@@ -1,5 +1,3 @@
-import * as pdf from "pdf-parse";
-
 const MAX_FILE_SIZE = 100 * 1024 * 1024;
 
 export async function extractPdfText(file: File) {
@@ -9,9 +7,9 @@ export async function extractPdfText(file: File) {
 
   const arrayBuffer = await file.arrayBuffer();
 
-  const buffer = Buffer.from(arrayBuffer);
+  const pdfParse = require("pdf-parse");
 
-  const data = await pdf.default(buffer);
+  const data = await pdfParse(Buffer.from(arrayBuffer));
 
   const text = data.text?.trim();
 
