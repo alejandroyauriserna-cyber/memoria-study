@@ -10,6 +10,7 @@ import {
   Users,
 } from "lucide-react";
 import { AppShell } from "@/components/ui/shell";
+import { get } from "idb-keyval";
 import { UploadGenerator } from "@/components/study/upload-generator";
 import { UNT_DERECHO } from "@/lib/academic/unt-derecho";
 
@@ -28,7 +29,7 @@ export default function Home() {
   async function askPdf() {
     try {
       setLoading(true);
-      const pdfText = localStorage.getItem("pdfText");
+      const pdfText = await get("pdfText");
 
       if (!pdfText) {
         alert("Primero genera un mazo desde un PDF para activar el tutor.");

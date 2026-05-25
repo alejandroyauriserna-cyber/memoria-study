@@ -10,6 +10,7 @@ import { StudyHub } from "@/components/study/study-hub";
 import { UNT_DERECHO_AUDIENCE } from "@/lib/ai/prompts";
 import { MAX_FILE_SIZE } from "@/lib/pdf/constants";
 import { loadAcademicSelection } from "@/lib/academic/storage";
+import { set } from "idb-keyval";
 import { DEFAULT_GENERATION_COUNTS } from "@/types/generation";
 import type { PdfExtractStreamEvent } from "@/types/pdf-progress";
 import type { StudyGenerationCounts } from "@/types/generation";
@@ -218,7 +219,12 @@ export function UploadGenerator() {
       setDeck(payload.deck);
       setExtractionMethod(method);
       setTextTruncated(truncated || Boolean(payload.truncated));
-      localStorage.setItem("pdfText", payload.pdfText ?? extractedText);
+      
+      try {
+        await set("pdfText", payload.pdfText ?? extractedText);
+      } catch (err) {
+        console.warn("No se pudo guardar el texto del PDF para el tutor:", err);
+      }
 
       setProgress({
         percent: 100,
