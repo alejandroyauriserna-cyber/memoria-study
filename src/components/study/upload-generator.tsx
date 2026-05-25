@@ -1,6 +1,5 @@
 "use client";
 
-import * as pdfjsLib from "pdfjs-dist";
 import {
   FileUp,
   Loader2,
@@ -24,32 +23,6 @@ type Status =
   | "saved";
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024;
-
-async function extractPdfText(file: File) {
-  const arrayBuffer = await file.arrayBuffer();
-
-  const pdf = await pdfjsLib.getDocument({
-    data: arrayBuffer,
-  }).promise;
-
-  let text = "";
-
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i);
-
-    const content = await page.getTextContent();
-
-    const strings = content.items
-      .map((item: any) =>
-        "str" in item ? item.str : ""
-      )
-      .join(" ");
-
-    text += strings + "\n";
-  }
-
-  return text.trim();
-}
 
 export function UploadGenerator() {
   const [deck, setDeck] =
@@ -77,25 +50,11 @@ export function UploadGenerator() {
         );
       }
 
-      const extractedText =
-        await extractPdfText(file);
-
       const response = await fetch(
         "/api/generate",
         {
           method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-
-          body: JSON.stringify({
-            sourceName: file.name,
-            audience:
-              formData.get("audience"),
-            text: extractedText,
-          }),
+          body: formData,
         },
       );
 
@@ -110,11 +69,6 @@ export function UploadGenerator() {
       }
 
       setDeck(payload.deck);
-
-      localStorage.setItem(
-        "pdfText",
-        extractedText,
-      );
 
       setStatus("idle");
     } catch (caught) {
