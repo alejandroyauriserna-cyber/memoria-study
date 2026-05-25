@@ -24,13 +24,17 @@ memory pairs, fill-in-the-blank exercises, and quizzes.
 npm install
 ```
 
-2. Create local environment variables:
+2. Crea tu archivo local de secretos (solo este lo usa Next.js):
 
 ```bash
 copy .env.example .env.local
 ```
 
-3. Fill in `.env.local`:
+3. Edita **solo** `.env.local` y reemplaza los placeholders con tus claves reales:
+
+> **Nota:** `.env.example` es la plantilla (texto ficticio). `.env.local` es tu copia privada con las APIs reales. No hace falta otro archivo `.env`.
+
+```bash
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
