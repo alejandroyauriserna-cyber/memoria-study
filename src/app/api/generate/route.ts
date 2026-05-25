@@ -57,7 +57,10 @@ export async function POST(request: Request) {
       console.error(dbError);
     }
 
-    return NextResponse.json({ deck });
+    return NextResponse.json({
+      deck,
+      pdfText: text,
+    });
   } catch (caught) {
     console.error(caught);
 
