@@ -1,8 +1,8 @@
-import PDFParser from "pdf2json";
+import pdf from "pdf-parse";
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024;
 
-export async function extractPdfText(file: File): Promise<string> {
+export async function extractPdfText(file: File) {
   if (file.size > MAX_FILE_SIZE) {
     throw new Error("PDFs hasta 100 MB.");
   }
@@ -11,18 +11,13 @@ export async function extractPdfText(file: File): Promise<string> {
 
   const buffer = Buffer.from(arrayBuffer);
 
-  return new Promise((resolve, reject) => {
-    const pdfParser = new PDFParser();
+  const data = await pdf(buffer);
 
-    pdfParser.on("pdfParser_dataError", (errData: any) => {
-      reject(errData.parserError);
-    });
+  const text = data.text?.trim();
 
-    pdfParser.on("pdfParser_dataReady", () => {
-      const text = pdfParser.getRawTextContent();
-      resolve(text);
-    });
+  if (!text) {
+    throw new Error("No se pudo extraer texto del PDF.");
+  }
 
-    pdfParser.parseBuffer(buffer);
-  });
+  return text;
 }
