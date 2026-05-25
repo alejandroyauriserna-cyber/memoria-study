@@ -14,23 +14,44 @@ export async function extractPdfText(file: File) {
   const text = await new Promise<string>((resolve, reject) => {
     const pdfParser = new PDFParser();
 
-    pdfParser.on("pdfParser_dataError", (errData: any) => {
-      reject(errData.parserError);
-    });
+    pdfParser.on(
+      "pdfParser_dataError",
+      (errData: any) => {
+        reject(
+          errData?.parserError ??
+            new Error("Error leyendo el PDF."),
+        );
+      },
+    );
 
-    pdfParser.on("pdfParser_dataReady", () => {
-      const rawText = pdfParser.getRawTextContent();
+    pdfParser.on(
+      "pdfParser_dataReady",
+      () => {
+        try {
+          const rawText =
+            pdfParser.getRawTextContent();
 
-      resolve(rawText);
-    });
+          resolve(rawText ?? "");
+        } catch (error) {
+          reject(error);
+        }
+      },
+    );
 
     pdfParser.parseBuffer(buffer);
   });
 
-  const cleanText = text.trim();
+  const cleanText = text
+    .replace(/\s+/g, " ")
+    .trim();
 
-  if (!cleanText) {
-    throw new Error("No se pudo extraer texto del PDF.");
+  if (
+    !cleanText ||
+    cleanText.length < 50
+  ) {
+    throw new Error(
+      "El PDF parece estar escaneado o no contiene texto seleccionable.",
+    );
   }
 
   return cleanText;
