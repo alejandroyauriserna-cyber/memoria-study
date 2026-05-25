@@ -1,7 +1,7 @@
 import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 
 pdfjs.GlobalWorkerOptions.workerSrc =
-  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs";
+  require("pdfjs-dist/build/pdf.worker.min.mjs");
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024;
 
@@ -24,7 +24,9 @@ export async function extractPdfText(file: File) {
     const content = await page.getTextContent();
 
     const strings = content.items
-      .map((item: any) => ("str" in item ? item.str : ""))
+      .map((item: any) =>
+        "str" in item ? item.str : ""
+      )
       .join(" ");
 
     text += strings + "\n";
