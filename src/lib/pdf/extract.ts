@@ -1,8 +1,5 @@
 import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 
-pdfjs.GlobalWorkerOptions.workerSrc =
-  require("pdfjs-dist/build/pdf.worker.min.mjs");
-
 const MAX_FILE_SIZE = 100 * 1024 * 1024;
 
 export async function extractPdfText(file: File) {
@@ -12,9 +9,13 @@ export async function extractPdfText(file: File) {
 
   const arrayBuffer = await file.arrayBuffer();
 
-  const pdf = await pdfjs.getDocument({
+  const loadingTask = pdfjs.getDocument({
     data: arrayBuffer,
-  }).promise;
+    useWorkerFetch: false,
+    useSystemFonts: true,
+  });
+
+  const pdf = await loadingTask.promise;
 
   let text = "";
 
