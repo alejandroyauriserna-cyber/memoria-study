@@ -1,9 +1,6 @@
-import * as pdfjsLib from "pdfjs-dist";
+import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024;
-
-pdfjsLib.GlobalWorkerOptions.workerSrc =
-  `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 export async function extractPdfText(file: File) {
   if (file.size > MAX_FILE_SIZE) {
@@ -18,8 +15,8 @@ export async function extractPdfText(file: File) {
 
   let text = "";
 
-  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-    const page = await pdf.getPage(pageNum);
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
 
     const content = await page.getTextContent();
 
@@ -30,11 +27,11 @@ export async function extractPdfText(file: File) {
     text += strings + "\n";
   }
 
-  const cleaned = text.trim();
+  const cleanText = text.trim();
 
-  if (!cleaned) {
+  if (!cleanText) {
     throw new Error("No se pudo extraer texto del PDF.");
   }
 
-  return cleaned;
+  return cleanText;
 }
