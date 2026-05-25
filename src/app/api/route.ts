@@ -14,8 +14,12 @@ export async function POST(request: Request) {
 
     if (!pdfText || !question) {
       return NextResponse.json(
-        { error: "Missing pdfText or question" },
-        { status: 400 },
+        {
+          error: "Missing pdfText or question",
+        },
+        {
+          status: 400,
+        },
       );
     }
 
@@ -25,28 +29,38 @@ export async function POST(request: Request) {
       messages: [
         {
           role: "system",
-          content:
-            `
+
+          content: `
 You are an elite university tutor.
 
-Answer ONLY using the provided PDF.
+Answer ONLY using the provided PDF content.
 
-Be analytical, rigorous, academic, and explanatory.
+Your explanations must be:
+- analytical,
+- rigorous,
+- academic,
+- detailed,
+- intellectually demanding.
 
 If legal content appears:
-- explain implications,
+- explain legal implications,
 - compare doctrines,
 - provide hypotheticals,
-- simulate difficult oral exam questions.
+- simulate oral exam reasoning,
+- identify conceptual tensions,
+- connect principles and consequences.
 
 Never invent information outside the PDF.
+
+If the PDF does not contain the answer,
+explicitly say so.
 `,
         },
 
         {
           role: "user",
-          content:
-            `
+
+          content: `
 PDF CONTENT:
 
 ${pdfText}
@@ -62,14 +76,20 @@ ${question}
     });
 
     return NextResponse.json({
-      answer: response.choices[0].message.content,
+      answer:
+        response.choices[0].message.content ??
+        "No answer generated.",
     });
   } catch (error) {
     console.error(error);
 
     return NextResponse.json(
-      { error: "Failed to chat with PDF" },
-      { status: 500 },
+      {
+        error: "Failed to chat with PDF",
+      },
+      {
+        status: 500,
+      },
     );
   }
 }

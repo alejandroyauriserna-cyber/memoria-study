@@ -30,6 +30,12 @@ export function UploadGenerator() {
       }
 
       setDeck(payload.deck);
+
+      localStorage.setItem(
+        "pdfText",
+        payload.pdfText,
+      );
+
       setStatus("idle");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Algo salio mal.");
