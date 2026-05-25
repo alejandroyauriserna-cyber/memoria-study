@@ -1,4 +1,4 @@
-import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
+import pdf from "pdf-parse";
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024;
 
@@ -9,28 +9,9 @@ export async function extractPdfText(file: File) {
 
   const arrayBuffer = await file.arrayBuffer();
 
-  const loadingTask = pdfjs.getDocument({
-    data: new Uint8Array(arrayBuffer),
-    disableWorker: true,
-  } as any);
+  const buffer = Buffer.from(arrayBuffer);
 
-  const pdf = await loadingTask.promise;
+  const data = await pdf(buffer);
 
-  let text = "";
-
-  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-    const page = await pdf.getPage(pageNum);
-
-    const content = await page.getTextContent();
-
-    const strings = content.items
-      .map((item: any) =>
-        "str" in item ? item.str : ""
-      )
-      .join(" ");
-
-    text += strings + "\n";
-  }
-
-  return text;
+  return data.text;
 }
