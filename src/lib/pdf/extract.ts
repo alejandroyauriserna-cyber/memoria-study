@@ -2,9 +2,6 @@ import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024;
 
-// 🔥 desactiva workers completamente
-(pdfjs as any).GlobalWorkerOptions.workerSrc = undefined;
-
 export async function extractPdfText(file: File) {
   if (file.size > MAX_FILE_SIZE) {
     throw new Error("PDFs hasta 100 MB.");
