@@ -11,14 +11,17 @@ const providerLabels: Record<StudyProvider, { label: string; note: string }> = {
     label: "OpenAI",
     note: "Generado con IA avanzada configurada por el proyecto.",
   },
+
   gemini: {
     label: "Gemini",
     note: "Generado con Gemini como alternativa de bajo costo o capa gratuita.",
   },
+
   xai: {
     label: "Grok / xAI",
     note: "Generado con Grok/xAI cuando esta disponible.",
   },
+
   local: {
     label: "Modo local gratis",
     note: "Generado sin API pagada, usando reglas sobre el texto extraido del PDF.",
@@ -28,6 +31,7 @@ const providerLabels: Record<StudyProvider, { label: string; note: string }> = {
 function withProvider<T extends object>(deck: T, provider: StudyProvider) {
   return {
     ...deck,
+
     generatedWith: {
       provider,
       ...providerLabels[provider],
@@ -43,28 +47,79 @@ export async function generateStudyDeck(input: {
   const providerErrors: string[] = [];
 
   if (env.openAiApiKey) {
-    const client = new OpenAI({ apiKey: env.openAiApiKey });
+    const client = new OpenAI({
+      apiKey: env.openAiApiKey,
+    });
 
     try {
       const response = await client.responses.parse({
         model: env.openAiModel,
+
         input: [
           {
             role: "system",
-            content:
-              "You create accurate, concise study material from source text. Use only the provided source. Make distractors plausible but unambiguous.",
+
+            content: `
+You are an elite university-level academic tutor specialized in generating rigorous and intellectually demanding study material.
+
+Your task is to transform academic content into advanced learning exercises for high-performing university students.
+
+RULES:
+- Prioritize deep understanding over memorization.
+- Avoid simplistic or obvious questions.
+- Generate analytical, difficult, and reasoning-heavy flashcards.
+- Include practical applications and hypotheticals whenever possible.
+- Compare concepts, doctrines, principles, and consequences.
+- Include edge cases, ambiguities, and conceptual traps.
+- Make quiz distractors highly plausible and challenging.
+- Avoid redundancy and repetition.
+- Every flashcard must test a distinct idea or angle.
+- Prioritize concepts most likely to appear in difficult university exams.
+- Ask WHY and HOW, not only WHAT.
+- Never oversimplify the material.
+
+For legal and academic material:
+- Prioritize interpretation and reasoning.
+- Include procedural implications and legal consequences.
+- Generate case-based and scenario-based questions.
+- Simulate strict university evaluations and oral exams.
+
+The generated material should feel:
+- rigorous,
+- advanced,
+- analytical,
+- professional,
+- intellectually demanding.
+
+Use ONLY the provided source text.
+`,
           },
+
           {
             role: "user",
-            content: `Source name: ${input.sourceName}
-Audience: ${input.audience ?? "college students"}
 
-Create a study deck with flashcards, fill-in-the-blank exercises, a quiz, and a short summary.
+            content: `
+Source name: ${input.sourceName}
+
+Audience: ${input.audience ?? "advanced university students"}
+
+Create an advanced university-level study deck with:
+
+- rigorous flashcards,
+- analytical fill-in-the-blank exercises,
+- difficult multiple-choice quiz questions,
+- practical hypotheticals,
+- conceptual comparison questions,
+- and a dense academic summary.
+
+The material must challenge high-performing university students and simulate demanding evaluations.
 
 Source text:
-${input.text}`,
+${input.text}
+`,
           },
         ],
+
         text: {
           format: zodTextFormat(studyDeckSchema, "study_deck"),
         },
@@ -76,7 +131,9 @@ ${input.text}`,
 
       return withProvider(response.output_parsed, "openai");
     } catch (error) {
-      providerErrors.push(`OpenAI: ${error instanceof Error ? error.message : "failed"}`);
+      providerErrors.push(
+        `OpenAI: ${error instanceof Error ? error.message : "failed"}`,
+      );
     }
   }
 
@@ -90,7 +147,9 @@ ${input.text}`,
 
       return withProvider(deck, "gemini");
     } catch (error) {
-      providerErrors.push(`Gemini: ${error instanceof Error ? error.message : "failed"}`);
+      providerErrors.push(
+        `Gemini: ${error instanceof Error ? error.message : "failed"}`,
+      );
     }
   }
 
@@ -104,10 +163,16 @@ ${input.text}`,
 
       return withProvider(deck, "xai");
     } catch (error) {
-      providerErrors.push(`xAI: ${error instanceof Error ? error.message : "failed"}`);
+      providerErrors.push(
+        `xAI: ${error instanceof Error ? error.message : "failed"}`,
+      );
     }
   }
 
   console.warn("Falling back to local generation.", providerErrors);
-  return withProvider(generateLocalStudyDeck(input), "local");
+
+  return withProvider(
+    generateLocalStudyDeck(input),
+    "local",
+  );
 }
