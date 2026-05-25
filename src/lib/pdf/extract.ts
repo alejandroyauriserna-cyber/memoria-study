@@ -10,9 +10,7 @@ export async function extractPdfText(file: File) {
   const arrayBuffer = await file.arrayBuffer();
 
   const loadingTask = pdfjs.getDocument({
-    data: arrayBuffer,
-    useWorkerFetch: false,
-    useSystemFonts: true,
+    data: new Uint8Array(arrayBuffer),
   });
 
   const pdf = await loadingTask.promise;
