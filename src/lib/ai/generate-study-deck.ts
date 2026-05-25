@@ -12,9 +12,14 @@ const providerLabels: Record<StudyProvider, { label: string; note: string }> = {
     note: "Generado con IA avanzada configurada por el proyecto.",
   },
 
+  openrouter: {
+    label: "OpenRouter DeepSeek",
+    note: "Generado usando DeepSeek gratuito via OpenRouter.",
+  },
+
   gemini: {
     label: "Gemini",
-    note: "Generado con Gemini como alternativa de bajo costo o capa gratuita.",
+    note: "Generado con Gemini como alternativa gratuita.",
   },
 
   xai: {
@@ -39,27 +44,7 @@ function withProvider<T extends object>(deck: T, provider: StudyProvider) {
   };
 }
 
-export async function generateStudyDeck(input: {
-  sourceName: string;
-  text: string;
-  audience?: string;
-}) {
-  const providerErrors: string[] = [];
-
-  if (env.openAiApiKey) {
-    const client = new OpenAI({
-      apiKey: env.openAiApiKey,
-    });
-
-    try {
-      const response = await client.responses.parse({
-        model: env.openAiModel,
-
-        input: [
-          {
-            role: "system",
-
-            content: `
+const SYSTEM_PROMPT = `
 You are an elite university-level academic tutor specialized in generating rigorous and intellectually demanding study material.
 
 Your task is to transform academic content into advanced learning exercises for high-performing university students.
@@ -92,7 +77,30 @@ The generated material should feel:
 - intellectually demanding.
 
 Use ONLY the provided source text.
-`,
+`;
+
+export async function generateStudyDeck(input: {
+  sourceName: string;
+  text: string;
+  audience?: string;
+}) {
+  const providerErrors: string[] = [];
+
+  // OPENROUTER + DEEPSEEK FREE
+  if (env.openRouterApiKey) {
+    const openrouter = new OpenAI({
+      apiKey: env.openRouterApiKey,
+      baseURL: "https://openrouter.ai/api/v1",
+    });
+
+    try {
+      const response = await openrouter.responses.parse({
+        model: env.openRouterModel,
+
+        input: [
+          {
+            role: "system",
+            content: SYSTEM_PROMPT,
           },
 
           {
@@ -126,6 +134,53 @@ ${input.text}
       });
 
       if (!response.output_parsed) {
+        throw new Error("OpenRouter did not return a valid study deck.");
+      }
+
+      return withProvider(response.output_parsed, "openrouter");
+    } catch (error) {
+      providerErrors.push(
+        `OpenRouter: ${error instanceof Error ? error.message : "failed"}`,
+      );
+    }
+  }
+
+  // OPENAI
+  if (env.openAiApiKey) {
+    const client = new OpenAI({
+      apiKey: env.openAiApiKey,
+    });
+
+    try {
+      const response = await client.responses.parse({
+        model: env.openAiModel,
+
+        input: [
+          {
+            role: "system",
+            content: SYSTEM_PROMPT,
+          },
+
+          {
+            role: "user",
+
+            content: `
+Source name: ${input.sourceName}
+
+Audience: ${input.audience ?? "advanced university students"}
+
+Source text:
+${input.text}
+`,
+          },
+        ],
+
+        text: {
+          format: zodTextFormat(studyDeckSchema, "study_deck"),
+        },
+      });
+
+      if (!response.output_parsed) {
         throw new Error("OpenAI did not return a valid study deck.");
       }
 
@@ -137,6 +192,7 @@ ${input.text}
     }
   }
 
+  // GEMINI
   if (env.geminiApiKey) {
     try {
       const deck = await generateWithGemini({
@@ -153,6 +209,7 @@ ${input.text}
     }
   }
 
+  // XAI
   if (env.xaiApiKey) {
     try {
       const deck = await generateWithXai({

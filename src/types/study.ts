@@ -1,5 +1,11 @@
 export type Difficulty = "easy" | "medium" | "hard";
-export type StudyProvider = "openai" | "gemini" | "xai" | "local";
+
+export type StudyProvider =
+  | "openai"
+  | "openrouter"
+  | "gemini"
+  | "xai"
+  | "local";
 
 export type Flashcard = {
   id: string;
@@ -34,11 +40,13 @@ export type StudyDeck = {
   flashcards: Flashcard[];
   fillBlanks: FillBlank[];
   quiz: QuizQuestion[];
+
   generatedWith?: {
     provider: StudyProvider;
     label: string;
     note: string;
   };
+
   isPublic?: boolean;
   createdAt?: string;
 };
