@@ -1,4 +1,4 @@
-import pdf from "pdf-parse";
+const pdf = require("pdf-parse");
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024;
 
