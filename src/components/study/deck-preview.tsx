@@ -10,15 +10,28 @@ export function DeckPreview({ deck }: { deck: StudyDeck }) {
   const [flipped, setFlipped] = useState(false);
   const [answers, setAnswers] = useState<Record<string, number>>({});
 
-  const card = deck.flashcards[cardIndex];
+  const card = deck.flashcards?.[cardIndex];
+
   const score = useMemo(
     () =>
       deck.quiz.reduce(
-        (total, question) => total + (answers[question.id] === question.answerIndex ? 1 : 0),
+        (total, question) =>
+          total + (answers[question.id] === question.answerIndex ? 1 : 0),
         0,
       ),
     [answers, deck.quiz],
   );
+
+  if (!card) {
+    return (
+      <section className="rounded-lg border border-border bg-card p-6 shadow-sm">
+        <h2 className="text-xl font-semibold">No se generaron flashcards.</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          El PDF se procesó, pero la IA no devolvió tarjetas válidas.
+        </p>
+      </section>
+    );
+  }
 
   return (
     <section className="grid gap-5 lg:grid-cols-[1.05fr_0.95fr]">
@@ -28,14 +41,21 @@ export function DeckPreview({ deck }: { deck: StudyDeck }) {
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
               Tarjetas
             </p>
+
             <h2 className="mt-1 text-xl font-semibold tracking-tight">
               {cardIndex + 1} de {deck.flashcards.length}
             </h2>
           </div>
-          <Button variant="ghost" onClick={() => setFlipped(false)} title="Reiniciar tarjeta">
+
+          <Button
+            variant="ghost"
+            onClick={() => setFlipped(false)}
+            title="Reiniciar tarjeta"
+          >
             <RotateCcw size={16} /> Reiniciar
           </Button>
         </div>
+
         <button
           type="button"
           onClick={() => setFlipped((value) => !value)}
@@ -44,13 +64,18 @@ export function DeckPreview({ deck }: { deck: StudyDeck }) {
           <p className="text-sm font-medium text-muted-foreground">
             {flipped ? "Respuesta" : "Pregunta"}
           </p>
+
           <p className="mt-5 text-2xl font-semibold leading-snug tracking-tight">
-            {flipped ? card.back : card.front}
+            {flipped ? card?.back : card?.front}
           </p>
+
           {!flipped ? (
-            <p className="mt-6 text-sm text-muted-foreground">Pista: {card.hint}</p>
+            <p className="mt-6 text-sm text-muted-foreground">
+              Pista: {card?.hint ?? "Sin pista"}
+            </p>
           ) : null}
         </button>
+
         <div className="mt-4 grid grid-cols-2 gap-3">
           <Button
             variant="secondary"
@@ -62,9 +87,13 @@ export function DeckPreview({ deck }: { deck: StudyDeck }) {
           >
             Anterior
           </Button>
+
           <Button
             onClick={() => {
-              setCardIndex((index) => Math.min(deck.flashcards.length - 1, index + 1));
+              setCardIndex((index) =>
+                Math.min(deck.flashcards.length - 1, index + 1),
+              );
+
               setFlipped(false);
             }}
             disabled={cardIndex === deck.flashcards.length - 1}
@@ -80,27 +109,41 @@ export function DeckPreview({ deck }: { deck: StudyDeck }) {
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
               Quiz
             </p>
+
             <h2 className="mt-1 text-xl font-semibold tracking-tight">
               Puntaje {score}/{deck.quiz.length}
             </h2>
           </div>
+
           <Button variant="secondary" title="Compartir deck">
             <Share2 size={16} /> Compartir
           </Button>
         </div>
+
         <div className="space-y-4">
           {deck.quiz.slice(0, 3).map((question) => (
-            <div key={question.id} className="rounded-lg border border-border p-4">
+            <div
+              key={question.id}
+              className="rounded-lg border border-border p-4"
+            >
               <p className="font-medium">{question.question}</p>
+
               <div className="mt-3 grid gap-2">
                 {question.options.map((option, index) => {
                   const selected = answers[question.id] === index;
+
                   const correct = question.answerIndex === index;
+
                   return (
                     <button
                       type="button"
                       key={option}
-                      onClick={() => setAnswers((current) => ({ ...current, [question.id]: index }))}
+                      onClick={() =>
+                        setAnswers((current) => ({
+                          ...current,
+                          [question.id]: index,
+                        }))
+                      }
                       className={`flex min-h-10 items-center justify-between rounded-lg border px-3 py-2 text-left text-sm ${
                         selected
                           ? correct
@@ -110,6 +153,7 @@ export function DeckPreview({ deck }: { deck: StudyDeck }) {
                       }`}
                     >
                       <span>{option}</span>
+
                       {selected && correct ? <Check size={16} /> : null}
                     </button>
                   );
