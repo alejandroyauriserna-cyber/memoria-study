@@ -2,11 +2,11 @@ import { NextResponse } from "next/server";
 import { generateStudyDeck } from "@/lib/ai/generate-study-deck";
 import { parseGenerationCounts } from "@/lib/ai/generation-counts";
 import { UNT_DERECHO_AUDIENCE } from "@/lib/ai/prompts";
-import { extractPdfText } from "@/lib/pdf/extract";
+import { extractPdfText, prepareTextForGeneration } from "@/lib/pdf/extract";
 import type { AcademicSelection } from "@/types/academic";
 
 export const runtime = "nodejs";
-export const maxDuration = 180;
+export const maxDuration = 300;
 
 function parseJsonField<T>(raw: FormDataEntryValue | null): T | undefined {
   if (typeof raw !== "string" || !raw.trim()) {
@@ -20,8 +20,55 @@ function parseJsonField<T>(raw: FormDataEntryValue | null): T | undefined {
   }
 }
 
+type GenerateJsonBody = {
+  sourceName: string;
+  text: string;
+  audience?: string;
+  academic?: AcademicSelection;
+  counts?: unknown;
+  ocrUsed?: boolean;
+};
+
 export async function POST(request: Request) {
   try {
+    const contentType = request.headers.get("content-type") ?? "";
+
+    if (contentType.includes("application/json")) {
+      const body = (await request.json()) as GenerateJsonBody;
+
+      if (!body.text?.trim() || !body.sourceName) {
+        return NextResponse.json(
+          { error: "Faltan el texto del PDF o el nombre del archivo." },
+          { status: 400 },
+        );
+      }
+
+      if (!body.academic) {
+        return NextResponse.json(
+          { error: "Selecciona año, ciclo, curso y semana." },
+          { status: 400 },
+        );
+      }
+
+      const counts = parseGenerationCounts(body.counts);
+      const prepared = prepareTextForGeneration(body.text);
+
+      const deck = await generateStudyDeck({
+        sourceName: body.sourceName,
+        text: prepared.text,
+        audience: body.audience ?? UNT_DERECHO_AUDIENCE,
+        academic: body.academic,
+        counts,
+        ocrUsed: Boolean(body.ocrUsed),
+      });
+
+      return NextResponse.json({
+        deck: { ...deck, academic: body.academic },
+        pdfText: prepared.text,
+        truncated: prepared.truncated,
+      });
+    }
+
     const formData = await request.formData();
     const file = formData.get("file");
     const audience = formData.get("audience");
@@ -46,10 +93,11 @@ export async function POST(request: Request) {
     }
 
     const { text, method } = await extractPdfText(file, { forceScanned });
+    const prepared = prepareTextForGeneration(text);
 
     const deck = await generateStudyDeck({
       sourceName: file.name,
-      text,
+      text: prepared.text,
       audience:
         typeof audience === "string" ? audience : UNT_DERECHO_AUDIENCE,
       academic,
@@ -59,8 +107,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       deck: { ...deck, academic },
-      pdfText: text,
+      pdfText: prepared.text,
       extractionMethod: method,
+      truncated: prepared.truncated,
     });
   } catch (caught) {
     console.error(caught);

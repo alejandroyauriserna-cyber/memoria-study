@@ -4,18 +4,68 @@ import { FileUp, Loader2, Save, Sparkles, WandSparkles } from "lucide-react";
 import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { AcademicNavigator } from "@/components/study/academic-navigator";
+import { GenerationProgress } from "@/components/study/generation-progress";
 import { GenerationSettings } from "@/components/study/generation-settings";
 import { StudyHub } from "@/components/study/study-hub";
 import { UNT_DERECHO_AUDIENCE } from "@/lib/ai/prompts";
+import { MAX_FILE_SIZE } from "@/lib/pdf/constants";
 import { loadAcademicSelection } from "@/lib/academic/storage";
 import { DEFAULT_GENERATION_COUNTS } from "@/types/generation";
+import type { PdfExtractStreamEvent } from "@/types/pdf-progress";
 import type { StudyGenerationCounts } from "@/types/generation";
 import type { AcademicSelection } from "@/types/academic";
 import type { StudyDeck } from "@/types/study";
 
-type Status = "idle" | "generating" | "saving" | "error" | "saved";
+type Status = "idle" | "working" | "saving" | "error" | "saved";
 
-const MAX_FILE_SIZE = 100 * 1024 * 1024;
+type ProgressState = {
+  percent: number;
+  message: string;
+  stageLabel: string;
+  currentChunk?: number;
+  totalChunks?: number;
+};
+
+function isExtractDone(
+  event: PdfExtractStreamEvent,
+): event is Extract<PdfExtractStreamEvent, { stage: "done" }> {
+  return event.stage === "done" && "text" in event;
+}
+
+async function readPdfExtractStream(
+  response: Response,
+  onEvent: (event: PdfExtractStreamEvent) => void,
+) {
+  const reader = response.body?.getReader();
+  if (!reader) {
+    throw new Error("El servidor no devolvió progreso de lectura.");
+  }
+
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) {
+      break;
+    }
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+
+    for (const line of lines) {
+      if (!line.trim()) {
+        continue;
+      }
+      onEvent(JSON.parse(line) as PdfExtractStreamEvent);
+    }
+  }
+
+  if (buffer.trim()) {
+    onEvent(JSON.parse(buffer) as PdfExtractStreamEvent);
+  }
+}
 
 export function UploadGenerator() {
   const [deck, setDeck] = useState<StudyDeck | null>(null);
@@ -24,6 +74,8 @@ export function UploadGenerator() {
   const [fileName, setFileName] = useState("");
   const [forceScanned, setForceScanned] = useState(false);
   const [extractionMethod, setExtractionMethod] = useState("");
+  const [textTruncated, setTextTruncated] = useState(false);
+  const [progress, setProgress] = useState<ProgressState | null>(null);
   const [counts, setCounts] = useState<StudyGenerationCounts>(
     DEFAULT_GENERATION_COUNTS,
   );
@@ -35,13 +87,22 @@ export function UploadGenerator() {
     setAcademic(selection);
   }, []);
 
-  async function generate(formData: FormData) {
-    setStatus("generating");
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setStatus("working");
     setError("");
+    setDeck(null);
+    setProgress({
+      percent: 2,
+      message: "Preparando tu PDF jurídico...",
+      stageLabel: "Inicio",
+    });
+
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const file = formData.get("file");
 
     try {
-      const file = formData.get("file");
-
       if (!(file instanceof File)) {
         throw new Error("Debes subir un PDF.");
       }
@@ -52,32 +113,124 @@ export function UploadGenerator() {
 
       const total = Object.values(counts).reduce((sum, value) => sum + value, 0);
       if (total === 0) {
-        throw new Error("Selecciona al menos un método de estudio con cantidad mayor a 0.");
+        throw new Error("Selecciona al menos un método con cantidad mayor a 0.");
       }
 
-      formData.set("audience", UNT_DERECHO_AUDIENCE);
-      formData.set("academic", JSON.stringify(academic));
-      formData.set("counts", JSON.stringify(counts));
-      formData.set("forceScanned", String(forceScanned));
+      const extractData = new FormData();
+      extractData.set("file", file);
+      extractData.set("forceScanned", String(forceScanned));
 
-      const response = await fetch("/api/generate", {
+      let extractedText = "";
+      let method = "";
+      let truncated = false;
+
+      const extractResponse = await fetch("/api/pdf/extract", {
         method: "POST",
-        body: formData,
+        body: extractData,
       });
 
-      const payload = await response.json();
+      if (!extractResponse.ok) {
+        throw new Error("No se pudo leer el PDF.");
+      }
 
-      if (!response.ok) {
+      let extractError = "";
+
+      await readPdfExtractStream(extractResponse, (event) => {
+        if (event.stage === "error") {
+          extractError = event.message;
+          return;
+        }
+
+        if (isExtractDone(event)) {
+          extractedText = event.text;
+          method = event.method;
+          truncated = Boolean(event.truncated);
+          setProgress({
+            percent: 50,
+            message: event.message,
+            stageLabel: "Lectura del PDF",
+          });
+          return;
+        }
+
+        const stageLabel =
+          event.stage === "ocr"
+            ? "OCR (documento escaneado)"
+            : event.stage === "parse"
+              ? "Leyendo PDF"
+              : "Subiendo";
+
+        const mappedPercent =
+          event.stage === "ocr"
+            ? 8 + Math.round(event.percent * 0.42)
+            : event.stage === "parse"
+              ? 8 + Math.round(event.percent * 0.35)
+              : event.percent;
+
+        setProgress({
+          percent: mappedPercent,
+          message: event.message,
+          stageLabel,
+          currentChunk: event.currentChunk,
+          totalChunks: event.totalChunks,
+        });
+      });
+
+      if (extractError) {
+        throw new Error(extractError);
+      }
+
+      if (!extractedText) {
+        throw new Error("No se extrajo texto del PDF.");
+      }
+
+      setProgress({
+        percent: 55,
+        message: "Generando flashcards, definiciones, pares y quiz con IA...",
+        stageLabel: "Generación con IA",
+      });
+
+      const generateResponse = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sourceName: file.name,
+          text: extractedText,
+          audience: UNT_DERECHO_AUDIENCE,
+          academic,
+          counts,
+          ocrUsed: method === "gemini-ocr",
+        }),
+      });
+
+      setProgress({
+        percent: 88,
+        message: "Finalizando mazo de estudio...",
+        stageLabel: "Generación con IA",
+      });
+
+      const payload = await generateResponse.json();
+
+      if (!generateResponse.ok) {
         throw new Error(payload.error ?? "No se pudo generar el mazo.");
       }
 
       setDeck(payload.deck);
-      setExtractionMethod(payload.extractionMethod ?? "");
-      localStorage.setItem("pdfText", payload.pdfText ?? "");
+      setExtractionMethod(method);
+      setTextTruncated(truncated || Boolean(payload.truncated));
+      localStorage.setItem("pdfText", payload.pdfText ?? extractedText);
+
+      setProgress({
+        percent: 100,
+        message: "¡Material listo para estudiar!",
+        stageLabel: "Completado",
+      });
+
       setStatus("idle");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Algo salió mal.");
       setStatus("error");
+      setProgress(null);
     }
   }
 
@@ -117,6 +270,9 @@ export function UploadGenerator() {
     }
   }
 
+  const maxMb = Math.round(MAX_FILE_SIZE / (1024 * 1024));
+  const isWorking = status === "working";
+
   return (
     <div className="space-y-5">
       <AcademicNavigator value={academic} onChange={handleAcademicChange} />
@@ -124,7 +280,7 @@ export function UploadGenerator() {
       <GenerationSettings value={counts} onChange={setCounts} />
 
       <form
-        action={generate}
+        onSubmit={handleSubmit}
         className="rounded-lg border border-border bg-card p-5 shadow-sm"
       >
         <div className="flex flex-col gap-4">
@@ -136,7 +292,7 @@ export function UploadGenerator() {
                 {fileName || "Elegir archivo PDF"}
               </span>
               <span className="mt-1 text-xs text-muted-foreground">
-                Texto seleccionable o documento escaneado
+                Códigos y lecturas pesadas hasta {maxMb} MB
               </span>
               <input
                 name="file"
@@ -144,12 +300,13 @@ export function UploadGenerator() {
                 accept="application/pdf"
                 className="sr-only"
                 required
+                disabled={isWorking}
                 onChange={(event) => {
                   const file = event.target.files?.[0];
                   if (!file) return;
 
                   if (file.size > MAX_FILE_SIZE) {
-                    setError("El PDF supera el límite de 100 MB.");
+                    setError(`El PDF supera el límite de ${maxMb} MB.`);
                     event.target.value = "";
                     setFileName("");
                     return;
@@ -162,31 +319,45 @@ export function UploadGenerator() {
             </label>
           </div>
 
-          <label className="flex items-center gap-2 text-sm">
+          <label className="flex items-start gap-2 text-sm">
             <input
               type="checkbox"
               checked={forceScanned}
+              disabled={isWorking}
               onChange={(event) => setForceScanned(event.target.checked)}
-              className="size-4 rounded border-border"
+              className="mt-1 size-4 rounded border-border"
             />
             <span>
-              <strong>PDF escaneado</strong> — forzar lectura OCR con Gemini (recomendado
-              para fotocopias o escaneos)
+              <strong>PDF escaneado</strong> — OCR por partes con Gemini (libros,
+              fotocopias y códigos escaneados; soporta archivos grandes)
             </span>
           </label>
 
           <Button
+            type="submit"
             className="w-full sm:w-auto"
-            disabled={status === "generating" || !academic}
+            disabled={isWorking || !academic}
           >
-            {status === "generating" ? (
+            {isWorking ? (
               <Loader2 className="animate-spin" size={16} />
             ) : (
               <WandSparkles size={16} />
             )}
-            {status === "generating" ? "Generando material..." : "Generar material"}
+            {isWorking ? "Procesando..." : "Generar material"}
           </Button>
         </div>
+
+        {progress && isWorking ? (
+          <div className="mt-4">
+            <GenerationProgress
+              percent={progress.percent}
+              message={progress.message}
+              stageLabel={progress.stageLabel}
+              currentChunk={progress.currentChunk}
+              totalChunks={progress.totalChunks}
+            />
+          </div>
+        ) : null}
 
         {error ? (
           <p className="mt-4 text-sm font-medium text-red-500">{error}</p>
@@ -213,6 +384,9 @@ export function UploadGenerator() {
                     <Sparkles size={14} className="text-accent" />
                     {deck.generatedWith.label}. {deck.generatedWith.note}
                     {extractionMethod === "gemini-ocr" ? " · PDF escaneado (OCR)" : null}
+                    {textTruncated
+                      ? " · Se usó la parte inicial del documento por longitud"
+                      : null}
                   </p>
                 ) : null}
 
