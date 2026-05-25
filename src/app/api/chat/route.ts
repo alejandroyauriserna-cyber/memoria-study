@@ -1,9 +1,9 @@
-import OpenAI from "openai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(
+  process.env.GEMINI_API_KEY!,
+);
 
 export async function POST(request: Request) {
   try {
@@ -23,13 +23,11 @@ export async function POST(request: Request) {
       );
     }
 
-    const response = await client.chat.completions.create({
-      model: "gpt-4.1-mini",
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-flash",
+    });
 
-      messages: [
-        {
-          role: "system",
-          content: `
+    const result = await model.generateContent(`
 You are an elite university tutor.
 
 Answer ONLY using the provided PDF content.
@@ -41,30 +39,19 @@ Your explanations must be:
 - detailed
 
 Never invent information outside the PDF.
-`,
-        },
 
-        {
-          role: "user",
-          content: `
 PDF CONTENT:
-
 ${pdfText}
 
 QUESTION:
-
 ${question}
-`,
-        },
-      ],
+`);
 
-      temperature: 0.7,
-    });
+    const response = await result.response;
+    const text = response.text();
 
     return NextResponse.json({
-      answer:
-        response.choices[0].message.content ??
-        "No answer generated.",
+      answer: text,
     });
   } catch (error) {
     console.error(error);
