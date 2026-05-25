@@ -1,3 +1,5 @@
+import type { AcademicSelection } from "@/types/academic";
+
 export type Difficulty = "easy" | "medium" | "hard";
 
 export type StudyProvider =
@@ -5,7 +7,8 @@ export type StudyProvider =
   | "openrouter"
   | "gemini"
   | "xai"
-  | "local";
+  | "local"
+  | "ocr";
 
 export type Flashcard = {
   id: string;
@@ -30,6 +33,19 @@ export type QuizQuestion = {
   explanation: string;
 };
 
+export type DefinitionCard = {
+  id: string;
+  term: string;
+  definition: string;
+  hint: string;
+};
+
+export type MatchingPair = {
+  id: string;
+  left: string;
+  right: string;
+};
+
 export type StudyDeck = {
   id?: string;
   title: string;
@@ -40,13 +56,14 @@ export type StudyDeck = {
   flashcards: Flashcard[];
   fillBlanks: FillBlank[];
   quiz: QuizQuestion[];
-
+  definitionCards: DefinitionCard[];
+  matchingPairs: MatchingPair[];
+  academic?: AcademicSelection;
   generatedWith?: {
     provider: StudyProvider;
     label: string;
     note: string;
   };
-
   isPublic?: boolean;
   createdAt?: string;
 };
@@ -62,6 +79,9 @@ export type DeckRecord = {
   flashcards: Flashcard[];
   fill_blanks: FillBlank[];
   quiz: QuizQuestion[];
+  definition_cards: DefinitionCard[];
+  matching_pairs: MatchingPair[];
+  academic_context: AcademicSelection | null;
   is_public: boolean;
   created_at: string;
 };

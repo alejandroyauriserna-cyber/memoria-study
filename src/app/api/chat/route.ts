@@ -1,68 +1,57 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
-
-const genAI = new GoogleGenerativeAI(
-  process.env.GEMINI_API_KEY!,
-);
+import { env } from "@/lib/env";
+import { UNT_DERECHO_AUDIENCE } from "@/lib/ai/prompts";
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    if (!env.geminiApiKey) {
+      return NextResponse.json(
+        { error: "Gemini no está configurado para el tutor." },
+        { status: 503 },
+      );
+    }
 
+    const body = await request.json();
     const pdfText = body.pdfText;
     const question = body.question;
 
     if (!pdfText || !question) {
       return NextResponse.json(
-        {
-          error: "Missing pdfText or question",
-        },
-        {
-          status: 400,
-        }
+        { error: "Faltan el texto del PDF o la pregunta." },
+        { status: 400 },
       );
     }
 
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
-    });
+    const genAI = new GoogleGenerativeAI(env.geminiApiKey);
+    const model = genAI.getGenerativeModel({ model: env.geminiModel });
 
     const result = await model.generateContent(`
-You are an elite university tutor.
+Eres tutor jurídico de la Universidad Nacional de Trujillo (UNT), carrera de Derecho.
+Audiencia: ${UNT_DERECHO_AUDIENCE}
 
-Answer ONLY using the provided PDF content.
+Responde SOLO con base en el contenido del PDF.
+- Usa español jurídico peruano claro y riguroso.
+- Cita artículos o conceptos solo si aparecen en el texto fuente.
+- No inventes normas externas al documento.
 
-Your explanations must be:
-- analytical
-- rigorous
-- academic
-- detailed
-
-Never invent information outside the PDF.
-
-PDF CONTENT:
+CONTENIDO DEL PDF:
 ${pdfText}
 
-QUESTION:
+PREGUNTA DEL ESTUDIANTE:
 ${question}
 `);
 
     const response = await result.response;
     const text = response.text();
 
-    return NextResponse.json({
-      answer: text,
-    });
+    return NextResponse.json({ answer: text });
   } catch (error) {
     console.error(error);
 
     return NextResponse.json(
-      {
-        error: "Failed to chat with PDF",
-      },
-      {
-        status: 500,
-      }
+      { error: "No se pudo consultar el PDF." },
+      { status: 500 },
     );
   }
 }

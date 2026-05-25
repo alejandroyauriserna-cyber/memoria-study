@@ -7,10 +7,24 @@ import { studyDeckSchema } from "@/lib/ai/schema";
 import { hasSupabaseEnv } from "@/lib/env";
 import type { DeckRecord } from "@/types/study";
 
+const academicSelectionSchema = z.object({
+  yearNumber: z.number(),
+  yearLabel: z.string(),
+  cycleNumber: z.number(),
+  cycleLabel: z.string(),
+  courseId: z.string(),
+  courseName: z.string(),
+  weekNumber: z.number(),
+  weekTitle: z.string(),
+});
+
 const requestSchema = z.object({
-  deck: studyDeckSchema.extend({
-    isPublic: z.boolean().optional(),
-  }),
+  deck: studyDeckSchema
+    .extend({
+      isPublic: z.boolean().optional(),
+      academic: academicSelectionSchema.optional(),
+    })
+    .passthrough(),
 });
 
 export async function POST(request: Request) {

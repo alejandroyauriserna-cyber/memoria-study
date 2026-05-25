@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "MemoriaStudy",
-  description: "Collaborative AI-powered study decks from PDFs.",
+  title: "MemoriaStudy · Derecho UNT",
+  description:
+    "Plataforma de estudio para Derecho en la Universidad Nacional de Trujillo: flashcards, quiz y mazos por semana.",
 };
 
 export default function RootLayout({
@@ -12,7 +13,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full antialiased">
+    <html lang="es" className="h-full antialiased">
       <body className="min-h-full bg-background text-foreground flex flex-col">
         {children}
       </body>

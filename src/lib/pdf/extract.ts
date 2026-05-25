@@ -1,160 +1,161 @@
-import PDFParser from "pdf2json";
+import PDFParser, { type Output } from "pdf2json";
+import { env } from "@/lib/env";
+import { extractTextWithGeminiOcr } from "@/lib/pdf/gemini-ocr";
+import { isLowQualityExtractedText } from "@/lib/pdf/text-quality";
 
-const MAX_FILE_SIZE =
-  100 * 1024 * 1024;
+const MAX_FILE_SIZE = 100 * 1024 * 1024;
+const MIN_USEFUL_TEXT_LENGTH = 50;
 
-async function extractWithPdf2Json(
-  buffer: Buffer,
-) {
-  const text =
-    await new Promise<string>(
-      (
-        resolve,
-        reject,
-      ) => {
-        const pdfParser =
-          new PDFParser();
+type PdfParserError = { parserError: Error } | Error;
 
-        pdfParser.on(
-          "pdfParser_dataError",
-          (
-            errData: any,
-          ) => {
-            reject(
-              errData?.parserError ??
-                new Error(
-                  "Error leyendo PDF.",
-                ),
-            );
-          },
-        );
+export type PdfExtractionOptions = {
+  forceScanned?: boolean;
+};
 
-        pdfParser.on(
-          "pdfParser_dataReady",
-          () => {
-            try {
-              const rawText =
-                pdfParser.getRawTextContent();
+export type PdfExtractionMeta = {
+  method: "pdf2json" | "pdf-parse" | "gemini-ocr";
+};
 
-              resolve(
-                rawText ?? "",
-              );
-            } catch (
-              error
-            ) {
-              reject(
-                error,
-              );
-            }
-          },
-        );
-
-        pdfParser.parseBuffer(
-          buffer,
-        );
-      },
-    );
-
-  return text
-    .replace(
-      /\s+/g,
-      " ",
-    )
-    .trim();
+function normalizeText(text: string) {
+  return text.replace(/\s+/g, " ").trim();
 }
 
-async function extractWithOCR(
-  buffer: Buffer,
-) {
-  const {
-    createWorker,
-  } = await import(
-    "tesseract.js"
+function decodeTextRun(value: string) {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+function textFromPages(pdfData: Output) {
+  const parts: string[] = [];
+
+  for (const page of pdfData.Pages ?? []) {
+    for (const item of page.Texts ?? []) {
+      for (const run of item.R ?? []) {
+        if (run.T) {
+          parts.push(decodeTextRun(run.T));
+        }
+      }
+    }
+  }
+
+  return normalizeText(parts.join(" "));
+}
+
+async function extractWithPdf2Json(buffer: Buffer) {
+  const pdfParser = new PDFParser(null, true);
+
+  const result = await new Promise<{ rawText: string; pdfData: Output }>(
+    (resolve, reject) => {
+      pdfParser.on("pdfParser_dataError", (errData: PdfParserError) => {
+        const error =
+          typeof errData === "object" &&
+          errData !== null &&
+          "parserError" in errData &&
+          errData.parserError instanceof Error
+            ? errData.parserError
+            : errData instanceof Error
+              ? errData
+              : new Error("Error leyendo PDF.");
+
+        reject(error);
+      });
+
+      pdfParser.on("pdfParser_dataReady", (pdfData: Output) => {
+        try {
+          resolve({
+            rawText: normalizeText(pdfParser.getRawTextContent() ?? ""),
+            pdfData,
+          });
+        } catch (error) {
+          reject(error);
+        }
+      });
+
+      pdfParser.parseBuffer(buffer);
+    },
   );
 
-  const worker =
-    await createWorker();
+  const pageText = textFromPages(result.pdfData);
+  return pageText.length > result.rawText.length ? pageText : result.rawText;
+}
 
-  // TU VERSION usa initialize
-  await worker.initialize(
-    "spa",
-  );
-
-  const {
-    data: { text },
-  } = await worker.recognize(
-    buffer,
-  );
-
-  await worker.terminate();
-
-  return text
-    .replace(
-      /\s+/g,
-      " ",
-    )
-    .trim();
+async function extractWithPdfParse(buffer: Buffer) {
+  const pdfParse = (await import("pdf-parse")).default;
+  const result = await pdfParse(buffer);
+  return normalizeText(result.text ?? "");
 }
 
 export async function extractPdfText(
   file: File,
+  options: PdfExtractionOptions = {},
 ) {
-  if (
-    file.size >
-    MAX_FILE_SIZE
-  ) {
-    throw new Error(
-      "PDFs hasta 100 MB.",
-    );
+  if (file.size > MAX_FILE_SIZE) {
+    throw new Error("PDFs hasta 100 MB.");
   }
 
-  const arrayBuffer =
-    await file.arrayBuffer();
+  const buffer = Buffer.from(await file.arrayBuffer());
 
-  const buffer =
-    Buffer.from(
-      arrayBuffer,
-    );
-
-  // intento normal
-  try {
-    const cleanText =
-      await extractWithPdf2Json(
-        buffer,
+  if (options.forceScanned) {
+    if (!env.geminiApiKey) {
+      throw new Error(
+        "Marcaste PDF escaneado pero falta GEMINI_API_KEY en .env.local.",
       );
+    }
+    const ocrText = await extractTextWithGeminiOcr(buffer, file.name);
+    return { text: ocrText, method: "gemini-ocr" as const };
+  }
 
+  const attempts: string[] = [];
+
+  try {
+    const pdf2jsonText = await extractWithPdf2Json(buffer);
     if (
-      cleanText &&
-      cleanText.length >
-        100
+      pdf2jsonText.length >= MIN_USEFUL_TEXT_LENGTH &&
+      !isLowQualityExtractedText(pdf2jsonText)
     ) {
-      return cleanText;
+      return { text: pdf2jsonText, method: "pdf2json" as const };
+    }
+    if (pdf2jsonText) {
+      attempts.push(pdf2jsonText);
     }
   } catch (error) {
-    console.warn(
-      "pdf2json fallo:",
-      error,
-    );
+    console.warn("pdf2json fallo:", error);
   }
 
-  // OCR fallback
-  console.warn(
-    "Usando OCR fallback...",
-  );
+  try {
+    const pdfParseText = await extractWithPdfParse(buffer);
+    if (
+      pdfParseText.length >= MIN_USEFUL_TEXT_LENGTH &&
+      !isLowQualityExtractedText(pdfParseText)
+    ) {
+      return { text: pdfParseText, method: "pdf-parse" as const };
+    }
+    if (pdfParseText) {
+      attempts.push(pdfParseText);
+    }
+  } catch (error) {
+    console.warn("pdf-parse fallo:", error);
+  }
 
-  const ocrText =
-    await extractWithOCR(
-      buffer,
-    );
-
+  const bestAttempt = attempts.sort((a, b) => b.length - a.length)[0];
   if (
-    !ocrText ||
-    ocrText.length < 50
+    bestAttempt &&
+    bestAttempt.length >= MIN_USEFUL_TEXT_LENGTH &&
+    !isLowQualityExtractedText(bestAttempt)
   ) {
-    throw new Error(
-      "No se pudo extraer texto útil del PDF.",
-    );
+    return { text: bestAttempt, method: "pdf-parse" as const };
   }
 
-  return ocrText;
+  if (env.geminiApiKey) {
+    console.warn("Aplicando OCR con Gemini (PDF escaneado o texto pobre)...");
+    const ocrText = await extractTextWithGeminiOcr(buffer, file.name);
+    return { text: ocrText, method: "gemini-ocr" as const };
+  }
+
+  throw new Error(
+    "No se pudo extraer texto del PDF. Marca «PDF escaneado» o configura GEMINI_API_KEY.",
+  );
 }

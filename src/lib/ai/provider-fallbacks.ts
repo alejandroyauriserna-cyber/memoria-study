@@ -1,38 +1,6 @@
 import { studyDeckSchema, type StudyDeckOutput } from "@/lib/ai/schema";
-
-function studyPrompt(input: {
-  sourceName: string;
-  text: string;
-  audience?: string;
-}) {
-  return `Eres un generador de material de estudio para estudiantes universitarios. Crea material preciso usando SOLO el texto fuente.
-
-Devuelve solo JSON valido con esta forma exacta:
-{
-  "title": "string",
-  "sourceName": "string",
-  "summary": "string",
-  "difficulty": "easy|medium|hard",
-  "estimatedMinutes": 20,
-  "flashcards": [{"id":"card_1","front":"string","back":"string","hint":"string","tags":["string"]}],
-  "fillBlanks": [{"id":"blank_1","sentence":"string with _____","answer":"string","explanation":"string"}],
-  "quiz": [{"id":"quiz_1","question":"string","options":["A","B","C","D"],"answerIndex":0,"explanation":"string"}]
-}
-
-Requisitos:
-- Usa espanol claro si el texto fuente esta en espanol.
-- Genera de 6 a 12 flashcards.
-- Genera de 4 a 8 ejercicios de completar espacios.
-- Genera de 5 a 10 preguntas de quiz.
-- Todas las respuestas deben estar sustentadas en el texto.
-- Evita inventar datos externos.
-
-Nombre del archivo: ${input.sourceName}
-Audiencia: ${input.audience ?? "estudiantes universitarios"}
-
-Texto fuente:
-${input.text}`;
-}
+import { buildProviderJsonPrompt } from "@/lib/ai/prompts";
+import type { StudyGenerationCounts } from "@/types/generation";
 
 function parseJsonDeck(raw: string) {
   const cleaned = raw
@@ -45,7 +13,7 @@ function parseJsonDeck(raw: string) {
   const jsonEnd = cleaned.lastIndexOf("}");
 
   if (jsonStart === -1 || jsonEnd === -1) {
-    throw new Error("Provider did not return JSON.");
+    throw new Error("El proveedor no devolvió JSON.");
   }
 
   return studyDeckSchema.parse(JSON.parse(cleaned.slice(jsonStart, jsonEnd + 1)));
@@ -55,6 +23,13 @@ export async function generateWithGemini(input: {
   sourceName: string;
   text: string;
   audience?: string;
+  counts: StudyGenerationCounts;
+  academic?: {
+    yearLabel: string;
+    cycleLabel: string;
+    courseName: string;
+    weekTitle: string;
+  };
   apiKey: string;
   model: string;
 }): Promise<StudyDeckOutput> {
@@ -64,7 +39,12 @@ export async function generateWithGemini(input: {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: studyPrompt(input) }] }],
+        contents: [
+          {
+            role: "user",
+            parts: [{ text: buildProviderJsonPrompt(input) }],
+          },
+        ],
         generationConfig: {
           responseMimeType: "application/json",
           temperature: 0.25,
@@ -74,14 +54,14 @@ export async function generateWithGemini(input: {
   );
 
   if (!response.ok) {
-    throw new Error(`Gemini failed with ${response.status}: ${await response.text()}`);
+    throw new Error(`Gemini falló (${response.status}): ${await response.text()}`);
   }
 
   const payload = await response.json();
   const text = payload.candidates?.[0]?.content?.parts?.[0]?.text;
 
   if (typeof text !== "string") {
-    throw new Error("Gemini returned an empty response.");
+    throw new Error("Gemini devolvió una respuesta vacía.");
   }
 
   return parseJsonDeck(text);
@@ -91,6 +71,13 @@ export async function generateWithXai(input: {
   sourceName: string;
   text: string;
   audience?: string;
+  counts: StudyGenerationCounts;
+  academic?: {
+    yearLabel: string;
+    cycleLabel: string;
+    courseName: string;
+    weekTitle: string;
+  };
   apiKey: string;
   model: string;
 }): Promise<StudyDeckOutput> {
@@ -108,22 +95,22 @@ export async function generateWithXai(input: {
         {
           role: "system",
           content:
-            "You are a study material generator. Return valid JSON only and use only the provided source.",
+            "Generador de material jurídico UNT. Devuelve solo JSON válido en español.",
         },
-        { role: "user", content: studyPrompt(input) },
+        { role: "user", content: buildProviderJsonPrompt(input) },
       ],
     }),
   });
 
   if (!response.ok) {
-    throw new Error(`xAI failed with ${response.status}: ${await response.text()}`);
+    throw new Error(`xAI falló (${response.status}): ${await response.text()}`);
   }
 
   const payload = await response.json();
   const text = payload.choices?.[0]?.message?.content;
 
   if (typeof text !== "string") {
-    throw new Error("xAI returned an empty response.");
+    throw new Error("xAI devolvió una respuesta vacía.");
   }
 
   return parseJsonDeck(text);

@@ -1,3 +1,4 @@
+import type { Document } from "@langchain/core/documents";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 
 export async function chunkPdfText(text: string) {
@@ -6,7 +7,7 @@ export async function chunkPdfText(text: string) {
     chunkOverlap: 300,
   });
 
-  const chunks = await splitter.createDocuments([text]);
+  const chunks: Document[] = await splitter.createDocuments([text]);
 
-  return chunks.map((chunk: any) => chunk.pageContent);
+  return chunks.map((chunk) => chunk.pageContent);
 }

@@ -1,65 +1,66 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-import { env } from "@/lib/env";
 import { generateStudyDeck } from "@/lib/ai/generate-study-deck";
+import { parseGenerationCounts } from "@/lib/ai/generation-counts";
+import { UNT_DERECHO_AUDIENCE } from "@/lib/ai/prompts";
 import { extractPdfText } from "@/lib/pdf/extract";
+import type { AcademicSelection } from "@/types/academic";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 180;
 
-const supabase = createClient(
-  env.supabaseUrl!,
-  env.supabaseServiceRoleKey!,
-);
+function parseJsonField<T>(raw: FormDataEntryValue | null): T | undefined {
+  if (typeof raw !== "string" || !raw.trim()) {
+    return undefined;
+  }
+
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return undefined;
+  }
+}
 
 export async function POST(request: Request) {
   try {
     const formData = await request.formData();
-
     const file = formData.get("file");
     const audience = formData.get("audience");
+    const academic = parseJsonField<AcademicSelection>(formData.get("academic"));
+    const counts = parseGenerationCounts(
+      parseJsonField(formData.get("counts")),
+    );
+    const forceScanned = formData.get("forceScanned") === "true";
 
     if (!(file instanceof File)) {
       return NextResponse.json(
-        { error: "A PDF file is required." },
+        { error: "Debes subir un PDF." },
         { status: 400 },
       );
     }
 
-    const text = await extractPdfText(file);
+    if (!academic) {
+      return NextResponse.json(
+        { error: "Selecciona año, ciclo, curso y semana." },
+        { status: 400 },
+      );
+    }
+
+    const { text, method } = await extractPdfText(file, { forceScanned });
 
     const deck = await generateStudyDeck({
       sourceName: file.name,
       text,
       audience:
-        typeof audience === "string"
-          ? audience
-          : "advanced university students",
+        typeof audience === "string" ? audience : UNT_DERECHO_AUDIENCE,
+      academic,
+      counts,
+      ocrUsed: method === "gemini-ocr",
     });
 
-    const { error: dbError } = await supabase
-      .from("study_decks")
-      .insert({
-        source_name: file.name,
-
-        audience:
-          typeof audience === "string"
-            ? audience
-            : "advanced university students",
-
-        summary: deck.summary,
-
-        deck,
-      });
-
-    if (dbError) {
-      console.error(dbError);
-    }
-
     return NextResponse.json({
-      deck,
+      deck: { ...deck, academic },
       pdfText: text,
+      extractionMethod: method,
     });
   } catch (caught) {
     console.error(caught);
@@ -69,7 +70,7 @@ export async function POST(request: Request) {
         error:
           caught instanceof Error
             ? caught.message
-            : "Unable to generate study material.",
+            : "No se pudo generar el material de estudio.",
       },
       { status: 500 },
     );

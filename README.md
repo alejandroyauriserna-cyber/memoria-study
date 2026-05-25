@@ -1,8 +1,10 @@
 # MemoriaStudy
 
-MemoriaStudy is a modern full-stack study workspace built with Next.js App Router,
-TypeScript, TailwindCSS, Supabase, and the OpenAI API. Users can upload a text-based
-PDF and generate summaries, flashcards, fill-in-the-blank exercises, and quizzes.
+MemoriaStudy is a modern full-stack study workspace for **Derecho (UNT)** built with
+Next.js App Router, TypeScript, TailwindCSS, Supabase, and AI providers. Users organize
+material by **año → ciclo → curso → semana**, upload PDFs (including scanned documents
+via Gemini OCR), and generate Spanish legal study content: flashcards, definition matching,
+memory pairs, fill-in-the-blank exercises, and quizzes.
 
 ## Stack
 
@@ -34,6 +36,8 @@ copy .env.example .env.local
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+OPENROUTER_API_KEY=your_openrouter_api_key
+OPENROUTER_MODEL=deepseek/deepseek-chat-v3-0324:free
 OPENAI_API_KEY=your_openai_api_key
 OPENAI_MODEL=gpt-5.2
 GEMINI_API_KEY=optional_gemini_api_key
@@ -77,6 +81,7 @@ supabase/schema.sql     Database schema and RLS policies
 
 ## Notes
 
-- Study generation tries OpenAI first, then Gemini, then xAI/Grok, then a free local PDF-based generator.
-- Saving decks requires Supabase URL, anon key, service role key, and the SQL schema.
-- PDF extraction works best with selectable text PDFs. Scanned PDFs need OCR in a future version.
+- Study generation tries OpenRouter, OpenAI, Gemini, xAI, then a free local generator. All prompts target UNT Derecho in Spanish.
+- Saving decks requires Supabase URL, anon key, service role key, and the SQL schema (run migrations in `supabase/schema.sql`).
+- PDF extraction: pdf2json → pdf-parse → **Gemini OCR** for scanned documents (`GEMINI_API_KEY` required for OCR).
+- Study modes: flashcards, término↔definición, juego de pares, completar espacios, quiz.

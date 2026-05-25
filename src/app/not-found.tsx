@@ -6,15 +6,15 @@ export default function NotFound() {
     <AppShell>
       <section className="mx-auto flex min-h-[calc(100vh-9rem)] max-w-3xl flex-col items-center justify-center px-4 text-center">
         <p className="text-sm font-semibold text-accent">404</p>
-        <h1 className="mt-3 text-4xl font-semibold tracking-tight">Deck unavailable</h1>
+        <h1 className="mt-3 text-4xl font-semibold tracking-tight">Mazo no disponible</h1>
         <p className="mt-3 text-muted-foreground">
-          This deck is private, missing, or Supabase has not been configured.
+          Este mazo es privado, no existe o Supabase no está configurado.
         </p>
         <Link
           href="/dashboard"
           className="mt-6 inline-flex h-11 items-center justify-center rounded-lg bg-foreground px-4 text-sm font-semibold text-background"
         >
-          Open dashboard
+          Ir al panel
         </Link>
       </section>
     </AppShell>

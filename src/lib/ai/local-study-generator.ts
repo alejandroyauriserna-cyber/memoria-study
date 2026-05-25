@@ -1,5 +1,7 @@
 import { createId } from "@/lib/utils";
 import type { StudyDeckOutput } from "@/lib/ai/schema";
+import { DEFAULT_GENERATION_COUNTS } from "@/types/generation";
+import type { StudyGenerationCounts } from "@/types/generation";
 
 const stopWords = new Set([
   "ademas",
@@ -136,7 +138,9 @@ function uniqueOptions(answer: string, keywords: string[], index: number) {
 export function generateLocalStudyDeck(input: {
   sourceName: string;
   text: string;
+  counts?: StudyGenerationCounts;
 }): StudyDeckOutput {
+  const counts = input.counts ?? DEFAULT_GENERATION_COUNTS;
   const sentences = splitSentences(input.text);
   const keywords = topKeywords(input.text);
   const coreSentences = [...sentences]
@@ -146,7 +150,7 @@ export function generateLocalStudyDeck(input: {
   const usableSentences = coreSentences.length >= 6 ? coreSentences : sentences.slice(0, 14);
   const summary = usableSentences.slice(0, 4).join(" ");
 
-  const flashcards = usableSentences.slice(0, 10).map((sentence, index) => {
+  const flashcards = usableSentences.slice(0, counts.flashcards || 0).map((sentence, index) => {
     const term = extractTerm(sentence, keywords);
 
     return {
@@ -160,7 +164,7 @@ export function generateLocalStudyDeck(input: {
     };
   });
 
-  const fillBlanks = usableSentences.slice(0, 7).map((sentence) => {
+  const fillBlanks = usableSentences.slice(0, counts.fillBlanks || 0).map((sentence) => {
     const answer = extractTerm(sentence, keywords);
     const blanked = sentence.replace(new RegExp(escapeRegExp(answer), "i"), "_____");
 
@@ -172,7 +176,7 @@ export function generateLocalStudyDeck(input: {
     };
   });
 
-  const quiz = usableSentences.slice(0, 8).map((sentence, index) => {
+  const quiz = usableSentences.slice(0, counts.quiz || 0).map((sentence, index) => {
     const answer = extractTerm(sentence, keywords);
 
     return {
@@ -184,14 +188,31 @@ export function generateLocalStudyDeck(input: {
     };
   });
 
+  const definitionCards = flashcards.slice(0, counts.definitionCards || 0).map((card) => ({
+    id: createId("def"),
+    term: card.front.replace(/^¿?Que es "|" segun el documento\?$/gi, "").trim() || card.front,
+    definition: card.back,
+    hint: card.hint,
+  }));
+
+  const matchingPairs = definitionCards.slice(0, counts.matchingPairs || 0).map((card) => ({
+    id: createId("pair"),
+    left: card.term,
+    right: card.definition,
+  }));
+
   return {
     title: titleFromSource(input.sourceName, keywords),
     sourceName: input.sourceName,
-    summary: summary || "Resumen generado localmente desde el texto extraido del PDF.",
+    summary:
+      summary ||
+      "Resumen generado localmente desde el texto extraído del PDF para Derecho (UNT).",
     difficulty: usableSentences.length > 10 ? "medium" : "easy",
     estimatedMinutes: Math.max(8, Math.min(45, Math.ceil(usableSentences.length * 2.5))),
     flashcards,
     fillBlanks,
     quiz,
+    definitionCards,
+    matchingPairs,
   };
 }

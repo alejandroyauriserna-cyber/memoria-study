@@ -11,7 +11,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <span className="grid size-9 place-items-center rounded-lg bg-foreground text-background">
               <BookOpen size={18} />
             </span>
-            <span className="font-semibold tracking-tight">MemoriaStudy</span>
+            <span className="font-semibold tracking-tight">
+              MemoriaStudy <span className="text-muted-foreground">· UNT Derecho</span>
+            </span>
           </Link>
           <nav className="flex items-center gap-2">
             <Link
