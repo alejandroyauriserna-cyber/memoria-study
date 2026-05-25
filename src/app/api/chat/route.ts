@@ -19,7 +19,7 @@ export async function POST(request: Request) {
         },
         {
           status: 400,
-        },
+        }
       );
     }
 
@@ -29,37 +29,23 @@ export async function POST(request: Request) {
       messages: [
         {
           role: "system",
-
           content: `
 You are an elite university tutor.
 
 Answer ONLY using the provided PDF content.
 
 Your explanations must be:
-- analytical,
-- rigorous,
-- academic,
-- detailed,
-- intellectually demanding.
-
-If legal content appears:
-- explain legal implications,
-- compare doctrines,
-- provide hypotheticals,
-- simulate oral exam reasoning,
-- identify conceptual tensions,
-- connect principles and consequences.
+- analytical
+- rigorous
+- academic
+- detailed
 
 Never invent information outside the PDF.
-
-If the PDF does not contain the answer,
-explicitly say so.
 `,
         },
 
         {
           role: "user",
-
           content: `
 PDF CONTENT:
 
@@ -89,7 +75,7 @@ ${question}
       },
       {
         status: 500,
-      },
+      }
     );
   }
 }
