@@ -1,37 +1,77 @@
 import { z } from "zod";
 
 export const studyDeckSchema = z.object({
-  title: z.string().min(3).max(90),
+  title: z.string().min(10).max(120),
+
   sourceName: z.string().min(1),
-  summary: z.string().min(80).max(1200),
+
+  summary: z.string().min(200).max(2500),
+
   difficulty: z.enum(["easy", "medium", "hard"]),
-  estimatedMinutes: z.number().int().min(5).max(120),
+
+  estimatedMinutes: z.number().int().min(15).max(240),
+
   flashcards: z.array(
     z.object({
       id: z.string(),
-      front: z.string().min(5),
-      back: z.string().min(5),
-      hint: z.string().min(3),
-      tags: z.array(z.string()).min(1).max(4),
+
+      front: z.string()
+        .min(25)
+        .max(500),
+
+      back: z.string()
+        .min(80)
+        .max(1500),
+
+      hint: z.string()
+        .min(10)
+        .max(300),
+
+      tags: z.array(
+        z.string().min(3).max(40),
+      ).min(1).max(6),
     }),
-  ).min(6).max(14),
+  ).min(10).max(25),
+
   fillBlanks: z.array(
     z.object({
       id: z.string(),
-      sentence: z.string().min(20),
-      answer: z.string().min(2),
-      explanation: z.string().min(10),
+
+      sentence: z.string()
+        .min(60)
+        .max(1000),
+
+      answer: z.string()
+        .min(3)
+        .max(120),
+
+      explanation: z.string()
+        .min(50)
+        .max(1000),
     }),
-  ).min(4).max(10),
+  ).min(8).max(20),
+
   quiz: z.array(
     z.object({
       id: z.string(),
-      question: z.string().min(10),
-      options: z.array(z.string()).length(4),
+
+      question: z.string()
+        .min(40)
+        .max(1200),
+
+      options: z.array(
+        z.string()
+          .min(15)
+          .max(300),
+      ).length(4),
+
       answerIndex: z.number().int().min(0).max(3),
-      explanation: z.string().min(10),
+
+      explanation: z.string()
+        .min(80)
+        .max(1500),
     }),
-  ).min(5).max(12),
+  ).min(10).max(25),
 });
 
 export type StudyDeckOutput = z.infer<typeof studyDeckSchema>;
