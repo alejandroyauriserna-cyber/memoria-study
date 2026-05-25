@@ -54,7 +54,9 @@ async function extractWithOCR(
   );
 
   const worker =
-    await createWorker();
+    await createWorker({
+      workerPath: undefined,
+    });
 
   await worker.loadLanguage(
     "spa",
