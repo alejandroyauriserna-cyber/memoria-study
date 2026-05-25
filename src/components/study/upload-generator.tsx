@@ -1,42 +1,119 @@
 "use client";
 
-import { FileUp, Loader2, Save, Sparkles, WandSparkles } from "lucide-react";
+import * as pdfjsLib from "pdfjs-dist";
+import {
+  FileUp,
+  Loader2,
+  Save,
+  Sparkles,
+  WandSparkles,
+} from "lucide-react";
+
 import { useState } from "react";
+
 import { Button } from "@/components/ui/button";
 import { DeckPreview } from "@/components/study/deck-preview";
+
 import type { StudyDeck } from "@/types/study";
 
-type Status = "idle" | "generating" | "saving" | "error" | "saved";
+type Status =
+  | "idle"
+  | "generating"
+  | "saving"
+  | "error"
+  | "saved";
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024;
 
+async function extractPdfText(file: File) {
+  const arrayBuffer = await file.arrayBuffer();
+
+  const pdf = await pdfjsLib.getDocument({
+    data: arrayBuffer,
+  }).promise;
+
+  let text = "";
+
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+
+    const content = await page.getTextContent();
+
+    const strings = content.items
+      .map((item: any) =>
+        "str" in item ? item.str : ""
+      )
+      .join(" ");
+
+    text += strings + "\n";
+  }
+
+  return text.trim();
+}
+
 export function UploadGenerator() {
-  const [deck, setDeck] = useState<StudyDeck | null>(null);
-  const [status, setStatus] = useState<Status>("idle");
+  const [deck, setDeck] =
+    useState<StudyDeck | null>(null);
+
+  const [status, setStatus] =
+    useState<Status>("idle");
+
   const [error, setError] = useState("");
-  const [fileName, setFileName] = useState("");
+
+  const [fileName, setFileName] =
+    useState("");
 
   async function generate(formData: FormData) {
     setStatus("generating");
+
     setError("");
 
     try {
-      const response = await fetch("/api/generate", {
-        method: "POST",
-        body: formData,
-      });
+      const file = formData.get("file");
 
-      const payload = await response.json();
+      if (!(file instanceof File)) {
+        throw new Error(
+          "Debes subir un PDF."
+        );
+      }
+
+      const extractedText =
+        await extractPdfText(file);
+
+      const response = await fetch(
+        "/api/generate",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+
+          body: JSON.stringify({
+            sourceName: file.name,
+            audience:
+              formData.get("audience"),
+            text: extractedText,
+          }),
+        },
+      );
+
+      const payload =
+        await response.json();
 
       if (!response.ok) {
-        throw new Error(payload.error ?? "No se pudo generar el deck.");
+        throw new Error(
+          payload.error ??
+            "No se pudo generar el deck."
+        );
       }
 
       setDeck(payload.deck);
 
       localStorage.setItem(
         "pdfText",
-        payload.pdfText ?? "",
+        extractedText,
       );
 
       setStatus("idle");
@@ -55,33 +132,43 @@ export function UploadGenerator() {
     if (!deck) return;
 
     setStatus("saving");
+
     setError("");
 
     try {
-      const response = await fetch("/api/decks", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          deck: {
-            ...deck,
-            isPublic: true,
-          },
-        }),
-      });
+      const response = await fetch(
+        "/api/decks",
+        {
+          method: "POST",
 
-      const payload = await response.json();
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+
+          body: JSON.stringify({
+            deck: {
+              ...deck,
+              isPublic: true,
+            },
+          }),
+        },
+      );
+
+      const payload =
+        await response.json();
 
       if (!response.ok) {
         throw new Error(
-          payload.error ?? "No se pudo guardar el deck."
+          payload.error ??
+            "No se pudo guardar el deck."
         );
       }
 
       setDeck({
         ...payload.deck,
-        generatedWith: deck.generatedWith,
+        generatedWith:
+          deck.generatedWith,
       });
 
       setStatus("saved");
@@ -115,7 +202,8 @@ export function UploadGenerator() {
               />
 
               <span className="text-sm font-semibold">
-                {fileName || "Elegir archivo PDF"}
+                {fileName ||
+                  "Elegir archivo PDF"}
               </span>
 
               <span className="mt-1 text-xs text-muted-foreground">
@@ -129,23 +217,32 @@ export function UploadGenerator() {
                 className="sr-only"
                 required
                 onChange={(event) => {
-                  const file = event.target.files?.[0];
+                  const file =
+                    event.target.files?.[0];
 
                   if (!file) return;
 
-                  if (file.size > MAX_FILE_SIZE) {
+                  if (
+                    file.size >
+                    MAX_FILE_SIZE
+                  ) {
                     setError(
                       "El PDF supera el límite de 100 MB."
                     );
 
-                    event.target.value = "";
+                    event.target.value =
+                      "";
+
                     setFileName("");
 
                     return;
                   }
 
                   setError("");
-                  setFileName(file.name);
+
+                  setFileName(
+                    file.name,
+                  );
                 }}
               />
             </label>
@@ -165,9 +262,12 @@ export function UploadGenerator() {
 
           <Button
             className="lg:w-48"
-            disabled={status === "generating"}
+            disabled={
+              status === "generating"
+            }
           >
-            {status === "generating" ? (
+            {status ===
+            "generating" ? (
               <Loader2
                 className="animate-spin"
                 size={16}
@@ -176,7 +276,8 @@ export function UploadGenerator() {
               <WandSparkles size={16} />
             )}
 
-            {status === "generating"
+            {status ===
+            "generating"
               ? "Generando..."
               : "Generar"}
           </Button>
@@ -209,8 +310,16 @@ export function UploadGenerator() {
                       className="text-accent"
                     />
 
-                    Motor: {deck.generatedWith.label}.{" "}
-                    {deck.generatedWith.note}
+                    Motor:{" "}
+                    {
+                      deck.generatedWith
+                        .label
+                    }
+                    .{" "}
+                    {
+                      deck.generatedWith
+                        .note
+                    }
                   </p>
                 ) : null}
 
@@ -222,9 +331,12 @@ export function UploadGenerator() {
               <Button
                 variant="secondary"
                 onClick={saveDeck}
-                disabled={status === "saving"}
+                disabled={
+                  status === "saving"
+                }
               >
-                {status === "saving" ? (
+                {status ===
+                "saving" ? (
                   <Loader2
                     className="animate-spin"
                     size={16}
