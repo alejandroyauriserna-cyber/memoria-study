@@ -1,5 +1,4 @@
 import PDFParser from "pdf2json";
-import Tesseract from "tesseract.js";
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024;
 
@@ -46,16 +45,19 @@ async function extractWithPdf2Json(
 }
 
 async function extractWithOCR(
-  file: File,
+  buffer: Buffer,
 ) {
-  const {
-    data: { text },
-  } = await Tesseract.recognize(
-    file,
-    "spa+eng",
+  const Tesseract = await import(
+    "tesseract.js"
   );
 
-  return text
+  const result =
+    await Tesseract.recognize(
+      buffer,
+      "spa+eng",
+    );
+
+  return result.data.text
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -76,7 +78,7 @@ export async function extractPdfText(
     arrayBuffer,
   );
 
-  // PRIMER INTENTO → TEXTO NORMAL
+  // INTENTO 1 → TEXTO NORMAL
   try {
     const cleanText =
       await extractWithPdf2Json(
@@ -96,22 +98,35 @@ export async function extractPdfText(
     );
   }
 
-  // FALLBACK OCR
+  // FALLBACK → OCR
   console.warn(
     "Usando OCR fallback...",
   );
 
-  const ocrText =
-    await extractWithOCR(file);
+  try {
+    const ocrText =
+      await extractWithOCR(
+        buffer,
+      );
 
-  if (
-    !ocrText ||
-    ocrText.length < 50
-  ) {
+    if (
+      !ocrText ||
+      ocrText.length < 50
+    ) {
+      throw new Error(
+        "OCR sin texto suficiente.",
+      );
+    }
+
+    return ocrText;
+  } catch (error) {
+    console.error(
+      "OCR fallo:",
+      error,
+    );
+
     throw new Error(
-      "No se pudo extraer texto util del PDF.",
+      "No se pudo extraer texto útil del PDF.",
     );
   }
-
-  return ocrText;
 }
