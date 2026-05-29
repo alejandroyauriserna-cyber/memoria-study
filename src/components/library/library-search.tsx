@@ -1,7 +1,7 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
-import { Search, FileSearch, Loader2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { FileSearch, Loader2, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MaterialCard } from "@/components/library/material-card";
 import type { Material } from "@/types/material";
@@ -43,30 +43,30 @@ export function LibrarySearch() {
   }
 
   return (
-    <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <section className="rounded-[32px] border border-border bg-card p-8 shadow-sm">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm font-semibold text-accent">Buscador académico</p>
-          <h2 className="mt-1 text-2xl font-semibold tracking-tight">Encuentra apuntes, PDFs y resúmenes</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Busca por curso, título, tipo de material o descripción en toda la biblioteca.
+          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-accent">Buscador académico</p>
+          <h2 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">Encuentra apuntes, PDFs y resúmenes</h2>
+          <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
+            Busca por curso, título, tipo de material o descripción en toda la biblioteca colaborativa.
           </p>
         </div>
       </div>
 
-      <form onSubmit={handleSearch} className="grid gap-4 sm:grid-cols-[1fr_auto]">
+      <form onSubmit={handleSearch} className="mt-6 grid gap-4 sm:grid-cols-[1fr_auto]">
         <label className="relative block">
           <span className="sr-only">Buscar materiales</span>
-          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Buscar cursos, apuntes, resúmenes o PDFs"
-            className="mt-2 h-12 w-full rounded-lg border border-border bg-background px-12 text-sm outline-none focus:border-accent"
+            className="mt-2 h-14 w-full rounded-3xl border border-border bg-muted px-14 text-sm outline-none focus:border-accent focus:ring-1 focus:ring-accent"
           />
         </label>
 
-        <Button type="submit" disabled={isLoading} className="h-12 w-full sm:w-auto">
+        <Button type="submit" disabled={isLoading} className="h-14 w-full sm:w-auto">
           {isLoading ? <Loader2 className="animate-spin" size={16} /> : <FileSearch size={16} />}
           Buscar
         </Button>
@@ -77,9 +77,9 @@ export function LibrarySearch() {
       {hasQuery ? (
         <div className="mt-6 space-y-4">
           {isLoading ? (
-            <div className="rounded-2xl border border-border bg-muted p-5 text-sm text-muted-foreground">Buscando resultados...</div>
+            <div className="rounded-3xl border border-border bg-muted p-6 text-sm text-muted-foreground">Buscando resultados...</div>
           ) : results.length === 0 ? (
-            <div className="rounded-2xl border border-border bg-muted p-5 text-sm text-muted-foreground">No se encontraron materiales para esta búsqueda.</div>
+            <div className="rounded-3xl border border-border bg-muted p-6 text-sm text-muted-foreground">No se encontraron materiales para esta búsqueda.</div>
           ) : (
             <div className="grid gap-4">
               {results.map((material) => (

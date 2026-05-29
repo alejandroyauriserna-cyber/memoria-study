@@ -1,7 +1,6 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { AppShell } from "@/components/ui/shell";
 import { BookOpen, ChevronRight } from "lucide-react";
+import { AppShell } from "@/components/ui/shell";
 import { LibrarySearch } from "@/components/library/library-search";
 import { UNT_DERECHO } from "@/lib/academic/unt-derecho";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -10,7 +9,20 @@ import type { MaterialRecord } from "@/types/material";
 
 export default async function LibraryHomePage() {
   if (!hasSupabaseEnv()) {
-    notFound();
+    return (
+      <AppShell>
+        <section className="mx-auto flex min-h-[calc(100vh-9rem)] max-w-3xl flex-col items-center justify-center px-4 text-center">
+          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-accent">Biblioteca</p>
+          <h1 className="mt-4 text-4xl font-semibold tracking-tight">Biblioteca no disponible</h1>
+          <p className="mt-4 max-w-xl text-sm leading-6 text-muted-foreground">
+            Verifica la configuración de Supabase para acceder a los materiales de la biblioteca colaborativa.
+          </p>
+          <Link href="/" className="mt-8 inline-flex h-12 items-center justify-center rounded-3xl bg-foreground px-6 text-sm font-semibold text-background hover:bg-foreground/90">
+            Volver al inicio
+          </Link>
+        </section>
+      </AppShell>
+    );
   }
 
   const admin = createAdminClient();
@@ -29,7 +41,11 @@ export default async function LibraryHomePage() {
 
     courseStats.set(item.course_id, {
       count: (existing?.count ?? 0) + 1,
-      latest: existing?.latest ? (new Date(item.created_at) > new Date(existing.latest) ? updatedAt : existing.latest) : updatedAt,
+      latest: existing?.latest
+        ? new Date(item.created_at) > new Date(existing.latest)
+          ? updatedAt
+          : existing.latest
+        : updatedAt,
       courseName: item.course_name,
     });
 
@@ -59,36 +75,92 @@ export default async function LibraryHomePage() {
 
   return (
     <AppShell>
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-        <div className="mb-8 grid gap-6 lg:grid-cols-[1.5fr_1fr] lg:items-end">
-          <div>
-            <p className="text-sm font-semibold text-accent">Biblioteca Colaborativa</p>
-            <h1 className="mt-2 text-4xl font-semibold tracking-tight">Banco de Apuntes UNT</h1>
-            <p className="mt-2 max-w-2xl text-muted-foreground">
-              Explora materiales compartidos por ciclo y curso. Todo derecho UNT está abierto para consulta.
-            </p>
+      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="grid gap-8 lg:grid-cols-[1.35fr_0.85fr] lg:items-start">
+          <div className="glass-card rounded-[32px] p-10 md:p-12">
+            <div className="flex flex-col gap-6">
+              <div className="max-w-2xl">
+                <p className="text-sm font-semibold uppercase tracking-[0.24em] text-accent">Biblioteca colaborativa</p>
+                <h1 className="mt-4 text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">Banco de apuntes UNT</h1>
+                <p className="mt-4 text-base leading-7 text-muted-foreground">
+                  Explora materiales por ciclo y curso, con una experiencia fresca, ágil y moderna para estudiantes de Derecho.
+                </p>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="rounded-3xl border border-border bg-card p-5 shadow-sm">
+                  <p className="text-sm uppercase tracking-[0.24em] text-muted-foreground">Materiales</p>
+                  <p className="mt-3 text-3xl font-semibold text-foreground">{materials.length}</p>
+                </div>
+                <div className="rounded-3xl border border-border bg-card p-5 shadow-sm">
+                  <p className="text-sm uppercase tracking-[0.24em] text-muted-foreground">Cursos</p>
+                  <p className="mt-3 text-3xl font-semibold text-foreground">
+                    {UNT_DERECHO.years.reduce((sum, year) => sum + year.cycles.reduce((inner, cycle) => inner + cycle.courses.length, 0), 0)}
+                  </p>
+                </div>
+                <div className="rounded-3xl border border-border bg-card p-5 shadow-sm">
+                  <p className="text-sm uppercase tracking-[0.24em] text-muted-foreground">Ciclos</p>
+                  <p className="mt-3 text-3xl font-semibold text-foreground">{UNT_DERECHO.years.reduce((sum, year) => sum + year.cycles.length, 0)}</p>
+                </div>
+              </div>
+
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Link href="/upload-material" className="inline-flex h-12 items-center justify-center rounded-3xl bg-foreground px-6 text-sm font-semibold text-background transition hover:-translate-y-0.5 hover:bg-foreground/90">
+                  Subir material
+                </Link>
+                <Link href="/favorites" className="inline-flex h-12 items-center justify-center rounded-3xl border border-border bg-card px-6 text-sm font-semibold text-foreground transition hover:-translate-y-0.5 hover:bg-muted">
+                  Ver favoritos
+                </Link>
+              </div>
+            </div>
           </div>
-          <Link
-            href="/upload-material"
-            className="inline-flex h-11 items-center justify-center rounded-lg border border-border bg-card px-4 text-sm font-semibold text-foreground hover:bg-muted"
-          >
-            Subir material
-          </Link>
+
+          <aside className="space-y-6">
+            <div className="glass-card rounded-[32px] p-8">
+              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-accent">Tendencias</p>
+              <div className="mt-6 grid gap-4">
+                <div className="rounded-3xl border border-border bg-card p-5 shadow-sm">
+                  <p className="text-sm font-semibold text-foreground">Material más descargado</p>
+                  <p className="mt-2 text-sm text-muted-foreground">Descubre los recursos más solicitados esta semana.</p>
+                </div>
+                <div className="rounded-3xl border border-border bg-card p-5 shadow-sm">
+                  <p className="text-sm font-semibold text-foreground">Material más valorado</p>
+                  <p className="mt-2 text-sm text-muted-foreground">Contenido reconocido por la comunidad UNT.</p>
+                </div>
+                <div className="rounded-3xl border border-border bg-card p-5 shadow-sm">
+                  <p className="text-sm font-semibold text-foreground">Organizador destacado</p>
+                  <p className="mt-2 text-sm text-muted-foreground">Mapas conceptuales y cuadros sinópticos populares.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-[32px] border border-border bg-card p-6 shadow-sm">
+              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-accent">Filtros rápidos</p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {['Más recientes', 'Más descargados', 'Más valorados', 'Estudios', 'Casos'].map((label) => (
+                  <span key={label} className="rounded-full border border-border bg-muted px-4 py-2 text-xs font-semibold text-muted-foreground">
+                    {label}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </aside>
         </div>
 
-        <LibrarySearch />
+        <div className="mt-10">
+          <LibrarySearch />
+        </div>
 
-        <div className="mt-8 grid gap-4">
+        <div className="mt-10 grid gap-6">
           {UNT_DERECHO.years.map((year) => (
-            <div key={year.number} className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-              <div className="mb-6 flex items-center justify-between gap-4">
+            <div key={year.number} className="rounded-[32px] border border-border bg-card p-8 shadow-sm">
+              <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-accent">{year.label}</p>
-                  <h2 className="mt-2 text-2xl font-semibold tracking-tight">Ciclos académicos</h2>
+                  <p className="text-sm font-semibold uppercase tracking-[0.24em] text-accent">{year.label}</p>
+                  <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">Ciclos académicos</h2>
                 </div>
-                <div className="grid gap-2 text-right text-sm text-muted-foreground">
-                  <p>{year.cycles.reduce((sum, cycle) => sum + cycle.courses.length, 0)} cursos</p>
-                  <p>{year.cycles.length} ciclos</p>
+                <div className="text-sm text-muted-foreground">
+                  {year.cycles.length} ciclos · {year.cycles.reduce((sum, cycle) => sum + cycle.courses.length, 0)} cursos
                 </div>
               </div>
 
@@ -96,13 +168,13 @@ export default async function LibraryHomePage() {
                 {year.cycles.map((cycle) => {
                   const stats = cycleStats.get(cycle.number);
                   return (
-                    <div key={cycle.number} className="rounded-2xl border border-border bg-muted p-5">
+                    <div key={cycle.number} className="rounded-[28px] border border-border bg-muted p-6">
                       <div className="flex items-center justify-between gap-4">
                         <div>
                           <p className="text-sm font-semibold text-accent">{cycle.label}</p>
-                          <p className="mt-2 text-lg font-semibold text-foreground">{cycle.courses.length} cursos</p>
+                          <p className="mt-2 text-2xl font-semibold text-foreground">{cycle.courses.length} cursos</p>
                         </div>
-                        <BookOpen className="text-muted-foreground" size={26} />
+                        <BookOpen className="text-muted-foreground" size={28} />
                       </div>
                       <div className="mt-5 space-y-3 text-sm text-muted-foreground">
                         <p>{stats?.materialCount ?? 0} materiales disponibles</p>
@@ -111,41 +183,6 @@ export default async function LibraryHomePage() {
                     </div>
                   );
                 })}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-8 grid gap-4">
-          {UNT_DERECHO.years.map((year) => (
-            <div key={year.number} className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-              <h3 className="text-lg font-semibold">{year.label}</h3>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {year.cycles.map((cycle) => (
-                  <div key={cycle.number} className="rounded-2xl border border-border bg-background p-4">
-                    <p className="text-sm font-semibold text-accent">{cycle.label}</p>
-                    <div className="mt-4 space-y-3">
-                      {cycle.courses.map((course) => {
-                        const stats = courseStats.get(course.id);
-                        return (
-                          <Link
-                            key={course.id}
-                            href={`/library/${course.id}`}
-                            className="block rounded-xl border border-border bg-card p-3 text-sm font-medium text-foreground hover:border-accent hover:bg-background"
-                          >
-                            <div className="flex items-center justify-between gap-3">
-                              <span>{course.name}</span>
-                              <ChevronRight size={14} />
-                            </div>
-                            <p className="mt-2 text-xs text-muted-foreground">
-                              {stats?.count ?? 0} materiales · última {stats?.latest ?? "sin datos"}
-                            </p>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
               </div>
             </div>
           ))}

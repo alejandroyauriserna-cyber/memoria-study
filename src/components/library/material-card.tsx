@@ -14,9 +14,7 @@ export function MaterialCard({ material }: { material: Material }) {
   const [message, setMessage] = useState("");
 
   async function handleDownload() {
-    if (!material.id) {
-      return;
-    }
+    if (!material.id) return;
 
     setBusy(true);
     setMessage("");
@@ -41,9 +39,7 @@ export function MaterialCard({ material }: { material: Material }) {
   }
 
   async function handleLike() {
-    if (!material.id) {
-      return;
-    }
+    if (!material.id) return;
 
     setBusy(true);
     setMessage("");
@@ -67,9 +63,7 @@ export function MaterialCard({ material }: { material: Material }) {
   }
 
   async function handleFavorite() {
-    if (!material.id) {
-      return;
-    }
+    if (!material.id) return;
 
     setBusy(true);
     setMessage("");
@@ -93,14 +87,14 @@ export function MaterialCard({ material }: { material: Material }) {
   }
 
   return (
-    <article className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-      <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start">
-        <div>
-          <p className="text-sm font-semibold text-accent">{material.courseName}</p>
-          <h3 className="mt-2 text-xl font-semibold tracking-tight">{material.title}</h3>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">{material.description}</p>
+    <article className="rounded-[32px] border border-border bg-card p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+      <div className="flex flex-col gap-5 sm:flex-row sm:justify-between sm:items-start">
+        <div className="flex-1">
+          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-accent">{material.courseName}</p>
+          <h3 className="mt-3 text-2xl font-semibold tracking-tight text-foreground">{material.title}</h3>
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">{material.description}</p>
         </div>
-        <div className="flex flex-col gap-2 text-sm text-muted-foreground sm:items-end">
+        <div className="flex flex-col gap-3 text-sm text-muted-foreground sm:items-end">
           <span className="inline-flex items-center gap-2 rounded-full border border-border bg-muted px-3 py-2">
             <BookOpen size={14} /> {material.cycleLabel}
           </span>
@@ -110,16 +104,16 @@ export function MaterialCard({ material }: { material: Material }) {
         </div>
       </div>
 
-      <div className="mt-5 grid gap-3 sm:grid-cols-2">
-        <p className="text-sm text-muted-foreground">
-          <User size={14} className="inline-block align-text-bottom" /> {material.authorName}
+      <div className="mt-5 grid gap-3 text-sm text-muted-foreground sm:grid-cols-2">
+        <p className="inline-flex items-center gap-2">
+          <User size={14} /> {material.authorName}
         </p>
-        <p className="text-sm text-muted-foreground">
-          <CalendarDays size={14} className="inline-block align-text-bottom" /> {new Date(material.createdAt ?? "").toLocaleDateString("es-PE")}
+        <p className="inline-flex items-center gap-2">
+          <CalendarDays size={14} /> {new Date(material.createdAt ?? "").toLocaleDateString("es-PE")}
         </p>
       </div>
 
-      <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mt-5 grid gap-3 sm:grid-cols-[1fr_auto]">
         <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
           <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted px-3 py-2">
             <ArrowDown size={14} /> {downloads}
@@ -128,7 +122,7 @@ export function MaterialCard({ material }: { material: Material }) {
             <Heart size={14} /> {likes}
           </span>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 justify-end">
           <Button variant={favorite ? "secondary" : "ghost"} onClick={handleFavorite} disabled={busy}>
             <Star size={16} /> {favorite ? "Guardado" : "Guardar"}
           </Button>
@@ -138,18 +132,21 @@ export function MaterialCard({ material }: { material: Material }) {
           <Button onClick={handleDownload} disabled={busy}>
             <ArrowDown size={16} /> Descargar
           </Button>
-          {material.id ? (
-            <a
-              href={`/organizers/create?materialId=${material.id}`}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 text-sm font-semibold text-foreground hover:bg-muted"
-            >
-              <Search size={16} /> ✨ Estudiar con IA
-            </a>
-          ) : null}
         </div>
       </div>
 
-      {message ? <p className="mt-3 text-sm text-red-500">{message}</p> : null}
+      {material.id ? (
+        <div className="mt-5 text-right">
+          <a
+            href={`/organizers/create?materialId=${material.id}`}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-3xl border border-border bg-card px-4 text-sm font-semibold text-foreground hover:bg-muted"
+          >
+            <Search size={16} /> Estudiar con IA
+          </a>
+        </div>
+      ) : null}
+
+      {message ? <p className="mt-4 text-sm text-red-500">{message}</p> : null}
     </article>
   );
 }
