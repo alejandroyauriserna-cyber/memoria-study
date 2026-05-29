@@ -83,6 +83,9 @@ create table if not exists public.user_profiles (
 
 alter table public.user_profiles add column if not exists email text;
 alter table public.user_profiles add column if not exists academic_context jsonb default '{}'::jsonb;
+alter table public.user_profiles add column if not exists full_name text;
+alter table public.user_profiles add column if not exists current_cycle_number integer;
+alter table public.user_profiles add column if not exists current_cycle_label text;
 
 drop trigger if exists user_profiles_set_updated_at on public.user_profiles;
 create trigger user_profiles_set_updated_at
@@ -107,3 +110,56 @@ create policy "Users update own profile"
 on public.user_profiles for update
 using (auth.uid() = user_id)
 with check (auth.uid() = user_id);
+
+create table if not exists public.materials (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete cascade,
+  author_name text not null,
+  title text not null,
+  description text not null,
+  course_id text not null,
+  course_name text not null,
+  cycle_number integer not null,
+  cycle_label text not null,
+  material_type text not null check (material_type in ('apunte', 'resumen', 'pdf', 'caso', 'guia', 'otro')),
+  file_name text not null,
+  file_url text not null,
+  views integer not null default 0,
+  downloads integer not null default 0,
+  is_public boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists materials_user_id_idx on public.materials(user_id);
+create index if not exists materials_course_id_idx on public.materials(course_id);
+create index if not exists materials_cycle_number_idx on public.materials(cycle_number);
+create index if not exists materials_public_idx on public.materials(is_public) where is_public = true;
+
+alter table public.materials enable row level security;
+
+drop policy if exists "Users can read public materials" on public.materials;
+create policy "Users can read public materials"
+on public.materials for select
+using (is_public = true);
+
+drop policy if exists "Users can read own materials" on public.materials;
+create policy "Users can read own materials"
+on public.materials for select
+using (auth.uid() = user_id);
+
+drop policy if exists "Users can create materials" on public.materials;
+create policy "Users can create materials"
+on public.materials for insert
+with check (auth.uid() = user_id);
+
+drop policy if exists "Users can update own materials" on public.materials;
+create policy "Users can update own materials"
+on public.materials for update
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+drop policy if exists "Users can delete own materials" on public.materials;
+create policy "Users can delete own materials"
+on public.materials for delete
+using (auth.uid() = user_id);

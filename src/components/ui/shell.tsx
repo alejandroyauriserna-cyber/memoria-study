@@ -23,10 +23,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               Panel
             </Link>
             <Link
-              href="/auth"
+              href="/library"
               className="hidden rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground sm:block"
             >
-              Ingresar
+              Biblioteca
+            </Link>
+            <Link
+              href="/upload-material"
+              className="hidden rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground sm:block"
+            >
+              Subir
+            </Link>
+            <Link
+              href="/profile"
+              className="hidden rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground sm:block"
+            >
+              Perfil
             </Link>
             <ThemeToggle />
           </nav>
