@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { redirect, notFound } from "next/navigation";
 import { AppShell } from "@/components/ui/shell";
 import { ProfileForm } from "@/components/profile/profile-form";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -16,7 +16,7 @@ export default async function ProfilePage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    notFound();
+    redirect("/auth");
   }
 
   const admin = createAdminClient();
