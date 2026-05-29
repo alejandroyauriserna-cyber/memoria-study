@@ -131,13 +131,26 @@ export function UploadGenerator() {
       });
 
       if (!extractResponse.ok) {
-        throw new Error("No se pudo leer el PDF.");
+        const errorText = await extractResponse.text();
+        let responseMessage = `No se pudo leer el PDF. (${extractResponse.status})`;
+        try {
+          const payload = JSON.parse(errorText);
+          if (payload?.error) {
+            responseMessage = `Error de extracción: ${payload.error}`;
+          }
+        } catch {
+          console.error("PDF extract HTTP error body:", errorText);
+          responseMessage = `Error de extracción: ${errorText}`;
+        }
+        console.error("PDF extract request failed:", extractResponse.status, responseMessage);
+        throw new Error(responseMessage);
       }
 
       let extractError = "";
 
       await readPdfExtractStream(extractResponse, (event) => {
         if (event.stage === "error") {
+          console.error("PDF extract event error:", event.message, event);
           extractError = event.message;
           return;
         }
@@ -183,6 +196,12 @@ export function UploadGenerator() {
 
       if (!extractedText) {
         throw new Error("No se extrajo texto del PDF.");
+      }
+
+      try {
+        await set("pdfText", extractedText);
+      } catch (err) {
+        console.warn("No se pudo guardar el texto del PDF antes de la generación:", err);
       }
 
       setProgress({
@@ -234,7 +253,17 @@ export function UploadGenerator() {
 
       setStatus("idle");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Algo salió mal.");
+      console.error("PDF generation error:", caught);
+      const message = caught instanceof Error ? caught.message : String(caught);
+      const isTransient = /429|503|límite de solicitudes|quota exceeded|service unavailable/i.test(
+        message,
+      );
+
+      setError(
+        isTransient
+          ? "La IA alcanzó temporalmente el límite de solicitudes. El texto del PDF ya está guardado y puedes intentar de nuevo más tarde."
+          : message,
+      );
       setStatus("error");
       setProgress(null);
     }

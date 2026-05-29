@@ -36,7 +36,7 @@ export async function POST(request: Request) {
     if (contentType.includes("application/json")) {
       const body = (await request.json()) as GenerateJsonBody;
 
-      if (!body.text?.trim() || !body.sourceName) {
+      if (typeof body.text !== "string" || !body.text.trim() || !body.sourceName) {
         return NextResponse.json(
           { error: "Faltan el texto del PDF o el nombre del archivo." },
           { status: 400 },

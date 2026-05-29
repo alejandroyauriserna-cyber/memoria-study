@@ -10,6 +10,7 @@ function streamLine(event: PdfExtractStreamEvent) {
 
 export async function POST(request: Request) {
   const encoder = new TextEncoder();
+  let fileName = "desconocido";
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -32,6 +33,14 @@ export async function POST(request: Request) {
           return;
         }
 
+        fileName = file.name;
+        console.log("PDF extract start:", {
+          fileName,
+          size: file.size,
+          mimeType: file.type,
+          forceScanned,
+        });
+
         send({
           stage: "upload",
           percent: 5,
@@ -49,6 +58,15 @@ export async function POST(request: Request) {
           },
         );
 
+        console.log("PDF extract success:", {
+          fileName: file.name,
+          mimeType: file.type,
+          size: file.size,
+          method,
+          textChars: text.length,
+          forceScanned,
+        });
+
         const prepared = prepareTextForGeneration(text);
 
         send({
@@ -63,13 +81,13 @@ export async function POST(request: Request) {
           truncated: prepared.truncated,
         });
       } catch (caught) {
+        const message =
+          caught instanceof Error ? caught.message : "Error al leer el PDF.";
+        console.error("PDF extract failed:", { fileName, error: caught });
         send({
           stage: "error",
           percent: 0,
-          message:
-            caught instanceof Error
-              ? caught.message
-              : "Error al leer el PDF.",
+          message,
         });
       } finally {
         controller.close();

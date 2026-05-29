@@ -27,6 +27,25 @@ function normalizeText(text: string) {
   return text.replace(/\s+/g, " ").trim();
 }
 
+async function extractTextWithGeminiOcrSafe(
+  buffer: Buffer,
+  fileName: string,
+  onProgress?: OcrProgressCallback,
+): Promise<string> {
+  try {
+    return await extractTextWithGeminiOcr(buffer, fileName, onProgress);
+  } catch (error) {
+    if (error instanceof Error && "partialText" in error) {
+      const partialText = (error as { partialText?: string }).partialText;
+      if (typeof partialText === "string" && partialText.length >= MIN_USEFUL_TEXT_LENGTH) {
+        return partialText;
+      }
+    }
+
+    throw error;
+  }
+}
+
 export function prepareTextForGeneration(text: string) {
   if (text.length <= MAX_AI_INPUT_CHARS) {
     return { text, truncated: false };
@@ -119,7 +138,7 @@ export async function extractPdfFromBuffer(
   buffer: Buffer,
   fileName: string,
   options: PdfExtractionOptions = {},
-) {
+): Promise<{ text: string; method: PdfExtractionMeta["method"] }> {
   if (buffer.byteLength > MAX_FILE_SIZE) {
     throw new Error("El PDF supera el límite de 150 MB.");
   }
@@ -139,7 +158,7 @@ export async function extractPdfFromBuffer(
       message: "Iniciando OCR para PDF escaneado...",
     });
 
-    const ocrText = await extractTextWithGeminiOcr(
+    const ocrText = await extractTextWithGeminiOcrSafe(
       buffer,
       fileName,
       onProgress,
@@ -154,10 +173,16 @@ export async function extractPdfFromBuffer(
     message: "Analizando capas de texto del PDF...",
   });
 
-  const attempts: string[] = [];
+  const attempts: Array<{
+    text: string;
+    method: "pdf2json" | "pdf-parse";
+  }> = [];
+  let pdfParseFailed = false;
+  let pdf2jsonText = "";
 
   try {
-    const pdf2jsonText = await extractWithPdf2Json(buffer);
+    pdf2jsonText = await extractWithPdf2Json(buffer);
+    console.log("pdf2json result length:", pdf2jsonText.length);
     if (
       pdf2jsonText.length >= MIN_USEFUL_TEXT_LENGTH &&
       !isLowQualityExtractedText(pdf2jsonText)
@@ -170,10 +195,10 @@ export async function extractPdfFromBuffer(
       return { text: pdf2jsonText, method: "pdf2json" as const };
     }
     if (pdf2jsonText) {
-      attempts.push(pdf2jsonText);
+      attempts.push({ text: pdf2jsonText, method: "pdf2json" });
     }
   } catch (error) {
-    console.warn("pdf2json fallo:", error);
+    console.error("pdf2json fallo:", error);
   }
 
   try {
@@ -184,6 +209,7 @@ export async function extractPdfFromBuffer(
     });
 
     const pdfParseText = await extractWithPdfParse(buffer);
+    console.log("pdf-parse result length:", pdfParseText.length);
     if (
       pdfParseText.length >= MIN_USEFUL_TEXT_LENGTH &&
       !isLowQualityExtractedText(pdfParseText)
@@ -196,19 +222,58 @@ export async function extractPdfFromBuffer(
       return { text: pdfParseText, method: "pdf-parse" as const };
     }
     if (pdfParseText) {
-      attempts.push(pdfParseText);
+      attempts.push({ text: pdfParseText, method: "pdf-parse" });
+    } else {
+      pdfParseFailed = true;
     }
   } catch (error) {
-    console.warn("pdf-parse fallo:", error);
+    pdfParseFailed = true;
+    console.error("pdf-parse fallo:", error);
   }
 
-  const bestAttempt = attempts.sort((a, b) => b.length - a.length)[0];
-  if (
-    bestAttempt &&
-    bestAttempt.length >= MIN_USEFUL_TEXT_LENGTH &&
-    !isLowQualityExtractedText(bestAttempt)
-  ) {
-    return { text: bestAttempt, method: "pdf-parse" as const };
+  const bestAttempt = attempts.sort((a, b) => b.text.length - a.text.length)[0];
+
+  if (pdfParseFailed && env.geminiApiKey) {
+    report(onProgress, {
+      stage: "ocr",
+      percent: 28,
+      message: "pdf-parse falló: usando OCR automático como ruta principal...",
+    });
+
+    const ocrText = await extractTextWithGeminiOcrSafe(
+      buffer,
+      fileName,
+      onProgress,
+    );
+    console.log("OCR result length after pdf-parse failure:", ocrText.length);
+    return { text: ocrText, method: "gemini-ocr" as const };
+  }
+
+  if (bestAttempt && bestAttempt.text.length >= MIN_USEFUL_TEXT_LENGTH) {
+    if (!isLowQualityExtractedText(bestAttempt.text)) {
+      return { text: bestAttempt.text, method: bestAttempt.method };
+    }
+
+    if (env.geminiApiKey) {
+      report(onProgress, {
+        stage: "ocr",
+        percent: 28,
+        message: "Texto de mala calidad: aplicando OCR automático...",
+      });
+
+      const ocrText = await extractTextWithGeminiOcrSafe(
+        buffer,
+        fileName,
+        onProgress,
+      );
+      console.log("OCR result length after low-quality parse:", ocrText.length);
+      return { text: ocrText, method: "gemini-ocr" as const };
+    }
+
+    console.warn(
+      "Texto extraído con calidad baja y Gemini no está disponible. Usando el mejor intento disponible.",
+    );
+    return { text: bestAttempt.text, method: bestAttempt.method };
   }
 
   if (env.geminiApiKey) {
@@ -218,7 +283,7 @@ export async function extractPdfFromBuffer(
       message: "Texto pobre o escaneado: aplicando OCR con Gemini...",
     });
 
-    const ocrText = await extractTextWithGeminiOcr(
+    const ocrText = await extractTextWithGeminiOcrSafe(
       buffer,
       fileName,
       onProgress,

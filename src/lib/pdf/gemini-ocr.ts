@@ -11,17 +11,51 @@ Transcribe fielmente TODO el texto visible de este fragmento de PDF escaneado (d
 - Si algo es ilegible escribe [ilegible] y continúa.
 `;
 
-/** Límite seguro por petición inline a Gemini */
 const MAX_INLINE_OCR_BYTES = 14 * 1024 * 1024;
 const PAGES_PER_CHUNK = 3;
-
-const OCR_MODELS = [
-  "gemini-2.0-flash",
-  "gemini-1.5-flash",
-  "gemini-2.5-flash",
-] as const;
+const MAX_MODEL_ATTEMPTS = 3;
+const SUPPORTED_GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash"] as const;
+const RETRYABLE_MODEL_ERRORS = [/429/, /503/, /quota exceeded/i, /too many requests/i, /service unavailable/i];
 
 export type OcrProgressCallback = (progress: PdfExtractionProgress) => void;
+
+type GeminiOcrError = Error & {
+  partialText?: string;
+  completedChunks?: number;
+  totalChunks?: number;
+};
+
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function normalizeGeminiModel(model: string | undefined) {
+  if (!model) {
+    return SUPPORTED_GEMINI_MODELS[0];
+  }
+
+  if (SUPPORTED_GEMINI_MODELS.includes(model as typeof SUPPORTED_GEMINI_MODELS[number])) {
+    return model;
+  }
+
+  console.warn(`Gemini model no soportado: ${model}. Usando ${SUPPORTED_GEMINI_MODELS[0]}.`);
+  return SUPPORTED_GEMINI_MODELS[0];
+}
+
+function isRetryableGeminiError(error: unknown) {
+  const message =
+    error instanceof Error
+      ? error.message
+      : typeof error === "string"
+      ? error
+      : "";
+
+  return RETRYABLE_MODEL_ERRORS.some((pattern) => pattern.test(message));
+}
+
+function extractErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
 
 async function ocrWithModel(
   apiKey: string,
@@ -31,23 +65,48 @@ async function ocrWithModel(
 ) {
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({ model: modelName });
+  let lastError: unknown;
 
-  const result = await model.generateContent([
-    {
-      inlineData: {
-        mimeType: "application/pdf",
-        data: buffer.toString("base64"),
-      },
-    },
-    { text: `${OCR_PROMPT}\n\nFragmento: ${label}` },
-  ]);
+  for (let attempt = 1; attempt <= MAX_MODEL_ATTEMPTS; attempt += 1) {
+    try {
+      const result = await model.generateContent([
+        {
+          inlineData: {
+            mimeType: "application/pdf",
+            data: buffer.toString("base64"),
+          },
+        },
+        { text: `${OCR_PROMPT}\n\nFragmento: ${label}` },
+      ]);
 
-  const text = result.response.text();
-  if (!text || text.trim().length < 20) {
-    throw new Error(`Modelo ${modelName}: texto insuficiente`);
+      const text = result.response.text();
+      if (!text || text.trim().length < 20) {
+        throw new Error(`Modelo ${modelName}: texto insuficiente`);
+      }
+
+      return text.replace(/\s+/g, " ").trim();
+    } catch (error) {
+      lastError = error;
+      const message = extractErrorMessage(error);
+
+      if (attempt < MAX_MODEL_ATTEMPTS && isRetryableGeminiError(error)) {
+        const backoff = 1000 * 2 ** (attempt - 1);
+        console.warn(
+          `Gemini ${modelName} intento ${attempt} falló por error temporal: ${message}. Reintentando en ${backoff}ms...`,
+        );
+        await delay(backoff);
+        continue;
+      }
+
+      throw new Error(
+        `Modelo ${modelName} falló${attempt > 1 ? ` tras ${attempt} intentos` : ""}: ${message}`,
+      );
+    }
   }
 
-  return text.replace(/\s+/g, " ").trim();
+  throw new Error(
+    `Modelo ${modelName} falló tras ${MAX_MODEL_ATTEMPTS} reintentos: ${extractErrorMessage(lastError)}`,
+  );
 }
 
 async function ocrBufferWithFallback(
@@ -56,10 +115,10 @@ async function ocrBufferWithFallback(
   label: string,
 ) {
   const errors: string[] = [];
-  const preferred = env.geminiModel;
+  const preferred = normalizeGeminiModel(env.geminiModel);
   const models = [
     preferred,
-    ...OCR_MODELS.filter((model) => model !== preferred),
+    ...SUPPORTED_GEMINI_MODELS.filter((model) => model !== preferred),
   ];
 
   for (const modelName of models) {
@@ -67,7 +126,7 @@ async function ocrBufferWithFallback(
       return await ocrWithModel(apiKey, modelName, buffer, label);
     } catch (error) {
       errors.push(
-        `${modelName}: ${error instanceof Error ? error.message : "falló"}`,
+        `${modelName}: ${extractErrorMessage(error)}`,
       );
     }
   }
@@ -126,13 +185,37 @@ export async function extractTextWithGeminiOcr(
       totalPages,
     });
 
-    const partText = await ocrBufferWithFallback(
-      env.geminiApiKey,
-      chunks[index],
-      `${fileName} · parte ${chunkNum}/${chunks.length}`,
-    );
+    try {
+      const partText = await ocrBufferWithFallback(
+        env.geminiApiKey,
+        chunks[index],
+        `${fileName} · parte ${chunkNum}/${chunks.length}`,
+      );
+      parts.push(partText);
+    } catch (error) {
+      const partial = parts.join(" ").trim();
+      const message = extractErrorMessage(error);
+      const partialError = new Error(
+        `OCR falló en parte ${chunkNum}/${chunks.length}: ${message}`,
+      ) as GeminiOcrError;
+      partialError.partialText = partial;
+      partialError.completedChunks = index;
+      partialError.totalChunks = chunks.length;
+      partialError.message = `OCR parcial (${index}/${chunks.length}). ${message}`;
 
-    parts.push(partText);
+      if (partial.length >= 50) {
+        onProgress?.({
+          stage: "ocr",
+          percent: 100,
+          message: `OCR parcialmente completado (${index}/${chunks.length} partes). Puedes continuar después sin perder el progreso.`,
+          currentChunk: index,
+          totalChunks: chunks.length,
+          totalPages,
+        });
+      }
+
+      throw partialError;
+    }
   }
 
   const combined = parts.join(" ").trim();
