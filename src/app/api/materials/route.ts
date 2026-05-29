@@ -16,6 +16,23 @@ const createMaterialSchema = z.object({
   cycleLabel: z.string().min(1),
 });
 
+function sanitizeFileName(fileName: string): string {
+  // Normalizar tildes y caracteres acentuados
+  const normalized = fileName.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+  // Extraer extensión
+  const lastDotIndex = normalized.lastIndexOf(".");
+  const nameWithoutExt = lastDotIndex > 0 ? normalized.substring(0, lastDotIndex) : normalized;
+  const extension = lastDotIndex > 0 ? normalized.substring(lastDotIndex) : "";
+
+  // Reemplazar espacios por guiones bajos, eliminar caracteres especiales
+  const sanitized = nameWithoutExt
+    .replace(/\s+/g, "_") // Espacios a guiones bajos
+    .replace(/[^a-zA-Z0-9_-]/g, ""); // Solo letras, números, guiones bajos y guiones
+
+  return sanitized + extension;
+}
+
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
