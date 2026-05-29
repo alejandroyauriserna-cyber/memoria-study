@@ -51,11 +51,13 @@ export function AuthForm() {
           throw new Error("Completa nombre, correo, contraseña y ciclo actual.");
         }
 
+        const callbackUrl = `${window.location.origin}/auth/callback`;
+
         const { error } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/dashboard`,
+            emailRedirectTo: callbackUrl,
             data: {
               full_name: fullName.trim(),
               current_cycle_number: currentCycle.cycleNumber,
@@ -79,12 +81,13 @@ export function AuthForm() {
         );
       }
 
+      const callbackUrl = `${window.location.origin}/auth/callback`;
       const result = password
         ? await supabase.auth.signInWithPassword({ email, password })
         : await supabase.auth.signInWithOtp({
             email,
             options: {
-              emailRedirectTo: `${window.location.origin}/dashboard`,
+              emailRedirectTo: callbackUrl,
               data: {
                 academic_context: academic,
               },
