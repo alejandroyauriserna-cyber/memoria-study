@@ -23,18 +23,45 @@ export default function AuthCallbackPage() {
         const supabase = createClient();
 
         let response;
+        // Case A: explicit OTP token (magic link / email confirm)
         if (token && type) {
           response = await supabase.auth.verifyOtp({
             type: type as any,
             token,
             email: email ?? "",
           });
-        } else if (code) {
-          response = await supabase.auth.exchangeCodeForSession(code);
+
+        // Case B: try to obtain session from URL fragment (recommended)
         } else {
-          throw new Error(
-            "No se encontró el token de autorización. Vuelve a iniciar sesión.",
-          );
+          // Try to parse session from URL first (handles implicit flow and hash tokens)
+          try {
+            const sessionResp = await (supabase.auth as any).getSessionFromUrl();
+            response = sessionResp;
+          } catch (err) {
+            // If getSessionFromUrl fails but we have a code param, try exchanging it.
+            if (code) {
+              try {
+                response = await supabase.auth.exchangeCodeForSession(code);
+              } catch (ex) {
+                // If PKCE verifier missing, try getSessionFromUrl as fallback one more time.
+                const msg = ex instanceof Error ? ex.message : String(ex);
+                if (/pkce|code verifier/i.test(msg)) {
+                  try {
+                    const fallback = await (supabase.auth as any).getSessionFromUrl();
+                    response = fallback;
+                  } catch {
+                    throw ex;
+                  }
+                } else {
+                  throw ex;
+                }
+              }
+            } else {
+              throw new Error(
+                "No se encontró el token de autorización. Vuelve a iniciar sesión.",
+              );
+            }
+          }
         }
 
         if (response.error) {
