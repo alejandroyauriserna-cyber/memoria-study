@@ -86,6 +86,14 @@ alter table public.user_profiles add column if not exists academic_context jsonb
 alter table public.user_profiles add column if not exists full_name text;
 alter table public.user_profiles add column if not exists current_cycle_number integer;
 alter table public.user_profiles add column if not exists current_cycle_label text;
+alter table public.user_profiles add column if not exists total_shared integer not null default 0;
+alter table public.user_profiles add column if not exists total_likes_received integer not null default 0;
+alter table public.user_profiles add column if not exists total_downloads_received integer not null default 0;
+alter table public.user_profiles add column if not exists total_organizers integer not null default 0;
+alter table public.user_profiles add column if not exists reputation_points integer not null default 0;
+alter table public.user_profiles add column if not exists reputation_level text;
+alter table public.user_profiles add column if not exists reputation_progress integer not null default 0;
+alter table public.user_profiles add column if not exists badges jsonb default '[]'::jsonb;
 
 drop trigger if exists user_profiles_set_updated_at on public.user_profiles;
 create trigger user_profiles_set_updated_at
@@ -126,6 +134,7 @@ create table if not exists public.materials (
   file_url text not null,
   views integer not null default 0,
   downloads integer not null default 0,
+  likes integer not null default 0,
   is_public boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -135,8 +144,74 @@ create index if not exists materials_user_id_idx on public.materials(user_id);
 create index if not exists materials_course_id_idx on public.materials(course_id);
 create index if not exists materials_cycle_number_idx on public.materials(cycle_number);
 create index if not exists materials_public_idx on public.materials(is_public) where is_public = true;
+create index if not exists materials_likes_idx on public.materials(likes);
 
 alter table public.materials enable row level security;
+
+create table if not exists public.material_likes (
+  id uuid primary key default gen_random_uuid(),
+  material_id uuid references public.materials(id) on delete cascade,
+  user_id uuid references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  unique (material_id, user_id)
+);
+
+create table if not exists public.material_favorites (
+  id uuid primary key default gen_random_uuid(),
+  material_id uuid references public.materials(id) on delete cascade,
+  user_id uuid references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  unique (material_id, user_id)
+);
+
+create table if not exists public.organizers (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete cascade,
+  material_id uuid references public.materials(id) on delete set null,
+  title text not null,
+  description text not null,
+  course_id text not null,
+  course_name text not null,
+  cycle_number integer not null,
+  cycle_label text not null,
+  organizer_type text not null,
+  content jsonb not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists materials_likes_idx on public.materials(likes);
+create index if not exists material_favorites_material_id_idx on public.material_favorites(material_id);
+create index if not exists material_favorites_user_id_idx on public.material_favorites(user_id);
+create index if not exists organizers_user_id_idx on public.organizers(user_id);
+create index if not exists organizers_course_id_idx on public.organizers(course_id);
+create index if not exists organizers_cycle_number_idx on public.organizers(cycle_number);
+
+alter table public.material_likes enable row level security;
+alter table public.material_favorites enable row level security;
+alter table public.organizers enable row level security;
+
+create policy if not exists "Users own likes" on public.material_likes for select using (auth.uid() = user_id);
+create policy if not exists "Users insert likes" on public.material_likes for insert with check (auth.uid() = user_id);
+create policy if not exists "Users delete own likes" on public.material_likes for delete using (auth.uid() = user_id);
+
+create policy if not exists "Users own favorites" on public.material_favorites for select using (auth.uid() = user_id);
+create policy if not exists "Users insert favorites" on public.material_favorites for insert with check (auth.uid() = user_id);
+create policy if not exists "Users delete own favorites" on public.material_favorites for delete using (auth.uid() = user_id);
+
+create policy if not exists "Users read own organizers" on public.organizers for select using (auth.uid() = user_id);
+create policy if not exists "Users create organizers" on public.organizers for insert with check (auth.uid() = user_id);
+create policy if not exists "Users update own organizers" on public.organizers for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy if not exists "Users delete own organizers" on public.organizers for delete using (auth.uid() = user_id);
+
+create index if not exists material_likes_material_id_idx on public.material_likes(material_id);
+create index if not exists material_likes_user_id_idx on public.material_likes(user_id);
+
+alter table public.material_likes enable row level security;
+
+create policy if not exists "Users own likes" on public.material_likes for select using (auth.uid() = user_id);
+create policy if not exists "Users insert likes" on public.material_likes for insert with check (auth.uid() = user_id);
+create policy if not exists "Users delete own likes" on public.material_likes for delete using (auth.uid() = user_id);
 
 drop policy if exists "Users can read public materials" on public.materials;
 create policy "Users can read public materials"

@@ -122,10 +122,10 @@ export function UploadMaterialForm() {
         <div className="mt-2 flex items-center gap-3">
           <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-border bg-muted px-4 py-3 text-sm hover:border-accent">
             <Upload size={16} />
-            {file?.name ?? "Elige un PDF"}
+            {file?.name ?? "Selecciona un archivo compatible"}
             <input
               type="file"
-              accept="application/pdf"
+              accept=".pdf,.docx,.pptx,image/*,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.presentationml.presentation"
               className="sr-only"
               onChange={(event) => {
                 const selected = event.target.files?.[0];

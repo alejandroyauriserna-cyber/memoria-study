@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     const file = formData.get("file");
 
     if (!(file instanceof File)) {
-      return NextResponse.json({ error: "Debes subir un archivo PDF." }, { status: 400 });
+      return NextResponse.json({ error: "Debes subir un archivo válido." }, { status: 400 });
     }
 
     const body = createMaterialSchema.parse({
@@ -70,32 +70,68 @@ export async function POST(request: Request) {
     const { data: urlData } = admin.storage.from(bucket).getPublicUrl(storagePath);
     const fileUrl = urlData.publicUrl;
 
+    const materialPayload = materialInsertPayload(
+      {
+        authorName: user.user_metadata?.full_name ?? user.email ?? "Estudiante UNT",
+        title: body.title,
+        description: body.description,
+        courseId: body.courseId,
+        courseName: body.courseName,
+        cycleNumber: body.cycleNumber,
+        cycleLabel: body.cycleLabel,
+        materialType: body.materialType,
+        fileName: file.name,
+        fileUrl,
+        views: 0,
+        downloads: 0,
+        likes: 0,
+      },
+      user.id,
+    );
+
     const { data, error } = await admin
       .from("materials")
-      .insert(
-        materialInsertPayload(
-          {
-            authorName: user.user_metadata?.full_name ?? user.email ?? "Estudiante UNT",
-            title: body.title,
-            description: body.description,
-            courseId: body.courseId,
-            courseName: body.courseName,
-            cycleNumber: body.cycleNumber,
-            cycleLabel: body.cycleLabel,
-            materialType: body.materialType,
-            fileName: file.name,
-            fileUrl,
-            views: 0,
-            downloads: 0,
-          },
-          user.id,
-        ),
-      )
+      .insert(materialPayload)
       .select()
       .single();
 
     if (error || !data) {
       throw error ?? new Error("No se pudo guardar el material.");
+    }
+
+    const { data: profileData, error: profileSelectError } = await admin
+      .from("user_profiles")
+      .select("total_shared, reputation_points")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (profileSelectError) {
+      throw profileSelectError;
+    }
+
+    if (profileData) {
+      const { error: profileUpdateError } = await admin
+        .from("user_profiles")
+        .update({
+          total_shared: (profileData.total_shared ?? 0) + 1,
+          reputation_points: (profileData.reputation_points ?? 0) + 10,
+        })
+        .eq("user_id", user.id);
+
+      if (profileUpdateError) {
+        throw profileUpdateError;
+      }
+    } else {
+      const { error: profileInsertError } = await admin.from("user_profiles").insert({
+        user_id: user.id,
+        email: user.email,
+        total_shared: 1,
+        reputation_points: 10,
+      });
+
+      if (profileInsertError) {
+        throw profileInsertError;
+      }
     }
 
     return NextResponse.json({ material: recordToMaterial(data as MaterialRecord) }, { status: 201 });

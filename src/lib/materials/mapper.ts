@@ -16,6 +16,7 @@ export function recordToMaterial(record: MaterialRecord): Material {
     fileUrl: record.file_url,
     views: record.views,
     downloads: record.downloads,
+    likes: record.likes,
     createdAt: record.created_at,
   };
 }
@@ -35,6 +36,7 @@ export function materialInsertPayload(material: Material, userId: string | null)
     file_url: material.fileUrl,
     views: material.views,
     downloads: material.downloads,
+    likes: material.likes,
     is_public: true,
   };
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, LogIn, UserPlus } from "lucide-react";
+import { Eye, EyeOff, Loader2, LogIn, UserPlus } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { AcademicNavigator } from "@/components/study/academic-navigator";
@@ -27,6 +27,7 @@ export function AuthForm() {
   });
   const [status, setStatus] = useState<"idle" | "loading" | "sent" | "error">("idle");
   const [message, setMessage] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const actionLabel = useMemo(
     () => (mode === "signup" ? "Registrarse" : "Ingresar"),
@@ -158,16 +159,24 @@ export function AuthForm() {
                 required
               />
             </label>
-            <label className="block">
+            <label className="block relative">
               <span className="text-sm font-semibold">Contraseña</span>
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 placeholder="Al menos 8 caracteres"
-                className="mt-2 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-accent"
+                className="mt-2 h-11 w-full rounded-lg border border-border bg-background px-3 pr-11 text-sm outline-none focus:border-accent"
                 required
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword((current) => !current)}
+                className="absolute inset-y-0 right-3 grid place-items-center text-muted-foreground"
+                aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </label>
             <CycleSelector value={currentCycle} onChange={setCurrentCycle} />
           </div>
@@ -190,15 +199,23 @@ export function AuthForm() {
           />
 
           {mode === "signin" && (
-            <label className="block">
+            <label className="block relative">
               <span className="text-sm font-semibold">Contraseña (opcional)</span>
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 placeholder="Ingresa si ya tienes contraseña"
-                className="mt-2 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-accent"
+                className="mt-2 h-11 w-full rounded-lg border border-border bg-background px-3 pr-11 text-sm outline-none focus:border-accent"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword((current) => !current)}
+                className="absolute inset-y-0 right-3 grid place-items-center text-muted-foreground"
+                aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </label>
           )}
 

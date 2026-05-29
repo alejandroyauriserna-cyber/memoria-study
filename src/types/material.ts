@@ -21,6 +21,8 @@ export type Material = {
   fileUrl: string;
   views: number;
   downloads: number;
+  likes: number;
+  isFavorite?: boolean;
   createdAt?: string;
 };
 
@@ -39,6 +41,7 @@ export type MaterialRecord = {
   file_url: string;
   views: number;
   downloads: number;
+  likes: number;
   created_at: string;
   updated_at: string;
 };
