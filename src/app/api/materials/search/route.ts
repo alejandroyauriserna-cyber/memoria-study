@@ -18,9 +18,9 @@ export async function GET(request: Request) {
     let queryBuilder = admin.from("materials").select("*").eq("is_public", true).order("created_at", { ascending: false });
 
     if (query) {
-      const term = `%${query.replace(/%/g, "\\%")}%`;
+      const term = `%${query.replace(/%/g, "\\%").replace(/_/g, "\\_")}%`;
       queryBuilder = queryBuilder.or(
-        `title.ilike.${term},description.ilike.${term},course_name.ilike.${term},material_type.ilike.${term},author_name.ilike.${term}`,
+        `title.ilike.${term},description.ilike.${term},file_name.ilike.${term},course_name.ilike.${term},material_type.ilike.${term},author_name.ilike.${term}`,
       );
     }
 

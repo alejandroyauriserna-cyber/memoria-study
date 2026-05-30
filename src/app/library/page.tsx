@@ -173,11 +173,15 @@ export default async function LibraryHomePage() {
                 {year.cycles.map((cycle) => {
                   const stats = cycleStats.get(cycle.number);
                   return (
-                    <div key={cycle.number} className="rounded-[28px] border border-border bg-muted p-6">
+                    <Link
+                      key={cycle.number}
+                      href={`/library/cycle/${cycle.number}`}
+                      className="group rounded-[28px] border border-border bg-muted p-6 transition hover:-translate-y-0.5 hover:border-accent hover:shadow-sm"
+                    >
                       <div className="flex items-center justify-between gap-4">
                         <div>
                           <p className="text-sm font-semibold text-accent">{cycle.label}</p>
-                          <p className="mt-2 text-2xl font-semibold text-foreground">{cycle.courses.length} cursos</p>
+                          <p className="mt-2 text-2xl font-semibold text-foreground group-hover:text-foreground">{cycle.courses.length} cursos</p>
                         </div>
                         <BookOpen className="text-muted-foreground" size={28} />
                       </div>
@@ -185,7 +189,7 @@ export default async function LibraryHomePage() {
                         <p>{stats?.materialCount ?? 0} materiales disponibles</p>
                         <p>Última actualización: {stats?.lastUpdate ?? "Sin actualizaciones"}</p>
                       </div>
-                    </div>
+                    </Link>
                   );
                 })}
               </div>

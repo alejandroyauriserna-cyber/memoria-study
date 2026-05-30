@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { ArrowDown, BookOpen, CalendarDays, Eye, Heart, Search, Star, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -91,8 +92,17 @@ export function MaterialCard({ material }: { material: Material }) {
       <div className="flex flex-col gap-5 sm:flex-row sm:justify-between sm:items-start">
         <div className="flex-1">
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-accent">{material.courseName}</p>
-          <h3 className="mt-3 text-2xl font-semibold tracking-tight text-foreground">{material.title}</h3>
+          <h3 className="mt-3 text-2xl font-semibold tracking-tight text-foreground">
+            {material.id ? (
+              <Link href={`/materials/${material.id}`} className="hover:text-accent">
+                {material.title}
+              </Link>
+            ) : (
+              material.title
+            )}
+          </h3>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">{material.description}</p>
+          <p className="mt-3 text-sm font-medium text-muted-foreground">Archivo: {material.fileName}</p>
         </div>
         <div className="flex flex-col gap-3 text-sm text-muted-foreground sm:items-end">
           <span className="inline-flex items-center gap-2 rounded-full border border-border bg-muted px-3 py-2">
@@ -135,16 +145,24 @@ export function MaterialCard({ material }: { material: Material }) {
         </div>
       </div>
 
-      {material.id ? (
-        <div className="mt-5 text-right">
+      <div className="mt-5 flex flex-wrap justify-between gap-2 text-sm">
+        {material.id ? (
+          <Link
+            href={`/materials/${material.id}`}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-3xl border border-border bg-card px-4 font-semibold text-foreground hover:bg-muted"
+          >
+            <Search size={16} /> Ver detalle
+          </Link>
+        ) : null}
+        {material.id ? (
           <a
             href={`/organizers/create?materialId=${material.id}`}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-3xl border border-border bg-card px-4 text-sm font-semibold text-foreground hover:bg-muted"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-3xl border border-border bg-card px-4 font-semibold text-foreground hover:bg-muted"
           >
             <Search size={16} /> Estudiar con IA
           </a>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
 
       {message ? <p className="mt-4 text-sm text-red-500">{message}</p> : null}
     </article>

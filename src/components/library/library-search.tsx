@@ -61,7 +61,7 @@ export function LibrarySearch() {
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Buscar cursos, apuntes, resúmenes o PDFs"
+            placeholder="Buscar curso, título, descripción o nombre de archivo"
             className="mt-2 h-14 w-full rounded-3xl border border-border bg-muted px-14 text-sm outline-none focus:border-accent focus:ring-1 focus:ring-accent"
           />
         </label>
