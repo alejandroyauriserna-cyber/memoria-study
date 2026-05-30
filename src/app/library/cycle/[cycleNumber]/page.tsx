@@ -12,7 +12,9 @@ export const dynamic = "force-dynamic";
 export default async function CycleMaterialsPage({ params }: { params: Record<string, string | undefined> }) {
   // Allow rendering even if environment detection is imperfect; prefer showing DB results when available.
   // Accept several common param names to tolerate mismatches between folder name and usage.
-  const rawCycle = params?.cycleNumber ?? params?.id ?? params?.cycleId ?? params?.cycle_number;
+  // NOTE: dynamic folder is [cycleNumber] — use exact param name.
+  console.log('cycle params', params);
+  const rawCycle = params?.cycleNumber;
   const cycleNumber = Number(rawCycle);
 
   // Validate cycleNumber before using in DB queries to avoid passing NaN to Supabase.
