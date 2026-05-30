@@ -9,9 +9,10 @@ import type { MaterialRecord } from "@/types/material";
 
 export const dynamic = "force-dynamic";
 
-export default async function CycleMaterialsPage({ params }: { params: { cycleNumber: string } }) {
+export default async function CycleMaterialsPage({ params }: { params: Record<string, string | undefined> }) {
   // Allow rendering even if environment detection is imperfect; prefer showing DB results when available.
-  const rawCycle = params?.cycleNumber;
+  // Accept several common param names to tolerate mismatches between folder name and usage.
+  const rawCycle = params?.cycleNumber ?? params?.id ?? params?.cycleId ?? params?.cycle_number;
   const cycleNumber = Number(rawCycle);
 
   // Validate cycleNumber before using in DB queries to avoid passing NaN to Supabase.
