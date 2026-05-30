@@ -87,7 +87,14 @@ export default async function MaterialDetailPage({ params }: { params: { id: str
                   rel="noreferrer"
                   className="inline-flex h-12 items-center justify-center rounded-3xl bg-foreground px-6 text-sm font-semibold text-background hover:bg-foreground/90"
                 >
-                  <ArrowDown size={16} /> Descargar archivo
+                  <BookOpen size={16} /> Ver PDF
+                </a>
+                <a
+                  href={material.fileUrl}
+                  download={material.fileName}
+                  className="inline-flex h-12 items-center justify-center rounded-3xl border border-border bg-card px-6 text-sm font-semibold text-foreground hover:bg-muted"
+                >
+                  <ArrowDown size={16} /> Descargar PDF
                 </a>
                 <Link
                   href={`/organizers/create?materialId=${material.id}`}

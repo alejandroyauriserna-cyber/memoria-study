@@ -63,13 +63,15 @@ export default async function Page({ params }: { params: any }) {
         ) : (
           <div className="grid gap-6">
             {materials.map((material) => (
-              <article key={material.id} className="rounded-[32px] border border-border bg-card p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+              <Link
+                key={material.id}
+                href={`/materials/${material.id}`}
+                className="block rounded-[32px] border border-border bg-card p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-accent"
+              >
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div className="flex-1">
                     <p className="text-sm font-semibold uppercase tracking-[0.24em] text-accent">{material.courseName}</p>
-                    <Link href={`/materials/${material.id}`} className="mt-3 block text-2xl font-semibold tracking-tight text-foreground hover:text-accent">
-                      {material.title}
-                    </Link>
+                    <h2 className="mt-3 text-2xl font-semibold tracking-tight text-foreground">{material.title}</h2>
                     <p className="mt-3 text-sm leading-6 text-muted-foreground">{material.description}</p>
                   </div>
                   <div className="flex flex-col gap-3 text-sm text-muted-foreground sm:items-end">
@@ -83,7 +85,7 @@ export default async function Page({ params }: { params: any }) {
                   <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted px-3 py-2">Ciclo: {material.cycleLabel}</span>
                   <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted px-3 py-2">Archivo: {material.fileName}</span>
                 </div>
-              </article>
+              </Link>
             ))}
           </div>
         )}
