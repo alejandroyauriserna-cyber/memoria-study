@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { AppShell } from "@/components/ui/shell";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hasSupabaseEnv } from "@/lib/env";
@@ -11,24 +10,15 @@ import type { MaterialRecord } from "@/types/material";
 export const dynamic = "force-dynamic";
 
 export default async function CycleMaterialsPage({ params }: { params: { cycleNumber: string } }) {
-  if (!hasSupabaseEnv()) {
-    notFound();
-  }
-
+  // Allow rendering even if environment detection is imperfect; prefer showing DB results when available.
   const cycleNumber = Number(params.cycleNumber);
-  if (!Number.isInteger(cycleNumber)) {
-    notFound();
-  }
-
-  const cycle = UNT_DERECHO.years
+  const cycleLookup = UNT_DERECHO.years
     .flatMap((year) => year.cycles)
     .find((item) => item.number === cycleNumber);
 
-  if (!cycle) {
-    notFound();
-  }
-
   const admin = createAdminClient();
+
+  // Query materials directly by cycle number and public flag.
   const { data, error } = await admin
     .from("materials")
     .select("*")
@@ -37,10 +27,25 @@ export default async function CycleMaterialsPage({ params }: { params: { cycleNu
     .order("created_at", { ascending: false });
 
   if (error) {
-    throw error;
+    // If there's an error querying, show a simple page with the error message instead of throwing notFound.
+    return (
+      <AppShell>
+        <section className="mx-auto flex min-h-[calc(100vh-9rem)] max-w-3xl flex-col items-center justify-center px-4 text-center">
+          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-accent">Error cargando materiales</p>
+          <h1 className="mt-4 text-2xl font-semibold tracking-tight text-foreground">No se pudieron obtener los materiales</h1>
+          <p className="mt-4 max-w-xl text-sm leading-6 text-muted-foreground">{String(error.message ?? error)}</p>
+          <Link href="/library" className="mt-8 inline-flex h-12 items-center justify-center rounded-3xl border border-border bg-card px-6 text-sm font-semibold text-foreground hover:bg-muted">
+            Volver a Biblioteca
+          </Link>
+        </section>
+      </AppShell>
+    );
   }
 
   const materials = (data ?? []).map((record) => recordToMaterial(record as MaterialRecord));
+
+  const cycleLabel = cycleLookup?.label ?? `Ciclo ${cycleNumber}`;
+  const courseCount = cycleLookup?.courses.length ?? 0;
 
   return (
     <AppShell>
@@ -48,9 +53,9 @@ export default async function CycleMaterialsPage({ params }: { params: { cycleNu
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-accent">Ciclo académico</p>
-            <h1 className="mt-2 text-4xl font-semibold tracking-tight text-foreground">{cycle.label}</h1>
+            <h1 className="mt-2 text-4xl font-semibold tracking-tight text-foreground">{cycleLabel}</h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Materiales públicos compartidos para el {cycle.label}. Navega por todos los recursos disponibles de este ciclo.
+              Materiales públicos compartidos para {cycleLabel}. Navega por todos los recursos disponibles de este ciclo.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -62,13 +67,13 @@ export default async function CycleMaterialsPage({ params }: { params: { cycleNu
 
         <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
           <div className="rounded-[32px] border border-border bg-card p-6 shadow-sm">
-            <p className="text-sm uppercase tracking-[0.24em] text-muted-foreground">Materiales en {cycle.label}</p>
+            <p className="text-sm uppercase tracking-[0.24em] text-muted-foreground">Materiales en {cycleLabel}</p>
             <p className="mt-4 text-4xl font-semibold text-foreground">{materials.length}</p>
             <p className="mt-2 text-sm text-muted-foreground">Mostrando materiales públicos del ciclo seleccionado.</p>
           </div>
           <div className="rounded-[32px] border border-border bg-card p-6 shadow-sm">
             <p className="text-sm uppercase tracking-[0.24em] text-muted-foreground">Cursos en este ciclo</p>
-            <p className="mt-4 text-4xl font-semibold text-foreground">{cycle.courses.length}</p>
+            <p className="mt-4 text-4xl font-semibold text-foreground">{courseCount}</p>
             <p className="mt-2 text-sm text-muted-foreground">Puedes usar el buscador para filtrar resultados por título, descripción o nombre de archivo.</p>
           </div>
         </div>

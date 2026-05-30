@@ -125,17 +125,17 @@ export default async function LibraryHomePage() {
               <p className="text-sm font-semibold uppercase tracking-[0.24em] text-accent">Tendencias</p>
               <div className="mt-6 grid gap-4">
                 <div className="rounded-3xl border border-border bg-card p-5 shadow-sm">
-                  <p className="text-sm font-semibold text-foreground">Material más descargado</p>
-                  <p className="mt-2 text-sm text-muted-foreground">Descubre los recursos más solicitados esta semana.</p>
-                </div>
-                <div className="rounded-3xl border border-border bg-card p-5 shadow-sm">
-                  <p className="text-sm font-semibold text-foreground">Material más valorado</p>
-                  <p className="mt-2 text-sm text-muted-foreground">Contenido reconocido por la comunidad UNT.</p>
-                </div>
-                <div className="rounded-3xl border border-border bg-card p-5 shadow-sm">
-                  <p className="text-sm font-semibold text-foreground">Organizador destacado</p>
-                  <p className="mt-2 text-sm text-muted-foreground">Mapas conceptuales y cuadros sinópticos populares.</p>
-                </div>
+                      <p className="text-sm font-semibold text-foreground">Material más descargado</p>
+                      <p className="mt-2 text-sm text-muted-foreground">Próximamente — Estadísticas en desarrollo.</p>
+                    </div>
+                    <div className="rounded-3xl border border-border bg-card p-5 shadow-sm">
+                      <p className="text-sm font-semibold text-foreground">Material más valorado</p>
+                      <p className="mt-2 text-sm text-muted-foreground">Próximamente — Estadísticas en desarrollo.</p>
+                    </div>
+                    <div className="rounded-3xl border border-border bg-card p-5 shadow-sm">
+                      <p className="text-sm font-semibold text-foreground">Organizador destacado</p>
+                      <p className="mt-2 text-sm text-muted-foreground">Próximamente — Estadísticas en desarrollo.</p>
+                    </div>
               </div>
             </div>
 
