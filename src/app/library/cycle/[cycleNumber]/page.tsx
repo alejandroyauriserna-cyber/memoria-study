@@ -11,7 +11,25 @@ export const dynamic = "force-dynamic";
 
 export default async function CycleMaterialsPage({ params }: { params: { cycleNumber: string } }) {
   // Allow rendering even if environment detection is imperfect; prefer showing DB results when available.
-  const cycleNumber = Number(params.cycleNumber);
+  const rawCycle = params?.cycleNumber;
+  const cycleNumber = Number(rawCycle);
+
+  // Validate cycleNumber before using in DB queries to avoid passing NaN to Supabase.
+  if (Number.isNaN(cycleNumber)) {
+    return (
+      <AppShell>
+        <section className="mx-auto flex min-h-[calc(100vh-9rem)] max-w-3xl flex-col items-center justify-center px-4 text-center">
+          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-accent">Ciclo inválido</p>
+          <h1 className="mt-4 text-2xl font-semibold tracking-tight text-foreground">Parámetro de ciclo no válido</h1>
+          <p className="mt-4 max-w-xl text-sm leading-6 text-muted-foreground">El identificador del ciclo proporcionado no es un número válido: {String(rawCycle)}</p>
+          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <a href="/library" className="inline-flex h-12 items-center justify-center rounded-3xl border border-border bg-card px-6 text-sm font-semibold text-foreground hover:bg-muted">Volver a Biblioteca</a>
+          </div>
+        </section>
+      </AppShell>
+    );
+  }
+
   const cycleLookup = UNT_DERECHO.years
     .flatMap((year) => year.cycles)
     .find((item) => item.number === cycleNumber);
