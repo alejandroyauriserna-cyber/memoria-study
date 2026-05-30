@@ -17,20 +17,42 @@ const createMaterialSchema = z.object({
 });
 
 function sanitizeFileName(fileName: string): string {
-  // Normalizar tildes y caracteres acentuados
   const normalized = fileName.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-
-  // Extraer extensión
   const lastDotIndex = normalized.lastIndexOf(".");
   const nameWithoutExt = lastDotIndex > 0 ? normalized.substring(0, lastDotIndex) : normalized;
-  const extension = lastDotIndex > 0 ? normalized.substring(lastDotIndex) : "";
+  const extension = lastDotIndex > 0 ? normalized.substring(lastDotIndex + 1) : "pdf";
 
-  // Reemplazar espacios por guiones bajos, eliminar caracteres especiales
-  const sanitized = nameWithoutExt
-    .replace(/\s+/g, "_") // Espacios a guiones bajos
-    .replace(/[^a-zA-Z0-9_-]/g, ""); // Solo letras, números, guiones bajos y guiones
+  const sanitizedName = nameWithoutExt
+    .replace(/\s+/g, "_")
+    .replace(/[^a-zA-Z0-9_-]/g, "");
 
-  return sanitized + extension;
+  const sanitizedExtension = extension.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const finalName = sanitizedName || "archivo";
+  const finalExtension = sanitizedExtension ? `.${sanitizedExtension}` : ".pdf";
+
+  return `${finalName}${finalExtension}`;
+}
+
+function formatValidationErrors(error: z.ZodError) {
+  const fieldErrors: Record<string, string> = {};
+
+  for (const issue of error.issues) {
+    const field = issue.path[0] as string | undefined;
+
+    if (field === "title") {
+      fieldErrors.title = "El título debe tener al menos 3 caracteres.";
+    } else if (field === "description") {
+      fieldErrors.description = "La descripción debe tener al menos 10 caracteres.";
+    } else if (field === "courseId" || field === "courseName" || field === "cycleLabel") {
+      fieldErrors.course = "Debes seleccionar un curso.";
+    } else if (field === "materialType") {
+      fieldErrors.course = "Debes seleccionar un tipo de material válido.";
+    } else {
+      fieldErrors[field ?? "form"] = "El campo no es válido.";
+    }
+  }
+
+  return fieldErrors;
 }
 
 export const runtime = "nodejs";
@@ -44,8 +66,19 @@ export async function POST(request: Request) {
     const formData = await request.formData();
     const file = formData.get("file");
 
-    if (!(file instanceof File)) {
-      return NextResponse.json({ error: "Debes subir un archivo válido." }, { status: 400 });
+    if (!(file instanceof File) || file.size === 0) {
+      return NextResponse.json(
+        { fieldErrors: { file: "Debes seleccionar un archivo PDF." } },
+        { status: 400 },
+      );
+    }
+
+    const isPdf = file.name.toLowerCase().endsWith(".pdf") || file.type === "application/pdf";
+    if (!isPdf) {
+      return NextResponse.json(
+        { fieldErrors: { file: "Debes seleccionar un archivo PDF." } },
+        { status: 400 },
+      );
     }
 
     const body = createMaterialSchema.parse({
@@ -69,11 +102,56 @@ export async function POST(request: Request) {
 
     const admin = createAdminClient();
     const bucket = "shared-materials";
-    const storagePath = `${user.id}/${crypto.randomUUID()}-${file.name}`;
+
+    const originalFileName = file.name;
+    const sanitizedFileName = sanitizeFileName(originalFileName);
+    const storagePath = `${user.id}/${crypto.randomUUID()}-${sanitizedFileName}`;
+
+    console.log("Storage upload debug:", {
+      originalFileName,
+      sanitizedFileName,
+      storagePath,
+      bucket,
+    });
 
     const bucketInfo = await admin.storage.getBucket(bucket);
+    if (bucketInfo.error) {
+      console.error("Storage bucket lookup failed:", bucketInfo.error);
+      if (bucketInfo.error.message?.toLowerCase().includes("not found")) {
+        const createBucketResponse = await admin.storage.createBucket(bucket, { public: true });
+        if (createBucketResponse.error) {
+          console.error("Storage bucket creation failed:", createBucketResponse.error);
+          return NextResponse.json(
+            {
+              error:
+                "El bucket de Storage no existe o no tiene permisos. Verifica la configuración del bucket shared-materials en Supabase Storage.",
+            },
+            { status: 500 },
+          );
+        }
+      } else {
+        return NextResponse.json(
+          {
+            error:
+              "No se puede acceder al bucket de Storage. Verifica la configuración del proyecto y la clave de servicio en Supabase.",
+          },
+          { status: 500 },
+        );
+      }
+    }
+
     if (!bucketInfo.data) {
-      await admin.storage.createBucket(bucket, { public: true });
+      const createBucketResponse = await admin.storage.createBucket(bucket, { public: true });
+      if (createBucketResponse.error) {
+        console.error("Storage bucket creation failed:", createBucketResponse.error);
+        return NextResponse.json(
+          {
+            error:
+              "El bucket de Storage no existe o no tiene permisos. Verifica la configuración del bucket shared-materials en Supabase Storage.",
+          },
+          { status: 500 },
+        );
+      }
     }
 
     const { error: uploadError } = await admin.storage
@@ -81,11 +159,28 @@ export async function POST(request: Request) {
       .upload(storagePath, file, { contentType: file.type, upsert: false });
 
     if (uploadError) {
-      throw uploadError;
+      console.error("Storage upload failed:", uploadError);
+      return NextResponse.json(
+        {
+          error:
+            "Ocurrió un error al subir el archivo. Verifica la configuración de Supabase Storage y que el nombre del archivo sea válido.",
+        },
+        { status: 500 },
+      );
     }
 
-    const { data: urlData } = admin.storage.from(bucket).getPublicUrl(storagePath);
-    const fileUrl = urlData.publicUrl;
+    const urlResult = admin.storage.from(bucket).getPublicUrl(storagePath);
+    if (!urlResult?.data?.publicUrl) {
+      console.error("Storage public URL generation failed:", urlResult);
+      return NextResponse.json(
+        {
+          error:
+            "Ocurrió un error al obtener la URL pública del archivo. Verifica la configuración de Supabase Storage.",
+        },
+        { status: 500 },
+      );
+    }
+    const fileUrl = urlResult.data.publicUrl;
 
     const materialPayload = materialInsertPayload(
       {
@@ -153,6 +248,16 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ material: recordToMaterial(data as MaterialRecord) }, { status: 201 });
   } catch (caught) {
+    if (caught instanceof z.ZodError) {
+      return NextResponse.json(
+        {
+          fieldErrors: formatValidationErrors(caught),
+          error: "Corrige los campos marcados.",
+        },
+        { status: 400 },
+      );
+    }
+
     return NextResponse.json(
       { error: caught instanceof Error ? caught.message : "Error creando material." },
       { status: 500 },
