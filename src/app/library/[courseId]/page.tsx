@@ -7,6 +7,8 @@ import { recordToMaterial } from "@/lib/materials/mapper";
 import { MaterialCard } from "@/components/library/material-card";
 import type { MaterialRecord } from "@/types/material";
 
+export const dynamic = "force-dynamic";
+
 export default async function CourseLibraryPage({
   params,
 }: {
@@ -31,12 +33,15 @@ export default async function CourseLibraryPage({
   }
 
   const admin = createAdminClient();
-  const { data } = await admin
+  const { data, error } = await admin
     .from("materials")
     .select("*")
     .eq("course_id", courseId)
     .eq("is_public", true)
     .order("created_at", { ascending: false });
+
+  console.log("materials", data);
+  console.log("error", error);
 
   const materials = (data ?? []).map((record) => recordToMaterial(record as MaterialRecord));
 

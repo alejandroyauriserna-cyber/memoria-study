@@ -7,6 +7,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { hasSupabaseEnv } from "@/lib/env";
 import type { MaterialRecord } from "@/types/material";
 
+export const dynamic = "force-dynamic";
+
 export default async function LibraryHomePage() {
   if (!hasSupabaseEnv()) {
     return (
@@ -26,10 +28,13 @@ export default async function LibraryHomePage() {
   }
 
   const admin = createAdminClient();
-  const { data } = await admin
+  const { data, error } = await admin
     .from("materials")
     .select("id,course_id,course_name,cycle_number,cycle_label,created_at")
     .eq("is_public", true);
+
+  console.log("materials", data);
+  console.log("error", error);
 
   const materials = (data ?? []) as MaterialRecord[];
   const courseStats = new Map<string, { count: number; latest: string; courseName: string }>();
