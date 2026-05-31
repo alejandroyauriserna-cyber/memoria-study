@@ -6,7 +6,7 @@ import { hasSupabaseEnv } from "@/lib/env";
 export const runtime = "nodejs";
 
 export async function POST(request: Request, context: any) {
-  const { id } = context.params;
+  const { id } = await context.params;
 
   try {
     if (!hasSupabaseEnv()) {
@@ -24,7 +24,8 @@ export async function POST(request: Request, context: any) {
 
     const admin = createAdminClient();
     const { data: existing, error: selectError } = await admin
-      .from("material_favorites")
+      .schema("public")
+      .from("favorites")
       .select("id")
       .eq("material_id", id)
       .eq("user_id", user.id)
@@ -38,7 +39,8 @@ export async function POST(request: Request, context: any) {
 
     if (existing) {
       const { error: deleteError } = await admin
-        .from("material_favorites")
+        .schema("public")
+        .from("favorites")
         .delete()
         .eq("id", existing.id);
 
@@ -46,10 +48,13 @@ export async function POST(request: Request, context: any) {
         throw deleteError;
       }
     } else {
-      const { error: insertError } = await admin.from("material_favorites").insert({
-        material_id: id,
-        user_id: user.id,
-      });
+      const { error: insertError } = await admin
+        .schema("public")
+        .from("favorites")
+        .insert({
+          material_id: id,
+          user_id: user.id,
+        });
 
       if (insertError) {
         throw insertError;

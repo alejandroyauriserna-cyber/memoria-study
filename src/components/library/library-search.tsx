@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { FileSearch, Loader2, Search } from "lucide-react";
+import { FileSearch, Loader2, Search, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MaterialCard } from "@/components/library/material-card";
 import type { Material } from "@/types/material";
@@ -9,6 +9,7 @@ import type { Material } from "@/types/material";
 export function LibrarySearch() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Material[]>([]);
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -27,7 +28,7 @@ export function LibrarySearch() {
     setError("");
 
     try {
-      const response = await fetch(`/api/materials/search?q=${encodeURIComponent(trimmed)}`);
+      const response = await fetch(`/api/materials/search?q=${encodeURIComponent(trimmed)}&favorites=${favoritesOnly ? "1" : "0"}`);
       const payload = await response.json();
 
       if (!response.ok) {
@@ -71,6 +72,16 @@ export function LibrarySearch() {
           Buscar
         </Button>
       </form>
+
+      <label className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-3xl border border-border bg-muted px-4 py-3 text-sm font-semibold text-muted-foreground transition hover:text-foreground">
+        <input
+          type="checkbox"
+          checked={favoritesOnly}
+          onChange={(event) => setFavoritesOnly(event.target.checked)}
+          className="h-4 w-4 accent-current"
+        />
+        <Star size={16} /> Solo favoritos
+      </label>
 
       {error ? <p className="mt-4 text-sm text-red-500">{error}</p> : null}
 

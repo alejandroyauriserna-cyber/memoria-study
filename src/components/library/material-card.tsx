@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { ArrowDown, BookOpen, CalendarDays, Eye, Heart, Search, Star, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { getMaterialBadges } from "@/lib/materials/badges";
 import type { Material } from "@/types/material";
 
 export function MaterialCard({ material }: { material: Material }) {
@@ -13,6 +14,32 @@ export function MaterialCard({ material }: { material: Material }) {
   const [favorite, setFavorite] = useState(material.isFavorite ?? false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const badges = getMaterialBadges({ ...material, likes, views });
+
+  async function handleOpenPdf() {
+    if (!material.id) return;
+
+    setBusy(true);
+    setMessage("");
+
+    try {
+      const response = await fetch(`/api/materials/${material.id}/view`, {
+        method: "POST",
+      });
+
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.error ?? "No se pudo abrir el PDF.");
+      }
+
+      setViews(payload.views ?? views);
+      window.open(payload.fileUrl ?? material.fileUrl, "_blank", "noopener,noreferrer");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Error abriendo el PDF.");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function handleDownload() {
     if (!material.id) return;
@@ -79,7 +106,9 @@ export function MaterialCard({ material }: { material: Material }) {
         throw new Error(payload.error ?? "No se pudo actualizar el favorito.");
       }
 
-      setFavorite(payload.isFavorite ?? !favorite);
+      const nextFavorite = payload.isFavorite ?? !favorite;
+      setFavorite(nextFavorite);
+      setMessage(nextFavorite ? "Material agregado a favoritos" : "Material eliminado de favoritos");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Error actualizando favorito.");
     } finally {
@@ -103,6 +132,15 @@ export function MaterialCard({ material }: { material: Material }) {
           </h3>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">{material.description}</p>
           <p className="mt-3 text-sm font-medium text-muted-foreground">Archivo: {material.fileName}</p>
+          {badges.length ? (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {badges.map((badge) => (
+                <span key={badge} className="rounded-full border border-accent/30 bg-accent-soft px-3 py-1 text-xs font-semibold text-accent">
+                  {badge}
+                </span>
+              ))}
+            </div>
+          ) : null}
         </div>
         <div className="flex flex-col gap-3 text-sm text-muted-foreground sm:items-end">
           <span className="inline-flex items-center gap-2 rounded-full border border-border bg-muted px-3 py-2">
@@ -133,11 +171,14 @@ export function MaterialCard({ material }: { material: Material }) {
           </span>
         </div>
         <div className="flex flex-wrap gap-2 justify-end">
-          <Button variant={favorite ? "secondary" : "ghost"} onClick={handleFavorite} disabled={busy}>
+          <Button variant={favorite ? "secondary" : "ghost"} onClick={handleFavorite} disabled={busy} className="transition">
             <Star size={16} /> {favorite ? "Guardado" : "Guardar"}
           </Button>
           <Button variant="secondary" onClick={handleLike} disabled={busy}>
             <Heart size={16} /> Me gusta
+          </Button>
+          <Button variant="secondary" onClick={handleOpenPdf} disabled={busy}>
+            <BookOpen size={16} /> Ver PDF
           </Button>
           <Button onClick={handleDownload} disabled={busy}>
             <ArrowDown size={16} /> Descargar

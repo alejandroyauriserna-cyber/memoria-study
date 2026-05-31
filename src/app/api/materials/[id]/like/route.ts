@@ -6,7 +6,7 @@ import { hasSupabaseEnv } from "@/lib/env";
 export const runtime = "nodejs";
 
 export async function POST(request: Request, context: any) {
-  const { id } = context.params;
+  const { id } = await context.params;
   try {
     if (!hasSupabaseEnv()) {
       return NextResponse.json({ error: "Supabase no está configurado." }, { status: 503 });
@@ -23,6 +23,7 @@ export async function POST(request: Request, context: any) {
 
     const admin = createAdminClient();
     const { data: existingLike, error: likeError } = await admin
+      .schema("public")
       .from("material_likes")
       .select("id")
       .eq("material_id", id)
@@ -37,6 +38,7 @@ export async function POST(request: Request, context: any) {
 
     if (existingLike) {
       const { error: deleteError } = await admin
+        .schema("public")
         .from("material_likes")
         .delete()
         .eq("id", existingLike.id);
@@ -45,10 +47,13 @@ export async function POST(request: Request, context: any) {
         throw deleteError;
       }
     } else {
-      const { error: insertError } = await admin.from("material_likes").insert({
-        material_id: id,
-        user_id: user.id,
-      });
+      const { error: insertError } = await admin
+        .schema("public")
+        .from("material_likes")
+        .insert({
+          material_id: id,
+          user_id: user.id,
+        });
 
       if (insertError) {
         throw insertError;
@@ -56,6 +61,7 @@ export async function POST(request: Request, context: any) {
     }
 
     const { data: material, error: materialError } = await admin
+      .schema("public")
       .from("materials")
       .select("likes")
       .eq("id", id)
@@ -76,6 +82,7 @@ export async function POST(request: Request, context: any) {
     }
 
     const { error: updateError } = await admin
+      .schema("public")
       .from("materials")
       .update({ likes })
       .eq("id", id);

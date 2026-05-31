@@ -6,7 +6,7 @@ import { hasSupabaseEnv } from "@/lib/env";
 export const runtime = "nodejs";
 
 export async function POST(request: Request, context: any) {
-  const { id } = context.params;
+  const { id } = await context.params;
   try {
     if (!hasSupabaseEnv()) {
       return NextResponse.json({ error: "Supabase no está configurado." }, { status: 503 });
@@ -23,6 +23,7 @@ export async function POST(request: Request, context: any) {
 
     const admin = createAdminClient();
     const { data: material, error: selectError } = await admin
+      .schema("public")
       .from("materials")
       .select("downloads")
       .eq("id", id)
@@ -38,6 +39,7 @@ export async function POST(request: Request, context: any) {
 
     const downloads = (material.downloads ?? 0) + 1;
     const { error: updateError } = await admin
+      .schema("public")
       .from("materials")
       .update({ downloads })
       .eq("id", id);

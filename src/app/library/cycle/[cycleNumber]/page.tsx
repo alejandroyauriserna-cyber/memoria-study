@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { AppShell } from "@/components/ui/shell";
+import { MaterialCard } from "@/components/library/material-card";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { recordToMaterial } from "@/lib/materials/mapper";
 import type { MaterialRecord } from "@/types/material";
 
@@ -10,6 +12,10 @@ export default async function Page({ params }: { params: any }) {
   const resolvedParams = await params;
   const cycleNumber = Number(resolvedParams?.cycleNumber ?? "");
   const admin = createAdminClient();
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const { data, error } = await admin
     .from("materials")
@@ -36,7 +42,22 @@ export default async function Page({ params }: { params: any }) {
     );
   }
 
-  const materials = (data ?? []).map((record) => recordToMaterial(record as MaterialRecord));
+  let favoriteIds = new Set<string>();
+
+  if (user) {
+    const { data: favorites } = await admin
+      .schema("public")
+      .from("favorites")
+      .select("material_id")
+      .eq("user_id", user.id);
+
+    favoriteIds = new Set((favorites ?? []).map((favorite) => favorite.material_id as string));
+  }
+
+  const materials = (data ?? []).map((record) => ({
+    ...recordToMaterial(record as MaterialRecord),
+    isFavorite: favoriteIds.has(record.id),
+  }));
 
   return (
     <AppShell>
@@ -63,29 +84,7 @@ export default async function Page({ params }: { params: any }) {
         ) : (
           <div className="grid gap-6">
             {materials.map((material) => (
-              <Link
-                key={material.id}
-                href={`/materials/${material.id}`}
-                className="block rounded-[32px] border border-border bg-card p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-accent"
-              >
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold uppercase tracking-[0.24em] text-accent">{material.courseName}</p>
-                    <h2 className="mt-3 text-2xl font-semibold tracking-tight text-foreground">{material.title}</h2>
-                    <p className="mt-3 text-sm leading-6 text-muted-foreground">{material.description}</p>
-                  </div>
-                  <div className="flex flex-col gap-3 text-sm text-muted-foreground sm:items-end">
-                    <span className="inline-flex items-center gap-2 rounded-full border border-border bg-muted px-3 py-2">Curso: {material.courseName}</span>
-                    <span className="inline-flex items-center gap-2 rounded-full border border-border bg-muted px-3 py-2">Tipo: {material.materialType}</span>
-                    <span className="inline-flex items-center gap-2 rounded-full border border-border bg-muted px-3 py-2">Fecha: {new Date(material.createdAt ?? "").toLocaleDateString("es-PE")}</span>
-                  </div>
-                </div>
-
-                <div className="mt-6 flex flex-wrap gap-3 text-sm text-muted-foreground">
-                  <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted px-3 py-2">Ciclo: {material.cycleLabel}</span>
-                  <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted px-3 py-2">Archivo: {material.fileName}</span>
-                </div>
-              </Link>
+              <MaterialCard key={material.id} material={material} />
             ))}
           </div>
         )}

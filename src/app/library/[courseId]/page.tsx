@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/ui/shell";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/env";
 import { UNT_DERECHO } from "@/lib/academic/unt-derecho";
 import { recordToMaterial } from "@/lib/materials/mapper";
@@ -12,13 +13,13 @@ export const dynamic = "force-dynamic";
 export default async function CourseLibraryPage({
   params,
 }: {
-  params: { courseId: string };
+  params: Promise<{ courseId: string }>;
 }) {
   if (!hasSupabaseEnv()) {
     notFound();
   }
 
-  const courseId = params.courseId;
+  const { courseId } = await params;
   const course = UNT_DERECHO.years
     .flatMap((year) => year.cycles)
     .flatMap((cycle) => cycle.courses.map((courseItem) => ({
@@ -33,6 +34,11 @@ export default async function CourseLibraryPage({
   }
 
   const admin = createAdminClient();
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const { data, error } = await admin
     .from("materials")
     .select("*")
@@ -43,7 +49,22 @@ export default async function CourseLibraryPage({
   console.log("materials", data);
   console.log("error", error);
 
-  const materials = (data ?? []).map((record) => recordToMaterial(record as MaterialRecord));
+  let favoriteIds = new Set<string>();
+
+  if (user) {
+    const { data: favorites } = await admin
+      .schema("public")
+      .from("favorites")
+      .select("material_id")
+      .eq("user_id", user.id);
+
+    favoriteIds = new Set((favorites ?? []).map((favorite) => favorite.material_id as string));
+  }
+
+  const materials = (data ?? []).map((record) => ({
+    ...recordToMaterial(record as MaterialRecord),
+    isFavorite: favoriteIds.has(record.id),
+  }));
 
   return (
     <AppShell>

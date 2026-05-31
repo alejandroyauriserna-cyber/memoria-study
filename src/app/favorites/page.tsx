@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { AppShell } from "@/components/ui/shell";
-import { MaterialCard } from "@/components/library/material-card";
+import { FavoritesBrowser } from "@/components/library/favorites-browser";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/env";
@@ -46,17 +46,18 @@ export default async function FavoritesPage() {
 
   const admin = createAdminClient();
   const { data, error } = await admin
-    .from("material_favorites")
-    .select("material_id, materials(*)")
+    .schema("public")
+    .from("favorites")
+    .select("material_id, created_at, materials(*)")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
   const materials = (data ?? [])
-    .map((item: any) => item.materials)
-    .filter(Boolean)
-    .map((record: MaterialRecord) => ({
-      ...recordToMaterial(record),
+    .filter((item: any) => item.materials)
+    .map((item: any) => ({
+      ...recordToMaterial(item.materials as MaterialRecord),
       isFavorite: true,
+      favoriteCreatedAt: item.created_at,
     }));
 
   return (
@@ -72,17 +73,13 @@ export default async function FavoritesPage() {
               </p>
             </div>
             <div className="rounded-3xl bg-muted px-5 py-3 text-sm font-semibold text-muted-foreground">
-              {materials.length} elementos guardados
+              Tienes {materials.length} materiales guardados
             </div>
           </div>
         </div>
 
         {materials.length ? (
-          <div className="mt-8 grid gap-6 lg:grid-cols-2">
-            {materials.map((material) => (
-              <MaterialCard key={material.id} material={material} />
-            ))}
-          </div>
+          <FavoritesBrowser materials={materials} />
         ) : (
           <div className="mt-8 rounded-[32px] border border-dashed border-border bg-muted p-12 text-center shadow-sm">
             <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-accent-soft text-3xl">📚</div>

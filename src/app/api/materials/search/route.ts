@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/env";
 import { recordToMaterial } from "@/lib/materials/mapper";
 
@@ -13,6 +14,7 @@ export async function GET(request: Request) {
 
     const url = new URL(request.url);
     const query = url.searchParams.get("q")?.trim() ?? "";
+    const favoritesOnly = url.searchParams.get("favorites") === "1";
 
     const admin = createAdminClient();
     let queryBuilder = admin.from("materials").select("*").eq("is_public", true).order("created_at", { ascending: false });
@@ -29,7 +31,33 @@ export async function GET(request: Request) {
       throw error;
     }
 
-    const materials = (data ?? []).map((record) => recordToMaterial(record));
+    let favoriteIds = new Set<string>();
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user) {
+      const { data: favorites, error: favoritesError } = await admin
+        .schema("public")
+        .from("favorites")
+        .select("material_id")
+        .eq("user_id", user.id);
+
+      if (favoritesError) {
+        throw favoritesError;
+      }
+
+      favoriteIds = new Set((favorites ?? []).map((favorite) => favorite.material_id as string));
+    }
+
+    const materials = (data ?? [])
+      .map((record) => ({
+        ...recordToMaterial(record),
+        isFavorite: favoriteIds.has(record.id),
+      }))
+      .filter((material) => !favoritesOnly || material.isFavorite);
+
     return NextResponse.json({ materials });
   } catch (caught) {
     return NextResponse.json({

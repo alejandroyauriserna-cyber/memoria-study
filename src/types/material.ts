@@ -23,6 +23,8 @@ export type Material = {
   downloads: number;
   likes: number;
   isFavorite?: boolean;
+  favoriteCreatedAt?: string;
+  lastOpenedAt?: string;
   createdAt?: string;
 };
 

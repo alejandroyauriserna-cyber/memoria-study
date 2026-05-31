@@ -23,8 +23,9 @@ export async function GET() {
 
     const admin = createAdminClient();
     const { data, error } = await admin
-      .from("material_favorites")
-      .select("material_id, materials(*)")
+      .schema("public")
+      .from("favorites")
+      .select("material_id, created_at, materials(*)")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
 
@@ -33,11 +34,11 @@ export async function GET() {
     }
 
     const materials = (data ?? [])
-      .map((item: any) => item.materials)
-      .filter(Boolean)
-      .map((record: any) => ({
-        ...recordToMaterial(record),
+      .filter((item: any) => item.materials)
+      .map((item: any) => ({
+        ...recordToMaterial(item.materials),
         isFavorite: true,
+        favoriteCreatedAt: item.created_at,
       }));
 
     return NextResponse.json({ materials });

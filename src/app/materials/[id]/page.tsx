@@ -1,9 +1,11 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
+import { BookOpen, CalendarDays, Heart, User } from "lucide-react";
 import { AppShell } from "@/components/ui/shell";
-import { Button } from "@/components/ui/button";
-import { ArrowDown, BookOpen, CalendarDays, Heart, User } from "lucide-react";
+import { MaterialDetailActions } from "@/components/materials/material-detail-actions";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { hasSupabaseEnv } from "@/lib/env";
+import { createClient } from "@/lib/supabase/server";
+import { getMaterialBadges } from "@/lib/materials/badges";
 import { recordToMaterial } from "@/lib/materials/mapper";
 import type { MaterialRecord } from "@/types/material";
 
@@ -15,8 +17,12 @@ export default async function MaterialPage({
   params: Promise<{ id: string }>;
 }) {
   const { id: materialId } = await params;
-
   const admin = createAdminClient();
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const { data, error } = await admin
     .schema("public")
     .from("materials")
@@ -25,22 +31,33 @@ export default async function MaterialPage({
     .single();
 
   if (error || !data) {
-    return (
-      <pre>
-        {JSON.stringify(
-          {
-            materialId,
-            data,
-            error,
-          },
-          null,
-          2
-        )}
-      </pre>
-    );
+    notFound();
   }
 
-  const material = recordToMaterial(data as MaterialRecord);
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const [{ count: recentViews }, { data: favorite }] = await Promise.all([
+    admin
+      .schema("public")
+      .from("material_views")
+      .select("id", { count: "exact", head: true })
+      .eq("material_id", materialId)
+      .gte("viewed_at", sevenDaysAgo),
+    user
+      ? admin
+          .schema("public")
+          .from("favorites")
+          .select("id")
+          .eq("material_id", materialId)
+          .eq("user_id", user.id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
+
+  const material = {
+    ...recordToMaterial(data as MaterialRecord),
+    isFavorite: Boolean(favorite),
+  };
+  const badges = getMaterialBadges(material, recentViews ?? 0);
 
   return (
     <AppShell>
@@ -49,7 +66,9 @@ export default async function MaterialPage({
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-accent">Detalle del material</p>
             <h1 className="mt-2 text-4xl font-semibold tracking-tight text-foreground">{material.title}</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">Información completa del material compartido en la biblioteca pública.</p>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
+              Información completa del material compartido en la biblioteca pública.
+            </p>
           </div>
           <div className="flex flex-wrap gap-3">
             <Link href="/library" className="inline-flex h-12 items-center justify-center rounded-3xl border border-border bg-card px-6 text-sm font-semibold text-foreground hover:bg-muted">
@@ -66,61 +85,68 @@ export default async function MaterialPage({
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.24em] text-accent">{material.courseName}</p>
               <p className="mt-3 text-sm text-muted-foreground">{material.cycleLabel}</p>
+              {badges.length ? (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {badges.map((badge) => (
+                    <span key={badge} className="rounded-full border border-accent/30 bg-accent-soft px-3 py-1 text-xs font-semibold text-accent">
+                      {badge}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+
               <p className="mt-6 text-lg font-semibold text-foreground">Descripción</p>
               <p className="mt-3 text-sm leading-7 text-muted-foreground">{material.description}</p>
 
               <div className="mt-8 grid gap-4 sm:grid-cols-2">
                 <div className="rounded-3xl border border-border bg-muted p-5">
                   <p className="text-sm uppercase tracking-[0.24em] text-muted-foreground">Autor</p>
-                  <p className="mt-2 text-base font-semibold text-foreground">{material.authorName}</p>
+                  <p className="mt-2 inline-flex items-center gap-2 text-base font-semibold text-foreground">
+                    <User size={16} /> {material.authorName}
+                  </p>
                 </div>
                 <div className="rounded-3xl border border-border bg-muted p-5">
                   <p className="text-sm uppercase tracking-[0.24em] text-muted-foreground">Creado</p>
-                  <p className="mt-2 text-base font-semibold text-foreground">{new Date(material.createdAt ?? "").toLocaleDateString("es-PE")}</p>
+                  <p className="mt-2 inline-flex items-center gap-2 text-base font-semibold text-foreground">
+                    <CalendarDays size={16} /> {new Date(material.createdAt ?? "").toLocaleDateString("es-PE")}
+                  </p>
                 </div>
               </div>
             </div>
 
             <aside className="space-y-4 rounded-[32px] border border-border bg-background p-6">
-              <div className="space-y-2">
-                <p className="text-sm uppercase tracking-[0.24em] text-muted-foreground">Nombre de archivo</p>
-                <p className="text-base font-semibold text-foreground">{material.fileName}</p>
+              <div className="grid grid-cols-3 gap-3 text-center">
+                <div className="rounded-3xl border border-border bg-muted p-4">
+                  <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Vistas</p>
+                  <p className="mt-2 text-xl font-semibold text-foreground">{material.views}</p>
+                </div>
+                <div className="rounded-3xl border border-border bg-muted p-4">
+                  <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Likes</p>
+                  <p className="mt-2 inline-flex items-center justify-center gap-1 text-xl font-semibold text-foreground">
+                    <Heart size={16} /> {material.likes}
+                  </p>
+                </div>
+                <div className="rounded-3xl border border-border bg-muted p-4">
+                  <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Bajas</p>
+                  <p className="mt-2 text-xl font-semibold text-foreground">{material.downloads}</p>
+                </div>
               </div>
-              <div className="space-y-2">
-                <p className="text-sm uppercase tracking-[0.24em] text-muted-foreground">Descargas</p>
-                <p className="text-base font-semibold text-foreground">{material.downloads}</p>
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm uppercase tracking-[0.24em] text-muted-foreground">Vistas</p>
-                <p className="text-base font-semibold text-foreground">{material.views}</p>
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm uppercase tracking-[0.24em] text-muted-foreground">Likes</p>
-                <p className="text-base font-semibold text-foreground">{material.likes}</p>
-              </div>
-              <div className="mt-6 flex flex-col gap-3">
-                <a
-                  href={material.fileUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex h-12 items-center justify-center rounded-3xl bg-foreground px-6 text-sm font-semibold text-background hover:bg-foreground/90"
-                >
-                  <BookOpen size={16} /> Ver PDF
-                </a>
-                <a
-                  href={material.fileUrl}
-                  download={material.fileName}
-                  className="inline-flex h-12 items-center justify-center rounded-3xl border border-border bg-card px-6 text-sm font-semibold text-foreground hover:bg-muted"
-                >
-                  <ArrowDown size={16} /> Descargar PDF
-                </a>
-                <Link
-                  href={`/organizers/create?materialId=${material.id}`}
-                  className="inline-flex h-12 items-center justify-center rounded-3xl border border-border bg-card px-6 text-sm font-semibold text-foreground hover:bg-muted"
-                >
-                  <BookOpen size={16} /> Estudiar con IA
-                </Link>
-              </div>
+
+              <MaterialDetailActions
+                materialId={material.id ?? materialId}
+                fileName={material.fileName}
+                fileUrl={material.fileUrl}
+                initialFavorite={material.isFavorite}
+                initialLikes={material.likes}
+                initialViews={material.views}
+              />
+
+              <Link
+                href={`/organizers/create?materialId=${material.id}`}
+                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-3xl border border-border bg-card px-6 text-sm font-semibold text-foreground hover:bg-muted"
+              >
+                <BookOpen size={16} /> Estudiar con IA
+              </Link>
             </aside>
           </div>
         </div>

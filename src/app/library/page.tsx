@@ -1,10 +1,13 @@
 import Link from "next/link";
-import { BookOpen, ChevronRight } from "lucide-react";
+import { ArrowDown, BookOpen, Eye, Heart, PlayCircle } from "lucide-react";
 import { AppShell } from "@/components/ui/shell";
 import { LibrarySearch } from "@/components/library/library-search";
 import { UNT_DERECHO } from "@/lib/academic/unt-derecho";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/env";
+import { getMaterialBadges } from "@/lib/materials/badges";
+import { recordToMaterial } from "@/lib/materials/mapper";
 import type { MaterialRecord } from "@/types/material";
 
 export const dynamic = "force-dynamic";
@@ -28,32 +31,60 @@ export default async function LibraryHomePage() {
   }
 
   const admin = createAdminClient();
-  const { data, error } = await admin
-    .from("materials")
-    .select("id,course_id,course_name,cycle_number,cycle_label,created_at")
-    .eq("is_public", true);
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  console.log("materials", data);
-  console.log("error", error);
+  const { data } = await admin
+    .schema("public")
+    .from("materials")
+    .select("*")
+    .eq("is_public", true)
+    .order("created_at", { ascending: false });
 
   const materials = (data ?? []) as MaterialRecord[];
-  const courseStats = new Map<string, { count: number; latest: string; courseName: string }>();
+  const totalViews = materials.reduce((sum, item) => sum + (item.views ?? 0), 0);
+  const totalLikes = materials.reduce((sum, item) => sum + (item.likes ?? 0), 0);
+  const totalDownloads = materials.reduce((sum, item) => sum + (item.downloads ?? 0), 0);
+  const mostViewed = [...materials].sort((a, b) => (b.views ?? 0) - (a.views ?? 0))[0];
+  const mostDownloaded = [...materials].sort((a, b) => (b.downloads ?? 0) - (a.downloads ?? 0))[0];
+  const mostLiked = [...materials].sort((a, b) => (b.likes ?? 0) - (a.likes ?? 0))[0];
+
+  const recentViewsSince = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const { data: recentViewsData } = await admin
+    .schema("public")
+    .from("material_views")
+    .select("material_id")
+    .gte("viewed_at", recentViewsSince);
+
+  const recentViewsByMaterial = new Map<string, number>();
+  (recentViewsData ?? []).forEach((view) => {
+    const materialId = view.material_id as string;
+    recentViewsByMaterial.set(materialId, (recentViewsByMaterial.get(materialId) ?? 0) + 1);
+  });
+
+  const { data: historyData } = user
+    ? await admin
+        .schema("public")
+        .from("material_study_history")
+        .select("opened_at, materials(*)")
+        .eq("user_id", user.id)
+        .order("opened_at", { ascending: false })
+        .limit(8)
+    : { data: [] };
+
+  const studyHistory = (historyData ?? [])
+    .filter((item: any) => item.materials)
+    .map((item: any) => ({
+      ...recordToMaterial(item.materials as MaterialRecord),
+      lastOpenedAt: item.opened_at,
+    }));
+
   const cycleStats = new Map<number, { materialCount: number; lastUpdate: string; courseCount: number }>();
 
   materials.forEach((item) => {
-    const existing = courseStats.get(item.course_id);
     const updatedAt = new Date(item.created_at).toLocaleDateString("es-PE");
-
-    courseStats.set(item.course_id, {
-      count: (existing?.count ?? 0) + 1,
-      latest: existing?.latest
-        ? new Date(item.created_at) > new Date(existing.latest)
-          ? updatedAt
-          : existing.latest
-        : updatedAt,
-      courseName: item.course_name,
-    });
-
     const cycle = cycleStats.get(item.cycle_number) ?? {
       materialCount: 0,
       lastUpdate: updatedAt,
@@ -88,26 +119,49 @@ export default async function LibraryHomePage() {
                 <p className="text-sm font-semibold uppercase tracking-[0.24em] text-accent">Biblioteca colaborativa</p>
                 <h1 className="mt-4 text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">Banco de apuntes UNT</h1>
                 <p className="mt-4 text-base leading-7 text-muted-foreground">
-                  Explora materiales por ciclo y curso, con una experiencia fresca, ágil y moderna para estudiantes de Derecho.
+                  Explora materiales por ciclo y curso, con estadísticas reales para estudiar y volver rápido a tus recursos.
                 </p>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-3">
-                <div className="rounded-3xl border border-border bg-card p-5 shadow-sm">
-                  <p className="text-sm uppercase tracking-[0.24em] text-muted-foreground">Materiales</p>
-                  <p className="mt-3 text-3xl font-semibold text-foreground">{materials.length}</p>
-                </div>
-                <div className="rounded-3xl border border-border bg-card p-5 shadow-sm">
-                  <p className="text-sm uppercase tracking-[0.24em] text-muted-foreground">Cursos</p>
-                  <p className="mt-3 text-3xl font-semibold text-foreground">
-                    {UNT_DERECHO.years.reduce((sum, year) => sum + year.cycles.reduce((inner, cycle) => inner + cycle.courses.length, 0), 0)}
-                  </p>
-                </div>
-                <div className="rounded-3xl border border-border bg-card p-5 shadow-sm">
-                  <p className="text-sm uppercase tracking-[0.24em] text-muted-foreground">Ciclos</p>
-                  <p className="mt-3 text-3xl font-semibold text-foreground">{UNT_DERECHO.years.reduce((sum, year) => sum + year.cycles.length, 0)}</p>
-                </div>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {[
+                  { label: "Materiales", value: materials.length, icon: BookOpen },
+                  { label: "Vistas", value: totalViews, icon: Eye },
+                  { label: "Likes", value: totalLikes, icon: Heart },
+                  { label: "Descargas", value: totalDownloads, icon: ArrowDown },
+                ].map(({ label, value, icon: Icon }) => (
+                  <div key={label} className="rounded-3xl border border-border bg-card p-5 shadow-sm">
+                    <p className="inline-flex items-center gap-2 text-sm uppercase tracking-[0.24em] text-muted-foreground">
+                      <Icon size={16} /> {label}
+                    </p>
+                    <p className="mt-3 text-3xl font-semibold text-foreground">{value}</p>
+                  </div>
+                ))}
               </div>
+
+              {studyHistory.length ? (
+                <div className="mt-4">
+                  <div className="mb-4 flex items-center justify-between gap-3">
+                    <p className="text-sm font-semibold uppercase tracking-[0.24em] text-accent">Continuar estudiando</p>
+                    <PlayCircle size={20} className="text-muted-foreground" />
+                  </div>
+                  <div className="flex gap-4 overflow-x-auto pb-2">
+                    {studyHistory.map((material) => (
+                      <Link
+                        key={material.id}
+                        href={`/materials/${material.id}`}
+                        className="min-w-64 rounded-[28px] border border-border bg-card p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                      >
+                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">{material.courseName}</p>
+                        <h3 className="mt-3 line-clamp-2 text-lg font-semibold text-foreground">{material.title}</h3>
+                        <p className="mt-4 text-xs text-muted-foreground">
+                          Última apertura: {new Date(material.lastOpenedAt ?? "").toLocaleDateString("es-PE")}
+                        </p>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
 
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link href="/upload-material" className="inline-flex h-12 items-center justify-center rounded-3xl bg-foreground px-6 text-sm font-semibold text-background transition hover:-translate-y-0.5 hover:bg-foreground/90">
@@ -122,30 +176,37 @@ export default async function LibraryHomePage() {
 
           <aside className="space-y-6">
             <div className="glass-card rounded-[32px] p-8">
-              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-accent">Tendencias</p>
+              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-accent">Rankings</p>
               <div className="mt-6 grid gap-4">
-                <div className="rounded-3xl border border-border bg-card p-5 shadow-sm">
-                      <p className="text-sm font-semibold text-foreground">Material más descargado</p>
-                      <p className="mt-2 text-sm text-muted-foreground">Próximamente — Estadísticas en desarrollo.</p>
-                    </div>
-                    <div className="rounded-3xl border border-border bg-card p-5 shadow-sm">
-                      <p className="text-sm font-semibold text-foreground">Material más valorado</p>
-                      <p className="mt-2 text-sm text-muted-foreground">Próximamente — Estadísticas en desarrollo.</p>
-                    </div>
-                    <div className="rounded-3xl border border-border bg-card p-5 shadow-sm">
-                      <p className="text-sm font-semibold text-foreground">Organizador destacado</p>
-                      <p className="mt-2 text-sm text-muted-foreground">Próximamente — Estadísticas en desarrollo.</p>
-                    </div>
-              </div>
-            </div>
-
-            <div className="rounded-[32px] border border-border bg-card p-6 shadow-sm">
-              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-accent">Filtros rápidos</p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {['Más recientes', 'Más descargados', 'Más valorados', 'Estudios', 'Casos'].map((label) => (
-                  <span key={label} className="rounded-full border border-border bg-muted px-4 py-2 text-xs font-semibold text-muted-foreground">
-                    {label}
-                  </span>
+                {[
+                  { label: "Material más visto", item: mostViewed, value: mostViewed?.views ?? 0, icon: Eye },
+                  { label: "Material más descargado", item: mostDownloaded, value: mostDownloaded?.downloads ?? 0, icon: ArrowDown },
+                  { label: "Material más valorado", item: mostLiked, value: mostLiked?.likes ?? 0, icon: Heart },
+                ].map(({ label, item, value, icon: Icon }) => (
+                  <div key={label} className="rounded-3xl border border-border bg-card p-5 shadow-sm">
+                    <p className="text-sm font-semibold text-foreground">{label}</p>
+                    {item ? (
+                      <>
+                        <Link href={`/materials/${item.id}`} className="mt-2 block text-sm text-muted-foreground hover:text-accent">
+                          {item.title}
+                        </Link>
+                        <div className="mt-3 flex items-center justify-between gap-3">
+                          <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted px-3 py-1 text-xs text-muted-foreground">
+                            <Icon size={14} /> {value}
+                          </span>
+                          <div className="flex flex-wrap justify-end gap-1">
+                            {getMaterialBadges(recordToMaterial(item), recentViewsByMaterial.get(item.id) ?? 0).map((badge) => (
+                              <span key={badge} className="rounded-full bg-accent-soft px-2 py-1 text-xs font-semibold text-accent">
+                                {badge}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <p className="mt-2 text-sm text-muted-foreground">Sin datos todavía.</p>
+                    )}
+                  </div>
                 ))}
               </div>
             </div>
