@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { AppShell } from "@/components/ui/shell";
 import { Button } from "@/components/ui/button";
 import { ArrowDown, BookOpen, CalendarDays, Heart, User } from "lucide-react";
@@ -13,32 +12,31 @@ export const dynamic = "force-dynamic";
 export default async function MaterialPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const materialId = params.id;
+  const { id: materialId } = await params;
 
   const admin = createAdminClient();
   const { data, error } = await admin
+    .schema("public")
     .from("materials")
     .select("*")
     .eq("id", materialId)
-    .eq("is_public", true)
     .single();
 
   if (error || !data) {
     return (
-      <AppShell>
-        <section className="mx-auto min-h-[calc(100vh-9rem)] max-w-4xl px-4 py-10 text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-accent">Material no encontrado</p>
-          <h1 className="mt-4 text-3xl font-semibold tracking-tight text-foreground">No se encontró el material solicitado</h1>
-          <p className="mt-4 max-w-xl text-sm leading-6 text-muted-foreground">Revisa que el enlace sea correcto o vuelve a la biblioteca.</p>
-          <div className="mt-8">
-            <Link href="/library" className="inline-flex h-12 items-center justify-center rounded-3xl border border-border bg-card px-6 text-sm font-semibold text-foreground hover:bg-muted">
-              Volver a Biblioteca
-            </Link>
-          </div>
-        </section>
-      </AppShell>
+      <pre>
+        {JSON.stringify(
+          {
+            materialId,
+            data,
+            error,
+          },
+          null,
+          2
+        )}
+      </pre>
     );
   }
 
