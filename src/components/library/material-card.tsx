@@ -197,7 +197,7 @@ export function MaterialCard({ material }: { material: Material }) {
         ) : null}
         {material.id ? (
           <a
-            href={`/organizers/create?materialId=${material.id}`}
+            href={`/api/organizers/create?materialId=${material.id}`}
             className="inline-flex h-11 items-center justify-center gap-2 rounded-3xl border border-border bg-card px-4 font-semibold text-foreground hover:bg-muted"
           >
             <Search size={16} /> Estudiar con IA

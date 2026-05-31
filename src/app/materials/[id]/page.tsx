@@ -141,12 +141,12 @@ export default async function MaterialPage({
                 initialViews={material.views}
               />
 
-              <Link
-                href={`/organizers/create?materialId=${material.id}`}
+              <a
+                href={`/api/organizers/create?materialId=${material.id}`}
                 className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-3xl border border-border bg-card px-6 text-sm font-semibold text-foreground hover:bg-muted"
               >
                 <BookOpen size={16} /> Estudiar con IA
-              </Link>
+              </a>
             </aside>
           </div>
         </div>
