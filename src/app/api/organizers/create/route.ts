@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import { generateOrganizerContent } from "@/lib/ai/generate-organizer";
+import {
+  OrganizerGenerationError,
+  generateOrganizerContent,
+} from "@/lib/ai/generate-organizer";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { env } from "@/lib/env";
@@ -144,8 +147,14 @@ export async function GET(request: Request) {
       },
     });
   } catch (caught) {
+    if (caught instanceof OrganizerGenerationError) {
+      return NextResponse.json({ error: caught.userMessage }, { status: 503 });
+    }
+
+    console.error("[organizers/create]", caught);
+
     return NextResponse.json(
-      { error: caught instanceof Error ? caught.message : "Error generando organizador." },
+      { error: "Ocurrió un error al generar el organizador. Inténtalo de nuevo." },
       { status: 500 },
     );
   }

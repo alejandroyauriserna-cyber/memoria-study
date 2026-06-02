@@ -12,10 +12,24 @@ import {
   assertOrganizerHasContent,
   normalizeOrganizerContent,
   organizerContentSchema,
-  type OrganizerContentOutput,
+  parseOrganizerContent,
+  type StoredOrganizerContent,
 } from "@/lib/ai/organizer-schema";
 
 const MAX_SUMMARY_ATTEMPTS = 3;
+
+export class OrganizerGenerationError extends Error {
+  readonly userMessage: string;
+
+  constructor(userMessage: string) {
+    super(userMessage);
+    this.name = "OrganizerGenerationError";
+    this.userMessage = userMessage;
+  }
+}
+
+const USER_FRIENDLY_ERROR =
+  "No pudimos generar el organizador con IA en este momento. Por favor, inténtalo de nuevo en unos minutos.";
 
 function parseOrganizerJson(raw: string) {
   const cleaned = raw
@@ -31,7 +45,7 @@ function parseOrganizerJson(raw: string) {
     throw new Error("El proveedor no devolvió JSON válido.");
   }
 
-  return organizerContentSchema.parse(JSON.parse(cleaned.slice(jsonStart, jsonEnd + 1)));
+  return parseOrganizerContent(JSON.parse(cleaned.slice(jsonStart, jsonEnd + 1)));
 }
 
 function isMissingSummaryError(error: unknown) {
@@ -46,15 +60,22 @@ function isMissingSummaryError(error: unknown) {
   return false;
 }
 
-function finalizeOrganizer(content: OrganizerContentOutput) {
+function logProviderFailure(provider: string, error: unknown) {
+  console.error(
+    `[organizer-ai] ${provider} failed:`,
+    error instanceof Error ? error.message : error,
+  );
+}
+
+function finalizeOrganizer(content: ReturnType<typeof parseOrganizerContent>): StoredOrganizerContent {
   const normalized = normalizeOrganizerContent(content);
   assertOrganizerHasContent(normalized);
   return normalized;
 }
 
 async function generateWithSummaryRetries(
-  generate: () => Promise<OrganizerContentOutput>,
-): Promise<OrganizerContentOutput> {
+  generate: () => Promise<ReturnType<typeof parseOrganizerContent>>,
+): Promise<StoredOrganizerContent> {
   let lastError: Error | null = null;
 
   for (let attempt = 1; attempt <= MAX_SUMMARY_ATTEMPTS; attempt++) {
@@ -139,111 +160,114 @@ async function fetchXaiOrganizer(input: { apiKey: string; model: string; prompt:
   return parseOrganizerJson(text);
 }
 
+async function tryOpenRouterOrganizer(userPrompt: string) {
+  const openrouter = new OpenAI({
+    apiKey: env.openRouterApiKey!,
+    baseURL: "https://openrouter.ai/api/v1",
+  });
+
+  return generateWithSummaryRetries(async () => {
+    const response = await openrouter.responses.parse({
+      model: env.openRouterModel,
+      input: [
+        { role: "system", content: SYSTEM_PROMPT_ORGANIZER },
+        { role: "user", content: userPrompt },
+      ],
+      text: {
+        format: zodTextFormat(organizerContentSchema, "organizer_content"),
+      },
+    });
+
+    if (!response.output_parsed) {
+      throw new MissingSummaryError();
+    }
+
+    return parseOrganizerContent(response.output_parsed);
+  });
+}
+
+async function tryOpenAiOrganizer(userPrompt: string) {
+  const client = new OpenAI({ apiKey: env.openAiApiKey! });
+
+  return generateWithSummaryRetries(async () => {
+    const response = await client.responses.parse({
+      model: env.openAiModel,
+      input: [
+        { role: "system", content: SYSTEM_PROMPT_ORGANIZER },
+        { role: "user", content: userPrompt },
+      ],
+      text: {
+        format: zodTextFormat(organizerContentSchema, "organizer_content"),
+      },
+    });
+
+    if (!response.output_parsed) {
+      throw new MissingSummaryError();
+    }
+
+    return parseOrganizerContent(response.output_parsed);
+  });
+}
+
 export async function generateOrganizerContent(input: {
   sourceName: string;
   text: string;
   materialTitle: string;
-}) {
+}): Promise<StoredOrganizerContent> {
   if (!hasOpenAiEnv()) {
-    throw new Error(
-      "No hay proveedor de IA configurado. Añade OPENROUTER_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY o XAI_API_KEY.",
+    throw new OrganizerGenerationError(
+      "El servicio de IA no está disponible en este momento. Inténtalo más tarde.",
     );
   }
 
   const userPrompt = buildOrganizerUserPrompt(input);
   const providerPrompt = buildOrganizerProviderJsonPrompt(input);
-  const providerErrors: string[] = [];
+
+  const providers: Array<{ name: string; run: () => Promise<StoredOrganizerContent> }> = [];
 
   if (env.openRouterApiKey) {
-    const openrouter = new OpenAI({
-      apiKey: env.openRouterApiKey,
-      baseURL: "https://openrouter.ai/api/v1",
-    });
-
-    try {
-      return await generateWithSummaryRetries(async () => {
-        const response = await openrouter.responses.parse({
-          model: env.openRouterModel,
-          input: [
-            { role: "system", content: SYSTEM_PROMPT_ORGANIZER },
-            { role: "user", content: userPrompt },
-          ],
-          text: {
-            format: zodTextFormat(organizerContentSchema, "organizer_content"),
-          },
-        });
-
-        if (!response.output_parsed) {
-          throw new MissingSummaryError();
-        }
-
-        return response.output_parsed;
-      });
-    } catch (error) {
-      providerErrors.push(
-        `OpenRouter: ${error instanceof Error ? error.message : "failed"}`,
-      );
-    }
+    providers.push({ name: "OpenRouter", run: () => tryOpenRouterOrganizer(userPrompt) });
   }
 
   if (env.openAiApiKey) {
-    const client = new OpenAI({ apiKey: env.openAiApiKey });
-
-    try {
-      return await generateWithSummaryRetries(async () => {
-        const response = await client.responses.parse({
-          model: env.openAiModel,
-          input: [
-            { role: "system", content: SYSTEM_PROMPT_ORGANIZER },
-            { role: "user", content: userPrompt },
-          ],
-          text: {
-            format: zodTextFormat(organizerContentSchema, "organizer_content"),
-          },
-        });
-
-        if (!response.output_parsed) {
-          throw new MissingSummaryError();
-        }
-
-        return response.output_parsed;
-      });
-    } catch (error) {
-      providerErrors.push(`OpenAI: ${error instanceof Error ? error.message : "failed"}`);
-    }
+    providers.push({ name: "OpenAI", run: () => tryOpenAiOrganizer(userPrompt) });
   }
 
   if (env.geminiApiKey) {
-    try {
-      return await generateWithSummaryRetries(() =>
-        fetchGeminiOrganizer({
-          apiKey: env.geminiApiKey!,
-          model: env.geminiModel,
-          prompt: providerPrompt,
-        }),
-      );
-    } catch (error) {
-      providerErrors.push(`Gemini: ${error instanceof Error ? error.message : "failed"}`);
-    }
+    providers.push({
+      name: "Gemini",
+      run: () =>
+        generateWithSummaryRetries(() =>
+          fetchGeminiOrganizer({
+            apiKey: env.geminiApiKey!,
+            model: env.geminiModel,
+            prompt: providerPrompt,
+          }),
+        ),
+    });
   }
 
   if (env.xaiApiKey) {
+    providers.push({
+      name: "xAI",
+      run: () =>
+        generateWithSummaryRetries(() =>
+          fetchXaiOrganizer({
+            apiKey: env.xaiApiKey!,
+            model: env.xaiModel,
+            prompt: providerPrompt,
+          }),
+        ),
+    });
+  }
+
+  for (const provider of providers) {
     try {
-      return await generateWithSummaryRetries(() =>
-        fetchXaiOrganizer({
-          apiKey: env.xaiApiKey!,
-          model: env.xaiModel,
-          prompt: providerPrompt,
-        }),
-      );
+      return await provider.run();
     } catch (error) {
-      providerErrors.push(`xAI: ${error instanceof Error ? error.message : "failed"}`);
+      logProviderFailure(provider.name, error);
     }
   }
 
-  throw new Error(
-    providerErrors.length
-      ? `No se pudo generar el organizador con IA: ${providerErrors.join(" | ")}`
-      : "No se pudo generar el organizador con IA.",
-  );
+  throw new OrganizerGenerationError(USER_FRIENDLY_ERROR);
 }

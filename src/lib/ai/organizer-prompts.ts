@@ -29,7 +29,7 @@ Requisitos por sección:
 - summary (OBLIGATORIO): síntesis fiel del documento (3-6 oraciones).
 - Incluye las demás secciones solo si el PDF permite sustentarlas:
 - simplifiedExplanation: explicación sencilla del contenido real del PDF.
-- conceptMap: title + nodes con conceptos/términos que aparezcan en el PDF.
+- conceptMap: title + nodes con conceptos/términos que aparezcan en el PDF (máximo 14 nodos).
 - hierarchy: root = tema central del PDF; branches = subtemas reales del documento.
 - timeline: eventos, etapas o secuencias mencionadas en el PDF (date solo si aparece).
 - flowChart: start/end/steps describiendo un proceso REAL del documento (no pasos genéricos de estudio).
@@ -48,7 +48,7 @@ export function buildOrganizerProviderJsonPrompt(input: {
 }) {
   return `${SYSTEM_PROMPT_ORGANIZER}
 
-Devuelve SOLO JSON válido con esta forma (summary siempre requerido; omite el resto si no puedes sustentarlo):
+Devuelve SOLO JSON válido con esta forma (summary siempre requerido; usa null en secciones no sustentadas):
 ${ORGANIZER_JSON_SHAPE}
 
 ${buildOrganizerUserPrompt(input)}`;
