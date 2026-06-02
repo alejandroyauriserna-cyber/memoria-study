@@ -1,20 +1,28 @@
 "use client";
 
+import { useCallback, useState } from "react";
 import {
   hasOrganizerSections,
   parseOrganizerContent,
 } from "@/lib/organizers/parse-content";
 import { convertLegacyFlowChart } from "@/lib/organizers/flow-map-layout";
-import { AiAnalysisBanner } from "@/components/study/ai-analysis-banner";
+import { mergeReviewContent } from "@/lib/organizers/review-fallback";
+import { getBranchForNode } from "@/components/organizers/sections/study-assistant-panel";
 import { ConceptMapCanvas } from "@/components/organizers/sections/concept-map-canvas";
 import { FlashcardPremium } from "@/components/organizers/sections/flashcard-premium";
 import { FlowProcessMap } from "@/components/organizers/sections/flow-process-map";
-import { HierarchyTree } from "@/components/organizers/sections/hierarchy-tree";
+import { KnowledgeTreeInteractive } from "@/components/organizers/sections/knowledge-tree-interactive";
+import {
+  LearningAnalyticsPanel,
+  useLearningAnalytics,
+} from "@/components/organizers/sections/learning-analytics-panel";
 import { EasyExplanationBlock } from "@/components/organizers/sections/organizer-section-shell";
 import { ReviewPremiumModule } from "@/components/organizers/sections/review-premium-module";
+import { StudyAssistantPanel } from "@/components/organizers/sections/study-assistant-panel";
 import { TimelineModern } from "@/components/organizers/sections/timeline-modern";
 import { VisualSummaryCard } from "@/components/organizers/sections/visual-summary-card";
 import { OrganizerContentSkeleton } from "@/components/organizers/organizer-skeleton";
+import type { NodeStudyDetail, StudyMapNode } from "@/lib/organizers/concept-map-study";
 
 export function OrganizerContentView({
   content,
@@ -27,11 +35,28 @@ export function OrganizerContentView({
   studio?: boolean;
   deckKey?: string;
 }) {
+  const [selectedNode, setSelectedNode] = useState<StudyMapNode | null>(null);
+  const [nodeDetail, setNodeDetail] = useState<NodeStudyDetail | null>(null);
+  const [focusBranchId, setFocusBranchId] = useState<number | null>(null);
+
+  const analyticsKey = deckKey ?? "organizer";
+  const { state, readingMinutes, mastery, recordConcept, recordAnswer } = useLearningAnalytics(analyticsKey);
+
+  const handleNodeSelect = useCallback(
+    (node: StudyMapNode | null, detail: NodeStudyDetail | null) => {
+      setSelectedNode(node);
+      setNodeDetail(detail);
+      if (node) recordConcept(node.label);
+    },
+    [recordConcept],
+  );
+
+  const parsed = parseOrganizerContent(content);
+  const reviewBundle = mergeReviewContent(parsed);
+
   if (loading) {
     return <OrganizerContentSkeleton studio={studio} />;
   }
-
-  const parsed = parseOrganizerContent(content);
 
   if (!hasOrganizerSections(parsed)) {
     return (
@@ -69,20 +94,10 @@ export function OrganizerContentView({
     reviewQuestions: parsed.reviewQuestions,
   };
 
+  const selectedBranch = selectedNode ? getBranchForNode(selectedNode) : null;
+
   const secondarySections = (
     <div className="organizer-bento space-y-4 p-4 sm:p-6">
-      {parsed.aiAnalysis || parsed.summary ? (
-        <AiAnalysisBanner
-          analysis={{
-            conceptsDetected: parsed.aiAnalysis?.conceptsDetected,
-            relationsFound: parsed.aiAnalysis?.relationsFound,
-            difficulty: parsed.aiAnalysis?.difficulty,
-            recommendations: parsed.aiAnalysis?.recommendations,
-            summary: parsed.aiAnalysis?.studyFocus ?? parsed.summary,
-          }}
-        />
-      ) : null}
-
       {parsed.summary ? (
         <VisualSummaryCard summary={parsed.summary} visualSummary={parsed.visualSummary} />
       ) : null}
@@ -93,45 +108,75 @@ export function OrganizerContentView({
 
       {flowProcess?.nodes?.length && flowProcess.edges?.length ? (
         <FlowProcessMap
-          title={flowProcess.title ?? "Flujo jurídico"}
+          title={flowProcess.title ?? "Proceso jurídico"}
           nodes={flowProcess.nodes}
           edges={flowProcess.edges}
         />
       ) : null}
 
       {parsed.hierarchy?.root && hierarchyBranches.length ? (
-        <HierarchyTree root={parsed.hierarchy.root} branches={hierarchyBranches} />
+        <KnowledgeTreeInteractive root={parsed.hierarchy.root} branches={hierarchyBranches} />
       ) : null}
 
       {timelineEvents.length ? <TimelineModern events={timelineEvents} /> : null}
 
       {parsed.flashcards?.length ? (
-        <FlashcardPremium flashcards={parsed.flashcards} deckKey={deckKey ?? "organizer"} />
+        <FlashcardPremium flashcards={parsed.flashcards} deckKey={analyticsKey} />
       ) : null}
 
-      {parsed.reviewBundle || parsed.reviewQuestions?.length ? (
-        <ReviewPremiumModule
-          reviewBundle={parsed.reviewBundle}
-          legacyQuestions={parsed.reviewQuestions}
-        />
-      ) : null}
+      <ReviewPremiumModule reviewBundle={reviewBundle} onAnswerRecorded={recordAnswer} />
     </div>
   );
 
   if (studio && hasConceptMap) {
     return (
-      <div className="flex h-full min-h-0 flex-1 flex-col">
+      <div className="flex h-full min-h-0 flex-1 flex-col lg:flex-row">
         <div className="flex min-h-0 flex-1 flex-col px-3 py-3 sm:px-4 sm:py-4">
           <ConceptMapCanvas
             title={parsed.conceptMap?.title}
             nodes={conceptNodes}
             fullscreen
+            externalPanel
             studyContext={studyContext}
+            onNodeSelect={handleNodeSelect}
+            onConceptStudied={recordConcept}
           />
         </div>
-        <div className="max-h-[38vh] shrink-0 overflow-y-auto border-t border-[rgba(0,255,213,0.1)] bg-[rgba(7,19,26,0.6)]">
-          {secondarySections}
-        </div>
+
+        <aside className="flex w-full shrink-0 flex-col border-t border-[rgba(0,255,213,0.1)] bg-[rgba(7,19,26,0.55)] lg:w-[min(100%,380px)] lg:border-l lg:border-t-0">
+          <div className="flex min-h-[280px] flex-1 flex-col p-3 sm:p-4">
+            {selectedNode && selectedBranch && nodeDetail ? (
+              <StudyAssistantPanel
+                embedded
+                node={selectedNode}
+                branch={selectedBranch}
+                detail={nodeDetail}
+                focusMode={focusBranchId === selectedNode.branchId}
+                onClose={() => {
+                  setSelectedNode(null);
+                  setNodeDetail(null);
+                }}
+                onFocusBranch={() =>
+                  setFocusBranchId((c) => (c === selectedNode.branchId ? null : selectedNode.branchId))
+                }
+                onStudyBranch={() => undefined}
+              />
+            ) : (
+              <LearningAnalyticsPanel
+                mastery={mastery}
+                conceptsStudied={state.conceptsStudied.length}
+                readingMinutes={readingMinutes}
+                questionsCorrect={state.questionsCorrect}
+                questionsWrong={state.questionsWrong}
+                organizerProgress={state.organizerProgress}
+              />
+            )}
+          </div>
+
+          <div className="max-h-[34vh] shrink-0 overflow-y-auto border-t border-[rgba(0,255,213,0.08)]">
+            {secondarySections}
+          </div>
+        </aside>
       </div>
     );
   }
@@ -144,6 +189,7 @@ export function OrganizerContentView({
           nodes={conceptNodes}
           hero={studio}
           studyContext={studyContext}
+          onConceptStudied={recordConcept}
         />
       ) : null}
       {secondarySections}

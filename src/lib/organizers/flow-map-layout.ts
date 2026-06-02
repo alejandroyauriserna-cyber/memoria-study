@@ -8,97 +8,76 @@ export type FlowLayoutNode = FlowProcessNode & {
   y: number;
   w: number;
   h: number;
+  stepIndex: number;
+  prevId: string | null;
+  nextId: string | null;
 };
 
-const NODE_W = 168;
-const NODE_H = 56;
-const GAP_X = 48;
-const GAP_Y = 72;
+const CARD_W = 184;
+const CARD_H = 88;
+const GAP_X = 56;
 
+/** Layout horizontal BPMN: pasos en fila con conectores laterales. */
 export function layoutFlowProcess(
   nodes: FlowProcessNode[],
   edges: FlowProcessEdge[],
-): { nodes: FlowLayoutNode[]; width: number; height: number } {
+): { nodes: FlowLayoutNode[]; width: number; height: number; orderedIds: string[] } {
   if (!nodes.length) {
-    return { nodes: [], width: 400, height: 240 };
+    return { nodes: [], width: 640, height: 200, orderedIds: [] };
   }
 
   const incoming = new Map<string, number>();
   const outgoing = new Map<string, string[]>();
-
   for (const node of nodes) {
     incoming.set(node.id, 0);
     outgoing.set(node.id, []);
   }
-
   for (const edge of edges) {
     incoming.set(edge.to, (incoming.get(edge.to) ?? 0) + 1);
     outgoing.get(edge.from)?.push(edge.to);
   }
 
-  const roots = nodes.filter((node) => (incoming.get(node.id) ?? 0) === 0);
-  const startNodes = roots.length ? roots : [nodes[0]];
+  const orderedIds: string[] = [];
+  const visited = new Set<string>();
+  let cursor = nodes.find((n) => (incoming.get(n.id) ?? 0) === 0)?.id ?? nodes[0]!.id;
 
-  const levels = new Map<string, number>();
-  const queue = startNodes.map((node) => node.id);
-  for (const id of queue) levels.set(id, 0);
-
-  while (queue.length) {
-    const current = queue.shift()!;
-    const level = levels.get(current) ?? 0;
-    for (const next of outgoing.get(current) ?? []) {
-      const nextLevel = Math.max(levels.get(next) ?? 0, level + 1);
-      if (!levels.has(next) || nextLevel > (levels.get(next) ?? 0)) {
-        levels.set(next, nextLevel);
-        queue.push(next);
-      }
-    }
+  while (cursor && !visited.has(cursor)) {
+    orderedIds.push(cursor);
+    visited.add(cursor);
+    cursor = outgoing.get(cursor)?.[0] ?? "";
   }
 
   for (const node of nodes) {
-    if (!levels.has(node.id)) levels.set(node.id, 0);
+    if (!visited.has(node.id)) orderedIds.push(node.id);
   }
 
-  const byLevel = new Map<number, FlowProcessNode[]>();
-  for (const node of nodes) {
-    const level = levels.get(node.id) ?? 0;
-    const group = byLevel.get(level) ?? [];
-    group.push(node);
-    byLevel.set(level, group);
-  }
+  const layoutNodes: FlowLayoutNode[] = orderedIds.map((id, index) => {
+    const node = nodes.find((n) => n.id === id)!;
+    return {
+      ...node,
+      x: index * (CARD_W + GAP_X),
+      y: 48,
+      w: CARD_W,
+      h: CARD_H,
+      stepIndex: index,
+      prevId: index > 0 ? orderedIds[index - 1]! : null,
+      nextId: index < orderedIds.length - 1 ? orderedIds[index + 1]! : null,
+    };
+  });
 
-  const layoutNodes: FlowLayoutNode[] = [];
-  let maxCols = 0;
+  const width = Math.max(640, orderedIds.length * (CARD_W + GAP_X) + 80);
+  const height = CARD_H + 96;
 
-  for (const [level, group] of [...byLevel.entries()].sort(([a], [b]) => a - b)) {
-    maxCols = Math.max(maxCols, group.length);
-    group.forEach((node, index) => {
-      layoutNodes.push({
-        ...node,
-        x: index * (NODE_W + GAP_X),
-        y: level * (NODE_H + GAP_Y),
-        w: NODE_W,
-        h: NODE_H,
-      });
-    });
-  }
-
-  const width = Math.max(480, maxCols * (NODE_W + GAP_X) + 80);
-  const height = Math.max(280, byLevel.size * (NODE_H + GAP_Y) + 80);
-
-  return { nodes: layoutNodes, width, height };
+  return { nodes: layoutNodes, width, height, orderedIds };
 }
 
-export function flowEdgePath(
-  from: FlowLayoutNode,
-  to: FlowLayoutNode,
-): string {
-  const x1 = from.x + from.w / 2;
-  const y1 = from.y + from.h;
-  const x2 = to.x + to.w / 2;
-  const y2 = to.y;
-  const midY = (y1 + y2) / 2;
-  return `M ${x1} ${y1} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2}`;
+export function flowEdgePath(from: FlowLayoutNode, to: FlowLayoutNode): string {
+  const x1 = from.x + from.w;
+  const y1 = from.y + from.h / 2;
+  const x2 = to.x;
+  const y2 = to.y + to.h / 2;
+  const midX = (x1 + x2) / 2;
+  return `M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}`;
 }
 
 export function convertLegacyFlowChart(
@@ -108,6 +87,7 @@ export function convertLegacyFlowChart(
   const nodes = labels.map((label, index) => ({
     id: `step-${index}`,
     label,
+    explanation: `Paso ${index + 1} del proceso jurídico descrito en el documento.`,
   }));
   const edges = nodes.slice(0, -1).map((node, index) => ({
     from: node.id,
@@ -116,10 +96,7 @@ export function convertLegacyFlowChart(
 
   return {
     title: "Proceso jurídico",
-    nodes: nodes.map((node) => ({
-      id: node.id,
-      label: node.label,
-    })),
-    edges: edges.map((edge) => ({ from: edge.from, to: edge.to })),
+    nodes,
+    edges,
   };
 }

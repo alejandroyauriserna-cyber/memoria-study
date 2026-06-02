@@ -83,6 +83,7 @@ export function FlashcardPremium({
   const cards = flashcards.filter((card) => card.question || card.answer);
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
+  const [mode, setMode] = useState<"study" | "exam">("study");
   const [progressMap, setProgressMap] = useState<Record<number, CardProgress>>({});
 
   useEffect(() => {
@@ -132,14 +133,35 @@ export function FlashcardPremium({
   const body = (
     <>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex gap-1 rounded-lg border border-[rgba(0,255,213,0.12)] p-0.5">
+          {(["study", "exam"] as const).map((item) => (
+            <button
+              key={item}
+              type="button"
+              onClick={() => {
+                setMode(item);
+                setFlipped(false);
+              }}
+              className={`rounded-md px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider ${
+                mode === item ? "bg-[rgba(0,255,213,0.15)] text-[#00FFD5]" : "text-muted-foreground"
+              }`}
+            >
+              {item === "study" ? "Estudio" : "Examen"}
+            </button>
+          ))}
+        </div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <TrendingUp size={14} className="text-[#00FFD5]" />
-          Dominio global: <span className="font-semibold text-[#00FFD5]">{overallMastery}%</span>
+          Dominio: <span className="font-semibold text-[#00FFD5]">{overallMastery}%</span>
         </div>
+      </div>
+
+      <div className="mb-2 flex items-center justify-between text-[10px]">
+        <span className={`rounded-full px-2 py-0.5 ${progress.mastery < 40 ? "bg-red-500/15 text-red-300" : progress.mastery < 70 ? "bg-amber-500/15 text-amber-200" : "bg-[rgba(0,255,213,0.12)] text-[#00FFD5]"}`}>
+          {progress.mastery < 40 ? "Difícil" : progress.mastery < 70 ? "Medio" : "Dominado"}
+        </span>
         {card.difficulty ? (
-          <span className="rounded-full border border-[rgba(0,255,213,0.15)] px-2 py-0.5 text-[10px] text-[#00FFD5]">
-            {difficultyLabel[card.difficulty]}
-          </span>
+          <span className="text-[#00FFD5]/80">{difficultyLabel[card.difficulty]}</span>
         ) : null}
       </div>
 
@@ -173,7 +195,7 @@ export function FlashcardPremium({
         </motion.div>
       </button>
 
-      {flipped ? (
+      {flipped && mode === "study" ? (
         <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
           {[
             { label: "Otra vez", quality: 0 as const },
@@ -190,6 +212,28 @@ export function FlashcardPremium({
               {item.label}
             </button>
           ))}
+        </div>
+      ) : null}
+
+      {flipped && mode === "exam" ? (
+        <div className="mt-4">
+          <p className="text-xs text-muted-foreground">Modo examen: ¿recordaste la respuesta?</p>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => persistRate(0)}
+              className="rounded-lg border border-red-400/30 px-2 py-2 text-[11px] text-red-200"
+            >
+              No la supe
+            </button>
+            <button
+              type="button"
+              onClick={() => persistRate(3)}
+              className="rounded-lg border border-[rgba(0,255,213,0.35)] px-2 py-2 text-[11px] text-[#00FFD5]"
+            >
+              La supe
+            </button>
+          </div>
         </div>
       ) : null}
 

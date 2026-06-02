@@ -86,7 +86,7 @@ export function OrganizerDetailModal({
           </div>
 
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-            <OrganizerContentView content={organizer.content} loading={loading} studio />
+            <OrganizerContentView content={organizer.content} loading={loading} studio deckKey={organizer.id} />
           </div>
         </motion.div>
       ) : null}

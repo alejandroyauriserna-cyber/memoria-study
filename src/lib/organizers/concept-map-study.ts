@@ -7,7 +7,6 @@ import {
   Scale,
   Users,
 } from "lucide-react";
-import dagre from "@dagrejs/dagre";
 
 export type StudyBranch = {
   id: number;
@@ -34,6 +33,8 @@ export type StudyMapNode = {
   y: number;
   branchId: number;
   branchIndex: number;
+  ring: 1 | 2;
+  globalIndex: number;
 };
 
 export type StudyMapLayout = {
@@ -46,86 +47,78 @@ export type StudyMapLayout = {
 
 export const NODE_W = 108;
 export const NODE_H = 32;
-export const CENTER_NODE_SIZE = 72;
+export const CENTER_NODE_SIZE = 88;
+
+const INNER_RADIUS = 148;
+const OUTER_RADIUS = 248;
+
+export { INNER_RADIUS, OUTER_RADIUS };
 
 function hashLabel(label: string) {
   return label.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0);
 }
 
-/** @deprecated use layoutStudyMapNodes return value */
-export function studyMapViewport() {
-  return { w: 800, h: 520, cx: 400, cy: 260 };
-}
-
-/** Dagre hierarchical layout: centro → ramas → conceptos, sin cruces. */
+/** Layout radial: centro → anillo interno → anillo externo por sector. */
 export function layoutStudyMapNodes(title: string | undefined, labels: string[]): StudyMapLayout {
-  const fallback = { nodes: [] as StudyMapNode[], cx: 400, cy: 260, w: 800, h: 520 };
+  const cx = 420;
+  const cy = 320;
+  const pad = 96;
 
   if (!labels.length) {
-    return fallback;
+    return { nodes: [], cx, cy, w: 840, h: 640 };
   }
 
   const branchCount = Math.min(STUDY_BRANCHES.length, Math.max(2, Math.ceil(labels.length / 2)));
   const perBranch = Math.max(1, Math.ceil(labels.length / branchCount));
 
-  const g = new dagre.graphlib.Graph();
-  g.setDefaultEdgeLabel(() => ({}));
-  g.setGraph({
-    rankdir: "LR",
-    nodesep: 24,
-    ranksep: 64,
-    marginx: 48,
-    marginy: 48,
-    align: "UL",
-  });
-
-  const centerId = "__center__";
-  g.setNode(centerId, { width: CENTER_NODE_SIZE, height: CENTER_NODE_SIZE });
-
-  const branchHubs = new Set<string>();
-
-  labels.forEach((label, index) => {
-    const branchId = Math.floor(index / perBranch) % branchCount;
-    const branchHubId = `__branch_${branchId}__`;
-    const nodeId = `node-${index}-${hashLabel(label)}`;
-
-    if (!branchHubs.has(branchHubId)) {
-      branchHubs.add(branchHubId);
-      g.setNode(branchHubId, { width: 8, height: 8 });
-      g.setEdge(centerId, branchHubId);
-    }
-
-    g.setNode(nodeId, { width: NODE_W, height: NODE_H });
-    g.setEdge(branchHubId, nodeId);
-  });
-
-  dagre.layout(g);
-
-  const centerPos = g.node(centerId) as { x: number; y: number; width: number; height: number };
   const rawNodes: StudyMapNode[] = labels.map((label, index) => {
     const branchId = Math.floor(index / perBranch) % branchCount;
-    const nodeId = `node-${index}-${hashLabel(label)}`;
-    const pos = g.node(nodeId) as { x: number; y: number };
+    const branchIndex = index % perBranch;
+    const half = Math.max(1, Math.ceil(perBranch / 2));
+    const ring: 1 | 2 = branchIndex < half ? 1 : 2;
+    const radius = ring === 1 ? INNER_RADIUS : OUTER_RADIUS;
+
+    const sectorSize = (2 * Math.PI) / branchCount;
+    const sectorStart = branchId * sectorSize - Math.PI / 2 + sectorSize * 0.12;
+    const sectorEnd = (branchId + 1) * sectorSize - Math.PI / 2 - sectorSize * 0.12;
+
+    const ringPeers = labels
+      .map((_, i) => i)
+      .filter((i) => {
+        const b = Math.floor(i / perBranch) % branchCount;
+        const bi = i % perBranch;
+        const r: 1 | 2 = bi < half ? 1 : 2;
+        return b === branchId && r === ring;
+      });
+
+    const peerIndex = ringPeers.indexOf(index);
+    const peerCount = ringPeers.length;
+    const angle =
+      peerCount === 1
+        ? (sectorStart + sectorEnd) / 2
+        : sectorStart + ((sectorEnd - sectorStart) * (peerIndex + 1)) / (peerCount + 1);
+
     return {
-      id: nodeId,
+      id: `node-${index}-${hashLabel(label)}`,
       label,
-      x: pos.x,
-      y: pos.y,
+      x: cx + Math.cos(angle) * radius,
+      y: cy + Math.sin(angle) * radius,
       branchId,
-      branchIndex: index % perBranch,
+      branchIndex,
+      ring,
+      globalIndex: index,
     };
   });
 
-  const allX = [centerPos.x, ...rawNodes.map((n) => n.x)];
-  const allY = [centerPos.y, ...rawNodes.map((n) => n.y)];
-  const pad = 72;
-  const minX = Math.min(...allX) - CENTER_NODE_SIZE / 2 - pad;
-  const maxX = Math.max(...allX) + NODE_W / 2 + pad;
-  const minY = Math.min(...allY) - CENTER_NODE_SIZE / 2 - pad;
-  const maxY = Math.max(...allY) + NODE_H / 2 + pad;
+  const allX = [cx, ...rawNodes.map((n) => n.x)];
+  const allY = [cy, ...rawNodes.map((n) => n.y)];
+  const minX = Math.min(...allX) - CENTER_NODE_SIZE - pad;
+  const maxX = Math.max(...allX) + NODE_W + pad;
+  const minY = Math.min(...allY) - CENTER_NODE_SIZE - pad;
+  const maxY = Math.max(...allY) + NODE_H + pad;
 
-  const w = Math.max(640, maxX - minX);
-  const h = Math.max(420, maxY - minY);
+  const w = Math.max(720, maxX - minX);
+  const h = Math.max(520, maxY - minY);
 
   const nodes = rawNodes.map((n) => ({
     ...n,
@@ -135,8 +128,8 @@ export function layoutStudyMapNodes(title: string | undefined, labels: string[])
 
   return {
     nodes,
-    cx: centerPos.x - minX,
-    cy: centerPos.y - minY,
+    cx: cx - minX,
+    cy: cy - minY,
     w,
     h,
   };
@@ -144,7 +137,6 @@ export function layoutStudyMapNodes(title: string | undefined, labels: string[])
 
 export type CanvasTransform = { x: number; y: number; scale: number };
 
-/** fitView: centra el contenido y escala para que quepa en el viewport. */
 export function computeFitTransform(
   viewportW: number,
   viewportH: number,
@@ -155,7 +147,7 @@ export function computeFitTransform(
     return { x: 0, y: 0, scale: 1 };
   }
 
-  const nodePad = 48;
+  const nodePad = 56;
   const xs = [layout.cx, ...layout.nodes.map((n) => n.x)];
   const ys = [layout.cy, ...layout.nodes.map((n) => n.y)];
   const minX = Math.min(...xs) - nodePad;
@@ -186,11 +178,11 @@ export function studyBezierPath(x1: number, y1: number, x2: number, y2: number) 
   const dx = x2 - x1;
   const dy = y2 - y1;
   const dist = Math.hypot(dx, dy) || 1;
-  const curve = Math.max(28, dist * 0.22);
-  const c1x = x1 + dx * 0.35 + (-dy / dist) * curve * 0.12;
-  const c1y = y1 + dy * 0.12 + (dx / dist) * curve * 0.12;
-  const c2x = x2 - dx * 0.35;
-  const c2y = y2 - dy * 0.15;
+  const curve = Math.max(32, dist * 0.28);
+  const c1x = x1 + dx * 0.25 + (-dy / dist) * curve * 0.35;
+  const c1y = y1 + dy * 0.25 + (dx / dist) * curve * 0.35;
+  const c2x = x2 - dx * 0.25 + (-dy / dist) * curve * 0.2;
+  const c2y = y2 - dy * 0.25 + (dx / dist) * curve * 0.2;
   return `M ${x1} ${y1} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${x2} ${y2}`;
 }
 
@@ -202,10 +194,16 @@ export type OrganizerStudyContext = {
 };
 
 export type NodeStudyDetail = {
-  definition: string;
-  example: string;
-  reviewQuestion: string;
+  summary: string;
+  simpleExplanation: string;
+  examImportance: string;
+  legalExample: string;
+  examQuestion: string;
+  commonMistake: string;
+  memoryTip: string;
   relations: string[];
+  previousConcepts: string[];
+  derivedConcepts: string[];
 };
 
 function normalize(text: string) {
@@ -222,7 +220,7 @@ function includesTerm(text: string, term: string) {
 
 export function buildNodeStudyDetail(
   node: StudyMapNode,
-  siblings: StudyMapNode[],
+  allNodes: StudyMapNode[],
   centerTitle: string | undefined,
   context: OrganizerStudyContext,
 ): NodeStudyDetail {
@@ -232,29 +230,61 @@ export function buildNodeStudyDetail(
       includesTerm(card.question ?? "", node.label) || includesTerm(card.answer ?? "", node.label),
   );
 
-  const definition =
-    matched?.answer?.trim() ||
+  const summary =
     extractSentence(context.summary, node.label) ||
+    matched?.answer?.trim() ||
+    `«${node.label}» es un concepto clave dentro de «${centerTitle ?? "este tema"}».`;
+
+  const simpleExplanation =
     extractSentence(context.simplifiedExplanation, node.label) ||
-    `${node.label} es un concepto central del tema «${centerTitle ?? "este material"}». Repásalo en el PDF para fijarlo en memoria.`;
-
-  const example =
     matched?.question?.trim() ||
-    `Pregúntate: ¿cómo se aplica «${node.label}» en un caso del documento?`;
+    `Piensa en «${node.label}» como una pieza del puzzle jurídico que conecta norma, hecho y consecuencia.`;
 
-  const reviewQuestion =
+  const examImportance =
+    node.ring === 1
+      ? "Alta probabilidad en examen: concepto estructural del tema."
+      : "Relevante para casos prácticos y preguntas de aplicación.";
+
+  const legalExample =
+    matched?.question?.trim() ||
+    `Caso tipo: identifica cómo interviene «${node.label}» en un supuesto del documento y qué efecto jurídico produce.`;
+
+  const examQuestion =
     context.reviewQuestions?.find((q) => includesTerm(q, node.label)) ||
-    `¿Puedes explicar «${node.label}» con tus propias palabras?`;
+    `¿Puedes definir «${node.label}» y dar un ejemplo del PDF?`;
 
+  const commonMistake = `Confundir «${node.label}» con conceptos vecinos sin distinguir requisitos, efectos o ámbito de aplicación.`;
+
+  const memoryTip = `Asocia «${node.label}» con la rama «${branchForId(node.branchId).name}» y repítelo en voz alta con un ejemplo propio.`;
+
+  const siblings = allNodes.filter((n) => n.branchId === node.branchId && n.id !== node.id);
   const relations = [
     centerTitle ? `Tema central: ${centerTitle}` : "",
-    ...siblings
-      .filter((s) => s.id !== node.id)
-      .slice(0, 4)
-      .map((s) => s.label),
+    ...siblings.slice(0, 3).map((s) => s.label),
   ].filter(Boolean);
 
-  return { definition, example, reviewQuestion, relations };
+  const previousConcepts = allNodes
+    .filter((n) => n.globalIndex < node.globalIndex && (n.branchId === node.branchId || n.ring === 1))
+    .slice(-2)
+    .map((n) => n.label);
+
+  const derivedConcepts = allNodes
+    .filter((n) => n.globalIndex > node.globalIndex && (n.branchId === node.branchId || n.ring === 2))
+    .slice(0, 2)
+    .map((n) => n.label);
+
+  return {
+    summary,
+    simpleExplanation,
+    examImportance,
+    legalExample,
+    examQuestion,
+    commonMistake,
+    memoryTip,
+    relations,
+    previousConcepts,
+    derivedConcepts,
+  };
 }
 
 function extractSentence(text: string | undefined, term: string) {
@@ -288,7 +318,7 @@ export function flashcardsForBranch(
     const detail = buildNodeStudyDetail(node, branchNodes, centerTitle, context);
     return {
       question: `¿Qué debes recordar sobre «${node.label}»?`,
-      answer: detail.definition,
+      answer: detail.summary,
     };
   });
 }
@@ -301,20 +331,29 @@ export function nodesInBranch(nodes: StudyMapNode[], branchId: number) {
   return nodes.filter((n) => n.branchId === branchId);
 }
 
-export function branchSectorPath(
-  cx: number,
-  cy: number,
-  branchId: number,
-  branchCount: number,
-  radius: number,
-) {
-  const start = (2 * Math.PI * branchId) / branchCount - Math.PI / 2 - Math.PI / branchCount;
-  const end = (2 * Math.PI * (branchId + 1)) / branchCount - Math.PI / 2 + Math.PI / branchCount;
-  const x1 = cx + Math.cos(start) * radius;
-  const y1 = cy + Math.sin(start) * radius;
-  const x2 = cx + Math.cos(end) * radius;
-  const y2 = cy + Math.sin(end) * radius;
-  return `M ${cx} ${cy} L ${x1} ${y1} A ${radius} ${radius} 0 0 1 ${x2} ${y2} Z`;
+export function getRelatedNodeIds(
+  nodeId: string | null,
+  layout: StudyMapNode[],
+): Set<string> {
+  if (!nodeId) return new Set(layout.map((n) => n.id));
+
+  const selected = layout.find((n) => n.id === nodeId);
+  if (!selected) return new Set();
+
+  const related = new Set<string>([nodeId]);
+
+  for (const node of layout) {
+    if (node.branchId === selected.branchId) related.add(node.id);
+    if (Math.abs(node.globalIndex - selected.globalIndex) === 1) related.add(node.id);
+    if (selected.ring === 2 && node.ring === 1 && node.branchId === selected.branchId) {
+      related.add(node.id);
+    }
+    if (selected.ring === 1 && node.ring === 2 && node.branchId === selected.branchId) {
+      related.add(node.id);
+    }
+  }
+
+  return related;
 }
 
 export function isNodeRelated(
@@ -323,9 +362,26 @@ export function isNodeRelated(
   layout: StudyMapNode[],
 ): boolean {
   if (!nodeId) return true;
-  if (nodeId === targetId) return true;
-  const selected = layout.find((n) => n.id === nodeId);
-  const target = layout.find((n) => n.id === targetId);
-  if (!selected || !target) return false;
-  return selected.branchId === target.branchId;
+  return getRelatedNodeIds(nodeId, layout).has(targetId);
+}
+
+export function getMapEdges(layout: StudyMapLayout) {
+  const edges: Array<{ from: "center" | string; to: string; kind: "center" | "inner" | "branch" }> = [];
+
+  for (const node of layout.nodes) {
+    if (node.ring === 1) {
+      edges.push({ from: "center", to: node.id, kind: "center" });
+    } else {
+      const inner = layout.nodes.find(
+        (n) => n.branchId === node.branchId && n.ring === 1,
+      );
+      if (inner) {
+        edges.push({ from: inner.id, to: node.id, kind: "branch" });
+      } else {
+        edges.push({ from: "center", to: node.id, kind: "center" });
+      }
+    }
+  }
+
+  return edges;
 }

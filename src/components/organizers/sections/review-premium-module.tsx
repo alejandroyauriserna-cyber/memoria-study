@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Brain, ChevronDown, ClipboardCheck, HelpCircle, Sparkles } from "lucide-react";
+import { Brain, ChevronDown, ClipboardCheck, HelpCircle, Trophy } from "lucide-react";
 import { OrganizerFloatPanel } from "@/components/organizers/sections/organizer-section-shell";
 import type { StoredOrganizerContent } from "@/lib/ai/organizer-schema";
 
@@ -16,18 +16,27 @@ const difficultyLabel = {
 
 export function ReviewPremiumModule({
   reviewBundle,
-  legacyQuestions = [],
+  onAnswerRecorded,
 }: {
-  reviewBundle?: ReviewBundle;
-  legacyQuestions?: string[];
+  reviewBundle: ReviewBundle;
+  onAnswerRecorded?: (correct: boolean) => void;
 }) {
   const [tab, setTab] = useState<"conceptos" | "preguntas" | "examen">("conceptos");
   const [openIndex, setOpenIndex] = useState<string | null>(null);
   const [examAnswers, setExamAnswers] = useState<Record<number, string>>({});
+  const [examStartedAt, setExamStartedAt] = useState<number | null>(null);
+  const [examFinishedAt, setExamFinishedAt] = useState<number | null>(null);
+  const [selectedConcept, setSelectedConcept] = useState<number | null>(null);
 
-  const questions = reviewBundle?.questions ?? [];
-  const keyConcepts = reviewBundle?.keyConcepts ?? [];
-  const examQuestions = reviewBundle?.examQuestions ?? [];
+  const questions = reviewBundle.questions ?? [];
+  const keyConcepts = reviewBundle.keyConcepts ?? [];
+  const examQuestions = reviewBundle.examQuestions ?? [];
+
+  useEffect(() => {
+    if (tab === "examen" && !examStartedAt) {
+      setExamStartedAt(Date.now());
+    }
+  }, [tab, examStartedAt]);
 
   const groupedQuestions = useMemo(() => {
     const groups = { basico: [] as typeof questions, intermedio: [] as typeof questions, avanzado: [] as typeof questions };
@@ -38,14 +47,31 @@ export function ReviewPremiumModule({
     return groups;
   }, [questions]);
 
-  const legacyItems = legacyQuestions.filter(Boolean);
+  const examScore = useMemo(() => {
+    let correct = 0;
+    examQuestions.forEach((item, index) => {
+      if (examAnswers[index] === item.answer) correct += 1;
+    });
+    return { correct, total: examQuestions.length };
+  }, [examAnswers, examQuestions]);
 
-  if (!keyConcepts.length && !questions.length && !examQuestions.length && !legacyItems.length) {
+  const examComplete = examQuestions.length > 0 && Object.keys(examAnswers).length >= examQuestions.length;
+  const examMinutes = examStartedAt
+    ? Math.max(1, Math.round(((examFinishedAt ?? Date.now()) - examStartedAt) / 60_000))
+    : 0;
+
+  useEffect(() => {
+    if (examComplete && !examFinishedAt) {
+      setExamFinishedAt(Date.now());
+    }
+  }, [examComplete, examFinishedAt]);
+
+  if (!keyConcepts.length && !questions.length && !examQuestions.length) {
     return null;
   }
 
   return (
-    <OrganizerFloatPanel title="Repaso inteligente" hint="IA · conceptos, preguntas y examen" icon={<HelpCircle size={17} />} span={12}>
+    <OrganizerFloatPanel title="Repaso inteligente" hint="Conceptos · preguntas · examen IA" icon={<HelpCircle size={17} />} span={12}>
       <div className="mb-4 flex flex-wrap gap-2">
         {[
           { id: "conceptos" as const, label: "Conceptos clave" },
@@ -69,20 +95,31 @@ export function ReviewPremiumModule({
 
       {tab === "conceptos" ? (
         <div className="grid gap-3 sm:grid-cols-2">
-          {(keyConcepts.length ? keyConcepts : legacyItems.slice(0, 6)).map((concept, index) => (
-            <motion.div
+          {keyConcepts.map((concept, index) => (
+            <motion.button
               key={`${concept}-${index}`}
+              type="button"
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.04 }}
-              className="rounded-xl border border-[rgba(0,255,213,0.12)] bg-[rgba(7,19,26,0.45)] p-3"
+              onClick={() => setSelectedConcept(selectedConcept === index ? null : index)}
+              className={`rounded-xl border p-3 text-left transition ${
+                selectedConcept === index
+                  ? "border-[rgba(0,255,213,0.35)] bg-[rgba(0,255,213,0.1)]"
+                  : "border-[rgba(0,255,213,0.12)] bg-[rgba(7,19,26,0.45)] hover:border-[rgba(0,255,213,0.25)]"
+              }`}
             >
               <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#00FFD5]">
                 <Brain size={12} />
                 Concepto {index + 1}
               </p>
               <p className="mt-2 text-sm leading-6 text-[#F5F7FA]">{concept}</p>
-            </motion.div>
+              {selectedConcept === index ? (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Repasa este concepto en el mapa y explícalo en voz alta antes de continuar.
+                </p>
+              ) : null}
+            </motion.button>
           ))}
         </div>
       ) : null}
@@ -124,7 +161,8 @@ export function ReviewPremiumModule({
                               exit={{ height: 0, opacity: 0 }}
                               className="overflow-hidden border-t border-[rgba(0,255,213,0.08)] px-3 py-3"
                             >
-                              <p className="text-xs leading-6 text-muted-foreground">{item.answer}</p>
+                              <p className="text-xs font-semibold text-[#00FFD5]">Respuesta</p>
+                              <p className="mt-1 text-xs leading-6 text-[#F5F7FA]/90">{item.answer}</p>
                             </motion.div>
                           ) : null}
                         </AnimatePresence>
@@ -135,84 +173,86 @@ export function ReviewPremiumModule({
               </div>
             );
           })}
-          {!questions.length && legacyItems.length ? (
-            <ReviewQuestionsLegacy questions={legacyItems} />
-          ) : null}
         </div>
       ) : null}
 
       {tab === "examen" ? (
         <div className="space-y-3">
-          {examQuestions.length ? (
-            examQuestions.map((item, index) => (
-              <div key={`exam-${index}`} className="rounded-xl border border-[rgba(0,255,213,0.12)] bg-[rgba(7,19,26,0.4)] p-4">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#00FFD5]">
-                  {item.type.replace("_", " ")}
-                </p>
-                <p className="mt-2 text-sm font-medium text-[#F5F7FA]">{item.question}</p>
-                {item.options?.length ? (
-                  <div className="mt-3 space-y-2">
-                    {item.options.map((option) => (
+          <div className="flex flex-wrap items-center gap-3 rounded-xl border border-[rgba(0,255,213,0.12)] bg-[rgba(0,255,213,0.06)] px-3 py-2">
+            <p className="text-xs text-muted-foreground">
+              Puntaje: <span className="font-semibold text-[#00FFD5]">{examScore.correct}/{examScore.total}</span>
+            </p>
+            {examStartedAt ? (
+              <p className="text-xs text-muted-foreground">
+                Tiempo: <span className="font-semibold text-[#F5F7FA]">{examMinutes} min</span>
+              </p>
+            ) : null}
+            {examComplete ? (
+              <p className="flex items-center gap-1 text-xs font-semibold text-[#00FFD5]">
+                <Trophy size={12} />
+                Dominio: {examScore.total ? Math.round((examScore.correct / examScore.total) * 100) : 0}%
+              </p>
+            ) : null}
+          </div>
+
+          {examQuestions.map((item, index) => (
+            <div key={`exam-${index}`} className="rounded-xl border border-[rgba(0,255,213,0.12)] bg-[rgba(7,19,26,0.4)] p-4">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#00FFD5]">
+                {item.type.replace("_", " ")}
+              </p>
+              <p className="mt-2 text-sm font-medium text-[#F5F7FA]">{item.question}</p>
+              {item.type === "caso_practico" ? (
+                <textarea
+                  className="mt-3 w-full rounded-lg border border-[rgba(0,255,213,0.15)] bg-[rgba(7,19,26,0.5)] px-3 py-2 text-xs text-[#F5F7FA]"
+                  rows={3}
+                  placeholder="Escribe tu solución..."
+                  onChange={(e) => setExamAnswers((c) => ({ ...c, [index]: e.target.value ? "respondido" : "" }))}
+                />
+              ) : item.options?.length ? (
+                <div className="mt-3 space-y-2">
+                  {item.options.map((option) => {
+                    const answered = examAnswers[index];
+                    const isSelected = answered === option;
+                    const showResult = Boolean(answered);
+                    const isCorrect = option === item.answer;
+                    return (
                       <button
                         key={option}
                         type="button"
-                        onClick={() => setExamAnswers((current) => ({ ...current, [index]: option }))}
+                        onClick={() => {
+                          setExamAnswers((c) => ({ ...c, [index]: option }));
+                          onAnswerRecorded?.(option === item.answer);
+                        }}
                         className={`block w-full rounded-lg border px-3 py-2 text-left text-xs transition ${
-                          examAnswers[index] === option
-                            ? "border-[rgba(0,255,213,0.4)] bg-[rgba(0,255,213,0.1)] text-[#00FFD5]"
-                            : "border-[rgba(0,255,213,0.1)] text-muted-foreground hover:border-[rgba(0,255,213,0.25)]"
+                          showResult && isSelected
+                            ? isCorrect
+                              ? "border-[rgba(0,255,213,0.4)] bg-[rgba(0,255,213,0.1)] text-[#00FFD5]"
+                              : "border-red-400/40 bg-red-500/10 text-red-200"
+                            : isSelected
+                              ? "border-[rgba(0,255,213,0.4)] bg-[rgba(0,255,213,0.1)] text-[#00FFD5]"
+                              : "border-[rgba(0,255,213,0.1)] text-muted-foreground hover:border-[rgba(0,255,213,0.25)]"
                         }`}
                       >
                         {option}
                       </button>
-                    ))}
-                  </div>
-                ) : null}
-                {examAnswers[index] ? (
-                  <p className={`mt-3 text-xs ${examAnswers[index] === item.answer ? "text-[#00FFD5]" : "text-[#FF8A00]"}`}>
-                    {examAnswers[index] === item.answer ? "Correcto" : `Respuesta: ${item.answer}`}
-                    {item.explanation ? ` · ${item.explanation}` : ""}
-                  </p>
-                ) : null}
-              </div>
-            ))
-          ) : (
-            <p className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Sparkles size={14} className="text-[#00FFD5]" />
-              El examen IA se generará con el próximo organizador enriquecido.
-            </p>
-          )}
+                    );
+                  })}
+                </div>
+              ) : null}
+              {examAnswers[index] && item.explanation ? (
+                <p className="mt-3 text-xs leading-5 text-muted-foreground">
+                  <span className="text-[#00FFD5]">Retroalimentación:</span> {item.explanation}
+                </p>
+              ) : null}
+            </div>
+          ))}
         </div>
       ) : null}
 
       <p className="mt-4 flex items-center gap-2 text-[11px] text-muted-foreground">
         <ClipboardCheck size={12} className="text-[#00FFD5]" />
-        Retención activa: repasa primero los conceptos marcados como avanzados y los que fallaste en el examen.
+        Prioriza conceptos fallados y repasa con flashcards antes del siguiente intento.
       </p>
     </OrganizerFloatPanel>
-  );
-}
-
-function ReviewQuestionsLegacy({ questions }: { questions: string[] }) {
-  const [openIndex, setOpenIndex] = useState<number | null>(0);
-  return (
-    <div className="space-y-2">
-      {questions.map((question, index) => {
-        const isOpen = openIndex === index;
-        return (
-          <div key={`${question}-${index}`} className="overflow-hidden rounded-xl border border-[rgba(0,255,213,0.1)]">
-            <button type="button" onClick={() => setOpenIndex(isOpen ? null : index)} className="flex w-full items-start gap-2 px-3 py-3 text-left">
-              <span className="text-sm text-[#F5F7FA]">{question}</span>
-              <ChevronDown size={16} className="ml-auto text-muted-foreground" />
-            </button>
-            {isOpen ? (
-              <div className="border-t border-[rgba(0,255,213,0.08)] px-3 py-2 text-xs text-muted-foreground">
-                Refuerza con flashcards y el mapa de conceptos del organizador.
-              </div>
-            ) : null}
-          </div>
-        );
-      })}
-    </div>
   );
 }
