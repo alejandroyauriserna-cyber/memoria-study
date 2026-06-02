@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { ArrowRight, Workflow } from "lucide-react";
-import { OrganizerSectionShell } from "@/components/organizers/sections/organizer-section-shell";
+import { OrganizerFloatPanel } from "@/components/organizers/sections/organizer-section-shell";
 
 export function FlowChartModern({
   start,
@@ -16,35 +16,31 @@ export function FlowChartModern({
   const items = [start, ...steps.filter(Boolean), end];
 
   return (
-    <OrganizerSectionShell
-      title="Flujo del contenido"
-      subtitle="Proceso descrito en el documento"
-      icon={<Workflow size={18} />}
-    >
-      <div className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center">
+    <OrganizerFloatPanel title="Flujo" hint="Proceso del documento" icon={<Workflow size={17} />} span={12}>
+      <div className="flex flex-wrap items-center gap-2">
         {items.map((step, index) => (
-          <div key={`${step}-${index}`} className="flex items-center gap-3">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.96 }}
+          <div key={`${step}-${index}`} className="flex items-center gap-2">
+            <motion.span
+              initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              transition={{ delay: index * 0.05 }}
-              className={`rounded-2xl border px-4 py-3 text-sm font-medium shadow-sm ${
+              transition={{ delay: index * 0.04 }}
+              className={`rounded-xl px-3.5 py-2 text-xs font-medium ${
                 index === 0
-                  ? "border-accent/30 bg-accent-soft text-foreground"
+                  ? "bg-accent/12 text-accent"
                   : index === items.length - 1
-                    ? "border-foreground/20 bg-foreground text-background"
-                    : "border-border bg-card text-foreground"
+                    ? "bg-foreground text-background"
+                    : "border border-foreground/8 bg-foreground/[0.03] text-foreground"
               }`}
             >
               {step}
-            </motion.div>
+            </motion.span>
             {index < items.length - 1 ? (
-              <ArrowRight className="hidden h-4 w-4 shrink-0 text-muted-foreground lg:block" />
+              <ArrowRight size={14} className="text-muted-foreground/60" />
             ) : null}
           </div>
         ))}
       </div>
-    </OrganizerSectionShell>
+    </OrganizerFloatPanel>
   );
 }

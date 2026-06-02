@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { CheckCircle2 } from "lucide-react";
 
 export function OrganizerCreatedNotice({
@@ -19,30 +20,28 @@ export function OrganizerCreatedNotice({
 
     if (organizerId) {
       const target = document.getElementById(`organizer-${organizerId}`);
-      target?.scrollIntoView({ behavior: "smooth", block: "start" });
+      target?.scrollIntoView({ behavior: "smooth", block: "center" });
     }
 
-    const timer = window.setTimeout(() => setVisible(false), 8000);
+    const timer = window.setTimeout(() => setVisible(false), 7000);
     return () => window.clearTimeout(timer);
   }, [created, organizerId]);
 
-  if (!visible) {
-    return null;
-  }
+  if (!visible) return null;
 
   return (
-    <div
-      className="mb-8 flex items-start gap-3 rounded-[28px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-900 shadow-sm"
+    <motion.div
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0 }}
+      className="organizer-glass mb-4 flex items-start gap-3 rounded-2xl px-4 py-3"
       role="status"
-      aria-live="polite"
     >
-      <CheckCircle2 className="mt-0.5 shrink-0 text-emerald-600" size={18} />
+      <CheckCircle2 className="mt-0.5 shrink-0 text-accent" size={18} />
       <div>
-        <p className="font-semibold">Organizador creado correctamente</p>
-        <p className="mt-1 text-emerald-800/90">
-          Tu organizador con IA ya está listo. Puedes revisarlo abajo y empezar a estudiar.
-        </p>
+        <p className="text-sm font-semibold text-foreground">Organizador listo</p>
+        <p className="text-xs text-muted-foreground">Abre el canvas para explorar el mapa y las secciones flotantes.</p>
       </div>
-    </div>
+    </motion.div>
   );
 }

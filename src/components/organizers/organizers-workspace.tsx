@@ -18,13 +18,13 @@ import {
 import { OrganizerCreatedNotice } from "@/components/organizers/organizer-created-notice";
 import { OrganizerDetailModal } from "@/components/organizers/organizer-detail-modal";
 import { OrganizerListSkeleton } from "@/components/organizers/organizer-skeleton";
-import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import {
   formatOrganizerDate,
-  organizerTypeLabel,
   wasOrganizerRegenerated,
 } from "@/lib/organizers/format";
+import { parseOrganizerContent } from "@/lib/organizers/parse-content";
+import { bezierConnector, conceptMapCenter, layoutConceptNodes } from "@/lib/organizers/concept-map-layout";
 import type { OrganizerRecord } from "@/types/organizer";
 
 type ViewMode = "grid" | "list";
@@ -49,72 +49,79 @@ function ConfirmDialog({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-[28px] border border-border bg-card p-6 shadow-2xl">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4 backdrop-blur-md">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="organizer-glass w-full max-w-md rounded-[24px] p-6"
+      >
         <h3 className="text-lg font-semibold text-foreground">{title}</h3>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
         <div className="mt-6 flex justify-end gap-2">
-          <Button variant="secondary" onClick={onCancel} disabled={loading}>
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={loading}
+            className="h-10 rounded-xl px-4 text-sm font-medium text-muted-foreground transition hover:bg-foreground/5"
+          >
             Cancelar
-          </Button>
-          <Button
+          </button>
+          <button
+            type="button"
             onClick={onConfirm}
             disabled={loading}
-            className="bg-red-600 text-white hover:bg-red-700"
+            className="inline-flex h-10 items-center gap-2 rounded-xl bg-red-600 px-4 text-sm font-semibold text-white hover:bg-red-700"
           >
             {loading ? <Loader2 className="animate-spin" size={16} /> : null}
             {confirmLabel}
-          </Button>
+          </button>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }
 
-function OrganizerCardActions({
-  organizer,
-  onView,
-  onRegenerate,
-  onDelete,
-  onShare,
-  regenerating,
-}: {
-  organizer: OrganizerRecord;
-  onView: () => void;
-  onRegenerate: () => void;
-  onDelete: () => void;
-  onShare: () => void;
-  regenerating: boolean;
-}) {
+function CardMapPreview({ content }: { content: unknown }) {
+  const parsed = parseOrganizerContent(content);
+  const title = parsed.conceptMap?.title;
+  const nodes = parsed.conceptMap?.nodes?.filter(Boolean).slice(0, 8) ?? [];
+  const { x: cx, y: cy, w, h } = conceptMapCenter();
+
+  if (!nodes.length) {
+    return (
+      <div className="organizer-dot-grid flex h-full min-h-[100px] items-center justify-center rounded-xl bg-gradient-to-br from-accent/5 to-indigo-500/5">
+        <Sparkles className="text-accent/40" size={28} />
+      </div>
+    );
+  }
+
+  const layout = layoutConceptNodes(title, nodes);
+
   return (
-    <div className="flex flex-wrap gap-2">
-      <Button variant="secondary" onClick={onView} className="h-9 px-3 text-xs">
-        <Eye size={14} /> Ver
-      </Button>
-      <Button
-        variant="secondary"
-        onClick={onRegenerate}
-        disabled={regenerating || !organizer.material_id}
-        className="h-9 px-3 text-xs"
-        title={organizer.material_id ? "Regenerar con IA" : "Sin material asociado"}
-      >
-        {regenerating ? (
-          <Loader2 className="animate-spin" size={14} />
-        ) : (
-          <RefreshCw size={14} />
-        )}
-        Regenerar
-      </Button>
-      <Button variant="ghost" onClick={onShare} className="h-9 px-3 text-xs" title="Próximamente">
-        <Share2 size={14} /> Compartir
-      </Button>
-      <Button
-        variant="ghost"
-        onClick={onDelete}
-        className="h-9 px-3 text-xs text-red-600 hover:bg-red-50 hover:text-red-700"
-      >
-        <Trash2 size={14} /> Eliminar
-      </Button>
+    <div className="organizer-dot-grid relative h-full min-h-[100px] overflow-hidden rounded-xl">
+      <svg viewBox={`0 0 ${w} ${h}`} className="h-full w-full opacity-90" aria-hidden>
+        {layout.map((node, index) => (
+          <path
+            key={`${node.label}-${index}`}
+            d={bezierConnector(cx, cy, node.x, node.y)}
+            fill="none"
+            stroke="rgba(31,107,67,0.25)"
+            strokeWidth={1.5}
+          />
+        ))}
+        <circle cx={cx} cy={cy} r={20} fill="rgba(31,107,67,0.2)" />
+        {layout.map((node, index) => (
+          <circle
+            key={`n-${index}`}
+            cx={node.x}
+            cy={node.y}
+            r={10}
+            fill="white"
+            stroke="rgba(31,107,67,0.35)"
+            strokeWidth={1}
+          />
+        ))}
+      </svg>
     </div>
   );
 }
@@ -140,56 +147,132 @@ function OrganizerCardItem({
 }) {
   const regenerated = wasOrganizerRegenerated(organizer.created_at, organizer.updated_at);
 
-  return (
-    <motion.article
-      layout
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25 }}
-      id={`organizer-${organizer.id}`}
-      className={`group overflow-hidden rounded-[28px] border bg-card/90 shadow-[0_20px_60px_rgba(15,23,42,0.06)] backdrop-blur-sm transition hover:-translate-y-0.5 hover:shadow-[0_28px_80px_rgba(15,23,42,0.1)] ${
-        highlighted ? "border-accent ring-2 ring-accent/20" : "border-border/80"
-      } ${viewMode === "list" ? "p-5 sm:p-6" : "p-5"}`}
-    >
-      <div className={viewMode === "list" ? "flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between" : ""}>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full border border-accent/20 bg-accent-soft px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-accent">
-              {organizerTypeLabel(String(organizer.organizer_type))}
-            </span>
-            {regenerated ? (
-              <span className="rounded-full border border-border bg-muted px-2.5 py-1 text-[10px] font-medium text-muted-foreground">
-                Regenerado
-              </span>
-            ) : null}
-          </div>
-
-          <h2 className="mt-3 text-xl font-semibold tracking-tight text-foreground">{organizer.title}</h2>
-          <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted-foreground">{organizer.description}</p>
-
-          <div className="mt-4 flex flex-wrap gap-2 text-xs text-muted-foreground">
-            <span className="rounded-full border border-border bg-muted/70 px-3 py-1">{organizer.course_name}</span>
-            <span className="rounded-full border border-border bg-muted/70 px-3 py-1">{organizer.cycle_label}</span>
-          </div>
-
-          <div className="mt-3 space-y-1 text-xs text-muted-foreground">
-            <p>Creado {formatOrganizerDate(organizer.created_at)}</p>
-            {regenerated ? <p>Última regeneración {formatOrganizerDate(organizer.updated_at)}</p> : null}
-          </div>
-        </div>
-
-        <div className={viewMode === "list" ? "lg:pt-1" : "mt-5"}>
-          <OrganizerCardActions
-            organizer={organizer}
+  if (viewMode === "list") {
+    return (
+      <motion.article
+        layout
+        id={`organizer-${organizer.id}`}
+        whileHover={{ x: 4 }}
+        className={`organizer-float-card organizer-glass group flex gap-4 rounded-[22px] p-3 sm:p-4 ${
+          highlighted ? "ring-2 ring-accent/30" : ""
+        }`}
+      >
+        <button type="button" onClick={onView} className="w-36 shrink-0 overflow-hidden rounded-xl sm:w-44">
+          <CardMapPreview content={organizer.content} />
+        </button>
+        <div className="flex min-w-0 flex-1 flex-col justify-between">
+          <button type="button" onClick={onView} className="text-left">
+            <h2 className="line-clamp-1 text-base font-semibold text-foreground">{organizer.title}</h2>
+            <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">{organizer.description}</p>
+            <p className="mt-2 text-[11px] text-muted-foreground">
+              {organizer.course_name} · {regenerated ? `Regenerado ${formatOrganizerDate(organizer.updated_at)}` : formatOrganizerDate(organizer.created_at)}
+            </p>
+          </button>
+          <CardActionBar
+            regenerating={regenerating}
+            hasMaterial={Boolean(organizer.material_id)}
             onView={onView}
             onRegenerate={onRegenerate}
             onDelete={onDelete}
             onShare={onShare}
+            compact
+          />
+        </div>
+      </motion.article>
+    );
+  }
+
+  return (
+    <motion.article
+      layout
+      id={`organizer-${organizer.id}`}
+      className={`group relative overflow-hidden rounded-[24px] ${
+        highlighted ? "ring-2 ring-accent/35 shadow-[0_0_60px_-12px_rgba(31,107,67,0.45)]" : ""
+      }`}
+    >
+      <div className="organizer-float-card organizer-glass relative flex h-full flex-col overflow-hidden rounded-[24px]">
+        <button type="button" onClick={onView} className="relative block text-left">
+          <div className="relative h-32 overflow-hidden border-b border-white/30 sm:h-36">
+            <CardMapPreview content={organizer.content} />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-white/90 via-transparent to-transparent dark:from-[#0b1220]/90" />
+          </div>
+          <div className="p-4">
+            <div className="flex items-center gap-2">
+              {regenerated ? (
+                <span className="rounded-md bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent">
+                  Regenerado
+                </span>
+              ) : null}
+              <span className="text-[10px] text-muted-foreground">{organizer.cycle_label}</span>
+            </div>
+            <h2 className="mt-2 line-clamp-2 text-sm font-semibold leading-snug text-foreground">
+              {organizer.title}
+            </h2>
+            <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">{organizer.course_name}</p>
+          </div>
+        </button>
+
+        <div className="absolute inset-x-0 bottom-0 translate-y-full border-t border-white/20 bg-white/80 p-2 backdrop-blur-xl transition duration-300 group-hover:translate-y-0 dark:bg-black/50">
+          <CardActionBar
             regenerating={regenerating}
+            hasMaterial={Boolean(organizer.material_id)}
+            onView={onView}
+            onRegenerate={onRegenerate}
+            onDelete={onDelete}
+            onShare={onShare}
           />
         </div>
       </div>
     </motion.article>
+  );
+}
+
+function CardActionBar({
+  onView,
+  onRegenerate,
+  onDelete,
+  onShare,
+  regenerating,
+  hasMaterial,
+  compact = false,
+}: {
+  onView: () => void;
+  onRegenerate: () => void;
+  onDelete: () => void;
+  onShare: () => void;
+  regenerating: boolean;
+  hasMaterial: boolean;
+  compact?: boolean;
+}) {
+  const btnClass = compact
+    ? "flex h-8 items-center gap-1 rounded-lg px-2 text-[11px] font-medium transition hover:bg-foreground/5"
+    : "flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-[11px] font-medium transition hover:bg-foreground/5";
+
+  return (
+    <div className={`flex ${compact ? "gap-1" : "gap-1"}`}>
+      <button type="button" onClick={onView} className={btnClass}>
+        <Eye size={13} /> Ver
+      </button>
+      <button
+        type="button"
+        onClick={onRegenerate}
+        disabled={regenerating || !hasMaterial}
+        className={btnClass}
+      >
+        {regenerating ? <Loader2 className="animate-spin" size={13} /> : <RefreshCw size={13} />}
+        {compact ? null : "Regenerar"}
+      </button>
+      <button type="button" onClick={onShare} className={btnClass}>
+        <Share2 size={13} />
+      </button>
+      <button
+        type="button"
+        onClick={onDelete}
+        className={`${btnClass} text-red-600 hover:bg-red-500/10`}
+      >
+        <Trash2 size={13} />
+      </button>
+    </div>
   );
 }
 
@@ -215,7 +298,7 @@ export function OrganizersWorkspace({
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setHydrated(true), 120);
+    const timer = window.setTimeout(() => setHydrated(true), 80);
     return () => window.clearTimeout(timer);
   }, []);
 
@@ -319,115 +402,101 @@ export function OrganizersWorkspace({
     }
   }
 
-  function handleShare() {
-    toast("Compartir estará disponible próximamente.", "info");
-  }
-
-  function openDetail(organizer: OrganizerRecord) {
-    setSelected(organizer);
-  }
-
   if (!hydrated) {
-    return (
-      <div className="mt-8">
-        <OrganizerListSkeleton />
-      </div>
-    );
+    return <OrganizerListSkeleton />;
   }
 
   return (
     <>
-      <div className="rounded-[32px] border border-border/80 bg-card/90 p-6 shadow-[0_24px_80px_rgba(15,23,42,0.06)] backdrop-blur-sm sm:p-8">
-        <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-accent">Organizadores</p>
-            <h1 className="mt-3 text-4xl font-semibold tracking-tight text-foreground">
-              Tu espacio de estudio con IA
-            </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Mapas conceptuales, repasos y síntesis generadas desde tus PDFs académicos.
-            </p>
+      <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-3 py-1 text-xs font-medium text-accent">
+            <Sparkles size={12} /> MemoriaStudy AI
           </div>
-          <Link
-            href="/library"
-            className="inline-flex h-12 items-center justify-center gap-2 rounded-3xl bg-foreground px-6 text-sm font-semibold text-background hover:bg-foreground/90"
-          >
-            <BookOpen size={16} /> Buscar materiales
-          </Link>
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+            Canvas de estudio
+          </h1>
+          <p className="mt-1 max-w-lg text-sm text-muted-foreground">
+            {organizers.length} espacio{organizers.length === 1 ? "" : "s"} visual
+            {filtered.length !== organizers.length ? ` · ${filtered.length} visibles` : ""}
+          </p>
         </div>
+        <Link
+          href="/library"
+          className="inline-flex h-11 shrink-0 items-center gap-2 rounded-2xl bg-gradient-to-r from-accent to-emerald-600 px-5 text-sm font-semibold text-white shadow-lg shadow-accent/20 transition hover:brightness-105"
+        >
+          <BookOpen size={16} /> Nuevo desde biblioteca
+        </Link>
+      </div>
 
-        <div className="mt-6 grid gap-3 lg:grid-cols-[1fr_auto_auto_auto]">
-          <label className="relative block">
-            <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
-            <input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Buscar organizadores..."
-              className="h-12 w-full rounded-2xl border border-border bg-background pl-11 pr-4 text-sm outline-none ring-accent focus:ring-2"
-            />
-          </label>
-
-          <select
-            value={courseFilter}
-            onChange={(event) => setCourseFilter(event.target.value)}
-            className="h-12 rounded-2xl border border-border bg-background px-4 text-sm outline-none"
+      <div className="organizer-glass mb-5 flex flex-col gap-3 rounded-[22px] p-3 sm:flex-row sm:items-center">
+        <label className="relative min-w-0 flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={15} />
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Buscar..."
+            className="h-10 w-full rounded-xl border-0 bg-foreground/[0.03] pl-9 pr-3 text-sm outline-none ring-accent focus:ring-2"
+          />
+        </label>
+        <select
+          value={courseFilter}
+          onChange={(event) => setCourseFilter(event.target.value)}
+          className="h-10 rounded-xl border-0 bg-foreground/[0.03] px-3 text-sm outline-none"
+        >
+          <option value="all">Curso</option>
+          {courses.map((course) => (
+            <option key={course} value={course}>
+              {course}
+            </option>
+          ))}
+        </select>
+        <select
+          value={cycleFilter}
+          onChange={(event) => setCycleFilter(event.target.value)}
+          className="h-10 rounded-xl border-0 bg-foreground/[0.03] px-3 text-sm outline-none"
+        >
+          <option value="all">Ciclo</option>
+          {cycles.map((cycle) => (
+            <option key={cycle.cycleNumber} value={cycle.cycleNumber}>
+              {cycle.cycleLabel}
+            </option>
+          ))}
+        </select>
+        <div className="flex rounded-xl bg-foreground/[0.04] p-1">
+          <button
+            type="button"
+            onClick={() => setViewMode("grid")}
+            className={`flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-medium ${
+              viewMode === "grid" ? "bg-background shadow-sm" : "text-muted-foreground"
+            }`}
           >
-            <option value="all">Todos los cursos</option>
-            {courses.map((course) => (
-              <option key={course} value={course}>
-                {course}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={cycleFilter}
-            onChange={(event) => setCycleFilter(event.target.value)}
-            className="h-12 rounded-2xl border border-border bg-background px-4 text-sm outline-none"
+            <Grid3X3 size={14} />
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode("list")}
+            className={`flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-medium ${
+              viewMode === "list" ? "bg-background shadow-sm" : "text-muted-foreground"
+            }`}
           >
-            <option value="all">Todos los ciclos</option>
-            {cycles.map((cycle) => (
-              <option key={cycle.cycleNumber} value={cycle.cycleNumber}>
-                {cycle.cycleLabel}
-              </option>
-            ))}
-          </select>
-
-          <div className="flex rounded-2xl border border-border bg-background p-1">
-            <button
-              type="button"
-              onClick={() => setViewMode("grid")}
-              className={`inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-xl px-4 text-sm font-medium ${
-                viewMode === "grid" ? "bg-muted text-foreground" : "text-muted-foreground"
-              }`}
-            >
-              <Grid3X3 size={16} /> Grid
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("list")}
-              className={`inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-xl px-4 text-sm font-medium ${
-                viewMode === "list" ? "bg-muted text-foreground" : "text-muted-foreground"
-              }`}
-            >
-              <LayoutList size={16} /> Lista
-            </button>
-          </div>
+            <LayoutList size={14} />
+          </button>
         </div>
       </div>
 
       {organizers.length ? (
-        <div className="mt-8">
+        <>
           <OrganizerCreatedNotice organizerId={highlightId} created={created} />
 
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <p className="text-sm text-muted-foreground">
-              {filtered.length} organizador{filtered.length === 1 ? "" : "es"}
-            </p>
-          </div>
-
           {filtered.length ? (
-            <div className={viewMode === "grid" ? "grid gap-5 md:grid-cols-2 xl:grid-cols-3" : "space-y-4"}>
+            <div
+              className={
+                viewMode === "grid"
+                  ? "grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
+                  : "flex flex-col gap-3"
+              }
+            >
               {filtered.map((organizer) => (
                 <OrganizerCardItem
                   key={organizer.id}
@@ -435,21 +504,19 @@ export function OrganizersWorkspace({
                   viewMode={viewMode}
                   highlighted={organizer.id === highlightId}
                   regenerating={regeneratingId === organizer.id}
-                  onView={() => openDetail(organizer)}
+                  onView={() => setSelected(organizer)}
                   onRegenerate={() => handleRegenerate(organizer)}
                   onDelete={() => setDeleteTarget(organizer)}
-                  onShare={handleShare}
+                  onShare={() => toast("Compartir estará disponible próximamente.", "info")}
                 />
               ))}
             </div>
           ) : (
-            <div className="rounded-[28px] border border-dashed border-border bg-muted/30 px-6 py-12 text-center">
-              <p className="text-sm font-medium text-muted-foreground">
-                No hay organizadores que coincidan con tu búsqueda o filtros.
-              </p>
+            <div className="organizer-glass rounded-[22px] px-6 py-14 text-center text-sm text-muted-foreground">
+              Sin resultados para tu búsqueda.
             </div>
           )}
-        </div>
+        </>
       ) : (
         <OrganizersEmptyState />
       )}
@@ -463,7 +530,7 @@ export function OrganizersWorkspace({
       <ConfirmDialog
         open={Boolean(deleteTarget)}
         title="Eliminar organizador"
-        description="Esta acción no se puede deshacer. Se eliminará el organizador y todo su contenido generado."
+        description="Esta acción no se puede deshacer."
         confirmLabel="Eliminar"
         loading={deleting}
         onConfirm={handleDelete}
@@ -475,32 +542,22 @@ export function OrganizersWorkspace({
 
 function OrganizersEmptyState() {
   return (
-    <div className="mt-8 rounded-[32px] border border-dashed border-border bg-gradient-to-br from-muted/40 via-card to-card p-12 text-center shadow-sm">
-      <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[28px] bg-accent-soft text-accent">
-        <Sparkles size={34} />
+    <div className="organizer-glass relative overflow-hidden rounded-[28px] px-8 py-16 text-center">
+      <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-indigo-500/10 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-accent/15 blur-3xl" />
+      <div className="relative mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-accent to-emerald-600 text-white shadow-xl shadow-accent/25">
+        <Sparkles size={28} />
       </div>
-      <p className="mt-6 text-sm font-semibold uppercase tracking-[0.24em] text-accent">
-        Tu biblioteca visual está vacía
+      <h2 className="relative mt-6 text-2xl font-semibold text-foreground">Tu canvas está vacío</h2>
+      <p className="relative mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+        Genera un organizador desde cualquier PDF y explora mapas, flashcards y repaso en un espacio visual.
       </p>
-      <h2 className="mt-4 text-3xl font-semibold text-foreground">Crea tu primer organizador con IA</h2>
-      <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
-        Abre un material en la biblioteca y pulsa Estudiar con IA para transformar el PDF en mapas,
-        flashcards y repasos premium.
-      </p>
-      <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-        <Link
-          href="/library"
-          className="inline-flex h-12 items-center justify-center rounded-3xl bg-foreground px-6 text-sm font-semibold text-background hover:bg-foreground/90"
-        >
-          Buscar materiales
-        </Link>
-        <Link
-          href="/upload-material"
-          className="inline-flex h-12 items-center justify-center rounded-3xl border border-border bg-card px-6 text-sm font-semibold text-foreground hover:bg-muted"
-        >
-          Subir material
-        </Link>
-      </div>
+      <Link
+        href="/library"
+        className="relative mt-8 inline-flex h-11 items-center rounded-2xl bg-foreground px-6 text-sm font-semibold text-background"
+      >
+        Ir a biblioteca
+      </Link>
     </div>
   );
 }

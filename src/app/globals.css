@@ -92,3 +92,81 @@ textarea {
 .summary-menu {
   list-style: none;
 }
+
+/* ——— Organizers Studio (premium canvas UI) ——— */
+.organizers-studio {
+  --studio-glow: rgba(31, 107, 67, 0.45);
+  --studio-mesh-1: rgba(99, 102, 241, 0.12);
+  --studio-mesh-2: rgba(31, 107, 67, 0.18);
+  --studio-mesh-3: rgba(16, 185, 129, 0.1);
+  position: relative;
+  isolation: isolate;
+}
+
+.organizers-studio::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 80% 50% at 10% -10%, var(--studio-mesh-1), transparent 50%),
+    radial-gradient(ellipse 60% 40% at 90% 0%, var(--studio-mesh-2), transparent 45%),
+    radial-gradient(ellipse 50% 60% at 50% 100%, var(--studio-mesh-3), transparent 55%),
+    var(--background);
+}
+
+.organizer-dot-grid {
+  background-image: radial-gradient(circle, rgba(15, 23, 42, 0.09) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+.dark .organizer-dot-grid {
+  background-image: radial-gradient(circle, rgba(248, 250, 252, 0.07) 1px, transparent 1px);
+}
+
+.organizer-glass {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow:
+    0 0 0 1px rgba(15, 23, 42, 0.04),
+    0 20px 50px -12px rgba(15, 23, 42, 0.12),
+    0 8px 24px -8px rgba(31, 107, 67, 0.08);
+  backdrop-filter: blur(20px) saturate(1.4);
+}
+
+.dark .organizer-glass {
+  background: rgba(17, 24, 39, 0.65);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 24px 60px -16px rgba(0, 0, 0, 0.55),
+    0 0 80px -20px var(--studio-glow);
+}
+
+.organizer-float-card {
+  transition:
+    transform 280ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 280ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 280ms ease;
+}
+
+.organizer-float-card:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 0 0 1px rgba(31, 107, 67, 0.12),
+    0 28px 70px -20px rgba(15, 23, 42, 0.18),
+    0 0 40px -10px rgba(31, 107, 67, 0.15);
+}
+
+.organizer-bento {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+}
+
+@media (max-width: 1023px) {
+  .organizer-bento > * {
+    grid-column: 1 / -1 !important;
+  }
+}

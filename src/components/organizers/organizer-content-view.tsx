@@ -19,20 +19,22 @@ import { OrganizerContentSkeleton } from "@/components/organizers/organizer-skel
 export function OrganizerContentView({
   content,
   loading = false,
+  studio = false,
 }: {
   content: unknown;
   loading?: boolean;
+  studio?: boolean;
 }) {
   if (loading) {
-    return <OrganizerContentSkeleton />;
+    return <OrganizerContentSkeleton studio={studio} />;
   }
 
   const parsed = parseOrganizerContent(content);
 
   if (!hasOrganizerSections(parsed)) {
     return (
-      <div className="rounded-[28px] border border-dashed border-border bg-muted/30 px-6 py-10 text-center">
-        <p className="text-sm font-medium text-muted-foreground">
+      <div className="organizer-glass flex min-h-[200px] items-center justify-center rounded-[24px] px-6 py-12 text-center">
+        <p className="text-sm text-muted-foreground">
           Este organizador aún no tiene secciones visuales disponibles.
         </p>
       </div>
@@ -40,6 +42,7 @@ export function OrganizerContentView({
   }
 
   const conceptNodes = parsed.conceptMap?.nodes?.filter(Boolean) ?? [];
+  const hasConceptMap = Boolean(parsed.conceptMap?.title || conceptNodes.length);
   const timelineEvents =
     parsed.timeline?.events
       ?.filter((event): event is { date?: string; label: string } => Boolean(event.label))
@@ -47,29 +50,36 @@ export function OrganizerContentView({
   const hierarchyBranches = parsed.hierarchy?.branches?.filter(Boolean) ?? [];
 
   return (
-    <div className="space-y-5">
-      {parsed.summary ? <ExecutiveSummaryCard summary={parsed.summary} /> : null}
-      {parsed.simplifiedExplanation ? (
-        <EasyExplanationBlock explanation={parsed.simplifiedExplanation} />
-      ) : null}
-      {parsed.conceptMap?.title || conceptNodes.length ? (
-        <ConceptMapCanvas title={parsed.conceptMap?.title} nodes={conceptNodes} />
-      ) : null}
-      {parsed.hierarchy?.root && hierarchyBranches.length ? (
-        <HierarchyTree root={parsed.hierarchy.root} branches={hierarchyBranches} />
-      ) : null}
-      {timelineEvents.length ? <TimelineModern events={timelineEvents} /> : null}
-      {parsed.flowChart?.start && parsed.flowChart?.end ? (
-        <FlowChartModern
-          start={parsed.flowChart.start}
-          end={parsed.flowChart.end}
-          steps={parsed.flowChart.steps}
+    <div className="space-y-4">
+      {hasConceptMap ? (
+        <ConceptMapCanvas
+          title={parsed.conceptMap?.title}
+          nodes={conceptNodes}
+          hero={studio}
         />
       ) : null}
-      {parsed.flashcards?.length ? <FlashcardCarousel flashcards={parsed.flashcards} /> : null}
-      {parsed.reviewQuestions?.length ? (
-        <ReviewQuestionsAccordion questions={parsed.reviewQuestions} />
-      ) : null}
+
+      <div className="organizer-bento">
+        {parsed.summary ? <ExecutiveSummaryCard summary={parsed.summary} /> : null}
+        {parsed.simplifiedExplanation ? (
+          <EasyExplanationBlock explanation={parsed.simplifiedExplanation} />
+        ) : null}
+        {parsed.hierarchy?.root && hierarchyBranches.length ? (
+          <HierarchyTree root={parsed.hierarchy.root} branches={hierarchyBranches} />
+        ) : null}
+        {timelineEvents.length ? <TimelineModern events={timelineEvents} /> : null}
+        {parsed.flowChart?.start && parsed.flowChart?.end ? (
+          <FlowChartModern
+            start={parsed.flowChart.start}
+            end={parsed.flowChart.end}
+            steps={parsed.flowChart.steps}
+          />
+        ) : null}
+        {parsed.flashcards?.length ? <FlashcardCarousel flashcards={parsed.flashcards} /> : null}
+        {parsed.reviewQuestions?.length ? (
+          <ReviewQuestionsAccordion questions={parsed.reviewQuestions} />
+        ) : null}
+      </div>
     </div>
   );
 }

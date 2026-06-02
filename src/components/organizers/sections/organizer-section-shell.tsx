@@ -1,75 +1,77 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Sparkles } from "lucide-react";
 import type { ReactNode } from "react";
 
-export function OrganizerSectionShell({
+export function OrganizerFloatPanel({
   title,
-  subtitle,
+  hint,
   icon,
   children,
-  accent = "default",
+  span = 6,
+  variant = "default",
 }: {
   title: string;
-  subtitle?: string;
+  hint?: string;
   icon: ReactNode;
   children: ReactNode;
-  accent?: "default" | "highlight" | "warm";
+  span?: 4 | 6 | 8 | 12;
+  variant?: "default" | "glow" | "warm";
 }) {
-  const accentClass =
-    accent === "highlight"
-      ? "from-accent/10 via-card to-card border-accent/20"
-      : accent === "warm"
-        ? "from-amber-50 via-card to-card border-amber-200/60"
-        : "from-muted/40 via-card to-card border-border/80";
+  const variantClass =
+    variant === "glow"
+      ? "ring-1 ring-accent/15"
+      : variant === "warm"
+        ? "ring-1 ring-amber-400/20"
+        : "";
 
   return (
-    <motion.section
-      initial={{ opacity: 0, y: 14 }}
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-40px" }}
-      transition={{ duration: 0.35, ease: "easeOut" }}
-      className={`overflow-hidden rounded-[28px] border bg-gradient-to-br p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)] sm:p-6 ${accentClass}`}
+      viewport={{ once: true, margin: "-24px" }}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      className={`organizer-float-card organizer-glass rounded-[22px] p-4 sm:p-5 ${variantClass}`}
+      style={{ gridColumn: `span ${span} / span ${span}` }}
     >
-      <div className="flex items-start gap-3">
-        <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-accent-soft text-accent shadow-sm">
+      <div className="mb-4 flex items-center gap-3">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-foreground/5 to-accent/10 text-accent">
           {icon}
         </span>
-        <div>
-          <h3 className="text-base font-semibold tracking-tight text-foreground">{title}</h3>
-          {subtitle ? <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p> : null}
+        <div className="min-w-0">
+          <h3 className="truncate text-sm font-semibold tracking-tight text-foreground">{title}</h3>
+          {hint ? <p className="truncate text-xs text-muted-foreground">{hint}</p> : null}
         </div>
       </div>
-      <div className="mt-5">{children}</div>
-    </motion.section>
+      {children}
+    </motion.div>
   );
 }
 
 export function ExecutiveSummaryCard({ summary }: { summary: string }) {
   return (
-    <OrganizerSectionShell
-      title="Executive Summary"
-      subtitle="Síntesis fiel del documento"
-      icon={<Sparkles size={18} />}
-      accent="highlight"
+    <OrganizerFloatPanel
+      title="Resumen ejecutivo"
+      hint="Lo esencial del documento"
+      icon={<span className="text-base">✦</span>}
+      span={8}
+      variant="glow"
     >
-      <p className="text-[15px] leading-8 text-foreground/90">{summary}</p>
-    </OrganizerSectionShell>
+      <p className="text-[15px] leading-[1.75] text-foreground/90">{summary}</p>
+    </OrganizerFloatPanel>
   );
 }
 
 export function EasyExplanationBlock({ explanation }: { explanation: string }) {
   return (
-    <OrganizerSectionShell
+    <OrganizerFloatPanel
       title="Explícamelo fácil"
-      subtitle="Versión clara y directa del contenido"
-      icon={<Sparkles size={18} />}
-      accent="warm"
+      hint="Sin jerga académica"
+      icon={<span className="text-base">💡</span>}
+      span={4}
+      variant="warm"
     >
-      <div className="rounded-2xl border border-amber-200/50 bg-white/70 px-5 py-4 text-[15px] leading-8 text-foreground/90 backdrop-blur-sm">
-        {explanation}
-      </div>
-    </OrganizerSectionShell>
+      <p className="text-sm leading-7 text-foreground/85">{explanation}</p>
+    </OrganizerFloatPanel>
   );
 }

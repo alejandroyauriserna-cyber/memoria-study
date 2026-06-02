@@ -18,11 +18,7 @@ export default async function OrganizersPage({
     return (
       <AppShell>
         <section className="mx-auto flex min-h-[calc(100vh-9rem)] max-w-3xl flex-col items-center justify-center px-4 text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-accent">Organizadores</p>
-          <h1 className="mt-4 text-4xl font-semibold tracking-tight">Organizadores no disponibles</h1>
-          <p className="mt-4 max-w-xl text-sm leading-6 text-muted-foreground">
-            Revisa la conexión de Supabase para acceder a tu biblioteca de organizadores.
-          </p>
+          <h1 className="text-3xl font-semibold tracking-tight">Organizadores no disponibles</h1>
         </section>
       </AppShell>
     );
@@ -37,16 +33,12 @@ export default async function OrganizersPage({
     return (
       <AppShell>
         <section className="mx-auto flex min-h-[calc(100vh-9rem)] max-w-3xl flex-col items-center justify-center px-4 text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-accent">Organizadores</p>
-          <h1 className="mt-4 text-4xl font-semibold tracking-tight">Inicia sesión para ver tus organizadores</h1>
-          <p className="mt-4 max-w-xl text-sm leading-6 text-muted-foreground">
-            Crea organizadores desde tus materiales guardados para visualizarlos aquí.
-          </p>
+          <h1 className="text-3xl font-semibold tracking-tight">Inicia sesión</h1>
           <Link
             href="/auth"
-            className="mt-8 inline-flex h-12 items-center justify-center rounded-3xl bg-foreground px-6 text-sm font-semibold text-background hover:bg-foreground/90"
+            className="mt-8 inline-flex h-12 items-center justify-center rounded-2xl bg-foreground px-6 text-sm font-semibold text-background"
           >
-            Iniciar sesión
+            Entrar
           </Link>
         </section>
       </AppShell>
@@ -65,19 +57,19 @@ export default async function OrganizersPage({
   return (
     <AppShell>
       <ToastProvider>
-        <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-          <OrganizersWorkspace
-            initialOrganizers={organizers}
-            highlightId={newOrganizerId}
-            created={created === "1"}
-          />
+        <div className="organizers-studio min-h-[calc(100vh-5rem)]">
+          <section className="mx-auto max-w-[1400px] px-3 py-6 sm:px-5 sm:py-8">
+            <OrganizersWorkspace
+              initialOrganizers={organizers}
+              highlightId={newOrganizerId}
+              created={created === "1"}
+            />
 
-          {error ? (
-            <p className="mt-6 text-sm text-red-500">
-              Error cargando organizadores: {error.message ?? "Intenta de nuevo."}
-            </p>
-          ) : null}
-        </section>
+            {error ? (
+              <p className="mt-4 text-sm text-red-500">{error.message}</p>
+            ) : null}
+          </section>
+        </div>
       </ToastProvider>
     </AppShell>
   );
