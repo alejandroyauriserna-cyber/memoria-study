@@ -190,18 +190,17 @@ export function OrganizerContentView({
         <OrganizerFloatSheet
           open={activePanel === "visualPrompt"}
           title="Crear Imagen Educativa IA"
-          wide
+          fullscreen
           onClose={() => setActivePanel(null)}
         >
-          <div className="-m-4 h-[min(78vh,720px)] sm:-m-5">
-            {organizerId ? (
-              <VisualPremiumPromptPanel
-                organizerId={organizerId}
-                visualPremiumPrompt={parsed.visualPremiumPrompt}
-                onGenerated={onContentUpdate}
-              />
-            ) : null}
-          </div>
+          {organizerId ? (
+            <VisualPremiumPromptPanel
+              organizerId={organizerId}
+              visualPremiumPrompt={parsed.visualPremiumPrompt}
+              onGenerated={onContentUpdate}
+              onClose={() => setActivePanel(null)}
+            />
+          ) : null}
         </OrganizerFloatSheet>
 
         <OrganizerFloatSheet
