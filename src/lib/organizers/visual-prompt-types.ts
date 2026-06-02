@@ -42,9 +42,17 @@ export type RubricAnalysis = {
   comparisonsRequired: boolean;
 };
 
+export type VisualCreativityLevel = "conservative" | "balanced" | "creative" | "extreme";
+
 export type VisualPremiumPrompt = {
   title: string;
   mode: VisualPromptMode;
+  /** Prompt generado por IA a partir del PDF, modo y rúbrica */
+  basePrompt: string;
+  /** Instrucciones opcionales del estudiante */
+  studentPersonalization?: string;
+  creativityLevel?: VisualCreativityLevel;
+  /** Prompt final listo para Gemini (base + creatividad + personalización) */
   prompt: string;
   analysis?: DocumentVisualAnalysis;
   rubricAnalysis?: RubricAnalysis;

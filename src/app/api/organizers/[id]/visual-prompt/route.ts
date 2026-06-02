@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { extractRubricText } from "@/lib/ai/extract-rubric-text";
 import { generateVisualPremiumPrompt } from "@/lib/ai/generate-visual-premium-prompt";
 import { parseOrganizerContent } from "@/lib/organizers/parse-content";
-import type { VisualPromptMode } from "@/lib/organizers/visual-prompt-types";
+import type { VisualCreativityLevel, VisualPromptMode } from "@/lib/organizers/visual-prompt-types";
 import { VISUAL_PROMPT_MODES } from "@/lib/organizers/visual-prompt-types";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -15,6 +15,19 @@ type RouteContext = { params: Promise<{ id: string }> };
 
 const VALID_MODES = new Set(VISUAL_PROMPT_MODES.map((m) => m.id));
 const MAX_RUBRIC_BYTES = 12 * 1024 * 1024;
+
+const VALID_CREATIVITY = new Set(["conservative", "balanced", "creative", "extreme"]);
+
+function parseCreativity(value: FormDataEntryValue | null): VisualCreativityLevel {
+  const level = typeof value === "string" ? value : "balanced";
+  return VALID_CREATIVITY.has(level) ? (level as VisualCreativityLevel) : "balanced";
+}
+
+function parsePersonalization(value: FormDataEntryValue | null): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed || null;
+}
 
 function parseMode(value: FormDataEntryValue | null): VisualPromptMode {
   const mode = typeof value === "string" ? value : "infographic";
@@ -33,10 +46,14 @@ export async function POST(request: Request, context: RouteContext) {
     let mode: VisualPromptMode = "infographic";
     let rubricText: string | null = null;
     let rubricFileName: string | undefined;
+    let studentPersonalization: string | null = null;
+    let creativityLevel: VisualCreativityLevel = "balanced";
 
     if (contentType.includes("multipart/form-data")) {
       const formData = await request.formData();
       mode = parseMode(formData.get("mode"));
+      studentPersonalization = parsePersonalization(formData.get("personalization"));
+      creativityLevel = parseCreativity(formData.get("creativityLevel"));
 
       const rubricEntry = formData.get("rubric");
       if (rubricEntry instanceof File && rubricEntry.size > 0) {
@@ -56,10 +73,17 @@ export async function POST(request: Request, context: RouteContext) {
         mode?: VisualPromptMode;
         rubricText?: string;
         rubricFileName?: string;
+        personalization?: string;
+        creativityLevel?: VisualCreativityLevel;
       };
       mode = body.mode && VALID_MODES.has(body.mode) ? body.mode : "infographic";
       rubricText = body.rubricText?.trim() || null;
       rubricFileName = body.rubricFileName;
+      studentPersonalization = body.personalization?.trim() || null;
+      creativityLevel =
+        body.creativityLevel && VALID_CREATIVITY.has(body.creativityLevel)
+          ? body.creativityLevel
+          : "balanced";
     }
 
     const supabase = await createClient();
@@ -94,6 +118,8 @@ export async function POST(request: Request, context: RouteContext) {
       mode,
       rubricText,
       rubricFileName,
+      studentPersonalization,
+      creativityLevel,
     );
 
     const mergedContent = {

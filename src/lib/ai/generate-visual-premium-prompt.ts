@@ -4,11 +4,15 @@ import { env } from "@/lib/env";
 import type { OrganizerContent } from "@/lib/organizers/parse-content";
 import {
   MODE_PROMPT_CONFIG,
+  UNIVERSAL_QUALITY_BLOCK,
+  buildFinalPrompt,
+  creativityLabel,
   modeLabel,
 } from "@/lib/organizers/visual-prompt-mode-config";
 import type {
   DocumentVisualAnalysis,
   RubricAnalysis,
+  VisualCreativityLevel,
   VisualPremiumPrompt,
   VisualPromptMode,
 } from "@/lib/organizers/visual-prompt-types";
@@ -162,6 +166,16 @@ export function extractDocumentVisualAnalysis(
 
   const conceptualRelations = unique(content.aiAnalysis?.relationsFound ?? [], 10);
 
+  const authors = unique(
+    [
+      ...concepts.filter((c) =>
+        /autor|doctrinador|tratadista|escrito por|según .* doctrina/i.test(c),
+      ),
+      ...(content.summary?.match(/(?:Dr\.|Dra\.|Prof\.)\s+[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(?:\s+[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+)*/g) ?? []),
+    ],
+    8,
+  );
+
   return {
     centralTopic,
     subtopics,
@@ -171,7 +185,7 @@ export function extractDocumentVisualAnalysis(
     norms,
     articles,
     jurisprudence,
-    authors: [],
+    authors,
     doctrine: unique(content.aiAnalysis?.recommendations ?? [], 6),
     comparisons,
     exceptions: unique(
@@ -189,6 +203,8 @@ export function buildPromptExplanation(
   analysis: DocumentVisualAnalysis,
   mode: VisualPromptMode,
   rubric?: RubricAnalysis | null,
+  creativityLevel?: VisualCreativityLevel,
+  studentPersonalization?: string | null,
 ): string[] {
   const lines: string[] = [];
 
@@ -201,19 +217,35 @@ export function buildPromptExplanation(
   }
 
   if (analysis.articles.length) {
-    lines.push(`Se detectaron ${analysis.articles.length} artículos o referencias normativas relevantes.`);
+    lines.push(`Se identificaron ${analysis.articles.length} artículos relevantes.`);
   }
 
   if (analysis.comparisons.length) {
-    lines.push(`Se identificó ${analysis.comparisons.length === 1 ? "una comparación doctrinal" : `${analysis.comparisons.length} comparaciones doctrinales`}.`);
+    lines.push(
+      `Se detectaron ${analysis.comparisons.length} ${analysis.comparisons.length === 1 ? "comparación doctrinal" : "comparaciones doctrinales"}.`,
+    );
   }
 
-  if (analysis.jurisprudence.length && mode === "jurisprudence") {
-    lines.push("Se incorporaron precedentes y casos para el mapa jurisprudencial.");
+  if (analysis.jurisprudence.length) {
+    lines.push("Se encontró jurisprudencia en el material.");
+  }
+
+  if (analysis.authors.length) {
+    lines.push(`Se identificaron ${analysis.authors.length} referencias doctrinales o autores.`);
   }
 
   if (analysis.exceptions.length && mode === "exam") {
     lines.push(`Se resaltaron ${analysis.exceptions.length} excepciones clave para repaso de examen.`);
+  }
+
+  lines.push(`Se aplicó el modo ${modeLabel(mode)}.`);
+
+  if (creativityLevel) {
+    lines.push(`Se aplicó nivel de creatividad ${creativityLabel(creativityLevel)}.`);
+  }
+
+  if (studentPersonalization?.trim()) {
+    lines.push("Se incorporaron instrucciones personalizadas.");
   }
 
   if (rubric) {
@@ -249,11 +281,10 @@ export function buildPromptExplanation(
     if (rubric.depthRequired) {
       lines.push(`Profundidad requerida: ${rubric.depthRequired}.`);
     }
+    lines.push("Se consideró la rúbrica del docente.");
   } else if (mode === "professor") {
     lines.push("Adjunta la rúbrica del docente para personalizar el prompt según sus criterios.");
   }
-
-  lines.push(`El modo seleccionado fue ${modeLabel(mode)}.`);
 
   return lines;
 }
@@ -400,12 +431,48 @@ ${sceneList}`.trim();
   }
 }
 
+function ensureQualityBlock(text: string, modeQuality: string): string {
+  const trimmed = text.trim();
+  if (trimmed.includes("4K") || trimmed.includes(UNIVERSAL_QUALITY_BLOCK.slice(0, 24))) {
+    return trimmed;
+  }
+  return `${trimmed}\n\n${modeQuality}\n${UNIVERSAL_QUALITY_BLOCK}`;
+}
+
+function assembleVisualPremiumPrompt(
+  base: Omit<VisualPremiumPrompt, "prompt"> & { basePrompt: string },
+  studentPersonalization?: string | null,
+  creativityLevel: VisualCreativityLevel = "balanced",
+): VisualPremiumPrompt {
+  const finalPrompt = buildFinalPrompt(base.basePrompt, {
+    creativityLevel,
+    studentPersonalization,
+  });
+
+  return {
+    ...base,
+    studentPersonalization: studentPersonalization?.trim() || undefined,
+    creativityLevel,
+    prompt: finalPrompt,
+    explanation: base.analysis
+      ? buildPromptExplanation(
+          base.analysis,
+          base.mode,
+          base.rubricAnalysis,
+          creativityLevel,
+          studentPersonalization,
+        )
+      : base.explanation,
+  };
+}
+
 function buildFallbackPrompt(
   analysis: DocumentVisualAnalysis,
   mode: VisualPromptMode,
   content: OrganizerContent,
   rubric?: RubricAnalysis | null,
-): VisualPremiumPrompt {
+  creativityLevel: VisualCreativityLevel = "balanced",
+): Omit<VisualPremiumPrompt, "prompt"> & { basePrompt: string } {
   const config = MODE_PROMPT_CONFIG[mode];
   const rubricSection = rubric
     ? mode === "professor"
@@ -413,7 +480,8 @@ function buildFallbackPrompt(
       : `\n\n${rubricBlock(rubric)}\nNota: La rúbrica complementa el modo ${config.label}; no reemplaza su estilo visual.`
     : "";
 
-  const prompt = `Genera una imagen ultra detallada en 4K.
+  const prompt = ensureQualityBlock(
+    `Genera una imagen ultra detallada en 4K.
 
 TÍTULO: ${analysis.centralTopic}
 MODO EXCLUSIVO: ${config.label.toUpperCase()} — NO mezclar con otros estilos.
@@ -434,17 +502,20 @@ PROHIBIDO EN ESTE MODO:
 ${config.forbidden}
 
 CALIDAD:
-${config.qualityTail}`;
+${config.qualityTail}`,
+    config.qualityTail,
+  );
 
   return {
     title: analysis.centralTopic,
     mode,
-    prompt,
+    basePrompt: prompt,
     analysis,
     rubricAnalysis: rubric ?? undefined,
-    explanation: buildPromptExplanation(analysis, mode, rubric),
+    explanation: [],
     hasRubric: Boolean(rubric),
     generatedAt: new Date().toISOString(),
+    creativityLevel,
   };
 }
 
@@ -453,16 +524,23 @@ async function enrichPromptWithGemini(
   content: OrganizerContent,
   mode: VisualPromptMode,
   rubric?: RubricAnalysis | null,
-): Promise<VisualPremiumPrompt> {
+  creativityLevel: VisualCreativityLevel = "balanced",
+): Promise<Omit<VisualPremiumPrompt, "prompt"> & { basePrompt: string }> {
   if (!env.geminiApiKey) {
-    return buildFallbackPrompt(analysis, mode, content, rubric);
+    return buildFallbackPrompt(analysis, mode, content, rubric, creativityLevel);
   }
 
   const config = MODE_PROMPT_CONFIG[mode];
+  const creativityDirective =
+    creativityLevel !== "balanced"
+      ? `\nNivel de creatividad solicitado: ${creativityLabel(creativityLevel)} — ajusta el estilo visual en consecuencia.`
+      : "";
 
   const systemPrompt = `Eres un director de arte educativo especializado en Derecho peruano (UNT).
-Tu trabajo es crear UN PROMPT HIPERDETALLADO para Gemini Image según UN SOLO MODO visual.
-NO generes la imagen. Solo el prompt final listo para copiar y pegar.
+Tu trabajo es crear UN PROMPT BASE HIPERDETALLADO para Gemini Image según UN SOLO MODO visual.
+NO generes la imagen. Solo el prompt base listo para personalización posterior.
+NO incluyas instrucciones del estudiante — eso se fusionará después.
+${creativityDirective}
 
 === MODO ACTIVO: ${config.label.toUpperCase()} ===
 ${config.directive}
@@ -494,15 +572,15 @@ ${mode === "memorization" ? "- EXAGERA metáforas visuales. Colores neón. Escen
 ${mode === "jurisprudence" ? "- Incluye línea de tiempo, precedentes y evolución doctrinal." : ""}
 ${mode === "professor" && rubric ? "- PRIORIZA criterios de la rúbrica sobre cualquier estilo genérico." : ""}
 
-El prompt debe ser una sola instrucción larga en español, lista para pegar en Gemini Image.
-Terminar con: ${config.qualityTail}
+El prompt debe ser una sola instrucción larga en español.
+Terminar con calidad: ${config.qualityTail} y ${UNIVERSAL_QUALITY_BLOCK}
 
 Devuelve SOLO JSON:
 {
   "title": "Título del póster visual",
   "mode": "${mode}",
-  "prompt": "Prompt hiperdetallado completo en español...",
-  "explanation": ["Se detectaron X conceptos...", "El modo seleccionado fue ${config.label}."]
+  "prompt": "Prompt base hiperdetallado completo en español...",
+  "explanation": ["Se detectaron X conceptos..."]
 }`;
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${env.geminiModel}:generateContent?key=${env.geminiApiKey}`;
@@ -520,40 +598,34 @@ Devuelve SOLO JSON:
 
   const payload = await response.json();
   if (!response.ok) {
-    return buildFallbackPrompt(analysis, mode, content, rubric);
+    return buildFallbackPrompt(analysis, mode, content, rubric, creativityLevel);
   }
 
   const text = payload.candidates?.[0]?.content?.parts?.[0]?.text;
   if (typeof text !== "string") {
-    return buildFallbackPrompt(analysis, mode, content, rubric);
+    return buildFallbackPrompt(analysis, mode, content, rubric, creativityLevel);
   }
 
   try {
     const parsed = parseJson(text);
     const prompt = parsed.prompt?.trim();
-    if (!prompt) return buildFallbackPrompt(analysis, mode, content, rubric);
+    if (!prompt) return buildFallbackPrompt(analysis, mode, content, rubric, creativityLevel);
 
-    const withQuality = prompt.includes("4K") || prompt.includes(config.qualityTail.slice(0, 20))
-      ? prompt
-      : `${prompt.trim()}\n\n${config.qualityTail}`;
-
-    const explanation =
-      parsed.explanation?.filter(Boolean).length
-        ? [...parsed.explanation.filter(Boolean), `El modo seleccionado fue ${modeLabel(mode)}.`]
-        : buildPromptExplanation(analysis, mode, rubric);
+    const basePrompt = ensureQualityBlock(prompt, config.qualityTail);
 
     return {
       title: parsed.title?.trim() || analysis.centralTopic,
       mode,
-      prompt: withQuality,
+      basePrompt,
       analysis,
       rubricAnalysis: rubric ?? undefined,
-      explanation: [...new Set(explanation)],
+      explanation: [],
       hasRubric: Boolean(rubric),
       generatedAt: new Date().toISOString(),
+      creativityLevel,
     };
   } catch {
-    return buildFallbackPrompt(analysis, mode, content, rubric);
+    return buildFallbackPrompt(analysis, mode, content, rubric, creativityLevel);
   }
 }
 
@@ -562,6 +634,8 @@ export async function generateVisualPremiumPrompt(
   mode: VisualPromptMode,
   rubricText?: string | null,
   rubricFileName?: string,
+  studentPersonalization?: string | null,
+  creativityLevel: VisualCreativityLevel = "balanced",
 ): Promise<VisualPremiumPrompt> {
   const analysis = extractDocumentVisualAnalysis(content, mode);
 
@@ -570,5 +644,13 @@ export async function generateVisualPremiumPrompt(
     rubricAnalysis = await analyzeAcademicRubric(rubricText, rubricFileName);
   }
 
-  return enrichPromptWithGemini(analysis, content, mode, rubricAnalysis);
+  const base = await enrichPromptWithGemini(
+    analysis,
+    content,
+    mode,
+    rubricAnalysis,
+    creativityLevel,
+  );
+
+  return assembleVisualPremiumPrompt(base, studentPersonalization, creativityLevel);
 }

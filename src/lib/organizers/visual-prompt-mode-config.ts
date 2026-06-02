@@ -1,17 +1,115 @@
-import type { VisualPromptMode } from "@/lib/organizers/visual-prompt-types";
+import type { VisualPromptMode, VisualCreativityLevel } from "@/lib/organizers/visual-prompt-types";
 
 export const VISUAL_IMAGE_MODULE_TITLE = "Crear Imagen Educativa IA";
 export const VISUAL_IMAGE_MODULE_SUBTITLE =
   "Convertimos tu PDF en un prompt listo para pegar en Gemini y obtener una imagen educativa profesional.";
 
 export const HOW_IT_WORKS_STEPS = [
-  "Analizamos tu PDF de estudio.",
-  "Extraemos conceptos, artículos y relaciones clave.",
-  "Construimos un prompt especializado según el modo elegido.",
-  "Copias el prompt con un clic.",
-  "Lo pegas en Gemini (generación de imagen).",
-  "Obtienes una imagen educativa profesional sin costo en MemoriaStudy.",
+  "Analizamos tu PDF.",
+  "Identificamos conceptos clave.",
+  "Construimos un prompt profesional.",
+  "Puedes personalizarlo.",
+  "Copias el prompt.",
+  "Lo pegas en Gemini.",
+  "Obtienes una imagen educativa de alta calidad.",
 ] as const;
+
+export const UNIVERSAL_QUALITY_BLOCK = `
+Ultra detailed, 4K, educational infographic, professional illustration, visual learning, rich colors, high information density, modern design, university level, realistic illustrations, premium academic poster, cinematic lighting, professional composition.
+`.trim();
+
+export const CREATIVITY_LEVELS: Array<{
+  id: VisualCreativityLevel;
+  label: string;
+  emoji: string;
+  description: string;
+  directive: string;
+}> = [
+  {
+    id: "conservative",
+    label: "Conservador",
+    emoji: "📐",
+    description: "Formal, académico, poco experimental.",
+    directive:
+      "Estilo conservador: formal, académico, sobrio, tipografía clara, composición ordenada, mínima experimentación visual.",
+  },
+  {
+    id: "balanced",
+    label: "Equilibrado",
+    emoji: "⚖️",
+    description: "Balance entre claridad y diseño atractivo.",
+    directive:
+      "Estilo equilibrado: balance entre claridad académica y diseño atractivo, ilustraciones moderadas, buena legibilidad.",
+  },
+  {
+    id: "creative",
+    label: "Creativo",
+    emoji: "🎨",
+    description: "Más ilustraciones y metáforas visuales.",
+    directive:
+      "Estilo creativo: más ilustraciones, metáforas visuales expresivas, paleta colorida, escenas narrativas educativas.",
+  },
+  {
+    id: "extreme",
+    label: "Extremo",
+    emoji: "✨",
+    description: "Máximo impacto visual y escenas memorables.",
+    directive:
+      "Estilo extremo: máximo impacto visual, escenas memorables e innovadoras, colores intensos, composición audaz, diseño imposible de olvidar.",
+  },
+];
+
+export const PERSONALIZATION_QUICK_CHIPS: Array<{
+  emoji: string;
+  label: string;
+  text: string;
+}> = [
+  { emoji: "🎨", label: "Más colores", text: "Quiero más colores vibrantes." },
+  { emoji: "📚", label: "Más ejemplos", text: "Agrega más ejemplos concretos." },
+  { emoji: "⚖️", label: "Más jurisprudencia", text: "Incluye más jurisprudencia y precedentes." },
+  { emoji: "🧠", label: "Más memoria visual", text: "Prioriza técnicas de memoria visual y metáforas." },
+  { emoji: "🎓", label: "Preparación examen", text: "Enfócate en preparación para examen." },
+  { emoji: "🏛️", label: "Más artículos", text: "Prioriza artículos de ley visibles." },
+  { emoji: "🖼️", label: "Estilo Canva", text: "Estilo moderno tipo Canva, limpio y colorido." },
+  { emoji: "📖", label: "Libro ilustrado", text: "Estilo libro ilustrado educativo." },
+  { emoji: "👨‍🏫", label: "Académico", text: "Estilo académico formal universitario." },
+  { emoji: "✨", label: "Más creatividad", text: "Más creatividad e impacto visual." },
+];
+
+export function creativityLabel(level: VisualCreativityLevel): string {
+  return CREATIVITY_LEVELS.find((item) => item.id === level)?.label ?? "Equilibrado";
+}
+
+export function buildFinalPrompt(
+  basePrompt: string,
+  options: {
+    creativityLevel?: VisualCreativityLevel;
+    studentPersonalization?: string | null;
+  },
+): string {
+  const level = options.creativityLevel ?? "balanced";
+  const creativity = CREATIVITY_LEVELS.find((item) => item.id === level) ?? CREATIVITY_LEVELS[1];
+
+  const sections = [basePrompt.trim()];
+
+  sections.push(`\nNIVEL DE CREATIVIDAD — ${creativity.label.toUpperCase()}:\n${creativity.directive}`);
+
+  const personalization = options.studentPersonalization?.trim();
+  if (personalization) {
+    sections.push(
+      `\nPERSONALIZACIÓN DEL ESTUDIANTE (INCORPORAR OBLIGATORIAMENTE):\n${personalization}`,
+    );
+  }
+
+  let merged = sections.join("\n");
+
+  const qualitySnippet = UNIVERSAL_QUALITY_BLOCK.slice(0, 30);
+  if (!merged.includes("4K") && !merged.includes(qualitySnippet)) {
+    merged = `${merged}\n\n${UNIVERSAL_QUALITY_BLOCK}`;
+  }
+
+  return merged;
+}
 
 export type ModePromptConfig = {
   id: VisualPromptMode;

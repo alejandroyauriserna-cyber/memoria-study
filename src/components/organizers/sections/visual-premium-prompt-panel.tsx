@@ -1,26 +1,33 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Check,
   ClipboardCopy,
-  ExternalLink,
   FileUp,
   Loader2,
   Palette,
   Paperclip,
+  PencilLine,
   Rocket,
   Sparkles,
   Wand2,
   X,
 } from "lucide-react";
 import {
+  CREATIVITY_LEVELS,
   HOW_IT_WORKS_STEPS,
+  PERSONALIZATION_QUICK_CHIPS,
   VISUAL_IMAGE_MODULE_SUBTITLE,
   VISUAL_IMAGE_MODULE_TITLE,
+  buildFinalPrompt,
 } from "@/lib/organizers/visual-prompt-mode-config";
-import { isSupportedRubricFile } from "@/lib/organizers/visual-prompt-types";
-import type { VisualPremiumPrompt, VisualPromptMode } from "@/lib/organizers/visual-prompt-types";
+import {
+  isSupportedRubricFile,
+  type VisualCreativityLevel,
+  type VisualPremiumPrompt,
+  type VisualPromptMode,
+} from "@/lib/organizers/visual-prompt-types";
 import {
   GEMINI_APP_URL,
   RUBRIC_ACCEPT,
@@ -40,6 +47,12 @@ export function VisualPremiumPromptPanel({
   const [mode, setMode] = useState<VisualPromptMode>(
     visualPremiumPrompt?.mode ?? "infographic",
   );
+  const [creativityLevel, setCreativityLevel] = useState<VisualCreativityLevel>(
+    visualPremiumPrompt?.creativityLevel ?? "balanced",
+  );
+  const [personalization, setPersonalization] = useState(
+    visualPremiumPrompt?.studentPersonalization ?? "",
+  );
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -52,10 +65,21 @@ export function VisualPremiumPromptPanel({
     if (visualPremiumPrompt) {
       setLocal(visualPremiumPrompt);
       setMode(visualPremiumPrompt.mode);
+      setCreativityLevel(visualPremiumPrompt.creativityLevel ?? "balanced");
+      setPersonalization(visualPremiumPrompt.studentPersonalization ?? "");
     }
   }, [visualPremiumPrompt]);
 
   const result = local ?? visualPremiumPrompt;
+
+  const basePrompt = result?.basePrompt ?? result?.prompt ?? "";
+  const finalPrompt = useMemo(
+    () =>
+      basePrompt
+        ? buildFinalPrompt(basePrompt, { creativityLevel, studentPersonalization: personalization })
+        : "",
+    [basePrompt, creativityLevel, personalization],
+  );
 
   async function handleGenerate() {
     setGenerating(true);
@@ -65,6 +89,10 @@ export function VisualPremiumPromptPanel({
     try {
       const formData = new FormData();
       formData.append("mode", mode);
+      formData.append("creativityLevel", creativityLevel);
+      if (personalization.trim()) {
+        formData.append("personalization", personalization.trim());
+      }
       if (rubricFile) {
         formData.append("rubric", rubricFile);
       }
@@ -81,6 +109,8 @@ export function VisualPremiumPromptPanel({
 
       const next = payload.visualPremiumPrompt as VisualPremiumPrompt;
       setLocal(next);
+      setCreativityLevel(next.creativityLevel ?? creativityLevel);
+      setPersonalization(next.studentPersonalization ?? personalization);
       onGenerated?.(payload.organizer?.content);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Error al generar la imagen educativa.");
@@ -104,16 +134,23 @@ export function VisualPremiumPromptPanel({
     event.target.value = "";
   }
 
+  function appendChip(text: string) {
+    setPersonalization((prev) => {
+      if (prev.includes(text)) return prev;
+      return prev.trim() ? `${prev.trim()}\n${text}` : text;
+    });
+  }
+
   const copyPrompt = useCallback(async () => {
-    if (!result?.prompt) return;
+    if (!finalPrompt) return;
     try {
-      await navigator.clipboard.writeText(result.prompt);
+      await navigator.clipboard.writeText(finalPrompt);
       setCopied(true);
       window.setTimeout(() => setCopied(false), 3000);
     } catch {
       setError("No se pudo copiar al portapapeles.");
     }
-  }, [result?.prompt]);
+  }, [finalPrompt]);
 
   const openGemini = useCallback(() => {
     window.open(GEMINI_APP_URL, "_blank", "noopener,noreferrer");
@@ -125,10 +162,10 @@ export function VisualPremiumPromptPanel({
         <div className="max-w-3xl">
           <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#FBBF24]">
             <Palette size={12} />
-            {VISUAL_IMAGE_MODULE_TITLE}
+            🖼️ {VISUAL_IMAGE_MODULE_TITLE}
           </p>
           <h3 className="mt-1 text-lg font-bold text-[#F5F7FA]">
-            Convierte tu PDF en un prompt listo para Gemini
+            Convierte tu PDF en imagen educativa con Gemini
           </h3>
           <p className="mt-2 text-sm leading-relaxed text-[#F5F7FA]/70">
             {VISUAL_IMAGE_MODULE_SUBTITLE}
@@ -140,7 +177,7 @@ export function VisualPremiumPromptPanel({
         <p className="mb-3 text-[11px] font-bold uppercase tracking-wider text-[#86EFAC]">
           ¿Cómo funciona?
         </p>
-        <ol className="grid gap-2 sm:grid-cols-2">
+        <ol className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {HOW_IT_WORKS_STEPS.map((step, index) => (
             <li
               key={step}
@@ -198,7 +235,7 @@ export function VisualPremiumPromptPanel({
       <div className="shrink-0 border-b border-white/8 px-4 py-3 sm:px-6">
         <p className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-[#F5F7FA]/50">
           <Paperclip size={11} />
-          Adjuntar rúbrica (opcional — recomendado para modo Profesor)
+          📎 Adjuntar rúbrica (opcional)
         </p>
         <div className="flex flex-wrap items-center gap-3">
           <input
@@ -230,6 +267,70 @@ export function VisualPremiumPromptPanel({
               </button>
             </span>
           ) : null}
+        </div>
+      </div>
+
+      <div className="shrink-0 border-b border-white/8 px-4 py-3 sm:px-6">
+        <p className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-[#F5F7FA]/50">
+          <PencilLine size={11} />
+          ✍️ Personaliza tu imagen (opcional)
+        </p>
+        <textarea
+          value={personalization}
+          onChange={(event) => setPersonalization(event.target.value)}
+          placeholder="Describe elementos adicionales que te gustaría incluir…"
+          rows={3}
+          className="w-full resize-y rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-[#F5F7FA] placeholder:text-[#F5F7FA]/35 focus:border-[#F59E0B]/40 focus:outline-none"
+        />
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {PERSONALIZATION_QUICK_CHIPS.map((chip) => (
+            <button
+              key={chip.label}
+              type="button"
+              onClick={() => appendChip(chip.text)}
+              className="rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-[10px] font-medium text-[#F5F7FA]/75 transition hover:border-[#F59E0B]/35 hover:bg-[#F59E0B]/10 hover:text-[#FBBF24]"
+            >
+              {chip.emoji} {chip.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="shrink-0 border-b border-white/8 px-4 py-3 sm:px-6">
+        <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-[#F5F7FA]/50">
+          🧑‍🎨 Nivel de creatividad
+        </p>
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          {CREATIVITY_LEVELS.map((level) => {
+            const active = creativityLevel === level.id;
+            return (
+              <label
+                key={level.id}
+                className={`flex cursor-pointer items-start gap-2 rounded-xl border px-3 py-2.5 transition ${
+                  active
+                    ? "border-[#A855F7]/50 bg-[#A855F7]/12"
+                    : "border-white/10 bg-white/[0.02] hover:border-white/20"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="creativityLevel"
+                  value={level.id}
+                  checked={active}
+                  onChange={() => setCreativityLevel(level.id)}
+                  className="mt-0.5"
+                />
+                <span>
+                  <span className="block text-xs font-bold text-[#F5F7FA]">
+                    {level.emoji} {level.label}
+                  </span>
+                  <span className="mt-0.5 block text-[10px] leading-snug text-[#F5F7FA]/55">
+                    {level.description}
+                  </span>
+                </span>
+              </label>
+            );
+          })}
         </div>
       </div>
 
@@ -265,7 +366,7 @@ export function VisualPremiumPromptPanel({
               {copied ? (
                 <span className="font-semibold text-[#22C55E]">✓ Prompt copiado correctamente</span>
               ) : (
-                "Copia el prompt y pégalo en Gemini para generar tu imagen."
+                "Copia el prompt final y pégalo en Gemini."
               )}
             </p>
             <div className="flex flex-wrap gap-2">
@@ -275,7 +376,7 @@ export function VisualPremiumPromptPanel({
                 className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#F59E0B] to-[#F97316] px-5 py-2.5 text-sm font-bold text-[#1a1005] shadow-lg transition hover:brightness-110"
               >
                 {copied ? <Check size={16} /> : <ClipboardCopy size={16} />}
-                📋 Copiar prompt
+                📋 Copiar prompt final
               </button>
               <button
                 type="button"
@@ -298,11 +399,11 @@ export function VisualPremiumPromptPanel({
             </div>
             <div className="max-w-md space-y-2">
               <p className="text-base font-bold text-[#F5F7FA]">
-                Tu PDF → prompt especializado → imagen en Gemini
+                Tu PDF → prompt profesional → imagen en Gemini
               </p>
               <p className="text-sm text-[#F5F7FA]/65">
-                Elige un modo arriba para ver qué tipo de imagen obtendrás. Cada modo genera un
-                prompt completamente diferente.
+                Elige modo, personaliza si quieres, y obtén un prompt listo para pegar en Gemini
+                Image sin costo en MemoriaStudy.
               </p>
             </div>
           </div>
@@ -312,31 +413,79 @@ export function VisualPremiumPromptPanel({
               <ExplanationBlock lines={result.explanation} hasRubric={result.hasRubric} />
             ) : null}
 
-            <div className="overflow-hidden rounded-2xl border border-[#F59E0B]/30 bg-[#02060a] shadow-[0_0_48px_rgba(245,158,11,0.1)]">
-              <div className="border-b border-white/8 px-4 py-3">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-[#FBBF24]">
-                  Prompt generado
-                </p>
-                <h4 className="text-base font-bold text-[#F5F7FA]">{result.title}</h4>
-                <p className="text-[10px] text-[#F5F7FA]/45">
-                  {VISUAL_PROMPT_MODES.find((m) => m.id === result.mode)?.emoji}{" "}
-                  {VISUAL_PROMPT_MODES.find((m) => m.id === result.mode)?.label}
-                  {result.hasRubric ? " · Con rúbrica del docente" : ""}
-                </p>
-              </div>
-              <pre className="max-h-[min(48vh,480px)] overflow-auto whitespace-pre-wrap p-4 text-xs leading-relaxed text-[#F5F7FA]/88">
-                {result.prompt}
-              </pre>
-              <div className="border-t border-white/8 px-4 py-2 text-[10px] text-[#F5F7FA]/40">
-                {result.prompt.length.toLocaleString("es-PE")} caracteres
-              </div>
-            </div>
+            <PromptPreviewBlock
+              title="📄 Prompt base IA"
+              subtitle="Generado automáticamente a partir de tu PDF, modo y rúbrica"
+              content={basePrompt}
+              accent="amber"
+            />
+
+            {personalization.trim() ? (
+              <PromptPreviewBlock
+                title="✍️ Personalización del estudiante"
+                subtitle="Tus instrucciones adicionales"
+                content={personalization.trim()}
+                accent="purple"
+              />
+            ) : null}
+
+            <PromptPreviewBlock
+              title="🚀 Prompt final"
+              subtitle="Listo para copiar y pegar en Gemini"
+              content={finalPrompt}
+              accent="green"
+              highlight
+            />
 
             {result.rubricAnalysis ? (
               <RubricPreview analysis={result.rubricAnalysis} />
             ) : null}
+
+            {result.analysis ? (
+              <AnalysisSummary analysis={result.analysis} />
+            ) : null}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function PromptPreviewBlock({
+  title,
+  subtitle,
+  content,
+  accent,
+  highlight,
+}: {
+  title: string;
+  subtitle: string;
+  content: string;
+  accent: "amber" | "purple" | "green";
+  highlight?: boolean;
+}) {
+  const border =
+    accent === "green"
+      ? "border-[#22C55E]/30"
+      : accent === "purple"
+        ? "border-[#A855F7]/30"
+        : "border-[#F59E0B]/30";
+
+  return (
+    <div
+      className={`overflow-hidden rounded-2xl border bg-[#02060a] ${border} ${
+        highlight ? "shadow-[0_0_48px_rgba(34,197,94,0.12)]" : ""
+      }`}
+    >
+      <div className="border-b border-white/8 px-4 py-3">
+        <p className="text-sm font-bold text-[#F5F7FA]">{title}</p>
+        <p className="text-[10px] text-[#F5F7FA]/45">{subtitle}</p>
+      </div>
+      <pre className="max-h-[min(36vh,320px)] overflow-auto whitespace-pre-wrap p-4 text-xs leading-relaxed text-[#F5F7FA]/88">
+        {content}
+      </pre>
+      <div className="border-t border-white/8 px-4 py-2 text-[10px] text-[#F5F7FA]/40">
+        {content.length.toLocaleString("es-PE")} caracteres
       </div>
     </div>
   );
@@ -394,6 +543,47 @@ function RubricPreview({
           ))}
         </ul>
       ) : null}
+    </div>
+  );
+}
+
+function AnalysisSummary({
+  analysis,
+}: {
+  analysis: NonNullable<VisualPremiumPrompt["analysis"]>;
+}) {
+  const items = [
+    { label: "Tema principal", value: analysis.centralTopic },
+    { label: "Subtemas", value: analysis.subtopics.length },
+    { label: "Conceptos", value: analysis.concepts.length },
+    { label: "Definiciones", value: analysis.definitions.length },
+    { label: "Artículos", value: analysis.articles.length },
+    { label: "Jurisprudencia", value: analysis.jurisprudence.length },
+    { label: "Comparaciones", value: analysis.comparisons.length },
+    { label: "Excepciones", value: analysis.exceptions.length },
+    { label: "Casos prácticos", value: analysis.practicalCases.length },
+    { label: "Doctrina", value: analysis.doctrine.length },
+    { label: "Prioridad examen", value: analysis.examPriorities.length },
+  ];
+
+  return (
+    <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-4">
+      <p className="mb-3 text-[10px] font-bold uppercase tracking-wider text-[#F5F7FA]/50">
+        Análisis del documento
+      </p>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        {items.map((item) => (
+          <div
+            key={item.label}
+            className="rounded-lg border border-white/8 bg-white/[0.02] px-3 py-2"
+          >
+            <p className="text-[10px] text-[#F5F7FA]/45">{item.label}</p>
+            <p className="text-sm font-semibold text-[#F5F7FA]/85">
+              {typeof item.value === "number" ? item.value : item.value}
+            </p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
