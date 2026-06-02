@@ -2,29 +2,21 @@
 
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { Crosshair, Maximize2, Minus, Plus } from "lucide-react";
 import {
-  BookOpen,
-  Brain,
-  Crosshair,
-  Gavel,
-  Landmark,
-  Lightbulb,
-  Maximize2,
-  Minus,
-  Plus,
-  Scale,
-  Target,
-  Users,
-  type LucideIcon,
-} from "lucide-react";
+  ImportanceBadge,
+  NodeThumbnail,
+} from "@/components/organizers/sections/visual-mind-map-node-media";
 import { VisualMindMapStudyPanel } from "@/components/organizers/sections/visual-mind-map-study-panel";
 import {
+  edgeAnchors,
   getMindMapEdges,
   layoutVisualMindMap,
   organicEdgePath,
 } from "@/lib/organizers/visual-mind-map-layout";
 import {
   LEGEND_CATEGORIES,
+  nodeDimensions,
   styleForTier,
   themeForCategory,
 } from "@/lib/organizers/visual-mind-map-theme";
@@ -35,47 +27,13 @@ import {
   type VisualMindMapNode,
 } from "@/lib/organizers/visual-mind-map-types";
 
-const ICON_MAP: Record<string, LucideIcon> = {
-  scale: Scale,
-  book: BookOpen,
-  gavel: Gavel,
-  users: Users,
-  landmark: Landmark,
-  lightbulb: Lightbulb,
-  target: Target,
-  brain: Brain,
-};
-
-function getIcon(name: string): LucideIcon {
-  return ICON_MAP[name] ?? Brain;
-}
-
-function computeFitTransform(vw: number, vh: number, map: VisualMindMap, padding = 40) {
+function computeFitTransform(vw: number, vh: number, map: VisualMindMap, padding = 36) {
   const scale = Math.min(
     (vw - padding * 2) / map.width,
     (vh - padding * 2) / map.height,
-    1.2,
+    1.05,
   );
-  return { x: 0, y: 0, scale: Math.max(0.38, scale) };
-}
-
-function edgeAnchors(from: VisualMindMapNode, to: VisualMindMapNode) {
-  const dx = to.x - from.x;
-  const dy = to.y - from.y;
-  const dist = Math.hypot(dx, dy) || 1;
-  const nx = dx / dist;
-  const ny = dy / dist;
-  const fromStyle = styleForTier(from.tier);
-  const toStyle = styleForTier(to.tier);
-  const fromOffset = Math.max(fromStyle.cardWidth, fromStyle.cardHeight) * 0.42;
-  const toOffset = Math.max(toStyle.cardWidth, toStyle.cardHeight) * 0.42;
-
-  return {
-    x1: from.x + nx * fromOffset,
-    y1: from.y + ny * fromOffset * 0.55,
-    x2: to.x - nx * toOffset,
-    y2: to.y - ny * toOffset * 0.55,
-  };
+  return { x: 0, y: 0, scale: Math.max(0.34, scale) };
 }
 
 export function VisualMindMapCanvas({
@@ -95,23 +53,14 @@ export function VisualMindMapCanvas({
 
   const map = useMemo(() => {
     const normalized = normalizeVisualMindMap(rawMap);
-    const needsLayout = normalized.nodes.some((n) => !n.x && !n.y && n.tier !== "center");
-    if (needsLayout && normalized.nodes.every((n) => n.x === 0 && n.y === 0)) {
-      const layout = layoutVisualMindMap(normalized.nodes.map(normalizeVisualMindMapNode));
-      return { ...normalized, ...layout };
-    }
-    return normalized;
+    const layout = layoutVisualMindMap(normalized.nodes.map(normalizeVisualMindMapNode));
+    return { ...normalized, ...layout };
   }, [rawMap]);
 
-  const nodes = useMemo(
-    () => map.nodes.map(normalizeVisualMindMapNode),
-    [map.nodes],
-  );
-
+  const nodes = useMemo(() => map.nodes.map(normalizeVisualMindMapNode), [map.nodes]);
   const nodeById = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes]);
   const selected = selectedId ? (nodeById.get(selectedId) ?? null) : null;
   const centerNode = nodes.find((n) => n.tier === "center");
-
   const focusId = selectedId ?? hoveredId;
 
   const relatedIds = useMemo(() => {
@@ -149,7 +98,7 @@ export function VisualMindMapCanvas({
       const el = viewportRef.current;
       if (!el) return;
       const rect = el.getBoundingClientRect();
-      const targetScale = Math.min(1.65, Math.max(transform.scale, 0.9));
+      const targetScale = Math.min(1.5, Math.max(transform.scale, 0.88));
       setTransform({
         x: rect.width / 2 - node.x * targetScale,
         y: rect.height / 2 - node.y * targetScale,
@@ -169,7 +118,7 @@ export function VisualMindMapCanvas({
   const zoom = useCallback((delta: number) => {
     setTransform((current) => ({
       ...current,
-      scale: Math.min(2.5, Math.max(0.25, current.scale + delta)),
+      scale: Math.min(2.4, Math.max(0.22, current.scale + delta)),
     }));
   }, []);
 
@@ -212,7 +161,6 @@ export function VisualMindMapCanvas({
 
   const toPercent = (value: number, total: number) => `${(value / total) * 100}%`;
   const { width: w, height: h } = map;
-
   const viewportHeight = fullscreen
     ? "h-full min-h-0 flex-1"
     : "h-[min(72vh,560px)] min-h-[320px]";
@@ -225,26 +173,22 @@ export function VisualMindMapCanvas({
         className={`visual-mind-map-viewport relative overflow-hidden rounded-[24px] ${viewportHeight}`}
         style={{
           background:
-            "radial-gradient(ellipse 70% 55% at 50% 42%, rgba(59,130,246,0.07), transparent 65%), radial-gradient(ellipse 50% 40% at 80% 20%, rgba(168,85,247,0.05), transparent 55%), #030a0f",
+            "radial-gradient(ellipse 75% 60% at 50% 40%, rgba(59,130,246,0.08), transparent 70%), #02060a",
         }}
       >
-        <div className="pointer-events-none absolute inset-0 opacity-25">
+        <div className="pointer-events-none absolute inset-0 opacity-20">
           <div
             className="h-full w-full"
             style={{
               backgroundImage:
-                "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.04) 1px, transparent 0)",
-              backgroundSize: "24px 24px",
+                "linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)",
+              backgroundSize: "32px 32px",
             }}
           />
         </div>
 
         <div className="absolute left-3 top-3 z-20">
-          <MapControls
-            onZoom={zoom}
-            onFit={applyFitView}
-            onCenter={() => setTransform((c) => ({ ...c, x: 0, y: 0 }))}
-          />
+          <MapControls onZoom={zoom} onFit={applyFitView} onCenter={() => setTransform((c) => ({ ...c, x: 0, y: 0 }))} />
         </div>
 
         <div className="absolute right-3 top-3 z-20 hidden flex-wrap justify-end gap-1.5 sm:flex">
@@ -253,8 +197,8 @@ export function VisualMindMapCanvas({
             return (
               <span
                 key={cat.id}
-                className="rounded-full px-2.5 py-0.5 text-[9px] font-semibold shadow-sm backdrop-blur-md"
-                style={{ background: cat.chip, color: cat.color, border: `1px solid ${cat.color}33` }}
+                className="rounded-md px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide backdrop-blur-md"
+                style={{ background: cat.chip, color: cat.color, border: `1px solid ${cat.color}44` }}
               >
                 {cat.label}
               </span>
@@ -292,9 +236,9 @@ export function VisualMindMapCanvas({
                       x2={to.x}
                       y2={to.y}
                     >
-                      <stop offset="0%" stopColor={themeForCategory(from.category).color} stopOpacity={0.15} />
-                      <stop offset="50%" stopColor={theme.color} stopOpacity={0.85} />
-                      <stop offset="100%" stopColor={theme.color} stopOpacity={0.35} />
+                      <stop offset="0%" stopColor={themeForCategory(from.category).color} stopOpacity={0.2} />
+                      <stop offset="55%" stopColor={theme.color} stopOpacity={0.95} />
+                      <stop offset="100%" stopColor={theme.color} stopOpacity={0.25} />
                     </linearGradient>
                   );
                 })}
@@ -305,7 +249,7 @@ export function VisualMindMapCanvas({
                 const active = focusId && relatedIds.has(from.id) && relatedIds.has(to.id);
                 const theme = themeForCategory(kind === "relation" ? from.category : to.category);
                 const { x1, y1, x2, y2 } = edgeAnchors(from, to);
-                const path = organicEdgePath(x1, y1, x2, y2, active ? 0.32 : kind === "relation" ? 0.38 : 0.22);
+                const path = organicEdgePath(x1, y1, x2, y2, active ? 0.34 : kind === "relation" ? 0.42 : 0.24);
 
                 return (
                   <g key={key}>
@@ -314,30 +258,35 @@ export function VisualMindMapCanvas({
                         d={path}
                         fill="none"
                         stroke={theme.color}
-                        strokeWidth={10}
+                        strokeWidth={12}
                         strokeLinecap="round"
-                        strokeOpacity={0.1}
+                        strokeOpacity={0.12}
                       />
                     ) : null}
                     <motion.path
                       d={path}
                       fill="none"
                       stroke={`url(#edge-grad-${key})`}
-                      strokeWidth={active ? 3 : kind === "relation" ? 1.4 : 2.2}
+                      strokeWidth={active ? 3.2 : kind === "relation" ? 1.5 : 2.4}
                       strokeLinecap="round"
-                      strokeDasharray={kind === "relation" ? "6 6" : undefined}
-                      strokeOpacity={dimmed ? 0.05 : active ? 1 : 0.45}
+                      strokeDasharray={kind === "relation" ? "7 7" : undefined}
+                      strokeOpacity={dimmed ? 0.04 : active ? 1 : 0.42}
                       className={active ? "visual-mind-edge-flow" : undefined}
                       initial={false}
-                      animate={{ strokeOpacity: dimmed ? 0.05 : active ? 1 : 0.45 }}
+                      animate={{ strokeOpacity: dimmed ? 0.04 : active ? 1 : 0.42 }}
                     />
+                    {active ? (
+                      <circle r={3.5} fill={theme.color} className="visual-mind-edge-particle">
+                        <animateMotion dur="2.4s" repeatCount="indefinite" path={path} />
+                      </circle>
+                    ) : null}
                   </g>
                 );
               })}
             </svg>
 
             {nodes.map((node, index) => (
-              <MindMapNodeCard
+              <MindMapLearningCard
                 key={node.id}
                 node={node}
                 index={index}
@@ -370,7 +319,7 @@ export function VisualMindMapCanvas({
   );
 }
 
-function MindMapNodeCard({
+function MindMapLearningCard({
   node,
   index,
   mapWidth,
@@ -395,81 +344,25 @@ function MindMapNodeCard({
 }) {
   const theme = themeForCategory(node.category);
   const tierStyle = styleForTier(node.tier);
-  const Icon = getIcon(node.icon);
+  const dims = nodeDimensions(node);
   const isCenter = node.tier === "center";
-  const isDetail = node.tier === "detail";
   const expanded = selected || hovered;
-
-  if (isDetail) {
-    return (
-      <motion.button
-        type="button"
-        data-visual-node
-        initial={{ scale: 0, opacity: 0 }}
-        animate={{
-          scale: expanded ? 1.12 : dimmed ? 0.85 : 1,
-          opacity: dimmed ? 0.18 : 1,
-        }}
-        transition={{ duration: 0.28, delay: index * 0.02 }}
-        className="absolute z-10 -translate-x-1/2 -translate-y-1/2 text-left"
-        style={{ left: toPercent(node.x, mapWidth), top: toPercent(node.y, mapHeight) }}
-        onMouseEnter={() => onHover(true)}
-        onMouseLeave={() => onHover(false)}
-        onClick={(event) => {
-          event.stopPropagation();
-          onSelect();
-        }}
-      >
-        <div
-          className="flex items-center gap-1.5 rounded-full px-2.5 py-1.5 backdrop-blur-xl transition-shadow duration-300"
-          style={{
-            width: tierStyle.cardWidth,
-            background: `linear-gradient(135deg, ${theme.soft}, rgba(3,10,15,0.88))`,
-            border: selected ? `2px solid ${theme.color}` : `1px solid ${theme.color}55`,
-            boxShadow: expanded
-              ? `0 0 24px ${theme.glow}, 0 8px 20px rgba(0,0,0,0.35)`
-              : `0 4px 12px rgba(0,0,0,0.25)`,
-          }}
-        >
-          <span
-            className="flex shrink-0 items-center justify-center rounded-full"
-            style={{
-              width: tierStyle.thumbWidth,
-              height: tierStyle.thumbWidth,
-              background: theme.gradient,
-            }}
-          >
-            {node.imageUrl ? (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img src={node.imageUrl} alt="" className="h-full w-full rounded-full object-cover" />
-            ) : (
-              <Icon size={tierStyle.iconSize} style={{ color: theme.color }} />
-            )}
-          </span>
-          <span
-            className="truncate font-semibold text-[#F5F7FA]"
-            style={{ fontSize: tierStyle.fontSize, maxWidth: tierStyle.cardWidth - tierStyle.thumbWidth - 16 }}
-          >
-            {node.label}
-          </span>
-        </div>
-      </motion.button>
-    );
-  }
+  const highlighted = theme.highlighted;
 
   return (
     <motion.button
       type="button"
       data-visual-node
-      initial={{ scale: 0, opacity: 0 }}
+      initial={{ scale: 0.88, opacity: 0, y: 12 }}
       animate={{
-        scale: selected ? 1.06 : hovered ? 1.04 : dimmed ? 0.82 : 1,
-        opacity: dimmed ? 0.14 : 1,
-        filter: dimmed ? "blur(4px) saturate(0.35)" : "none",
+        scale: selected ? 1.05 : hovered ? 1.03 : dimmed ? 0.78 : isCenter ? 1 : tierStyle.scale,
+        opacity: dimmed ? 0.12 : 1,
+        filter: dimmed ? "blur(5px) saturate(0.3)" : "none",
+        y: 0,
       }}
-      transition={{ duration: 0.32, delay: index * 0.025, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.34, delay: index * 0.022, ease: [0.22, 1, 0.36, 1] }}
       className="absolute z-10 -translate-x-1/2 -translate-y-1/2 text-left"
-      style={{ left: toPercent(node.x, mapWidth), top: toPercent(node.y, mapHeight) }}
+      style={{ left: toPercent(node.x, mapWidth), top: toPercent(node.y, mapHeight), width: dims.width }}
       onMouseEnter={() => onHover(true)}
       onMouseLeave={() => onHover(false)}
       onClick={(event) => {
@@ -477,126 +370,88 @@ function MindMapNodeCard({
         onSelect();
       }}
     >
-      <div className="relative" style={{ width: tierStyle.cardWidth }}>
-        {isCenter ? (
-          <div
-            className="pointer-events-none absolute -inset-8 rounded-[40px] blur-3xl"
-            style={{ background: theme.glow, opacity: 0.35 }}
-          />
-        ) : null}
-
+      {isCenter ? (
         <div
-          className={`relative overflow-hidden backdrop-blur-xl transition-all duration-300 ${
-            isCenter ? "rounded-[32px]" : "rounded-[22px]"
-          }`}
-          style={{
-            width: tierStyle.cardWidth,
-            minHeight: tierStyle.cardHeight,
-            background: isCenter
-              ? `linear-gradient(160deg, rgba(59,130,246,0.22), rgba(3,10,15,0.92))`
-              : `linear-gradient(160deg, ${theme.soft}, rgba(3,10,15,0.9))`,
-            border: selected
-              ? `2px solid ${theme.color}`
-              : hovered
-                ? `1.5px solid ${theme.color}aa`
-                : `1px solid ${theme.color}44`,
-            boxShadow: selected
-              ? `0 0 56px ${theme.glow}, 0 20px 48px rgba(0,0,0,0.4)`
-              : hovered
-                ? `0 0 32px ${theme.glow.replace("0.55", "0.25")}, 0 12px 32px rgba(0,0,0,0.32)`
-                : `0 8px 28px rgba(0,0,0,0.28)`,
-          }}
-        >
-          {isCenter ? (
-            <div className="flex flex-col">
-              <div
-                className="relative w-full overflow-hidden"
-                style={{ height: tierStyle.cardHeight - 56 }}
-              >
-                {node.imageUrl ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img src={node.imageUrl} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <div
-                    className="flex h-full w-full items-center justify-center"
-                    style={{ background: theme.gradient }}
-                  >
-                    <Icon size={56} style={{ color: theme.color }} />
-                  </div>
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#030a0f] via-transparent to-transparent" />
-              </div>
-              <div className="px-4 pb-4 pt-3 text-center">
-                <span
-                  className="mb-2 inline-flex rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider"
-                  style={{ background: theme.chip, color: theme.color }}
-                >
-                  Tema central
-                </span>
-                <p
-                  className="font-bold leading-snug text-[#F5F7FA]"
-                  style={{ fontSize: tierStyle.fontSize }}
-                >
-                  {node.label}
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="flex h-full min-h-[96px]">
-              <div
-                className="relative shrink-0 overflow-hidden"
-                style={{
-                  width: tierStyle.thumbWidth,
-                  minHeight: tierStyle.cardHeight,
-                }}
-              >
-                {node.imageUrl ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img src={node.imageUrl} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <div
-                    className="flex h-full w-full items-center justify-center"
-                    style={{ background: theme.gradient }}
-                  >
-                    <Icon size={tierStyle.iconSize + 4} style={{ color: theme.color }} />
-                  </div>
-                )}
-                <div
-                  className="absolute inset-y-0 right-0 w-px"
-                  style={{ background: `${theme.color}33` }}
-                />
-              </div>
-              <div className="flex min-w-0 flex-1 flex-col justify-center px-3 py-2.5">
-                <span
-                  className="mb-1.5 w-fit rounded-full px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider"
-                  style={{ background: theme.chip, color: theme.color }}
-                >
-                  {theme.label}
-                </span>
-                <p
-                  className="font-bold leading-tight text-[#F5F7FA]"
-                  style={{
-                    fontSize: tierStyle.fontSize,
-                    display: "-webkit-box",
-                    WebkitLineClamp: tierStyle.labelLines,
-                    WebkitBoxOrient: "vertical",
-                    overflow: "hidden",
-                  }}
-                >
-                  {node.label}
-                </p>
-                {expanded && node.explanation ? (
-                  <motion.p
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    className="mt-1.5 line-clamp-2 text-[10px] leading-snug text-[#F5F7FA]/65"
-                  >
-                    {node.explanation}
-                  </motion.p>
-                ) : null}
-              </div>
-            </div>
-          )}
+          className="pointer-events-none absolute -inset-10 rounded-[40px] blur-3xl"
+          style={{ background: theme.glow, opacity: 0.42 }}
+        />
+      ) : null}
+
+      <div
+        className={`relative overflow-hidden backdrop-blur-xl transition-all duration-300 ${
+          isCenter ? "rounded-[28px]" : "rounded-[20px]"
+        }`}
+        style={{
+          width: dims.width,
+          minHeight: dims.height,
+          background: isCenter
+            ? `linear-gradient(165deg, rgba(59,130,246,0.24), rgba(2,6,10,0.96))`
+            : highlighted
+              ? `linear-gradient(165deg, ${theme.soft}, rgba(2,6,10,0.94))`
+              : `linear-gradient(165deg, ${theme.soft.replace("0.16", "0.12")}, rgba(2,6,10,0.94))`,
+          border: selected
+            ? `2px solid ${theme.color}`
+            : hovered
+              ? `1.5px solid ${theme.color}cc`
+              : highlighted
+                ? `1.5px solid ${theme.color}88`
+                : `1px solid ${theme.color}40`,
+          boxShadow: selected
+            ? `0 0 64px ${theme.glow}, 0 24px 56px rgba(0,0,0,0.45)`
+            : hovered
+              ? `0 0 36px ${theme.glow.replace(/[\d.]+\)$/, "0.28)")}, 0 16px 36px rgba(0,0,0,0.35)`
+              : isCenter
+                ? `0 0 48px ${theme.glow.replace(/[\d.]+\)$/, "0.32)")}, 0 16px 40px rgba(0,0,0,0.38)`
+                : `0 10px 28px rgba(0,0,0,0.3)`,
+        }}
+      >
+        <NodeThumbnail
+          node={node}
+          height={tierStyle.thumbHeight}
+          iconSize={tierStyle.iconSize}
+          className="w-full rounded-none rounded-t-[inherit]"
+        />
+
+        <div className={`px-3 ${isCenter ? "pb-4 pt-3" : "pb-3 pt-2.5"}`}>
+          <div className="mb-1.5 flex items-center justify-between gap-2">
+            <span
+              className="rounded-md px-2 py-0.5 text-[8px] font-bold uppercase tracking-[0.12em]"
+              style={{ background: theme.chip, color: theme.color }}
+            >
+              {theme.label}
+            </span>
+            <ImportanceBadge importance={node.importance} />
+          </div>
+
+          <p
+            className="font-bold leading-snug text-[#F5F7FA]"
+            style={{ fontSize: isCenter ? tierStyle.titleSize : tierStyle.titleSize }}
+          >
+            {node.label}
+          </p>
+
+          <p
+            className="mt-1.5 leading-snug text-[#F5F7FA]/72"
+            style={{
+              fontSize: isCenter ? tierStyle.summarySize : tierStyle.summarySize,
+              display: "-webkit-box",
+              WebkitLineClamp: isCenter ? 2 : 2,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+            }}
+          >
+            {node.summary || node.explanation}
+          </p>
+
+          {expanded && node.example ? (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="mt-2 line-clamp-1 text-[10px] italic text-[#F5F7FA]/50"
+            >
+              Ej.: {node.example}
+            </motion.p>
+          ) : null}
         </div>
       </div>
     </motion.button>
@@ -613,7 +468,7 @@ function MapControls({
   onCenter: () => void;
 }) {
   return (
-    <div className="flex flex-col gap-1 rounded-2xl border border-white/10 bg-[rgba(3,10,15,0.9)] p-1.5 shadow-lg backdrop-blur-xl">
+    <div className="flex flex-col gap-1 rounded-2xl border border-white/10 bg-[rgba(2,6,10,0.92)] p-1.5 shadow-lg backdrop-blur-xl">
       <div className="flex gap-1">
         <IconBtn onClick={() => onZoom(-0.08)} label="Alejar">
           <Minus size={15} />

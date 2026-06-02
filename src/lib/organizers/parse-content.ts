@@ -1,5 +1,6 @@
 import type { VisualMindMap } from "@/lib/organizers/visual-mind-map-types";
 import type { AcademicInfographic } from "@/lib/organizers/academic-infographic-types";
+import type { VisualPremiumPrompt } from "@/lib/organizers/visual-prompt-types";
 
 export type OrganizerFlashcard = {
   question?: string;
@@ -72,6 +73,7 @@ export type OrganizerContent = {
   simplifiedExplanation?: string;
   visualMindMap?: VisualMindMap;
   academicInfographic?: AcademicInfographic;
+  visualPremiumPrompt?: VisualPremiumPrompt;
 };
 
 export function parseOrganizerContent(content: unknown): OrganizerContent {

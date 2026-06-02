@@ -21,6 +21,7 @@ import { ReviewPremiumModule } from "@/components/organizers/sections/review-pre
 import { TimelineModern } from "@/components/organizers/sections/timeline-modern";
 import { VisualSummaryCard } from "@/components/organizers/sections/visual-summary-card";
 import { VisualMindMapPanel } from "@/components/organizers/sections/visual-mind-map-panel";
+import { VisualPremiumPromptPanel } from "@/components/organizers/sections/visual-premium-prompt-panel";
 import { OrganizerContentSkeleton } from "@/components/organizers/organizer-skeleton";
 import { useLearningAnalytics } from "@/components/organizers/sections/learning-analytics-panel";
 
@@ -180,6 +181,23 @@ export function OrganizerContentView({
                 }
                 visualMindMap={parsed.visualMindMap}
                 academicInfographic={parsed.academicInfographic}
+                onGenerated={onContentUpdate}
+              />
+            ) : null}
+          </div>
+        </OrganizerFloatSheet>
+
+        <OrganizerFloatSheet
+          open={activePanel === "visualPrompt"}
+          title="Prompt Visual IA"
+          wide
+          onClose={() => setActivePanel(null)}
+        >
+          <div className="-m-4 h-[min(78vh,720px)] sm:-m-5">
+            {organizerId ? (
+              <VisualPremiumPromptPanel
+                organizerId={organizerId}
+                visualPremiumPrompt={parsed.visualPremiumPrompt}
                 onGenerated={onContentUpdate}
               />
             ) : null}

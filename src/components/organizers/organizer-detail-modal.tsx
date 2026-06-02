@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ImageIcon, Map, Sparkles, X } from "lucide-react";
+import { ImageIcon, Map, Palette, Sparkles, X } from "lucide-react";
 import { OrganizerContentView } from "@/components/organizers/organizer-content-view";
 import { AcademicInfographicPanel } from "@/components/organizers/sections/academic-infographic-panel";
+import { VisualPremiumPromptPanel } from "@/components/organizers/sections/visual-premium-prompt-panel";
 import {
   formatOrganizerDate,
   wasOrganizerRegenerated,
@@ -12,7 +13,7 @@ import {
 import { parseOrganizerContent } from "@/lib/organizers/parse-content";
 import type { OrganizerRecord } from "@/types/organizer";
 
-export type OrganizerStudioTab = "interactive" | "infographic";
+export type OrganizerStudioTab = "interactive" | "infographic" | "visualPrompt";
 
 export function OrganizerDetailModal({
   organizer,
@@ -122,6 +123,13 @@ export function OrganizerDetailModal({
               label="Infografía IA"
               accent="#A78BFA"
             />
+            <StudioTab
+              active={activeTab === "visualPrompt"}
+              onClick={() => setActiveTab("visualPrompt")}
+              icon={Palette}
+              label="Prompt Visual IA"
+              accent="#F59E0B"
+            />
           </div>
 
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -134,11 +142,17 @@ export function OrganizerDetailModal({
                 organizerId={organizer.id}
                 onContentUpdate={handleContentUpdate}
               />
-            ) : (
+            ) : activeTab === "infographic" ? (
               <AcademicInfographicPanel
                 organizerId={organizer.id}
                 organizerTitle={organizer.title}
                 academicInfographic={parsed.academicInfographic}
+                onGenerated={handleContentUpdate}
+              />
+            ) : (
+              <VisualPremiumPromptPanel
+                organizerId={organizer.id}
+                visualPremiumPrompt={parsed.visualPremiumPrompt}
                 onGenerated={handleContentUpdate}
               />
             )}
