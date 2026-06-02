@@ -9,7 +9,7 @@ import type { SearchSuggestion } from "@/lib/search/score";
 
 const DEBOUNCE_MS = 280;
 
-export function LibrarySearch() {
+export function LibrarySearch({ compact = false }: { compact?: boolean }) {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
   const [results, setResults] = useState<Material[]>([]);
@@ -155,7 +155,8 @@ export function LibrarySearch() {
   const showDropdown = open && hasQuery;
 
   return (
-    <section className="ms-panel p-8">
+    <section className={compact ? "" : "ms-panel p-8"}>
+      {!compact ? (
       <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#00FFD5]">Buscador académico</p>
           <h2 className="mt-2 text-3xl font-bold tracking-tight text-[#F5F7FA]">Encuentra materiales al instante</h2>
@@ -163,11 +164,12 @@ export function LibrarySearch() {
             Escribe y obtén sugerencias en tiempo real: títulos, PDFs, cursos y organizadores generados.
           </p>
       </div>
+      ) : null}
 
-      <div ref={containerRef} className="relative mt-6">
+      <div ref={containerRef} className={compact ? "relative" : "relative mt-6"}>
         <label className="relative block">
           <span className="sr-only">Buscar materiales</span>
-          <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#00FFD5]" />
+          <Search className={`pointer-events-none absolute top-1/2 -translate-y-1/2 text-[#00FFD5] ${compact ? "left-3 h-4 w-4" : "left-4 h-5 w-5"}`} />
           <input
             ref={inputRef}
             value={query}
@@ -177,8 +179,10 @@ export function LibrarySearch() {
             }}
             onFocus={() => hasQuery && setOpen(true)}
             onKeyDown={onKeyDown}
-            placeholder="Buscar título, PDF, curso o concepto…"
-            className="h-14 w-full rounded-xl border border-[rgba(0,255,213,0.2)] bg-[rgba(7,19,26,0.6)] px-14 pr-12 text-sm text-[#F5F7FA] outline-none focus:border-[rgba(0,255,213,0.45)] focus:shadow-[0_0_24px_rgba(0,255,213,0.12)]"
+            placeholder="Buscar título, PDF, curso..."
+            className={`w-full rounded-xl border border-[rgba(0,255,213,0.2)] bg-[rgba(7,19,26,0.6)] pr-12 text-sm text-[#F5F7FA] outline-none focus:border-[rgba(0,255,213,0.45)] focus:shadow-[0_0_24px_rgba(0,255,213,0.12)] ${
+              compact ? "h-11 pl-10" : "h-14 pl-14"
+            }`}
             autoComplete="off"
             role="combobox"
             aria-expanded={showDropdown}

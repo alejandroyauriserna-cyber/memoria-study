@@ -20,7 +20,7 @@ const items = [
   { id: "summary" as const, label: "Resumen", icon: BookOpen },
   { id: "flow" as const, label: "Flujo", icon: Workflow },
   { id: "tree" as const, label: "Ruta", icon: GitBranch },
-  { id: "flashcards" as const, label: "Flashcards", icon: Layers },
+  { id: "flashcards" as const, label: "Estudio", icon: Layers },
   { id: "review" as const, label: "Repaso", icon: HelpCircle },
 ];
 

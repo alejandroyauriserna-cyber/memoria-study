@@ -162,7 +162,7 @@ export function OrganizerContentView({
 
         <OrganizerFloatSheet
           open={activePanel === "flashcards"}
-          title="Flashcards"
+          title="Modo estudio"
           wide
           onClose={() => setActivePanel(null)}
         >
@@ -177,7 +177,7 @@ export function OrganizerContentView({
           wide
           onClose={() => setActivePanel(null)}
         >
-          <ReviewPremiumModule reviewBundle={reviewBundle} onAnswerRecorded={recordAnswer} />
+          <ReviewPremiumModule reviewBundle={reviewBundle} deckKey={analyticsKey} onAnswerRecorded={recordAnswer} />
         </OrganizerFloatSheet>
       </div>
     );

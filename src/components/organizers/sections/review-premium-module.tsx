@@ -2,9 +2,29 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Brain, ChevronDown, ClipboardCheck, HelpCircle, Trophy } from "lucide-react";
+import {
+  Brain,
+  ChevronDown,
+  ClipboardCheck,
+  Flame,
+  HelpCircle,
+  Target,
+  Timer,
+  Trophy,
+  XCircle,
+  CheckCircle2,
+} from "lucide-react";
 import { OrganizerFloatPanel } from "@/components/organizers/sections/organizer-section-shell";
 import type { StoredOrganizerContent } from "@/lib/ai/organizer-schema";
+import {
+  buildReviewRecommendations,
+  buildTopicMasteryList,
+  loadReviewAnalytics,
+  recordExamSession,
+  recordReviewAnswer,
+  weakTopics,
+  type ReviewAnalyticsState,
+} from "@/lib/study/review-analytics";
 
 type ReviewBundle = NonNullable<StoredOrganizerContent["reviewBundle"]>;
 
@@ -16,21 +36,30 @@ const difficultyLabel = {
 
 export function ReviewPremiumModule({
   reviewBundle,
+  deckKey = "default",
   onAnswerRecorded,
 }: {
   reviewBundle: ReviewBundle;
+  deckKey?: string;
   onAnswerRecorded?: (correct: boolean) => void;
 }) {
-  const [tab, setTab] = useState<"conceptos" | "preguntas" | "examen">("conceptos");
+  const [tab, setTab] = useState<"metricas" | "conceptos" | "preguntas" | "examen">("metricas");
   const [openIndex, setOpenIndex] = useState<string | null>(null);
   const [examAnswers, setExamAnswers] = useState<Record<number, string>>({});
+  const [examSubmitted, setExamSubmitted] = useState<Record<number, boolean>>({});
   const [examStartedAt, setExamStartedAt] = useState<number | null>(null);
   const [examFinishedAt, setExamFinishedAt] = useState<number | null>(null);
+  const [showResults, setShowResults] = useState(false);
   const [selectedConcept, setSelectedConcept] = useState<number | null>(null);
+  const [analytics, setAnalytics] = useState<ReviewAnalyticsState>(() => loadReviewAnalytics(deckKey));
 
   const questions = reviewBundle.questions ?? [];
   const keyConcepts = reviewBundle.keyConcepts ?? [];
   const examQuestions = reviewBundle.examQuestions ?? [];
+
+  useEffect(() => {
+    setAnalytics(loadReviewAnalytics(deckKey));
+  }, [deckKey]);
 
   useEffect(() => {
     if (tab === "examen" && !examStartedAt) {
@@ -50,33 +79,78 @@ export function ReviewPremiumModule({
   const examScore = useMemo(() => {
     let correct = 0;
     examQuestions.forEach((item, index) => {
-      if (examAnswers[index] === item.answer) correct += 1;
+      const submitted = examSubmitted[index];
+      if (!submitted) return;
+      const answer = examAnswers[index];
+      if (item.type === "caso_practico") {
+        if (answer && answer.length > 20) correct += 1;
+      } else if (answer === item.answer) {
+        correct += 1;
+      }
     });
     return { correct, total: examQuestions.length };
-  }, [examAnswers, examQuestions]);
+  }, [examAnswers, examQuestions, examSubmitted]);
 
-  const examComplete = examQuestions.length > 0 && Object.keys(examAnswers).length >= examQuestions.length;
+  const allSubmitted =
+    examQuestions.length > 0 &&
+    examQuestions.every((_, index) => examSubmitted[index]);
+
   const examMinutes = examStartedAt
     ? Math.max(1, Math.round(((examFinishedAt ?? Date.now()) - examStartedAt) / 60_000))
     : 0;
 
-  useEffect(() => {
-    if (examComplete && !examFinishedAt) {
-      setExamFinishedAt(Date.now());
-    }
-  }, [examComplete, examFinishedAt]);
+  const masteryList = useMemo(
+    () => buildTopicMasteryList(keyConcepts, analytics.topicStats),
+    [keyConcepts, analytics.topicStats],
+  );
+
+  const weak = useMemo(() => weakTopics(masteryList), [masteryList]);
+  const recommendations = useMemo(
+    () => buildReviewRecommendations(masteryList, analytics.streak),
+    [masteryList, analytics.streak],
+  );
+
+  const conceptsMastered = masteryList.filter((t) => t.mastery >= 70).length;
+
+  function submitExamAnswer(index: number, question: string, correct: boolean) {
+    setExamSubmitted((c) => ({ ...c, [index]: true }));
+    const next = recordReviewAnswer(deckKey, question, correct);
+    setAnalytics(next);
+    onAnswerRecorded?.(correct);
+  }
+
+  function finishExam() {
+    setExamFinishedAt(Date.now());
+    setShowResults(true);
+    const next = recordExamSession(deckKey, examScore.correct, examScore.total);
+    setAnalytics(next);
+  }
+
+  function resetExam() {
+    setExamAnswers({});
+    setExamSubmitted({});
+    setExamStartedAt(Date.now());
+    setExamFinishedAt(null);
+    setShowResults(false);
+  }
 
   if (!keyConcepts.length && !questions.length && !examQuestions.length) {
     return null;
   }
 
   return (
-    <OrganizerFloatPanel title="Repaso inteligente" hint="Conceptos · preguntas · examen IA" icon={<HelpCircle size={17} />} span={12}>
+    <OrganizerFloatPanel
+      title="Repaso inteligente"
+      hint="Métricas · evaluación · retroalimentación"
+      icon={<HelpCircle size={17} />}
+      span={12}
+    >
       <div className="mb-4 flex flex-wrap gap-2">
         {[
-          { id: "conceptos" as const, label: "Conceptos clave" },
-          { id: "preguntas" as const, label: "Preguntas IA" },
-          { id: "examen" as const, label: "Examen IA" },
+          { id: "metricas" as const, label: "Métricas" },
+          { id: "conceptos" as const, label: "Conceptos" },
+          { id: "preguntas" as const, label: "Preguntas" },
+          { id: "examen" as const, label: "Modo examen" },
         ].map((item) => (
           <button
             key={item.id}
@@ -84,7 +158,9 @@ export function ReviewPremiumModule({
             onClick={() => setTab(item.id)}
             className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
               tab === item.id
-                ? "bg-[rgba(0,255,213,0.15)] text-[#00FFD5]"
+                ? item.id === "examen"
+                  ? "bg-[rgba(255,138,0,0.18)] text-amber-200"
+                  : "bg-[rgba(0,255,213,0.15)] text-[#00FFD5]"
                 : "text-muted-foreground hover:text-[#F5F7FA]"
             }`}
           >
@@ -92,6 +168,74 @@ export function ReviewPremiumModule({
           </button>
         ))}
       </div>
+
+      {tab === "metricas" ? (
+        <div className="space-y-5">
+          <div className="grid gap-3 sm:grid-cols-4">
+            {[
+              { label: "Racha", value: `${analytics.streak} días`, icon: Flame },
+              { label: "Tiempo estudio", value: `${analytics.studyMinutes} min`, icon: Timer },
+              { label: "Conceptos dominados", value: String(conceptsMastered), icon: Target },
+              { label: "Temas débiles", value: String(weak.length), icon: XCircle },
+            ].map(({ label, value, icon: Icon }) => (
+              <div
+                key={label}
+                className="rounded-xl border border-[rgba(0,255,213,0.12)] bg-[rgba(7,19,26,0.45)] p-3"
+              >
+                <p className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground">
+                  <Icon size={11} className="text-[#00FFD5]" />
+                  {label}
+                </p>
+                <p className="mt-1 text-xl font-bold text-[#F5F7FA]">{value}</p>
+              </div>
+            ))}
+          </div>
+
+          <div>
+            <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#00FFD5]">
+              Dominio por tema
+            </p>
+            <div className="space-y-3">
+              {(masteryList.length ? masteryList : keyConcepts.map((topic) => ({ topic, mastery: 0, correct: 0, total: 0 }))).map(
+                (item) => (
+                  <div key={item.topic}>
+                    <div className="mb-1 flex items-center justify-between gap-2 text-sm">
+                      <span className="truncate text-[#F5F7FA]/90">{item.topic}</span>
+                      <span className="shrink-0 text-xs font-semibold text-[#00FFD5]">{item.mastery}%</span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-[rgba(0,255,213,0.08)]">
+                      <motion.div
+                        className={`h-full rounded-full ${
+                          item.mastery >= 70
+                            ? "bg-gradient-to-r from-[#00FFD5] to-[#00BFFF]"
+                            : item.mastery >= 40
+                              ? "bg-amber-400"
+                              : "bg-red-400/80"
+                        }`}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${Math.max(item.mastery, item.total ? 8 : 0)}%` }}
+                      />
+                    </div>
+                  </div>
+                ),
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-[rgba(0,255,213,0.12)] bg-[rgba(0,255,213,0.06)] p-4">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-[#00FFD5]">
+              Recomendaciones automáticas
+            </p>
+            <ul className="mt-2 space-y-1.5">
+              {recommendations.map((rec) => (
+                <li key={rec} className="text-xs leading-5 text-[#F5F7FA]/85">
+                  · {rec}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      ) : null}
 
       {tab === "conceptos" ? (
         <div className="grid gap-3 sm:grid-cols-2">
@@ -114,11 +258,6 @@ export function ReviewPremiumModule({
                 Concepto {index + 1}
               </p>
               <p className="mt-2 text-sm leading-6 text-[#F5F7FA]">{concept}</p>
-              {selectedConcept === index ? (
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Repasa este concepto en el mapa y explícalo en voz alta antes de continuar.
-                </p>
-              ) : null}
             </motion.button>
           ))}
         </div>
@@ -139,7 +278,10 @@ export function ReviewPremiumModule({
                     const globalIndex = `${level}-${index}`;
                     const isOpen = openIndex === globalIndex;
                     return (
-                      <div key={globalIndex} className="overflow-hidden rounded-xl border border-[rgba(0,255,213,0.1)] bg-[rgba(7,19,26,0.35)]">
+                      <div
+                        key={globalIndex}
+                        className="overflow-hidden rounded-xl border border-[rgba(0,255,213,0.1)] bg-[rgba(7,19,26,0.35)]"
+                      >
                         <button
                           type="button"
                           onClick={() => setOpenIndex(isOpen ? null : globalIndex)}
@@ -177,81 +319,175 @@ export function ReviewPremiumModule({
       ) : null}
 
       {tab === "examen" ? (
-        <div className="space-y-3">
-          <div className="flex flex-wrap items-center gap-3 rounded-xl border border-[rgba(0,255,213,0.12)] bg-[rgba(0,255,213,0.06)] px-3 py-2">
-            <p className="text-xs text-muted-foreground">
-              Puntaje: <span className="font-semibold text-[#00FFD5]">{examScore.correct}/{examScore.total}</span>
+        <div className="space-y-4">
+          <div className="rounded-xl border border-[rgba(255,138,0,0.2)] bg-[rgba(255,138,0,0.08)] px-4 py-3">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-200">
+              Modo examen · Evaluar conocimiento
             </p>
-            {examStartedAt ? (
-              <p className="text-xs text-muted-foreground">
-                Tiempo: <span className="font-semibold text-[#F5F7FA]">{examMinutes} min</span>
-              </p>
-            ) : null}
-            {examComplete ? (
-              <p className="flex items-center gap-1 text-xs font-semibold text-[#00FFD5]">
-                <Trophy size={12} />
-                Dominio: {examScore.total ? Math.round((examScore.correct / examScore.total) * 100) : 0}%
-              </p>
-            ) : null}
+            <p className="mt-1 text-xs text-muted-foreground">
+              Responde cada pregunta y confirma antes de ver la retroalimentación. Sin respuestas anticipadas.
+            </p>
           </div>
 
-          {examQuestions.map((item, index) => (
-            <div key={`exam-${index}`} className="rounded-xl border border-[rgba(0,255,213,0.12)] bg-[rgba(7,19,26,0.4)] p-4">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#00FFD5]">
-                {item.type.replace("_", " ")}
+          {showResults ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="rounded-2xl border border-[rgba(0,255,213,0.2)] bg-[rgba(7,19,26,0.55)] p-6 text-center"
+            >
+              <Trophy size={32} className="mx-auto text-[#00FFD5]" />
+              <p className="mt-3 text-2xl font-bold text-[#F5F7FA]">
+                {examScore.total ? Math.round((examScore.correct / examScore.total) * 100) : 0}%
               </p>
-              <p className="mt-2 text-sm font-medium text-[#F5F7FA]">{item.question}</p>
-              {item.type === "caso_practico" ? (
-                <textarea
-                  className="mt-3 w-full rounded-lg border border-[rgba(0,255,213,0.15)] bg-[rgba(7,19,26,0.5)] px-3 py-2 text-xs text-[#F5F7FA]"
-                  rows={3}
-                  placeholder="Escribe tu solución..."
-                  onChange={(e) => setExamAnswers((c) => ({ ...c, [index]: e.target.value ? "respondido" : "" }))}
-                />
-              ) : item.options?.length ? (
-                <div className="mt-3 space-y-2">
-                  {item.options.map((option) => {
-                    const answered = examAnswers[index];
-                    const isSelected = answered === option;
-                    const showResult = Boolean(answered);
-                    const isCorrect = option === item.answer;
-                    return (
-                      <button
-                        key={option}
-                        type="button"
-                        onClick={() => {
-                          setExamAnswers((c) => ({ ...c, [index]: option }));
-                          onAnswerRecorded?.(option === item.answer);
-                        }}
-                        className={`block w-full rounded-lg border px-3 py-2 text-left text-xs transition ${
-                          showResult && isSelected
-                            ? isCorrect
-                              ? "border-[rgba(0,255,213,0.4)] bg-[rgba(0,255,213,0.1)] text-[#00FFD5]"
-                              : "border-red-400/40 bg-red-500/10 text-red-200"
-                            : isSelected
-                              ? "border-[rgba(0,255,213,0.4)] bg-[rgba(0,255,213,0.1)] text-[#00FFD5]"
-                              : "border-[rgba(0,255,213,0.1)] text-muted-foreground hover:border-[rgba(0,255,213,0.25)]"
-                        }`}
-                      >
-                        {option}
-                      </button>
-                    );
-                  })}
+              <p className="mt-1 text-sm text-muted-foreground">
+                {examScore.correct} de {examScore.total} correctas · {examMinutes} min
+              </p>
+              {weak.length ? (
+                <div className="mt-4 text-left">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-amber-300">
+                    Temas débiles
+                  </p>
+                  <ul className="mt-2 space-y-1">
+                    {weak.map((t) => (
+                      <li key={t.topic} className="text-xs text-muted-foreground">
+                        · {t.topic} ({t.mastery}%)
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               ) : null}
-              {examAnswers[index] && item.explanation ? (
-                <p className="mt-3 text-xs leading-5 text-muted-foreground">
-                  <span className="text-[#00FFD5]">Retroalimentación:</span> {item.explanation}
-                </p>
+              <ul className="mt-4 space-y-1 text-left">
+                {recommendations.map((r) => (
+                  <li key={r} className="text-xs text-[#F5F7FA]/85">
+                    → {r}
+                  </li>
+                ))}
+              </ul>
+              <button
+                type="button"
+                onClick={resetExam}
+                className="mt-5 rounded-xl bg-[rgba(0,255,213,0.15)] px-5 py-2 text-sm font-semibold text-[#00FFD5]"
+              >
+                Reintentar examen
+              </button>
+            </motion.div>
+          ) : (
+            <>
+              {examQuestions.map((item, index) => {
+                const submitted = examSubmitted[index];
+                const selected = examAnswers[index];
+                const isCorrect =
+                  item.type === "caso_practico"
+                    ? Boolean(selected && selected.length > 20)
+                    : selected === item.answer;
+
+                return (
+                  <div
+                    key={`exam-${index}`}
+                    className="rounded-xl border border-[rgba(255,138,0,0.15)] bg-[rgba(7,19,26,0.5)] p-4"
+                  >
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-200">
+                      Pregunta {index + 1} · {item.type.replace("_", " ")}
+                    </p>
+                    <p className="mt-2 text-sm font-medium text-[#F5F7FA]">{item.question}</p>
+
+                    {item.type === "caso_practico" ? (
+                      <textarea
+                        className="mt-3 w-full rounded-lg border border-[rgba(0,255,213,0.15)] bg-[rgba(7,19,26,0.5)] px-3 py-2 text-xs text-[#F5F7FA] disabled:opacity-60"
+                        rows={3}
+                        placeholder="Escribe tu solución..."
+                        value={selected ?? ""}
+                        disabled={submitted}
+                        onChange={(e) =>
+                          setExamAnswers((c) => ({ ...c, [index]: e.target.value }))
+                        }
+                      />
+                    ) : item.options?.length ? (
+                      <div className="mt-3 space-y-2">
+                        {item.options.map((option) => (
+                          <button
+                            key={option}
+                            type="button"
+                            disabled={submitted}
+                            onClick={() => setExamAnswers((c) => ({ ...c, [index]: option }))}
+                            className={`block w-full rounded-lg border px-3 py-2 text-left text-xs transition disabled:cursor-default ${
+                              selected === option
+                                ? "border-[rgba(255,138,0,0.35)] bg-[rgba(255,138,0,0.12)] text-amber-100"
+                                : "border-[rgba(0,255,213,0.1)] text-muted-foreground hover:border-[rgba(0,255,213,0.25)]"
+                            }`}
+                          >
+                            {option}
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
+
+                    {!submitted ? (
+                      <button
+                        type="button"
+                        disabled={!selected}
+                        onClick={() =>
+                          submitExamAnswer(
+                            index,
+                            item.question,
+                            item.type === "caso_practico"
+                              ? Boolean(selected && selected.length > 20)
+                              : selected === item.answer,
+                          )
+                        }
+                        className="mt-3 rounded-lg bg-[rgba(255,138,0,0.15)] px-4 py-2 text-xs font-semibold text-amber-200 disabled:opacity-40"
+                      >
+                        Confirmar respuesta
+                      </button>
+                    ) : (
+                      <div
+                        className={`mt-3 flex items-start gap-2 rounded-lg border p-3 ${
+                          isCorrect
+                            ? "border-[rgba(0,255,213,0.3)] bg-[rgba(0,255,213,0.08)]"
+                            : "border-red-400/30 bg-red-500/10"
+                        }`}
+                      >
+                        {isCorrect ? (
+                          <CheckCircle2 size={16} className="shrink-0 text-[#00FFD5]" />
+                        ) : (
+                          <XCircle size={16} className="shrink-0 text-red-300" />
+                        )}
+                        <div className="text-xs leading-5">
+                          <p className={isCorrect ? "text-[#00FFD5]" : "text-red-200"}>
+                            {isCorrect ? "Correcto" : "Incorrecto"}
+                          </p>
+                          {!isCorrect && item.type !== "caso_practico" ? (
+                            <p className="mt-1 text-muted-foreground">
+                              Respuesta correcta: <span className="text-[#F5F7FA]">{item.answer}</span>
+                            </p>
+                          ) : null}
+                          {item.explanation ? (
+                            <p className="mt-2 text-muted-foreground">{item.explanation}</p>
+                          ) : null}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              {allSubmitted ? (
+                <button
+                  type="button"
+                  onClick={finishExam}
+                  className="w-full rounded-xl bg-gradient-to-r from-[#FF8A00] to-[#FF5C00] py-3 text-sm font-semibold text-[#07131A]"
+                >
+                  Ver resultados finales
+                </button>
               ) : null}
-            </div>
-          ))}
+            </>
+          )}
         </div>
       ) : null}
 
       <p className="mt-4 flex items-center gap-2 text-[11px] text-muted-foreground">
         <ClipboardCheck size={12} className="text-[#00FFD5]" />
-        Prioriza conceptos fallados y repasa con flashcards antes del siguiente intento.
+        Estudio en flashcards · Evaluación en modo examen — herramientas separadas.
       </p>
     </OrganizerFloatPanel>
   );
