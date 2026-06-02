@@ -1,48 +1,15 @@
 import { NextResponse } from "next/server";
+import { generateOrganizerContent } from "@/lib/ai/generate-organizer";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { env } from "@/lib/env";
+import { downloadMaterialPdf } from "@/lib/organizers/download-material-pdf";
+import { extractPdfFromBuffer, prepareOrganizerText } from "@/lib/pdf/extract";
 
 export const runtime = "nodejs";
+export const maxDuration = 300;
 
-function buildOrganizerContent(material: any) {
-  return {
-    summary: `Resumen del material: ${material.description}`,
-    flashcards: [
-      { question: `¿Cuál es el tema principal de ${material.title}?`, answer: material.description },
-    ],
-    reviewQuestions: [
-      `¿Qué puntos clave se deben recordar de ${material.course_name}?`,
-      `¿Cómo se aplica el contenido de este material en casos prácticos?`,
-    ],
-    conceptMap: {
-      title: material.title,
-      nodes: [material.course_name, material.cycle_label, "conceptos clave"],
-    },
-    synopticChart: {
-      title: material.title,
-      highlights: [material.course_name, material.cycle_label],
-    },
-    comparisonTable: {
-      left: "Concepto",
-      right: "Definición",
-    },
-    hierarchy: {
-      root: material.course_name,
-      branches: [material.title],
-    },
-    flowChart: {
-      start: "Leer material",
-      end: "Aplicar en estudio",
-    },
-    timeline: {
-      events: [
-        { date: new Date(material.created_at).toLocaleDateString("es-PE"), label: "Creación" },
-      ],
-    },
-    simplifiedExplanation: `Este material ayuda a entender ${material.course_name} en ${material.cycle_label}.`, 
-  };
-}
+const MIN_EXTRACTED_TEXT = 120;
 
 export async function GET(request: Request) {
   try {
@@ -69,7 +36,7 @@ export async function GET(request: Request) {
     const admin = createAdminClient();
     const { data: materialData, error: materialError } = await admin
       .from("materials")
-      .select("*")
+      .select("id,title,file_url,file_name,course_id,course_name,cycle_number,cycle_label")
       .eq("id", materialId)
       .maybeSingle();
 
@@ -77,13 +44,53 @@ export async function GET(request: Request) {
       throw materialError;
     }
 
-    if (!materialData) {
+    if (!materialData?.file_url) {
       return NextResponse.json({ error: "Material no encontrado." }, { status: 404 });
     }
 
-    const content = buildOrganizerContent(materialData);
+    const { buffer, fileName } = await downloadMaterialPdf(materialData.file_url);
+
+    let extractedText = "";
+    let extractionMethod = "unknown";
+
+    try {
+      const extraction = await extractPdfFromBuffer(
+        buffer,
+        materialData.file_name || fileName,
+      );
+      extractedText = extraction.text;
+      extractionMethod = extraction.method;
+    } catch (extractionError) {
+      return NextResponse.json(
+        {
+          error:
+            extractionError instanceof Error
+              ? extractionError.message
+              : "No se pudo leer el PDF del material.",
+        },
+        { status: 422 },
+      );
+    }
+
+    if (!extractedText || extractedText.trim().length < MIN_EXTRACTED_TEXT) {
+      return NextResponse.json(
+        {
+          error:
+            "No se pudo extraer texto suficiente del PDF. Si es escaneado, verifica GEMINI_API_KEY para OCR.",
+        },
+        { status: 422 },
+      );
+    }
+
+    const prepared = prepareOrganizerText(extractedText);
+    const content = await generateOrganizerContent({
+      sourceName: materialData.file_name || fileName,
+      text: prepared.text,
+      materialTitle: materialData.title,
+    });
+
     const title = `Organizador IA para ${materialData.title}`;
-    const description = `Organizador generado automáticamente para el material "${materialData.title}".`;
+    const description = `Organizador generado a partir del contenido del PDF "${materialData.title}".`;
 
     const { error: insertError } = await admin.from("organizers").insert({
       user_id: user.id,
@@ -128,7 +135,14 @@ export async function GET(request: Request) {
       }
     }
 
-    return NextResponse.json({ organizer: { title, description, content } });
+    return NextResponse.json({
+      organizer: { title, description, content },
+      extraction: {
+        method: extractionMethod,
+        truncated: prepared.truncated,
+        charCount: prepared.text.length,
+      },
+    });
   } catch (caught) {
     return NextResponse.json(
       { error: caught instanceof Error ? caught.message : "Error generando organizador." },

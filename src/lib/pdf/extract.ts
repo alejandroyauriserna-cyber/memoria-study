@@ -5,10 +5,10 @@ import {
   type OcrProgressCallback,
 } from "@/lib/pdf/gemini-ocr";
 import { isLowQualityExtractedText } from "@/lib/pdf/text-quality";
-import { MAX_AI_INPUT_CHARS, MAX_FILE_SIZE } from "@/lib/pdf/constants";
+import { MAX_AI_INPUT_CHARS, MAX_FILE_SIZE, MAX_ORGANIZER_INPUT_CHARS } from "@/lib/pdf/constants";
 import type { PdfExtractionProgress } from "@/types/pdf-progress";
 
-export { MAX_AI_INPUT_CHARS, MAX_FILE_SIZE } from "@/lib/pdf/constants";
+export { MAX_AI_INPUT_CHARS, MAX_FILE_SIZE, MAX_ORGANIZER_INPUT_CHARS } from "@/lib/pdf/constants";
 
 const MIN_USEFUL_TEXT_LENGTH = 50;
 
@@ -46,17 +46,49 @@ async function extractTextWithGeminiOcrSafe(
   }
 }
 
-export function prepareTextForGeneration(text: string) {
-  if (text.length <= MAX_AI_INPUT_CHARS) {
+export function prepareTextForGeneration(text: string, maxChars = MAX_AI_INPUT_CHARS) {
+  if (text.length <= maxChars) {
     return { text, truncated: false };
   }
 
   return {
     text:
-      text.slice(0, MAX_AI_INPUT_CHARS) +
+      text.slice(0, maxChars) +
       "\n\n[... documento recortado por longitud; se usó la parte inicial ...]",
     truncated: true,
   };
+}
+
+const ORGANIZER_SECTION_SEPARATOR = "\n\n[... sección omitida ...]\n\n";
+
+/** Muestrea inicio (40%), centro (20%) y final (40%) para no perder conclusiones. */
+export function sampleTextHeadMiddleTail(text: string, maxChars: number) {
+  if (text.length <= maxChars) {
+    return { text, truncated: false };
+  }
+
+  const separatorBudget = ORGANIZER_SECTION_SEPARATOR.length * 2;
+  const contentBudget = maxChars - separatorBudget;
+
+  const startLen = Math.floor(contentBudget * 0.4);
+  const middleLen = Math.floor(contentBudget * 0.2);
+  const endLen = contentBudget - startLen - middleLen;
+
+  const start = text.slice(0, startLen);
+  const middleStart = Math.floor((text.length - middleLen) / 2);
+  const middle = text.slice(middleStart, middleStart + middleLen);
+  const end = text.slice(text.length - endLen);
+
+  return {
+    text:
+      `${start}${ORGANIZER_SECTION_SEPARATOR}${middle}${ORGANIZER_SECTION_SEPARATOR}${end}` +
+      "\n\n[... documento recortado: 40% inicio, 20% centro, 40% final ...]",
+    truncated: true,
+  };
+}
+
+export function prepareOrganizerText(text: string) {
+  return sampleTextHeadMiddleTail(text, MAX_ORGANIZER_INPUT_CHARS);
 }
 
 function decodeTextRun(value: string) {
