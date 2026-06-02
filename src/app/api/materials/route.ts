@@ -217,32 +217,23 @@ export async function POST(request: Request) {
       .eq("user_id", user.id)
       .maybeSingle();
 
-    if (profileSelectError) {
-      throw profileSelectError;
-    }
-
-    if (profileData) {
-      const { error: profileUpdateError } = await admin
-        .from("user_profiles")
-        .update({
-          total_shared: (profileData.total_shared ?? 0) + 1,
-          reputation_points: (profileData.reputation_points ?? 0) + 10,
-        })
-        .eq("user_id", user.id);
-
-      if (profileUpdateError) {
-        throw profileUpdateError;
-      }
-    } else {
-      const { error: profileInsertError } = await admin.from("user_profiles").insert({
-        user_id: user.id,
-        email: user.email,
-        total_shared: 1,
-        reputation_points: 10,
-      });
-
-      if (profileInsertError) {
-        throw profileInsertError;
+    if (!profileSelectError) {
+      if (profileData) {
+        await admin
+          .from("user_profiles")
+          .update({
+            total_shared: (profileData.total_shared ?? 0) + 1,
+            reputation_points: (profileData.reputation_points ?? 0) + 10,
+          })
+          .eq("user_id", user.id);
+      } else {
+        await admin.from("user_profiles").insert({
+          user_id: user.id,
+          email: user.email,
+          academic_context: {},
+          total_shared: 1,
+          reputation_points: 10,
+        });
       }
     }
 

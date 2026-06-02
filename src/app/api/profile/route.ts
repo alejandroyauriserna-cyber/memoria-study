@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import type { User } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/env";
@@ -27,6 +28,75 @@ const bodySchema = z.object({
   currentCycle: currentCycleSchema.optional(),
 });
 
+type ProfileShape = {
+  full_name: string | null;
+  current_cycle_number: number | null;
+  current_cycle_label: string | null;
+  academic_context: unknown;
+  email: string | null;
+};
+
+function profileFromAuthUser(user: User): ProfileShape {
+  const metadata = user.user_metadata ?? {};
+
+  return {
+    full_name: (metadata.full_name as string | undefined) ?? null,
+    current_cycle_number: (metadata.current_cycle_number as number | undefined) ?? null,
+    current_cycle_label: (metadata.current_cycle_label as string | undefined) ?? null,
+    academic_context: metadata.academic_context ?? metadata.academic ?? {},
+    email: user.email ?? null,
+  };
+}
+
+function buildProfilePayload(
+  user: User,
+  body: z.infer<typeof bodySchema>,
+): ProfileShape & { user_id: string } {
+  return {
+    user_id: user.id,
+    email: user.email ?? body.email ?? null,
+    academic_context: body.academic ?? undefined,
+    full_name: body.fullName ?? (user.user_metadata?.full_name as string | undefined) ?? null,
+    current_cycle_number:
+      body.currentCycle?.cycleNumber ??
+      (user.user_metadata?.current_cycle_number as number | undefined) ??
+      null,
+    current_cycle_label:
+      body.currentCycle?.cycleLabel ??
+      (user.user_metadata?.current_cycle_label as string | undefined) ??
+      null,
+  };
+}
+
+async function saveProfileToUserMetadata(
+  admin: ReturnType<typeof createAdminClient>,
+  user: User,
+  body: z.infer<typeof bodySchema>,
+  profilePayload: ProfileShape,
+) {
+  const metadata = {
+    ...user.user_metadata,
+    full_name: profilePayload.full_name,
+    current_cycle_number: profilePayload.current_cycle_number,
+    current_cycle_label: profilePayload.current_cycle_label,
+  };
+
+  if (body.academic) {
+    Object.assign(metadata, {
+      academic: body.academic,
+      academic_context: body.academic,
+    });
+  }
+
+  const { error } = await admin.auth.admin.updateUserById(user.id, {
+    user_metadata: metadata,
+  });
+
+  if (error) {
+    throw error;
+  }
+}
+
 export async function GET() {
   try {
     if (!hasSupabaseEnv()) {
@@ -43,7 +113,7 @@ export async function GET() {
     }
 
     const admin = createAdminClient();
-    const { data } = await admin
+    const { data, error } = await admin
       .from("user_profiles")
       .select(
         "full_name, current_cycle_number, current_cycle_label, academic_context, email",
@@ -51,7 +121,11 @@ export async function GET() {
       .eq("user_id", user.id)
       .maybeSingle();
 
-    return NextResponse.json({ profile: data ?? null });
+    if (error) {
+      return NextResponse.json({ profile: profileFromAuthUser(user) });
+    }
+
+    return NextResponse.json({ profile: data ?? profileFromAuthUser(user) });
   } catch (caught) {
     return NextResponse.json(
       { error: caught instanceof Error ? caught.message : "Error al leer perfil." },
@@ -83,24 +157,14 @@ export async function POST(request: Request) {
       });
     }
 
-    const profilePayload = {
-      user_id: user.id,
-      email: user.email ?? body.email ?? null,
-      academic_context: body.academic ?? undefined,
-      full_name: body.fullName ?? user.user_metadata?.full_name ?? null,
-      current_cycle_number:
-        body.currentCycle?.cycleNumber ?? user.user_metadata?.current_cycle_number ?? null,
-      current_cycle_label:
-        body.currentCycle?.cycleLabel ?? user.user_metadata?.current_cycle_label ?? null,
-    };
-
+    const profilePayload = buildProfilePayload(user, body);
     const admin = createAdminClient();
     const { error } = await admin.from("user_profiles").upsert(profilePayload, {
       onConflict: "user_id",
     });
 
     if (error) {
-      throw error;
+      await saveProfileToUserMetadata(admin, user, body, profilePayload);
     }
 
     return NextResponse.json({ saved: true, profile: profilePayload });
