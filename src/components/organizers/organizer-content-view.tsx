@@ -176,11 +176,7 @@ export function OrganizerContentView({
             {organizerId ? (
               <VisualMindMapPanel
                 organizerId={organizerId}
-                organizerTitle={
-                  parsed.conceptMap?.title ?? parsed.hierarchy?.root ?? undefined
-                }
                 visualMindMap={parsed.visualMindMap}
-                academicInfographic={parsed.academicInfographic}
                 onGenerated={onContentUpdate}
               />
             ) : null}

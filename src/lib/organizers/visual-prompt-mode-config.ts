@@ -1,4 +1,4 @@
-import type { VisualPromptMode, VisualCreativityLevel } from "@/lib/organizers/visual-prompt-types";
+import type { VisualPromptMode, VisualCreativityLevel, VisualAcademicLevel } from "@/lib/organizers/visual-prompt-types";
 
 export const ATLAS_JURIDICO_MODULE_TITLE = "Atlas Jurídico IA";
 /** @deprecated Use ATLAS_JURIDICO_MODULE_TITLE */
@@ -37,24 +37,45 @@ export const HOW_IT_WORKS_STEPS = [
 ] as const;
 
 export const ATLAS_ACADEMIC_MANDATE = `
-MANDATO ACADÉMICO — ATLAS JURÍDICO UNIVERSITARIO DE ALTA GAMA:
-Nivel: Facultad de Derecho, Posgrado, Maestría.
-Inspiración editorial: Harvard Law Review, National Geographic Atlas, The Economist Visual Essays, Bloomberg Graphics, Yale Law School, Oxford Law, Visual Capitalist (legal edition).
-NO crear infografía escolar. NO material de primaria ni secundaria.
+MANDATO ACADÉMICO UNIVERSAL — VISUALIZACIÓN JURÍDICA DE ALTO NIVEL:
+Público: estudiantes universitarios de Derecho, posgrado, tesis, sustentaciones y práctica profesional.
+Inspiración editorial: Harvard Law School, Yale Law School, Oxford Law, Stanford Law, Bloomberg Graphics, Visual Capitalist, National Geographic Atlas, The Economist.
+
+PRINCIPIO FUNDAMENTAL: la imagen debe ENSEÑAR, no decorar. Cada elemento transmite conocimiento jurídico.
 
 PROHIBIDO ABSOLUTAMENTE:
-caricaturas, estilo infantil, dibujos escolares, emojis, personajes sonrientes, personajes repetidos, ilustraciones tipo primaria, estilo Canva juvenil, colores saturados infantiles, iconos clipart.
+infografía escolar, mapa conceptual escolar, lámina de secundaria, estilo Canva básico, estilo PowerPoint, caricaturas, dibujos infantiles, emojis, personajes genéricos repetidos, lupas repetidas, pergaminos repetidos, iconos clonados, decoración sin significado doctrinal.
+Si un mismo objeto aparece más de una vez, debe tener justificación académica.
 
-OBLIGATORIO:
-diagramas profesionales, esquemas doctrinales, iconografía jurídica elegante, manuscritos, libros históricos, códigos civiles, sentencias, expedientes, tribunales, líneas doctrinales, mapas conceptuales avanzados, flechas académicas, relaciones de causalidad, jerarquías conceptuales, comparaciones doctrinales.
+ESTRUCTURA JERÁRQUICA (8 NIVELES):
+Nivel 1 — Tema principal.
+Nivel 2 — Conceptos doctrinales principales.
+Nivel 3 — Principios.
+Nivel 4 — Artículos.
+Nivel 5 — Jurisprudencia.
+Nivel 6 — Casos prácticos.
+Nivel 7 — Excepciones.
+Nivel 8 — Comparaciones.
 
-COMPOSICIÓN:
-Tema principal en el centro. Alrededor: conceptos, principios, artículos, jurisprudencia, excepciones, doctrina.
-Cada elemento: título + explicación breve + conexión visual lógica.
+DENSIDAD ACADÉMICA — cada bloque debe contener: concepto + explicación resumida + utilidad jurídica + relación con otros conceptos.
+La imagen debe funcionar incluso sin leer el PDF.
 
-PALETA: azul petróleo, dorado, blanco marfil, gris grafito.
-FORMATO: póster panorámico 16:9, resolución ultra alta, iluminación cinematográfica, aspecto editorial premium, alta densidad informativa.
-Debe parecer una página extraída de un atlas jurídico moderno — material de maestría, no escolar.
+RELACIONES VISUALES — las conexiones representan: dependencia, subordinación, excepción, consecuencia, comparación, oposición, integración.
+Usar flechas diferentes, colores diferentes y jerarquías visuales. No conectar nodos al azar.
+
+REPRESENTACIÓN METAFÓRICA ÚNICA POR CONCEPTO (no reutilizar el mismo símbolo):
+Buena fe → brújula ética / balanza equilibrada.
+Voluntad → firma jurídica / consentimiento.
+Interpretación → capas de texto revelándose.
+Jurisprudencia → red de sentencias vinculadas.
+Normas imperativas → pilares estructurales.
+Contratación en masa → ecosistema contractual conectado.
+
+MEMORIZACIÓN COGNITIVA: chunking, asociación visual, agrupación temática, colores por categoría, diferenciación semántica.
+
+PALETA: azul petróleo, dorado, marfil, gris grafito. Iluminación cinematográfica. Contraste alto. Aspecto premium editorial.
+FORMATO: póster panorámico 16:9, resolución ultra alta.
+Debe parecer una página de atlas jurídico moderno — material universitario premium, NO escolar.
 `.trim();
 
 export const UNIVERSAL_QUALITY_BLOCK = `
@@ -123,17 +144,122 @@ export function creativityLabel(level: VisualCreativityLevel): string {
   return CREATIVITY_LEVELS.find((item) => item.id === level)?.label ?? "Equilibrado";
 }
 
+export const ACADEMIC_LEVEL_CONFIG: Record<
+  VisualAcademicLevel,
+  {
+    label: string;
+    directive: string;
+    structure: string;
+    density: string;
+    qualityHint: string;
+  }
+> = {
+  basic: {
+    label: "Básico",
+    directive: `NIVEL ACADÉMICO — BÁSICO (INTRODUCTORIO):
+Objetivo: comprensión rápida del tema. Ideal para primeros ciclos y primer contacto.
+PRIORIZA: pocos conceptos (máximo 5-7), mucha claridad visual, poco texto por bloque, relaciones simples, colores distintivos por categoría.
+EVITA: densidad extrema, jurisprudencia extensa, conflictos doctrinales, texto ilegible.
+Resultado: visualización simple pero elegante — nunca escolar ni infantil.`,
+    structure: `ESTRUCTURA BÁSICA:
+- Tema central dominante
+- 4-6 conceptos periféricos con definición de una línea
+- Conexiones simples (flecha sólida = dependencia; línea punteada = relación)
+- Sin más de 2 niveles jerárquicos visibles`,
+    density: "Baja densidad textual. Máximo 1-2 frases por concepto. Legibilidad prioritaria.",
+    qualityHint: "introductory university law visualization, clear and elegant, low density, premium editorial",
+  },
+  undergraduate: {
+    label: "Universitario",
+    directive: `NIVEL ACADÉMICO — UNIVERSITARIO (EXÁMENES):
+Objetivo: preparación de parciales y finales universitarios.
+PRIORIZA: densidad conceptual media-alta, principios jurídicos, artículos relevantes, comparaciones doctrinales, casos prácticos, jerarquía de 8 niveles.
+Inspiración: manuales universitarios, material de preparación para exámenes de Derecho.
+Resultado: mapa visual académico completo para evaluación.`,
+    structure: `ESTRUCTURA UNIVERSITARIA (8 NIVELES):
+Tema → conceptos → principios → artículos → jurisprudencia → casos → excepciones → comparaciones.
+Cada bloque: concepto + explicación + utilidad jurídica + relación visual.`,
+    density: "Densidad media-alta. Cada nodo incluye definición breve y utilidad jurídica.",
+    qualityHint: "university law exam preparation atlas, full doctrinal hierarchy, articles and cases visible",
+  },
+  postgraduate: {
+    label: "Posgrado",
+    directive: `NIVEL ACADÉMICO — POSGRADO (ANÁLISIS PROFUNDO):
+Objetivo: análisis doctrinal avanzado para maestrías y sustentaciones.
+PRIORIZA: doctrina avanzada, autores, jurisprudencia central, corrientes interpretativas, comparaciones complejas, relación entre normas.
+Inspiración: Harvard Law School, Yale Law School, Oxford Law — atlas jurídico profesional.
+Resultado: atlas jurídico de posgrado con máxima rigurosidad editorial.`,
+    structure: `ESTRUCTURA POSGRADO:
+- Tema con marco doctrinal
+- Nodos con doctrina, autores y corrientes interpretativas
+- Jurisprudencia con ratios decidendi visibles
+- Comparaciones en columnas paralelas
+- Flechas codificadas: dependencia, subordinación, excepción, integración, oposición`,
+    density: "Alta densidad informativa. Integrar autores, doctrina y precedentes sin ocultarlos.",
+    qualityHint: "postgraduate legal atlas, advanced doctrine, jurisprudence lines, Harvard Yale Oxford editorial",
+  },
+  thesis: {
+    label: "Tesis",
+    directive: `NIVEL ACADÉMICO — TESIS (INVESTIGACIÓN):
+Objetivo: visualización de investigación jurídica académica.
+PRIORIZA: máxima profundidad, relaciones causales complejas, conflictos doctrinales, desarrollo argumentativo, problemas jurídicos, hipótesis, variables, líneas jurisprudenciales.
+Inspiración: papers científicos, revistas indexadas, investigaciones jurídicas.
+Resultado: visualización de investigación — NO infografía, sino síntesis argumentativa visual.`,
+    structure: `ESTRUCTURA TESIS:
+Nivel 1 — Problema jurídico / pregunta de investigación.
+Nivel 2 — Marco normativo y doctrinal.
+Nivel 3 — Hipótesis y variables.
+Nivel 4 — Corrientes doctrinales enfrentadas.
+Nivel 5 — Líneas jurisprudenciales.
+Nivel 6 — Argumentos y contraargumentos.
+Nivel 7 — Conclusiones parciales.
+Nivel 8 — Implicaciones y vacíos normativos.`,
+    density: "Máxima densidad académica. Conflictos doctrinales visibles. Relaciones causales explícitas.",
+    qualityHint: "legal research visualization, thesis-level depth, doctrinal conflicts, hypothesis variables, indexed journal style",
+  },
+  litigant: {
+    label: "Litigante",
+    directive: `NIVEL ACADÉMICO — LITIGANTE / PRÁCTICA PROFESIONAL:
+Objetivo: pensar y razonar como abogado — NO solo memorizar definiciones.
+PRIORIZA: conflicto jurídico, posiciones enfrentadas, argumentos de ambas partes, contraargumentos, jurisprudencia aplicable central, normas relevantes, criterios de decisión, riesgos legales, excepciones procesales, posibles defensas, consecuencias prácticas.
+La imagen debe responder: «¿Qué haría un abogado frente a este problema?»
+Inspiración: despachos jurídicos internacionales, tribunales superiores, informes legales premium, litigación estratégica.`,
+    structure: `ESTRUCTURA LITIGANTE:
+Nivel 1 — Problema jurídico principal.
+Nivel 2 — Normativa aplicable.
+Nivel 3 — Argumentos posibles (parte demandante / actor).
+Nivel 4 — Contraargumentos (parte demandada / defensa).
+Nivel 5 — Jurisprudencia relevante (casaciones, sentencias, acuerdos plenarios — posición central).
+Nivel 6 — Posible decisión judicial / criterio de decisión.
+Nivel 7 — Consecuencias prácticas y riesgos.
+Conexiones: estrategia, ataque, defensa, excepción, contradicción, riesgo, oportunidad.`,
+    density: "Enfoque estratégico. Convertir conceptos abstractos en situaciones reales. Precedentes en posición central, no en rincón.",
+    qualityHint: "legal litigation strategy map, law firm premium report, case analysis, arguments counterarguments, practical consequences",
+  },
+};
+
+export function academicLevelLabel(level: VisualAcademicLevel): string {
+  return ACADEMIC_LEVEL_CONFIG[level]?.label ?? "Universitario";
+}
+
 export function buildFinalPrompt(
   basePrompt: string,
   options: {
     creativityLevel?: VisualCreativityLevel;
+    academicLevel?: VisualAcademicLevel;
     studentPersonalization?: string | null;
   },
 ): string {
   const level = options.creativityLevel ?? "balanced";
   const creativity = CREATIVITY_LEVELS.find((item) => item.id === level) ?? CREATIVITY_LEVELS[1];
+  const academicLevel = options.academicLevel ?? "undergraduate";
+  const academic = ACADEMIC_LEVEL_CONFIG[academicLevel];
 
   const sections = [basePrompt.trim()];
+
+  sections.push(
+    `\nNIVEL ACADÉMICO DE LA IMAGEN — ${academic.label.toUpperCase()}:\n${academic.directive}\n\n${academic.structure}\n\nDENSIDAD: ${academic.density}`,
+  );
 
   sections.push(`\nNIVEL DE CREATIVIDAD — ${creativity.label.toUpperCase()}:\n${creativity.directive}`);
 
@@ -146,13 +272,13 @@ export function buildFinalPrompt(
 
   let merged = sections.join("\n");
 
-  if (!merged.includes("Harvard Law Review")) {
+  if (!merged.includes("PRINCIPIO FUNDAMENTAL")) {
     merged = `${merged}\n\n${ATLAS_ACADEMIC_MANDATE}`;
   }
 
   const qualitySnippet = UNIVERSAL_QUALITY_BLOCK.slice(0, 30);
   if (!merged.includes("4K") && !merged.includes(qualitySnippet)) {
-    merged = `${merged}\n\n${UNIVERSAL_QUALITY_BLOCK}`;
+    merged = `${merged}\n\n${UNIVERSAL_QUALITY_BLOCK}\n${academic.qualityHint}`;
   }
 
   return merged;

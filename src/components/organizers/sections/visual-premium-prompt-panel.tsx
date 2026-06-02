@@ -29,10 +29,12 @@ import {
   PERSONALIZATION_PLACEHOLDER,
   PERSONALIZATION_QUICK_CHIPS,
   WHAT_MEMORIASTUDY_DOES,
+  academicLevelLabel,
   buildFinalPrompt,
 } from "@/lib/organizers/visual-prompt-mode-config";
 import {
   isSupportedRubricFile,
+  type VisualAcademicLevel,
   type VisualCreativityLevel,
   type VisualPremiumPrompt,
   type VisualPromptMode,
@@ -40,6 +42,7 @@ import {
 import {
   GEMINI_APP_URL,
   RUBRIC_ACCEPT,
+  VISUAL_ACADEMIC_LEVELS,
   VISUAL_PROMPT_MODES,
 } from "@/lib/organizers/visual-prompt-types";
 
@@ -58,7 +61,8 @@ type NavItem = {
 };
 
 const NAV_ITEMS: NavItem[] = [
-  { id: SECTION_IDS.tipo, label: "Atlas" },
+  { id: SECTION_IDS.tipo, label: "Nivel" },
+  { id: "vip-section-atlas", label: "Atlas" },
   { id: SECTION_IDS.rubrica, label: "Rúbrica" },
   { id: SECTION_IDS.personalizacion, label: "Personalización" },
   { id: SECTION_IDS.prompt, label: "Prompt", requiresResult: true },
@@ -83,6 +87,9 @@ export function VisualPremiumPromptPanel({
   const [mode, setMode] = useState<VisualPromptMode>(
     visualPremiumPrompt?.mode ?? "infographic",
   );
+  const [academicLevel, setAcademicLevel] = useState<VisualAcademicLevel>(
+    visualPremiumPrompt?.academicLevel ?? "undergraduate",
+  );
   const [creativityLevel, setCreativityLevel] = useState<VisualCreativityLevel>(
     visualPremiumPrompt?.creativityLevel ?? "balanced",
   );
@@ -100,10 +107,12 @@ export function VisualPremiumPromptPanel({
   const [activeNav, setActiveNav] = useState<string>(SECTION_IDS.tipo);
 
   const selectedMode = VISUAL_PROMPT_MODES.find((m) => m.id === mode);
+  const selectedAcademicLevel = VISUAL_ACADEMIC_LEVELS.find((l) => l.id === academicLevel);
 
   useEffect(() => {
     if (visualPremiumPrompt) {
       setMode(visualPremiumPrompt.mode);
+      setAcademicLevel(visualPremiumPrompt.academicLevel ?? "undergraduate");
       setCreativityLevel(visualPremiumPrompt.creativityLevel ?? "balanced");
       setPersonalization(visualPremiumPrompt.studentPersonalization ?? "");
       setImageTitle(visualPremiumPrompt.studentTitle ?? "");
@@ -115,9 +124,13 @@ export function VisualPremiumPromptPanel({
   const finalPrompt = useMemo(
     () =>
       basePrompt
-        ? buildFinalPrompt(basePrompt, { creativityLevel, studentPersonalization: personalization })
+        ? buildFinalPrompt(basePrompt, {
+            creativityLevel,
+            academicLevel,
+            studentPersonalization: personalization,
+          })
         : "",
-    [basePrompt, creativityLevel, personalization],
+    [basePrompt, creativityLevel, academicLevel, personalization],
   );
 
   const generationStatus: "idle" | "generating" | "ready" = generating
@@ -178,6 +191,7 @@ export function VisualPremiumPromptPanel({
     try {
       const formData = new FormData();
       formData.append("mode", mode);
+      formData.append("academicLevel", academicLevel);
       formData.append("creativityLevel", creativityLevel);
       if (personalization.trim()) {
         formData.append("personalization", personalization.trim());
@@ -201,6 +215,7 @@ export function VisualPremiumPromptPanel({
 
       const next = payload.visualPremiumPrompt as VisualPremiumPrompt;
       setPromptResult(next);
+      setAcademicLevel(next.academicLevel ?? academicLevel);
       setCreativityLevel(next.creativityLevel ?? creativityLevel);
       setPersonalization(next.studentPersonalization ?? personalization);
       setImageTitle(next.studentTitle ?? imageTitle);
@@ -343,8 +358,67 @@ export function VisualPremiumPromptPanel({
           <div className="min-w-0 flex-1 space-y-10 pb-8">
             <InfoCard />
 
-            {/* PASO 1 — Tipo de atlas */}
-            <StepSection id={SECTION_IDS.tipo} step={1} title="Tipo de atlas jurídico">
+            {/* PASO 1 — Nivel académico */}
+            <StepSection id={SECTION_IDS.tipo} step={1} title="Nivel académico de la imagen">
+              <p className="mb-3 text-sm text-[#F5F7FA]/60">
+                Este parámetro modifica radicalmente densidad, estructura y profundidad del prompt.
+              </p>
+              <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                {VISUAL_ACADEMIC_LEVELS.map((item) => {
+                  const active = academicLevel === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setAcademicLevel(item.id)}
+                      className={`rounded-xl border px-4 py-3 text-left transition ${
+                        active
+                          ? "border-[#4285F4]/50 bg-[#4285F4]/12 shadow-[0_0_24px_rgba(66,133,244,0.12)]"
+                          : "border-white/10 bg-white/[0.02] hover:border-white/20"
+                      }`}
+                    >
+                      <span className="block text-sm font-bold text-[#F5F7FA]">{item.label}</span>
+                      <span className="mt-1 block text-[11px] leading-snug text-[#F5F7FA]/55">
+                        {item.description}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              {selectedAcademicLevel ? (
+                <div className="mt-4 space-y-3">
+                  <div className="rounded-xl border border-[#4285F4]/30 bg-[#4285F4]/10 px-4 py-3">
+                    <p className="text-xs font-semibold text-[#93C5FD]">Ideal para:</p>
+                    <p className="mt-1 text-sm text-[#F5F7FA]/85">{selectedAcademicLevel.idealFor}</p>
+                  </div>
+                  <div className="rounded-xl border border-[#A855F7]/30 bg-[#A855F7]/10 px-4 py-3">
+                    <p className="text-xs font-semibold text-[#C4B5FD]">Resultado esperado:</p>
+                    <p className="mt-1 text-sm text-[#F5F7FA]/85">
+                      {selectedAcademicLevel.expectedResult}
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3">
+                    <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-[#F5F7FA]/45">
+                      Incluye
+                    </p>
+                    <ul className="grid gap-1.5 sm:grid-cols-2">
+                      {selectedAcademicLevel.expectedHighlights.map((item) => (
+                        <li
+                          key={item}
+                          className="flex items-start gap-2 text-xs text-[#F5F7FA]/75"
+                        >
+                          <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-[#4285F4]" />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              ) : null}
+            </StepSection>
+
+            {/* PASO 2 — Tipo de atlas */}
+            <StepSection id="vip-section-atlas" step={2} title="Tipo de atlas jurídico">
               <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
                 {VISUAL_PROMPT_MODES.map((item) => {
                   const active = mode === item.id;
@@ -395,8 +469,8 @@ export function VisualPremiumPromptPanel({
               ) : null}
             </StepSection>
 
-            {/* PASO 2 — Rúbrica */}
-            <StepSection id={SECTION_IDS.rubrica} step={2} title="Adjuntar rúbrica">
+            {/* PASO 3 — Rúbrica */}
+            <StepSection id={SECTION_IDS.rubrica} step={3} title="Adjuntar rúbrica">
               <p className="mb-3 text-sm text-[#F5F7FA]/60">
                 Opcional. La IA analizará criterios, puntajes y formato para adaptar el prompt.
               </p>
@@ -434,10 +508,10 @@ export function VisualPremiumPromptPanel({
               </div>
             </StepSection>
 
-            {/* PASO 3 — Personalización */}
+            {/* PASO 4 — Personalización */}
             <StepSection
               id={SECTION_IDS.personalizacion}
-              step={3}
+              step={4}
               title="Personalización adicional"
             >
               <div className="mb-6">
@@ -529,7 +603,7 @@ export function VisualPremiumPromptPanel({
               </div>
             </StepSection>
 
-            {/* PASO 4 — Generar */}
+            {/* PASO 5 — Generar */}
             <section className="scroll-mt-4">
               <button
                 type="button"
@@ -552,15 +626,18 @@ export function VisualPremiumPromptPanel({
               {error ? <p className="mt-3 text-sm text-red-400">{error}</p> : null}
             </section>
 
-            {/* PASO 5 — Prompt generado */}
+            {/* PASO 6 — Prompt generado */}
             {hasPrompt && finalPrompt && promptResult ? (
-              <StepSection id={SECTION_IDS.prompt} step={5} title="Prompt generado">
+              <StepSection id={SECTION_IDS.prompt} step={6} title="Prompt generado">
                 <PremiumPromptCard
                   title={promptResult.title}
                   modeLabel={
                     VISUAL_PROMPT_MODES.find((m) => m.id === promptResult.mode)?.label ??
                     promptResult.mode
                   }
+                  academicLevelLabel={academicLevelLabel(
+                    promptResult.academicLevel ?? academicLevel,
+                  )}
                   content={finalPrompt}
                   copied={copied}
                   onCopy={copyPrompt}
@@ -618,9 +695,9 @@ export function VisualPremiumPromptPanel({
               </div>
             )}
 
-            {/* PASO 6 — Explicación */}
+            {/* PASO 7 — Explicación */}
             {hasPrompt && promptResult?.explanation?.length ? (
-              <StepSection id={SECTION_IDS.explicacion} step={6} title="¿Por qué se generó así?">
+              <StepSection id={SECTION_IDS.explicacion} step={7} title="¿Por qué se generó así?">
                 <ExplanationBlock
                   lines={promptResult.explanation}
                   hasRubric={promptResult.hasRubric}
@@ -774,6 +851,7 @@ function StepSection({
 function PremiumPromptCard({
   title,
   modeLabel,
+  academicLevelLabel: levelLabel,
   content,
   copied,
   onCopy,
@@ -781,6 +859,7 @@ function PremiumPromptCard({
 }: {
   title: string;
   modeLabel: string;
+  academicLevelLabel: string;
   content: string;
   copied: boolean;
   onCopy: () => void;
@@ -800,7 +879,9 @@ function PremiumPromptCard({
                 Atlas jurídico final · Gemini Image
               </p>
               <h3 className="text-base font-bold text-[#F5F7FA]">{title}</h3>
-              <p className="text-[11px] text-[#F5F7FA]/45">Modo: {modeLabel}</p>
+              <p className="text-[11px] text-[#F5F7FA]/45">
+                Modo: {modeLabel} · Nivel: {levelLabel}
+              </p>
             </div>
           </div>
           <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-medium text-[#F5F7FA]/60">

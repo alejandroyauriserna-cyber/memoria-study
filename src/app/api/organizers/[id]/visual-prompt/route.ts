@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { extractRubricText } from "@/lib/ai/extract-rubric-text";
 import { generateVisualPremiumPrompt } from "@/lib/ai/generate-visual-premium-prompt";
 import { parseOrganizerContent } from "@/lib/organizers/parse-content";
-import type { VisualCreativityLevel, VisualPromptMode } from "@/lib/organizers/visual-prompt-types";
+import type { VisualAcademicLevel, VisualCreativityLevel, VisualPromptMode } from "@/lib/organizers/visual-prompt-types";
 import { VISUAL_PROMPT_MODES } from "@/lib/organizers/visual-prompt-types";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -17,10 +17,22 @@ const VALID_MODES = new Set(VISUAL_PROMPT_MODES.map((m) => m.id));
 const MAX_RUBRIC_BYTES = 12 * 1024 * 1024;
 
 const VALID_CREATIVITY = new Set(["conservative", "balanced", "creative", "extreme"]);
+const VALID_ACADEMIC_LEVELS = new Set([
+  "basic",
+  "undergraduate",
+  "postgraduate",
+  "thesis",
+  "litigant",
+]);
 
 function parseCreativity(value: FormDataEntryValue | null): VisualCreativityLevel {
   const level = typeof value === "string" ? value : "balanced";
   return VALID_CREATIVITY.has(level) ? (level as VisualCreativityLevel) : "balanced";
+}
+
+function parseAcademicLevel(value: FormDataEntryValue | null): VisualAcademicLevel {
+  const level = typeof value === "string" ? value : "undergraduate";
+  return VALID_ACADEMIC_LEVELS.has(level) ? (level as VisualAcademicLevel) : "undergraduate";
 }
 
 function parsePersonalization(value: FormDataEntryValue | null): string | null {
@@ -48,6 +60,7 @@ export async function POST(request: Request, context: RouteContext) {
     let rubricFileName: string | undefined;
     let studentPersonalization: string | null = null;
     let creativityLevel: VisualCreativityLevel = "balanced";
+    let academicLevel: VisualAcademicLevel = "undergraduate";
     let customTitle: string | null = null;
 
     if (contentType.includes("multipart/form-data")) {
@@ -55,6 +68,7 @@ export async function POST(request: Request, context: RouteContext) {
       mode = parseMode(formData.get("mode"));
       studentPersonalization = parsePersonalization(formData.get("personalization"));
       creativityLevel = parseCreativity(formData.get("creativityLevel"));
+      academicLevel = parseAcademicLevel(formData.get("academicLevel"));
       customTitle = parsePersonalization(formData.get("imageTitle"));
 
       const rubricEntry = formData.get("rubric");
@@ -77,6 +91,7 @@ export async function POST(request: Request, context: RouteContext) {
         rubricFileName?: string;
         personalization?: string;
         creativityLevel?: VisualCreativityLevel;
+        academicLevel?: VisualAcademicLevel;
         imageTitle?: string;
       };
       mode = body.mode && VALID_MODES.has(body.mode) ? body.mode : "infographic";
@@ -88,6 +103,10 @@ export async function POST(request: Request, context: RouteContext) {
         body.creativityLevel && VALID_CREATIVITY.has(body.creativityLevel)
           ? body.creativityLevel
           : "balanced";
+      academicLevel =
+        body.academicLevel && VALID_ACADEMIC_LEVELS.has(body.academicLevel)
+          ? body.academicLevel
+          : "undergraduate";
     }
 
     const supabase = await createClient();
@@ -125,6 +144,7 @@ export async function POST(request: Request, context: RouteContext) {
       studentPersonalization,
       creativityLevel,
       customTitle,
+      academicLevel,
     );
 
     const mergedContent = {

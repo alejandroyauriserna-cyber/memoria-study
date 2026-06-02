@@ -4,8 +4,10 @@ import { env } from "@/lib/env";
 import type { OrganizerContent } from "@/lib/organizers/parse-content";
 import {
   ATLAS_ACADEMIC_MANDATE,
+  ACADEMIC_LEVEL_CONFIG,
   MODE_PROMPT_CONFIG,
   UNIVERSAL_QUALITY_BLOCK,
+  academicLevelLabel,
   buildFinalPrompt,
   creativityLabel,
   modeLabel,
@@ -13,6 +15,7 @@ import {
 import type {
   DocumentVisualAnalysis,
   RubricAnalysis,
+  VisualAcademicLevel,
   VisualCreativityLevel,
   VisualPremiumPrompt,
   VisualPromptMode,
@@ -38,21 +41,27 @@ const SCENE_RULES: Record<
   Array<{ match: RegExp; metaphor: string }>
 > = {
   infographic: [
-    { match: /buena fe|honestidad/i, metaphor: "nodo doctrinal: balanza equilibrada + definición breve + cita conceptual" },
-    { match: /contrato|contratación|negocio jurídico/i, metaphor: "manuscrito legal firmado, pluma estilográfica, sello notarial — esquema doctrinal" },
+    { match: /buena fe|honestidad/i, metaphor: "brújula ética sobre balanza equilibrada — definición + utilidad jurídica + conexión doctrinal" },
+    { match: /voluntad|consentimiento/i, metaphor: "firma jurídica sobre documento con sello de consentimiento" },
+    { match: /contrato|contratación|negocio jurídico/i, metaphor: "ecosistema contractual conectado — manuscrito firmado, pluma estilográfica, sello notarial" },
+    { match: /contratación en masa|contratos de adhesión/i, metaphor: "red de contratos interconectados formando ecosistema contractual masivo" },
     { match: /nulidad/i, metaphor: "documento anulado con sello institucional rojo, artículo correlativo visible" },
+    { match: /norma imperativa|normas imperativas|orden público/i, metaphor: "pilares estructurales jurídicos que sostienen el edificio normativo" },
     { match: /juez|tribunal|magistrado/i, metaphor: "iconografía de tribunal clásico, columnas, balanza — sin personajes caricaturescos" },
     { match: /código civil|código|civil/i, metaphor: "tomo del Código Civil encuadernado en cuero, artículos numerados en tipografía serif" },
-    { match: /interpretación|hermenéutica/i, metaphor: "lupa sobre texto manuscrito histórico, flechas de interpretación sistemática" },
-    { match: /jurisprudencia|precedente|fallo|sentencia/i, metaphor: "expediente numerado con ratio decidendi en recuadro dorado" },
+    { match: /interpretación|hermenéutica/i, metaphor: "capas de texto manuscrito revelándose progresivamente — interpretación literal, sistemática, teleológica" },
+    { match: /jurisprudencia|precedente|fallo|sentencia|casación/i, metaphor: "red de sentencias vinculadas con ratio decidendi en recuadros dorados" },
+    { match: /error|consentimiento defectuoso/i, metaphor: "documento con cláusula tachada señalando vicio del consentimiento" },
   ],
   memorization: [
     { match: /nulidad/i, metaphor: "símbolo mnemotécnico: documento anulado con sello rojo institucional (formal, memorable)" },
-    { match: /buena fe|honestidad/i, metaphor: "símbolo: balanza dorada equilibrada sobre fondo petróleo" },
-    { match: /interpretación|hermenéutica/i, metaphor: "símbolo: lupa sobre pergamino con texto subrayado" },
+    { match: /buena fe|honestidad/i, metaphor: "símbolo: brújula ética sobre balanza dorada equilibrada" },
+    { match: /voluntad|consentimiento/i, metaphor: "símbolo: firma jurídica con pluma estilográfica" },
+    { match: /interpretación|hermenéutica/i, metaphor: "símbolo: capas de pergamino con texto revelándose" },
     { match: /obligación|obligacion/i, metaphor: "símbolo: cadena estilizada dorada conectando sujetos jurídicos" },
     { match: /código civil|código|civil/i, metaphor: "símbolo: tomo jurídico monumental en cuero con lomo dorado" },
-    { match: /jurisprudencia|precedente|fallo|sentencia/i, metaphor: "símbolo: torre de expedientes con sello judicial" },
+    { match: /jurisprudencia|precedente|fallo|sentencia/i, metaphor: "símbolo: red de expedientes vinculados con sello judicial" },
+    { match: /norma imperativa|orden público/i, metaphor: "símbolo: pilares estructurales jurídicos" },
   ],
   exam: [
     { match: /nulidad/i, metaphor: "etiqueta roja «NULIDAD» + definición breve en texto grande" },
@@ -216,8 +225,13 @@ export function buildPromptExplanation(
   rubric?: RubricAnalysis | null,
   creativityLevel?: VisualCreativityLevel,
   studentPersonalization?: string | null,
+  academicLevel?: VisualAcademicLevel,
 ): string[] {
   const lines: string[] = [];
+
+  if (academicLevel) {
+    lines.push(`Se aplicó nivel académico ${academicLevelLabel(academicLevel)}.`);
+  }
 
   lines.push(`Se detectaron ${analysis.concepts.length} conceptos principales.`);
 
@@ -239,6 +253,16 @@ export function buildPromptExplanation(
 
   if (analysis.jurisprudence.length) {
     lines.push("Se encontró jurisprudencia en el material.");
+  }
+
+  if (academicLevel === "litigant" && analysis.practicalCases.length) {
+    lines.push(
+      `Se estructuraron ${analysis.practicalCases.length} situaciones prácticas para análisis litigante.`,
+    );
+  }
+
+  if (academicLevel === "thesis" && analysis.conceptualRelations.length) {
+    lines.push("Se incluyeron relaciones causales y conflictos doctrinales para nivel tesis.");
   }
 
   if (analysis.authors.length) {
@@ -333,6 +357,76 @@ ${rubric.structureRequirements.map((s) => `- ${s}`).join("\n") || "- Estructura 
 ${rubric.conceptCountHint ? `Cantidad de conceptos: ${rubric.conceptCountHint}` : ""}
 ${rubric.depthRequired ? `Profundidad: ${rubric.depthRequired}` : ""}
 `.trim();
+}
+
+function buildAcademicLevelBlock(
+  analysis: DocumentVisualAnalysis,
+  academicLevel: VisualAcademicLevel,
+): string {
+  const config = ACADEMIC_LEVEL_CONFIG[academicLevel];
+
+  if (academicLevel === "litigant") {
+    return `
+${config.directive}
+
+PROBLEMA JURÍDICO DETECTADO:
+${analysis.centralTopic}
+
+NORMATIVA APLICABLE:
+${[...analysis.norms, ...analysis.articles].map((n) => `- ${n}`).join("\n") || "- Del material analizado"}
+
+ARGUMENTOS POSIBLES (PARTE ACTORA):
+${analysis.concepts.slice(0, 6).map((c) => `- ${c}`).join("\n")}
+
+CONTRAARGUMENTOS / DEFENSAS:
+${analysis.exceptions.map((e) => `- Excepción/defensa: ${e}`).join("\n") || "- Excepciones del material"}
+
+JURISPRUDENCIA CENTRAL (POSICIÓN PRINCIPAL, NO EN RINCÓN):
+${analysis.jurisprudence.map((j) => `- ${j}`).join("\n") || "- Precedentes del material"}
+
+CASOS PRÁCTICOS:
+${analysis.practicalCases.map((c) => `- ${c}`).join("\n") || "- Situaciones del material"}
+
+CRITERIOS DE DECISIÓN:
+${analysis.comparisons.map((c) => `- ${c}`).join("\n") || "- Comparaciones doctrinales relevantes"}`.trim();
+  }
+
+  if (academicLevel === "thesis") {
+    return `
+${config.directive}
+
+PROBLEMA / PREGUNTA DE INVESTIGACIÓN:
+${analysis.centralTopic}
+
+HIPÓTESIS Y VARIABLES (DEL MATERIAL):
+${analysis.conceptualRelations.map((r) => `- ${r}`).join("\n") || "- Relaciones conceptuales detectadas"}
+
+CONFLICTOS DOCTRINALES:
+${analysis.comparisons.map((c) => `- ${c}`).join("\n") || "- Comparaciones doctrinales"}
+
+LÍNEAS JURISPRUDENCIALES:
+${analysis.jurisprudence.map((j) => `- ${j}`).join("\n") || "- Precedentes identificados"}
+
+DOCTRINA Y AUTORES:
+${[...analysis.authors, ...analysis.doctrine].map((a) => `- ${a}`).join("\n") || "- Referencias doctrinales"}`.trim();
+  }
+
+  if (academicLevel === "basic") {
+    return `
+${config.directive}
+
+CONCEPTOS ESENCIALES (MÁXIMO 7):
+${analysis.concepts.slice(0, 7).map((c) => `- ${c}`).join("\n")}
+
+DEFINICIONES BREVES:
+${analysis.definitions.slice(0, 5).map((d) => `- ${d}`).join("\n") || analysis.concepts.slice(0, 5).map((c) => `- ${c}`).join("\n")}`.trim();
+  }
+
+  return `
+${config.directive}
+
+${config.structure}
+${config.density}`.trim();
 }
 
 function buildModeContentBlock(analysis: DocumentVisualAnalysis, mode: VisualPromptMode): string {
@@ -454,14 +548,17 @@ function assembleVisualPremiumPrompt(
   base: Omit<VisualPremiumPrompt, "prompt"> & { basePrompt: string },
   studentPersonalization?: string | null,
   creativityLevel: VisualCreativityLevel = "balanced",
+  academicLevel: VisualAcademicLevel = "undergraduate",
 ): VisualPremiumPrompt {
   const finalPrompt = buildFinalPrompt(base.basePrompt, {
     creativityLevel,
+    academicLevel,
     studentPersonalization,
   });
 
   return {
     ...base,
+    academicLevel,
     studentPersonalization: studentPersonalization?.trim() || undefined,
     creativityLevel,
     prompt: finalPrompt,
@@ -472,6 +569,7 @@ function assembleVisualPremiumPrompt(
           base.rubricAnalysis,
           creativityLevel,
           studentPersonalization,
+          academicLevel,
         )
       : base.explanation,
   };
@@ -483,10 +581,12 @@ function buildFallbackPrompt(
   content: OrganizerContent,
   rubric?: RubricAnalysis | null,
   creativityLevel: VisualCreativityLevel = "balanced",
+  academicLevel: VisualAcademicLevel = "undergraduate",
   resolvedTitle?: string,
   isStudentTitle = false,
 ): Omit<VisualPremiumPrompt, "prompt"> & { basePrompt: string } {
   const config = MODE_PROMPT_CONFIG[mode];
+  const academic = ACADEMIC_LEVEL_CONFIG[academicLevel];
   const title = resolvedTitle?.trim() || analysis.centralTopic;
   const rubricSection = rubric
     ? mode === "professor"
@@ -495,18 +595,25 @@ function buildFallbackPrompt(
     : "";
 
   const prompt = ensureQualityBlock(
-    `Genera un atlas visual jurídico universitario ultra detallado (NO infografía escolar).
+    `Genera un atlas visual jurídico ultra detallado (NO infografía escolar).
 
 ${titleDirective(title, isStudentTitle)}
 MODO EXCLUSIVO: ${config.label.toUpperCase()} — NO mezclar con otros estilos.
+NIVEL ACADÉMICO: ${academic.label.toUpperCase()} — modifica densidad y estructura según directivas.
 
 ${ATLAS_ACADEMIC_MANDATE}
+
+${academic.directive}
+
+${academic.structure}
 
 ${config.directive}
 
 ${config.layout}
 
 ${config.visualRules}
+
+${buildAcademicLevelBlock(analysis, academicLevel)}
 
 ${buildModeContentBlock(analysis, mode)}
 ${rubricSection}
@@ -518,13 +625,15 @@ PROHIBIDO EN ESTE MODO:
 ${config.forbidden}
 
 CALIDAD:
-${config.qualityTail}`,
+${config.qualityTail}
+${academic.qualityHint}`,
     config.qualityTail,
   );
 
   return {
     title,
     mode,
+    academicLevel,
     basePrompt: prompt,
     analysis,
     rubricAnalysis: rubric ?? undefined,
@@ -542,6 +651,7 @@ async function enrichPromptWithGemini(
   mode: VisualPromptMode,
   rubric?: RubricAnalysis | null,
   creativityLevel: VisualCreativityLevel = "balanced",
+  academicLevel: VisualAcademicLevel = "undergraduate",
   resolvedTitle?: string,
   isStudentTitle = false,
 ): Promise<Omit<VisualPremiumPrompt, "prompt"> & { basePrompt: string }> {
@@ -554,12 +664,14 @@ async function enrichPromptWithGemini(
       content,
       rubric,
       creativityLevel,
+      academicLevel,
       title,
       isStudentTitle,
     );
   }
 
   const config = MODE_PROMPT_CONFIG[mode];
+  const academic = ACADEMIC_LEVEL_CONFIG[academicLevel];
   const creativityDirective =
     creativityLevel !== "balanced"
       ? `\nNivel de creatividad solicitado: ${creativityLabel(creativityLevel)} — ajusta el estilo visual en consecuencia.`
@@ -572,6 +684,13 @@ NO generes la imagen. Solo el prompt base listo para personalización posterior.
 ${ATLAS_ACADEMIC_MANDATE}
 ${creativityDirective}
 
+=== NIVEL ACADÉMICO OBLIGATORIO: ${academic.label.toUpperCase()} ===
+${academic.directive}
+
+${academic.structure}
+
+DENSIDAD: ${academic.density}
+
 === MODO ACTIVO: ${config.label.toUpperCase()} ===
 ${titleDirective(title, isStudentTitle)}
 
@@ -583,6 +702,8 @@ ${config.visualRules}
 
 PROHIBIDO EN ESTE MODO:
 ${config.forbidden}
+
+${buildAcademicLevelBlock(analysis, academicLevel)}
 
 ${mode === "professor" && rubric ? rubricBlock(rubric) : rubric ? `${rubricBlock(rubric)}\nLa rúbrica COMPLEMENTA el modo ${config.label}; el estilo visual principal sigue siendo el del modo.` : ""}
 
@@ -597,16 +718,20 @@ ${content.summary?.slice(0, 2000) ?? ""}
 
 REGLAS CRÍTICAS:
 - Generar ATLAS JURÍDICO UNIVERSITARIO, nunca infografía escolar ni material infantil.
-- El prompt debe ser RADICALMENTE DIFERENTE al de otros modos.
+- El prompt debe ser RADICALMENTE DIFERENTE según el NIVEL ACADÉMICO (${academic.label}) y el MODO (${config.label}).
 - NO caricaturas, NO emojis, NO personajes sonrientes, NO estilo Canva juvenil.
-- NO mezcles estilos de otros modos.
+- NO reutilizar el mismo símbolo para conceptos distintos — metáforas únicas por concepto.
+- NO mezcles estilos de otros modos ni niveles académicos.
+${academicLevel === "basic" ? "- MÁXIMO 7 conceptos. Claridad sobre densidad." : ""}
+${academicLevel === "litigant" ? "- PRIORIZA conflicto jurídico, argumentos/contraargumentos, jurisprudencia central." : ""}
+${academicLevel === "thesis" ? "- PRIORIZA problemas jurídicos, hipótesis, conflictos doctrinales, líneas jurisprudenciales." : ""}
 ${mode === "exam" ? "- MINIMIZA decoración. MAXIMIZA definiciones, artículos y excepciones legibles." : ""}
 ${mode === "memorization" ? "- Símbolos mnemotécnicos formales y elegantes, paleta petróleo/dorado/marfil." : ""}
 ${mode === "jurisprudence" ? "- Incluye línea de tiempo, precedentes y evolución doctrinal con nombres de fallos." : ""}
 ${mode === "professor" && rubric ? "- PRIORIZA criterios de la rúbrica sobre cualquier estilo genérico." : ""}
 
 El prompt debe ser una sola instrucción larga en español.
-Terminar con calidad: ${config.qualityTail} y ${UNIVERSAL_QUALITY_BLOCK}
+Terminar con calidad: ${config.qualityTail}, ${academic.qualityHint} y ${UNIVERSAL_QUALITY_BLOCK}
 
 Devuelve SOLO JSON:
 {
@@ -637,6 +762,7 @@ Devuelve SOLO JSON:
       content,
       rubric,
       creativityLevel,
+      academicLevel,
       title,
       isStudentTitle,
     );
@@ -650,6 +776,7 @@ Devuelve SOLO JSON:
       content,
       rubric,
       creativityLevel,
+      academicLevel,
       title,
       isStudentTitle,
     );
@@ -665,6 +792,7 @@ Devuelve SOLO JSON:
         content,
         rubric,
         creativityLevel,
+        academicLevel,
         title,
         isStudentTitle,
       );
@@ -675,6 +803,7 @@ Devuelve SOLO JSON:
     return {
       title: isStudentTitle ? title : parsed.title?.trim() || title,
       mode,
+      academicLevel,
       basePrompt,
       analysis,
       rubricAnalysis: rubric ?? undefined,
@@ -691,6 +820,7 @@ Devuelve SOLO JSON:
       content,
       rubric,
       creativityLevel,
+      academicLevel,
       title,
       isStudentTitle,
     );
@@ -705,6 +835,7 @@ export async function generateVisualPremiumPrompt(
   studentPersonalization?: string | null,
   creativityLevel: VisualCreativityLevel = "balanced",
   customTitle?: string | null,
+  academicLevel: VisualAcademicLevel = "undergraduate",
 ): Promise<VisualPremiumPrompt> {
   const analysis = extractDocumentVisualAnalysis(content, mode);
   const isStudentTitle = Boolean(customTitle?.trim());
@@ -721,11 +852,17 @@ export async function generateVisualPremiumPrompt(
     mode,
     rubricAnalysis,
     creativityLevel,
+    academicLevel,
     resolvedTitle,
     isStudentTitle,
   );
 
-  const merged = assembleVisualPremiumPrompt(base, studentPersonalization, creativityLevel);
+  const merged = assembleVisualPremiumPrompt(
+    base,
+    studentPersonalization,
+    creativityLevel,
+    academicLevel,
+  );
   return {
     ...merged,
     studentTitle: isStudentTitle ? resolvedTitle : undefined,
