@@ -108,33 +108,23 @@ export async function GET(request: Request) {
       .eq("user_id", user.id)
       .maybeSingle();
 
-    if (profileSelectError) {
-      throw profileSelectError;
-    }
-
-    if (profileData) {
-      const { error: profileUpdateError } = await admin
-        .from("user_profiles")
-        .update({
-          total_organizers: (profileData.total_organizers ?? 0) + 1,
-          reputation_points: (profileData.reputation_points ?? 0) + 15,
-        })
-        .eq("user_id", user.id);
-
-      if (profileUpdateError) {
-        throw profileUpdateError;
-      }
-    } else {
-      const { error: profileInsertError } = await admin.from("user_profiles").insert({
-        user_id: user.id,
-        email: user.email,
-        academic_context: {},
-        total_organizers: 1,
-        reputation_points: 15,
-      });
-
-      if (profileInsertError) {
-        throw profileInsertError;
+    if (!profileSelectError) {
+      if (profileData) {
+        await admin
+          .from("user_profiles")
+          .update({
+            total_organizers: (profileData.total_organizers ?? 0) + 1,
+            reputation_points: (profileData.reputation_points ?? 0) + 15,
+          })
+          .eq("user_id", user.id);
+      } else {
+        await admin.from("user_profiles").insert({
+          user_id: user.id,
+          email: user.email,
+          academic_context: {},
+          total_organizers: 1,
+          reputation_points: 15,
+        });
       }
     }
 
