@@ -1,22 +1,27 @@
 @import "tailwindcss";
 
+/* ——— MEMORIASTUDY · TRON LEGACY DESIGN SYSTEM ——— */
 :root {
-  --background: #f6faf6;
-  --surface: #ffffff;
-  --surface-strong: #eef5ec;
-  --foreground: #0f1720;
-  --muted: #dae4d8;
-  --muted-foreground: #6b7280;
-  --border: #d8e3d3;
-  --card: #ffffff;
-  --accent: #1f6b43;
-  --accent-foreground: #ffffff;
-  --accent-soft: #e8fbef;
-  --shadow: 0 28px 80px rgba(15, 23, 42, 0.08);
-  --radius: 30px;
-  --radius-sm: 18px;
-  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  color-scheme: light;
+  --background: #07131a;
+  --surface: #0b1d24;
+  --surface-strong: #102730;
+  --foreground: #f5f7fa;
+  --muted: #0b1d24;
+  --muted-foreground: rgba(245, 247, 250, 0.58);
+  --border: rgba(0, 255, 213, 0.15);
+  --card: #102730;
+  --accent: #00ffd5;
+  --accent-secondary: #00bfff;
+  --accent-orange: #ff8a00;
+  --accent-foreground: #07131a;
+  --accent-soft: rgba(0, 255, 213, 0.1);
+  --glow: rgba(0, 255, 213, 0.35);
+  --glow-strong: rgba(0, 255, 213, 0.55);
+  --shadow: 0 0 40px rgba(0, 255, 213, 0.08), 0 24px 80px rgba(0, 0, 0, 0.45);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --font-sans: "Segoe UI", Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -28,30 +33,18 @@
   --color-card: var(--card);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-accent-soft: var(--accent-soft);
   --font-sans: var(--font-sans);
 }
 
-.dark {
-  --background: #0b1220;
-  --surface: #111827;
-  --surface-strong: #161f2f;
-  --foreground: #f8fafc;
-  --muted: #1f2937;
-  --muted-foreground: #9ca3af;
-  --border: #27334a;
-  --card: #111827;
-  --accent: #34d399;
-  --accent-foreground: #0f1720;
-  --accent-soft: #0f1720;
+html {
   color-scheme: dark;
 }
 
 body {
   min-height: 100vh;
   margin: 0;
-  background: radial-gradient(circle at top left, rgba(31, 107, 67, 0.16), transparent 28%),
-    radial-gradient(circle at bottom right, rgba(34, 197, 94, 0.08), transparent 30%),
-    var(--background);
+  background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
 }
@@ -59,104 +52,227 @@ body {
 button,
 a,
 input,
-textarea {
-  transition:
-    background-color 180ms ease,
-    border-color 180ms ease,
-    color 180ms ease,
-    transform 180ms ease,
-    opacity 180ms ease;
+textarea,
+select {
   font: inherit;
 }
 
 ::selection {
-  background: color-mix(in oklab, var(--accent) 40%, transparent);
+  background: rgba(0, 255, 213, 0.28);
+  color: #fff;
 }
 
-.glass-card {
-  background: rgba(255, 255, 255, 0.88);
-  border: 1px solid rgba(31, 107, 67, 0.12);
-  box-shadow: var(--shadow);
-  backdrop-filter: blur(18px);
-}
-
-.dark .glass-card {
-  background: rgba(17, 24, 39, 0.88);
-  border-color: rgba(52, 211, 153, 0.14);
-}
-
-.smooth-scroll {
-  scroll-behavior: smooth;
-}
-
-.summary-menu {
-  list-style: none;
-}
-
-/* ——— Organizers Studio (premium canvas UI) ——— */
-.organizers-studio {
-  --studio-glow: rgba(31, 107, 67, 0.45);
-  --studio-mesh-1: rgba(99, 102, 241, 0.12);
-  --studio-mesh-2: rgba(31, 107, 67, 0.18);
-  --studio-mesh-3: rgba(16, 185, 129, 0.1);
-  position: relative;
-  isolation: isolate;
-}
-
-.organizers-studio::before {
-  content: "";
+/* ——— Ambient background ——— */
+.tron-bg-root {
+  pointer-events: none;
   position: fixed;
   inset: 0;
-  z-index: -1;
-  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.tron-bg-mesh {
+  position: absolute;
+  inset: 0;
   background:
-    radial-gradient(ellipse 80% 50% at 10% -10%, var(--studio-mesh-1), transparent 50%),
-    radial-gradient(ellipse 60% 40% at 90% 0%, var(--studio-mesh-2), transparent 45%),
-    radial-gradient(ellipse 50% 60% at 50% 100%, var(--studio-mesh-3), transparent 55%),
-    var(--background);
+    radial-gradient(ellipse 90% 60% at 15% -5%, rgba(0, 255, 213, 0.14), transparent 55%),
+    radial-gradient(ellipse 70% 50% at 85% 10%, rgba(0, 191, 255, 0.12), transparent 50%),
+    radial-gradient(ellipse 60% 45% at 50% 100%, rgba(255, 138, 0, 0.06), transparent 55%),
+    linear-gradient(180deg, #07131a 0%, #0a1820 50%, #07131a 100%);
 }
 
-.organizer-dot-grid {
-  background-image: radial-gradient(circle, rgba(15, 23, 42, 0.09) 1px, transparent 1px);
-  background-size: 22px 22px;
+.tron-bg-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0, 255, 213, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 213, 0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, black 20%, transparent 75%);
 }
 
-.dark .organizer-dot-grid {
-  background-image: radial-gradient(circle, rgba(248, 250, 252, 0.07) 1px, transparent 1px);
+.tron-bg-noise {
+  position: absolute;
+  inset: 0;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
+.tron-bg-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  animation: tron-orb-float 14s ease-in-out infinite;
+}
+
+.tron-bg-orb-a {
+  width: 420px;
+  height: 420px;
+  top: -8%;
+  left: -5%;
+  background: rgba(0, 255, 213, 0.12);
+}
+
+.tron-bg-orb-b {
+  width: 360px;
+  height: 360px;
+  top: 40%;
+  right: -8%;
+  background: rgba(0, 191, 255, 0.1);
+  animation-delay: -5s;
+}
+
+.tron-bg-orb-c {
+  width: 280px;
+  height: 280px;
+  bottom: -5%;
+  left: 35%;
+  background: rgba(255, 138, 0, 0.07);
+  animation-delay: -9s;
+}
+
+@keyframes tron-orb-float {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(12px, -18px) scale(1.05);
+  }
+}
+
+/* ——— Panels & cards ——— */
+.tron-panel,
+.glass-card,
 .organizer-glass {
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.85);
+  position: relative;
+  background: linear-gradient(145deg, rgba(16, 39, 48, 0.92) 0%, rgba(11, 29, 36, 0.88) 100%);
+  border: 1px solid var(--border);
   box-shadow:
-    0 0 0 1px rgba(15, 23, 42, 0.04),
-    0 20px 50px -12px rgba(15, 23, 42, 0.12),
-    0 8px 24px -8px rgba(31, 107, 67, 0.08);
-  backdrop-filter: blur(20px) saturate(1.4);
+    var(--shadow),
+    inset 0 1px 0 rgba(0, 255, 213, 0.08);
+  backdrop-filter: blur(24px) saturate(1.5);
 }
 
-.dark .organizer-glass {
-  background: rgba(17, 24, 39, 0.65);
-  border-color: rgba(255, 255, 255, 0.08);
+.tron-panel::before,
+.glass-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(0, 255, 213, 0.35), transparent 40%, rgba(0, 191, 255, 0.2));
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.tron-capsule {
+  position: relative;
+  background: linear-gradient(160deg, rgba(16, 39, 48, 0.95), rgba(7, 19, 26, 0.9));
+  border: 1px solid rgba(0, 255, 213, 0.2);
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.05),
-    0 24px 60px -16px rgba(0, 0, 0, 0.55),
-    0 0 80px -20px var(--studio-glow);
+    0 0 0 1px rgba(0, 255, 213, 0.05),
+    0 16px 48px rgba(0, 0, 0, 0.4),
+    0 0 32px rgba(0, 255, 213, 0.06);
+  backdrop-filter: blur(20px);
+  transition:
+    transform 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 320ms ease,
+    border-color 320ms ease;
+}
+
+.tron-capsule:hover {
+  transform: translateY(-4px) scale(1.01);
+  border-color: rgba(0, 255, 213, 0.45);
+  box-shadow:
+    0 0 0 1px rgba(0, 255, 213, 0.2),
+    0 24px 60px rgba(0, 0, 0, 0.5),
+    0 0 48px var(--glow);
+}
+
+.tron-stat {
+  background: rgba(0, 255, 213, 0.04);
+  border: 1px solid rgba(0, 255, 213, 0.12);
+  box-shadow: inset 0 0 24px rgba(0, 255, 213, 0.03);
+}
+
+.tron-glow-text {
+  text-shadow: 0 0 24px var(--glow);
+  color: var(--accent);
+}
+
+.tron-nav-link {
+  border-radius: 10px;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+  transition: all 200ms ease;
+}
+
+.tron-nav-link:hover,
+.tron-nav-link[data-active="true"] {
+  color: var(--accent);
+  background: rgba(0, 255, 213, 0.08);
+  box-shadow: 0 0 20px rgba(0, 255, 213, 0.12);
+}
+
+/* ——— Buttons ——— */
+.tron-btn-primary {
+  background: linear-gradient(135deg, rgba(0, 255, 213, 0.95), rgba(0, 191, 255, 0.85));
+  color: var(--accent-foreground);
+  border: 1px solid rgba(0, 255, 213, 0.5);
+  box-shadow: 0 0 24px var(--glow), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transition: all 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.tron-btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 0 36px var(--glow-strong), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.tron-btn-secondary {
+  background: rgba(16, 39, 48, 0.8);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  box-shadow: inset 0 0 20px rgba(0, 255, 213, 0.04);
+  transition: all 220ms ease;
+}
+
+.tron-btn-secondary:hover:not(:disabled) {
+  border-color: rgba(0, 255, 213, 0.35);
+  box-shadow: 0 0 24px rgba(0, 255, 213, 0.15);
+  transform: translateY(-1px);
+}
+
+.tron-btn-ghost {
+  color: var(--muted-foreground);
+  background: transparent;
+  transition: all 200ms ease;
+}
+
+.tron-btn-ghost:hover:not(:disabled) {
+  color: var(--accent);
+  background: rgba(0, 255, 213, 0.06);
+}
+
+/* ——— Organizers / study map ——— */
+.organizers-studio {
+  position: relative;
+  isolation: isolate;
 }
 
 .organizer-float-card {
   transition:
     transform 280ms cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 280ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 280ms ease,
     border-color 280ms ease;
 }
 
 .organizer-float-card:hover {
   transform: translateY(-3px);
-  box-shadow:
-    0 0 0 1px rgba(31, 107, 67, 0.12),
-    0 28px 70px -20px rgba(15, 23, 42, 0.18),
-    0 0 40px -10px rgba(31, 107, 67, 0.15);
+  box-shadow: 0 0 40px var(--glow);
 }
 
 .organizer-bento {
@@ -173,15 +289,59 @@ textarea {
 
 .study-map-viewport {
   background:
-    radial-gradient(ellipse 90% 70% at 50% 0%, rgba(99, 102, 241, 0.14), transparent 55%),
-    radial-gradient(ellipse 70% 60% at 100% 100%, rgba(16, 185, 129, 0.12), transparent 50%),
-    radial-gradient(ellipse 60% 50% at 0% 80%, rgba(236, 72, 153, 0.08), transparent 45%),
-    linear-gradient(165deg, #f8fafc 0%, #eef2ff 35%, #ecfdf5 100%);
+    radial-gradient(ellipse 100% 80% at 50% 0%, rgba(0, 255, 213, 0.12), transparent 60%),
+    radial-gradient(ellipse 80% 60% at 100% 80%, rgba(0, 191, 255, 0.08), transparent 50%),
+    radial-gradient(ellipse 60% 50% at 0% 70%, rgba(255, 138, 0, 0.05), transparent 45%),
+    linear-gradient(180deg, #07131a 0%, #0b1d24 50%, #07131a 100%);
+  border: 1px solid rgba(0, 255, 213, 0.2);
+  box-shadow:
+    inset 0 0 80px rgba(0, 255, 213, 0.04),
+    0 0 60px rgba(0, 255, 213, 0.08);
 }
 
-.dark .study-map-viewport {
-  background:
-    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(99, 102, 241, 0.22), transparent 55%),
-    radial-gradient(ellipse 60% 50% at 100% 100%, rgba(16, 185, 129, 0.15), transparent 50%),
-    linear-gradient(165deg, #0f172a 0%, #1e1b4b 40%, #0f172a 100%);
+.tron-edge-flow {
+  stroke-dasharray: 10 8;
+  animation: tron-edge-flow 1.4s linear infinite;
+}
+
+@keyframes tron-edge-flow {
+  to {
+    stroke-dashoffset: -36;
+  }
+}
+
+.tron-node-core {
+  background: radial-gradient(circle at 30% 30%, #00ffd5, #00bfff 45%, #07131a 100%);
+  box-shadow:
+    0 0 60px var(--glow-strong),
+    0 0 120px rgba(0, 255, 213, 0.25),
+    inset 0 0 30px rgba(255, 255, 255, 0.15);
+  border: 2px solid rgba(0, 255, 213, 0.6);
+}
+
+.tron-node-glass {
+  background: rgba(16, 39, 48, 0.65);
+  border: 1px solid rgba(0, 255, 213, 0.25);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 0 24px rgba(0, 255, 213, 0.12);
+}
+
+.tron-flashcard-front {
+  background: linear-gradient(145deg, rgba(16, 39, 48, 0.95), rgba(11, 29, 36, 0.9));
+  border: 1px solid rgba(0, 255, 213, 0.25);
+  box-shadow: 0 0 32px rgba(0, 255, 213, 0.1);
+}
+
+.tron-flashcard-back {
+  background: linear-gradient(145deg, rgba(0, 255, 213, 0.25), rgba(0, 191, 255, 0.2));
+  border: 1px solid rgba(0, 255, 213, 0.45);
+  box-shadow: 0 0 40px var(--glow);
+}
+
+.smooth-scroll {
+  scroll-behavior: smooth;
+}
+
+.summary-menu {
+  list-style: none;
 }

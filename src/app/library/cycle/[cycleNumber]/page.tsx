@@ -28,12 +28,12 @@ export default async function Page({ params }: { params: any }) {
     return (
       <AppShell>
         <section className="mx-auto min-h-[calc(100vh-9rem)] max-w-3xl px-4 py-10 text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-accent">Error cargando materiales</p>
-          <h1 className="mt-4 text-3xl font-semibold tracking-tight text-foreground">No se pudieron cargar los materiales del ciclo</h1>
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#00FFD5]">Error cargando materiales</p>
+          <h1 className="mt-4 text-3xl font-bold tracking-tight text-[#F5F7FA]">No se pudieron cargar los materiales del ciclo</h1>
           <p className="mt-4 text-sm leading-6 text-muted-foreground">Ocurrió un error al obtener los recursos compartidos. Intenta recargar la página.</p>
-          <p className="mt-4 text-sm text-red-500">{error.message}</p>
+          <p className="mt-4 text-sm text-[#FF8A00]">{error.message}</p>
           <div className="mt-8">
-            <Link href="/library" className="inline-flex h-12 items-center justify-center rounded-3xl border border-border bg-card px-6 text-sm font-semibold text-foreground hover:bg-muted">
+            <Link href="/library" className="tron-btn-secondary inline-flex h-12 items-center justify-center rounded-xl px-6 text-sm font-semibold">
               Volver a Biblioteca
             </Link>
           </div>
@@ -63,21 +63,21 @@ export default async function Page({ params }: { params: any }) {
     <AppShell>
       <section className="mx-auto max-w-6xl px-4 py-10">
         <div className="mb-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-accent">Ciclo académico</p>
-          <h1 className="mt-2 text-4xl font-semibold tracking-tight text-foreground">Materiales del ciclo {resolvedParams?.cycleNumber}</h1>
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#00FFD5]">Ciclo · Red de materiales</p>
+          <h1 className="mt-2 text-4xl font-bold tracking-tight text-[#F5F7FA]">Materiales del ciclo {resolvedParams?.cycleNumber}</h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
             Recursos públicos compartidos para el ciclo seleccionado. Haz clic en un material para ver el detalle.
           </p>
         </div>
 
         {materials.length === 0 ? (
-          <div className="rounded-[32px] border border-border bg-card p-10 text-center shadow-sm">
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-accent">Sin materiales</p>
-            <h2 className="mt-4 text-3xl font-semibold tracking-tight text-foreground">Aún no hay recursos para este ciclo</h2>
+          <div className="tron-panel rounded-2xl p-10 text-center">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#00FFD5]">Sin materiales</p>
+            <h2 className="mt-4 text-3xl font-bold tracking-tight text-[#F5F7FA]">Aún no hay recursos para este ciclo</h2>
             <p className="mt-4 max-w-xl text-sm leading-6 text-muted-foreground">
               No se encontraron materiales públicos para este ciclo. Revisa otro ciclo o vuelve más tarde.
             </p>
-            <Link href="/library" className="mt-8 inline-flex h-12 items-center justify-center rounded-3xl border border-border bg-card px-6 text-sm font-semibold text-foreground hover:bg-muted">
+            <Link href="/library" className="tron-btn-secondary mt-8 inline-flex h-12 items-center justify-center rounded-xl px-6 text-sm font-semibold">
               Volver a Biblioteca
             </Link>
           </div>

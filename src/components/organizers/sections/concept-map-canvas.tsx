@@ -129,7 +129,7 @@ export function ConceptMapCanvas({
       <div
         ref={viewportRef}
         onWheel={onWheel}
-        className={`study-map-viewport relative overflow-hidden rounded-[22px] border border-white/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_24px_80px_rgba(15,23,42,0.12)] ${
+        className={`study-map-viewport relative overflow-hidden rounded-2xl ${
           hero ? "h-[min(78vh,620px)] min-h-[420px]" : "h-[min(62vh,520px)] min-h-[360px]"
         }`}
       >
@@ -192,7 +192,8 @@ export function ConceptMapCanvas({
                     stroke={branch.color}
                     strokeWidth={active ? 3.2 : 2.2}
                     strokeLinecap="round"
-                    strokeOpacity={dimmed ? 0.08 : active ? 0.85 : 0.45}
+                    strokeOpacity={dimmed ? 0.08 : active ? 0.9 : 0.5}
+                    className={!dimmed ? "tron-edge-flow" : undefined}
                     initial={{ pathLength: 0, opacity: 0 }}
                     animate={{
                       pathLength: 1,
@@ -225,11 +226,8 @@ export function ConceptMapCanvas({
                 style={{ left: toPercent(cx, w), top: toPercent(cy, h) }}
               >
                 <div className="relative">
-                  <div
-                    className="absolute -inset-8 rounded-full blur-3xl"
-                    style={{ background: "rgba(99,102,241,0.25)" }}
-                  />
-                  <div className="relative flex min-h-[120px] min-w-[120px] max-w-[240px] items-center justify-center rounded-full border-4 border-white/80 bg-gradient-to-br from-indigo-500 via-violet-600 to-emerald-600 px-8 py-8 text-center text-base font-bold leading-snug text-white shadow-[0_20px_60px_rgba(99,102,241,0.45)] sm:min-h-[140px] sm:min-w-[140px] sm:text-lg">
+                  <div className="absolute -inset-10 rounded-full bg-[rgba(0,255,213,0.25)] blur-3xl" />
+                  <div className="tron-node-core relative flex min-h-[120px] min-w-[120px] max-w-[240px] items-center justify-center rounded-full px-8 py-8 text-center text-base font-bold leading-snug text-[#07131A] sm:min-h-[140px] sm:min-w-[140px] sm:text-lg">
                     {title}
                   </div>
                 </div>
@@ -269,24 +267,23 @@ export function ConceptMapCanvas({
                   style={{ left: toPercent(node.x, w), top: toPercent(node.y, h) }}
                 >
                   <div
-                    className={`relative max-w-[160px] rounded-2xl border-2 px-3.5 py-2.5 shadow-lg transition-shadow ${
-                      selected ? "ring-4 ring-white/60" : ""
+                    className={`tron-node-glass relative max-w-[160px] rounded-xl px-3.5 py-2.5 transition-shadow ${
+                      selected ? "ring-2 ring-[#00FFD5] shadow-[0_0_32px_rgba(0,255,213,0.4)]" : ""
                     }`}
                     style={{
                       borderColor: branch.color,
-                      background: `linear-gradient(145deg, white 0%, ${branch.soft} 100%)`,
                       boxShadow: selected
                         ? `0 16px 40px ${branch.glow}`
-                        : `0 8px 24px ${branch.glow.replace("0.45", "0.2")}`,
+                        : `0 8px 24px ${branch.glow.replace("0.5", "0.2")}`,
                     }}
                   >
                     <span
-                      className="mb-1.5 flex h-7 w-7 items-center justify-center rounded-lg text-white"
-                      style={{ background: branch.color }}
+                      className="mb-1.5 flex h-7 w-7 items-center justify-center rounded-lg text-[#07131A]"
+                      style={{ background: `linear-gradient(135deg, ${branch.color}, rgba(0,191,255,0.8))` }}
                     >
                       <BranchIcon size={14} />
                     </span>
-                    <p className="text-[11px] font-semibold leading-4 text-foreground sm:text-xs">
+                    <p className="text-[11px] font-semibold leading-4 text-[#F5F7FA] sm:text-xs">
                       {node.label}
                     </p>
                   </div>
@@ -333,11 +330,11 @@ function CanvasControls({
   onReset: () => void;
 }) {
   return (
-    <div className="flex items-center gap-1 rounded-2xl border border-white/40 bg-white/70 p-1 shadow-lg backdrop-blur-md dark:bg-black/40">
+    <div className="flex items-center gap-1 rounded-xl border border-[rgba(0,255,213,0.2)] bg-[rgba(16,39,48,0.85)] p-1 shadow-[0_0_24px_rgba(0,255,213,0.12)] backdrop-blur-md">
       <button
         type="button"
         onClick={() => onZoom(-0.1)}
-        className="flex h-8 w-8 items-center justify-center rounded-xl transition hover:bg-black/5"
+        className="flex h-8 w-8 items-center justify-center rounded-lg text-[#F5F7FA] transition hover:bg-[rgba(0,255,213,0.1)] hover:text-[#00FFD5]"
         aria-label="Alejar"
       >
         <Minus size={15} />
@@ -345,7 +342,7 @@ function CanvasControls({
       <button
         type="button"
         onClick={() => onZoom(0.1)}
-        className="flex h-8 w-8 items-center justify-center rounded-xl transition hover:bg-black/5"
+        className="flex h-8 w-8 items-center justify-center rounded-lg text-[#F5F7FA] transition hover:bg-[rgba(0,255,213,0.1)] hover:text-[#00FFD5]"
         aria-label="Acercar"
       >
         <Plus size={15} />
@@ -353,7 +350,7 @@ function CanvasControls({
       <button
         type="button"
         onClick={onReset}
-        className="flex h-8 w-8 items-center justify-center rounded-xl transition hover:bg-black/5"
+        className="flex h-8 w-8 items-center justify-center rounded-lg text-[#F5F7FA] transition hover:bg-[rgba(0,255,213,0.1)] hover:text-[#00FFD5]"
         aria-label="Restablecer"
       >
         <RotateCcw size={13} />

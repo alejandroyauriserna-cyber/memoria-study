@@ -36,22 +36,22 @@ export default async function MyMaterialsPage() {
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-sm font-semibold text-accent">Mis materiales</p>
-            <h1 className="mt-2 text-4xl font-semibold tracking-tight">Tus archivos compartidos</h1>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#00FFD5]">Mis materiales</p>
+            <h1 className="mt-2 text-4xl font-bold tracking-tight text-[#F5F7FA]">Tus archivos compartidos</h1>
             <p className="mt-2 max-w-2xl text-muted-foreground">
               Administra y revisa el material que has subido. Todos los archivos se pueden descargar desde aquí.
             </p>
           </div>
           <Link
             href="/upload-material"
-            className="inline-flex h-11 items-center justify-center rounded-lg border border-border bg-card px-4 text-sm font-semibold text-foreground hover:bg-muted"
+            className="tron-btn-primary inline-flex h-11 items-center justify-center rounded-xl px-4 text-sm font-semibold"
           >
             Subir nuevo material
           </Link>
         </div>
 
         {materials.length === 0 ? (
-          <div className="rounded-2xl border border-border bg-card p-8 text-center text-muted-foreground shadow-sm">
+          <div className="tron-panel rounded-2xl p-8 text-center text-muted-foreground">
             No has subido ningún material aún.
           </div>
         ) : (

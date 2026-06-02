@@ -18,12 +18,12 @@ export type StudyBranch = {
 };
 
 export const STUDY_BRANCHES: StudyBranch[] = [
-  { id: 0, name: "Fundamentos", color: "#6366f1", glow: "rgba(99,102,241,0.45)", soft: "rgba(99,102,241,0.12)", icon: BookOpen },
-  { id: 1, name: "Normativa", color: "#0ea5e9", glow: "rgba(14,165,233,0.45)", soft: "rgba(14,165,233,0.12)", icon: Scale },
-  { id: 2, name: "Proceso", color: "#10b981", glow: "rgba(16,185,129,0.45)", soft: "rgba(16,185,129,0.12)", icon: Gavel },
-  { id: 3, name: "Actores", color: "#f59e0b", glow: "rgba(245,158,11,0.45)", soft: "rgba(245,158,11,0.12)", icon: Users },
-  { id: 4, name: "Instituciones", color: "#ec4899", glow: "rgba(236,72,153,0.45)", soft: "rgba(236,72,153,0.12)", icon: Landmark },
-  { id: 5, name: "Ideas clave", color: "#8b5cf6", glow: "rgba(139,92,246,0.45)", soft: "rgba(139,92,246,0.12)", icon: Lightbulb },
+  { id: 0, name: "Fundamentos", color: "#00FFD5", glow: "rgba(0,255,213,0.5)", soft: "rgba(0,255,213,0.12)", icon: BookOpen },
+  { id: 1, name: "Normativa", color: "#00BFFF", glow: "rgba(0,191,255,0.5)", soft: "rgba(0,191,255,0.12)", icon: Scale },
+  { id: 2, name: "Proceso", color: "#00FFD5", glow: "rgba(0,255,213,0.45)", soft: "rgba(0,255,213,0.1)", icon: Gavel },
+  { id: 3, name: "Actores", color: "#FF8A00", glow: "rgba(255,138,0,0.5)", soft: "rgba(255,138,0,0.12)", icon: Users },
+  { id: 4, name: "Instituciones", color: "#00BFFF", glow: "rgba(0,191,255,0.45)", soft: "rgba(0,191,255,0.1)", icon: Landmark },
+  { id: 5, name: "Ideas clave", color: "#00FFD5", glow: "rgba(0,255,213,0.4)", soft: "rgba(0,255,213,0.08)", icon: Lightbulb },
 ];
 
 export type StudyMapNode = {

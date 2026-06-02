@@ -132,7 +132,7 @@ export function MaterialCard({ material }: { material: Material }) {
   }
 
   return (
-    <article className="rounded-[32px] border border-border bg-card p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+    <article className="tron-capsule rounded-2xl p-6">
       <div className="flex flex-col gap-5 sm:flex-row sm:justify-between sm:items-start">
         <div className="flex-1">
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-accent">{material.courseName}</p>
@@ -158,11 +158,11 @@ export function MaterialCard({ material }: { material: Material }) {
           ) : null}
         </div>
         <div className="flex flex-col gap-3 text-sm text-muted-foreground sm:items-end">
-          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-muted px-3 py-2">
-            <BookOpen size={14} /> {material.cycleLabel}
+          <span className="inline-flex items-center gap-2 rounded-full border border-[rgba(0,255,213,0.15)] bg-[rgba(0,255,213,0.06)] px-3 py-2">
+            <BookOpen size={14} className="text-[#00FFD5]" /> {material.cycleLabel}
           </span>
-          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-muted px-3 py-2">
-            <Eye size={14} /> {views}
+          <span className="inline-flex items-center gap-2 rounded-full border border-[rgba(0,255,213,0.15)] bg-[rgba(0,255,213,0.06)] px-3 py-2">
+            <Eye size={14} className="text-[#00FFD5]" /> {views}
           </span>
         </div>
       </div>
@@ -178,11 +178,11 @@ export function MaterialCard({ material }: { material: Material }) {
 
       <div className="mt-5 grid gap-3 sm:grid-cols-[1fr_auto]">
         <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
-          <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted px-3 py-2">
-            <ArrowDown size={14} /> {downloads}
+          <span className="inline-flex items-center gap-1 rounded-full border border-[rgba(0,255,213,0.15)] bg-[rgba(0,255,213,0.06)] px-3 py-2">
+            <ArrowDown size={14} className="text-[#00FFD5]" /> {downloads}
           </span>
-          <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted px-3 py-2">
-            <Heart size={14} /> {likes}
+          <span className="inline-flex items-center gap-1 rounded-full border border-[rgba(0,255,213,0.15)] bg-[rgba(0,255,213,0.06)] px-3 py-2">
+            <Heart size={14} className="text-[#FF8A00]" /> {likes}
           </span>
         </div>
         <div className="flex flex-wrap gap-2 justify-end">
@@ -205,7 +205,7 @@ export function MaterialCard({ material }: { material: Material }) {
         {material.id ? (
           <Link
             href={`/materials/${material.id}`}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-3xl border border-border bg-card px-4 font-semibold text-foreground hover:bg-muted"
+            className="tron-btn-secondary inline-flex h-11 items-center justify-center gap-2 rounded-xl px-4 font-semibold"
           >
             <Search size={16} /> Ver detalle
           </Link>
@@ -216,7 +216,7 @@ export function MaterialCard({ material }: { material: Material }) {
             onClick={handleStudyWithAi}
             disabled={actionsDisabled}
             aria-busy={isGenerating}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-3xl border border-border bg-card px-4 font-semibold text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+            className="tron-btn-primary inline-flex h-11 items-center justify-center gap-2 rounded-xl px-4 font-semibold disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isGenerating ? (
               <Loader2 className="animate-spin" size={16} />

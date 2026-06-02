@@ -36,7 +36,7 @@ export default async function OrganizersPage({
           <h1 className="text-3xl font-semibold tracking-tight">Inicia sesión</h1>
           <Link
             href="/auth"
-            className="mt-8 inline-flex h-12 items-center justify-center rounded-2xl bg-foreground px-6 text-sm font-semibold text-background"
+            className="tron-btn-primary mt-8 inline-flex h-12 items-center justify-center rounded-xl px-6 text-sm font-semibold"
           >
             Entrar
           </Link>

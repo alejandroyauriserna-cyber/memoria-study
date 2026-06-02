@@ -71,16 +71,16 @@ export default async function CourseLibraryPage({
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-sm font-semibold text-accent">{course.cycleLabel}</p>
-            <h1 className="mt-2 text-4xl font-semibold tracking-tight">{course.name}</h1>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#00FFD5]">{course.cycleLabel}</p>
+            <h1 className="mt-2 text-4xl font-bold tracking-tight text-[#F5F7FA]">{course.name}</h1>
             <p className="mt-2 max-w-2xl text-muted-foreground">
-              Material académico compartido para este curso. Accede a archivos, guías y casos prácticos.
+              Material compartido para este curso. Accede a archivos, guías y casos prácticos.
             </p>
           </div>
         </div>
 
         {materials.length === 0 ? (
-          <div className="rounded-2xl border border-border bg-card p-8 text-center text-muted-foreground shadow-sm">
+          <div className="tron-panel rounded-2xl p-8 text-center text-muted-foreground">
             No hay materiales compartidos para este curso todavía.
           </div>
         ) : (

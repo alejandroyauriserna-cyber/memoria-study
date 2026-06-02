@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "MemoriaStudy · Derecho UNT",
+  title: "MemoriaStudy · IA Futurista",
   description:
-    "Plataforma de estudio para Derecho en la Universidad Nacional de Trujillo: flashcards, quiz y mazos por semana.",
+    "Plataforma de estudio con IA para Derecho UNT. Organizadores visuales, flashcards y tutor inteligente.",
 };
 
 export default function RootLayout({
@@ -13,10 +13,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className="h-full antialiased">
-      <body className="min-h-full bg-background text-foreground flex flex-col">
-        {children}
-      </body>
+    <html lang="es" className="h-full antialiased dark">
+      <body className="flex min-h-full flex-col bg-background text-foreground">{children}</body>
     </html>
   );
 }

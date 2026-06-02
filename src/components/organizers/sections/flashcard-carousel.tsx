@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, Layers } from "lucide-react";
 import { OrganizerFloatPanel } from "@/components/organizers/sections/organizer-section-shell";
 
@@ -21,42 +21,52 @@ export function FlashcardCarousel({
   if (!cards.length) return null;
 
   const card = cards[index];
+  const progress = ((index + 1) / cards.length) * 100;
 
   const body = (
     <>
+      <div className="mb-4 h-1.5 overflow-hidden rounded-full bg-[rgba(0,255,213,0.08)]">
+        <motion.div
+          className="h-full rounded-full bg-gradient-to-r from-[#00FFD5] to-[#00BFFF] shadow-[0_0_12px_rgba(0,255,213,0.4)]"
+          animate={{ width: `${progress}%` }}
+          transition={{ type: "spring", stiffness: 200, damping: 24 }}
+        />
+      </div>
+
       <button
         type="button"
         onClick={() => setFlipped((value) => !value)}
-        className="relative mx-auto block min-h-44 w-full [perspective:1200px]"
+        className="relative mx-auto block min-h-48 w-full [perspective:1400px]"
       >
         <motion.div
           animate={{ rotateY: flipped ? 180 : 0 }}
-          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className="relative min-h-44 w-full [transform-style:preserve-3d]"
+          transition={{ type: "spring", stiffness: 180, damping: 22 }}
+          className="relative min-h-48 w-full [transform-style:preserve-3d]"
         >
-          <div className="absolute inset-0 flex flex-col items-center justify-center rounded-2xl border border-foreground/5 bg-gradient-to-br from-white/80 to-accent/5 px-5 py-6 text-center [backface-visibility:hidden] dark:from-white/5">
-            <p className="text-[10px] font-medium text-accent">Pregunta</p>
-            <p className="mt-3 text-base font-semibold leading-7 text-foreground">{card.question}</p>
+          <div className="tron-flashcard-front absolute inset-0 flex flex-col items-center justify-center rounded-2xl px-6 py-8 text-center [backface-visibility:hidden]">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#00FFD5]">Pregunta</p>
+            <p className="mt-4 text-lg font-semibold leading-8 text-[#F5F7FA]">{card.question}</p>
+            <p className="mt-6 text-xs text-muted-foreground">Toca para voltear</p>
           </div>
-          <div className="absolute inset-0 flex flex-col items-center justify-center rounded-2xl bg-gradient-to-br from-accent to-emerald-700 px-5 py-6 text-center text-white [backface-visibility:hidden] [transform:rotateY(180deg)]">
-            <p className="text-[10px] font-medium text-white/80">Respuesta</p>
-            <p className="mt-3 text-base font-semibold leading-7">{card.answer}</p>
+          <div className="tron-flashcard-back absolute inset-0 flex flex-col items-center justify-center rounded-2xl px-6 py-8 text-center text-[#07131A] [backface-visibility:hidden] [transform:rotateY(180deg)]">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#07131A]/70">Respuesta</p>
+            <p className="mt-4 text-lg font-semibold leading-8">{card.answer}</p>
           </div>
         </motion.div>
       </button>
 
-      <div className="mt-4 flex items-center justify-between">
+      <div className="mt-5 flex items-center justify-between">
         <p className="text-xs text-muted-foreground">
           {index + 1} / {cards.length}
         </p>
-        <div className="flex gap-1">
+        <div className="flex gap-2">
           <button
             type="button"
             onClick={() => {
               setFlipped(false);
               setIndex((v) => (v - 1 + cards.length) % cards.length);
             }}
-            className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-foreground/5"
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-[rgba(0,255,213,0.15)] text-[#F5F7FA] transition hover:border-[rgba(0,255,213,0.4)] hover:bg-[rgba(0,255,213,0.08)] hover:text-[#00FFD5]"
           >
             <ChevronLeft size={16} />
           </button>
@@ -66,7 +76,7 @@ export function FlashcardCarousel({
               setFlipped(false);
               setIndex((v) => (v + 1) % cards.length);
             }}
-            className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-foreground/5"
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-[rgba(0,255,213,0.15)] text-[#F5F7FA] transition hover:border-[rgba(0,255,213,0.4)] hover:bg-[rgba(0,255,213,0.08)] hover:text-[#00FFD5]"
           >
             <ChevronRight size={16} />
           </button>
@@ -81,7 +91,17 @@ export function FlashcardCarousel({
 
   return (
     <OrganizerFloatPanel title="Flashcards" hint="Toca para voltear" icon={<Layers size={17} />} span={6}>
-      {body}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={index}
+          initial={{ opacity: 0, scale: 0.96, filter: "blur(4px)" }}
+          animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+          exit={{ opacity: 0, scale: 0.96 }}
+          transition={{ duration: 0.25 }}
+        >
+          {body}
+        </motion.div>
+      </AnimatePresence>
     </OrganizerFloatPanel>
   );
 }

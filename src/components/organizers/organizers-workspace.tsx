@@ -95,7 +95,7 @@ function CardMapPreview({ content }: { content: unknown }) {
   if (!nodes.length) {
     return (
       <div className="study-map-viewport flex h-full min-h-[100px] items-center justify-center rounded-xl">
-        <Sparkles className="text-indigo-400/50" size={28} />
+        <Sparkles className="text-[#00FFD5]/50" size={28} />
       </div>
     );
   }
@@ -118,7 +118,7 @@ function CardMapPreview({ content }: { content: unknown }) {
             />
           );
         })}
-        <circle cx={cx} cy={cy} r={28} fill="rgba(99,102,241,0.25)" />
+        <circle cx={cx} cy={cy} r={28} fill="rgba(0,255,213,0.25)" />
         {layout.map((node, index) => (
           <circle
             key={`n-${index}`}
@@ -418,11 +418,11 @@ export function OrganizersWorkspace({
     <>
       <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-3 py-1 text-xs font-medium text-accent">
-            <Sparkles size={12} /> MemoriaStudy AI
+          <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[rgba(0,255,213,0.25)] bg-[rgba(0,255,213,0.08)] px-3 py-1 text-xs font-medium text-[#00FFD5]">
+            <Sparkles size={12} /> MemoriaStudy · Canvas IA
           </div>
-          <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-            Canvas de estudio
+          <h1 className="text-3xl font-bold tracking-tight text-[#F5F7FA] sm:text-4xl">
+            Red de conocimiento
           </h1>
           <p className="mt-1 max-w-lg text-sm text-muted-foreground">
             {organizers.length} espacio{organizers.length === 1 ? "" : "s"} visual
@@ -431,7 +431,7 @@ export function OrganizersWorkspace({
         </div>
         <Link
           href="/library"
-          className="inline-flex h-11 shrink-0 items-center gap-2 rounded-2xl bg-gradient-to-r from-accent to-emerald-600 px-5 text-sm font-semibold text-white shadow-lg shadow-accent/20 transition hover:brightness-105"
+          className="tron-btn-primary inline-flex h-11 shrink-0 items-center gap-2 rounded-xl px-5 text-sm font-semibold"
         >
           <BookOpen size={16} /> Nuevo desde biblioteca
         </Link>

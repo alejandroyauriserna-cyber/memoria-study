@@ -122,14 +122,19 @@ export function AuthForm() {
     }
   }
 
+  const inputClass =
+    "mt-2 h-11 w-full rounded-xl border border-[rgba(0,255,213,0.2)] bg-[rgba(7,19,26,0.6)] px-3 text-sm text-[#F5F7FA] outline-none focus:border-[rgba(0,255,213,0.45)] focus:shadow-[0_0_24px_rgba(0,255,213,0.12)]";
+
   return (
     <div className="space-y-5">
-      <div className="flex gap-2 rounded-full border border-border bg-card p-1">
+      <div className="flex gap-2 rounded-xl border border-[rgba(0,255,213,0.15)] bg-[rgba(7,19,26,0.5)] p-1">
         <button
           type="button"
           onClick={() => setMode("signin")}
-          className={`flex-1 rounded-full px-4 py-2 text-sm font-semibold ${
-            mode === "signin" ? "bg-foreground text-background" : "text-muted-foreground"
+          className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold transition ${
+            mode === "signin"
+              ? "bg-gradient-to-r from-[#00FFD5] to-[#00BFFF] text-[#07131A] shadow-[0_0_16px_rgba(0,255,213,0.3)]"
+              : "text-muted-foreground hover:text-[#00FFD5]"
           }`}
         >
           Ingresar
@@ -137,8 +142,10 @@ export function AuthForm() {
         <button
           type="button"
           onClick={() => setMode("signup")}
-          className={`flex-1 rounded-full px-4 py-2 text-sm font-semibold ${
-            mode === "signup" ? "bg-foreground text-background" : "text-muted-foreground"
+          className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold transition ${
+            mode === "signup"
+              ? "bg-gradient-to-r from-[#00FFD5] to-[#00BFFF] text-[#07131A] shadow-[0_0_16px_rgba(0,255,213,0.3)]"
+              : "text-muted-foreground hover:text-[#00FFD5]"
           }`}
         >
           Registrarse
@@ -147,26 +154,26 @@ export function AuthForm() {
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {mode === "signup" ? (
-          <div className="rounded-lg border border-border bg-card p-5 shadow-sm space-y-4">
+          <div className="rounded-xl border border-[rgba(0,255,213,0.12)] bg-[rgba(7,19,26,0.4)] p-5 space-y-4">
             <label className="block">
-              <span className="text-sm font-semibold">Nombre completo</span>
+              <span className="text-sm font-semibold text-[#F5F7FA]">Nombre completo</span>
               <input
                 type="text"
                 value={fullName}
                 onChange={(event) => setFullName(event.target.value)}
                 placeholder="Tu nombre completo"
-                className="mt-2 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-accent"
+                className={inputClass}
                 required
               />
             </label>
             <label className="block relative">
-              <span className="text-sm font-semibold">Contraseña</span>
+              <span className="text-sm font-semibold text-[#F5F7FA]">Contraseña</span>
               <input
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 placeholder="Al menos 8 caracteres"
-                className="mt-2 h-11 w-full rounded-lg border border-border bg-background px-3 pr-11 text-sm outline-none focus:border-accent"
+                className={`${inputClass} pr-11`}
                 required
               />
               <button
@@ -184,8 +191,8 @@ export function AuthForm() {
           <AcademicNavigator value={academic} onChange={handleAcademicChange} />
         )}
 
-        <div className="rounded-lg border border-border bg-card p-5 shadow-sm space-y-4">
-          <label className="text-sm font-semibold" htmlFor="email">
+        <div className="rounded-xl border border-[rgba(0,255,213,0.12)] bg-[rgba(7,19,26,0.4)] p-5 space-y-4">
+          <label className="text-sm font-semibold text-[#F5F7FA]" htmlFor="email">
             Correo institucional o personal
           </label>
           <input
@@ -194,19 +201,19 @@ export function AuthForm() {
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             placeholder="tu.correo@ejemplo.com"
-            className="mt-2 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-accent"
+            className={inputClass}
             required
           />
 
           {mode === "signin" && (
             <label className="block relative">
-              <span className="text-sm font-semibold">Contraseña (opcional)</span>
+              <span className="text-sm font-semibold text-[#F5F7FA]">Contraseña (opcional)</span>
               <input
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 placeholder="Ingresa si ya tienes contraseña"
-                className="mt-2 h-11 w-full rounded-lg border border-border bg-background px-3 pr-11 text-sm outline-none focus:border-accent"
+                className={`${inputClass} pr-11`}
               />
               <button
                 type="button"
