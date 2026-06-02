@@ -13,9 +13,10 @@ type CurrentCycle = {
 type Props = {
   fullName?: string | null;
   currentCycle?: CurrentCycle | null;
+  compact?: boolean;
 };
 
-export function ProfileForm({ fullName = "", currentCycle = null }: Props) {
+export function ProfileForm({ fullName = "", currentCycle = null, compact = false }: Props) {
   const [name, setName] = useState(fullName ?? "");
   const [cycle, setCycle] = useState<CurrentCycle>(
     currentCycle ?? {
@@ -48,24 +49,37 @@ export function ProfileForm({ fullName = "", currentCycle = null }: Props) {
       }
 
       setStatus("saved");
-      setMessage("Perfil actualizado correctamente.");
+      setMessage("Guardado.");
     } catch (error) {
       setStatus("error");
-      setMessage(error instanceof Error ? error.message : "Error al guardar el perfil.");
+      setMessage(error instanceof Error ? error.message : "Error al guardar.");
     }
   }
 
+  const inputClass = compact
+    ? "mt-2 h-10 w-full rounded-xl border border-[rgba(0,255,213,0.15)] bg-[rgba(16,39,48,0.6)] px-3 text-sm text-[#F5F7FA] outline-none focus:border-[rgba(0,255,213,0.35)]"
+    : "mt-2 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-accent";
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-5 rounded-lg border border-border bg-card p-5 shadow-sm">
-      <div className="grid gap-4 sm:grid-cols-2">
+    <form
+      onSubmit={handleSubmit}
+      className={
+        compact
+          ? "space-y-4"
+          : "space-y-5 rounded-lg border border-border bg-card p-5 shadow-sm"
+      }
+    >
+      <div className={`grid gap-4 ${compact ? "sm:grid-cols-2" : "sm:grid-cols-2"}`}>
         <label className="block">
-          <span className="text-sm font-semibold">Nombre completo</span>
+          <span className={`font-semibold ${compact ? "text-xs text-muted-foreground" : "text-sm"}`}>
+            Nombre
+          </span>
           <input
             type="text"
             value={name}
             onChange={(event) => setName(event.target.value)}
             placeholder="Tu nombre"
-            className="mt-2 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-accent"
+            className={inputClass}
             required
           />
         </label>
@@ -75,14 +89,12 @@ export function ProfileForm({ fullName = "", currentCycle = null }: Props) {
         </div>
       </div>
 
-      <Button type="submit" disabled={status === "saving" || !name.trim()}>
-        {status === "saving" ? "Guardando..." : "Actualizar perfil"}
+      <Button type="submit" disabled={status === "saving" || !name.trim()} className={compact ? "h-9 px-4 text-xs" : undefined}>
+        {status === "saving" ? "Guardando..." : "Guardar"}
       </Button>
 
       {message ? (
-        <p className={`mt-3 text-sm ${status === "error" ? "text-red-500" : "text-accent"}`}>
-          {message}
-        </p>
+        <p className={`text-sm ${status === "error" ? "text-red-400" : "text-[#00FFD5]"}`}>{message}</p>
       ) : null}
     </form>
   );

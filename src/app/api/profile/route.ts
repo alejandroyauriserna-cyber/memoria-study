@@ -26,6 +26,29 @@ const bodySchema = z.object({
   email: z.string().email().optional(),
   fullName: z.string().min(3).optional(),
   currentCycle: currentCycleSchema.optional(),
+  studySettings: z
+    .object({
+      preferences: z
+        .object({
+          conceptMaps: z.boolean(),
+          flashcards: z.boolean(),
+          exams: z.boolean(),
+          practicalCases: z.boolean(),
+        })
+        .optional(),
+      theme: z.enum(["cyan", "ocean", "amber", "violet"]).optional(),
+      goals: z
+        .array(
+          z.object({
+            id: z.string(),
+            label: z.string(),
+            completed: z.boolean(),
+            createdAt: z.number(),
+          }),
+        )
+        .optional(),
+    })
+    .optional(),
 });
 
 type ProfileShape = {
@@ -159,6 +182,31 @@ export async function POST(request: Request) {
 
     const profilePayload = buildProfilePayload(user, body);
     const admin = createAdminClient();
+
+    const { data: existingProfile } = await admin
+      .from("user_profiles")
+      .select("academic_context")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    const priorContext =
+      existingProfile?.academic_context && typeof existingProfile.academic_context === "object"
+        ? (existingProfile.academic_context as Record<string, unknown>)
+        : {};
+
+    if (body.academic) {
+      profilePayload.academic_context = { ...priorContext, ...body.academic };
+    } else if (body.studySettings) {
+      profilePayload.academic_context = {
+        ...priorContext,
+        studyPreferences: body.studySettings.preferences ?? priorContext.studyPreferences,
+        theme: body.studySettings.theme ?? priorContext.theme,
+        goals: body.studySettings.goals ?? priorContext.goals,
+      };
+    } else {
+      profilePayload.academic_context = priorContext;
+    }
+
     const { error } = await admin.from("user_profiles").upsert(profilePayload, {
       onConflict: "user_id",
     });
