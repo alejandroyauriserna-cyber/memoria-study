@@ -18,6 +18,17 @@ import type {
   VisualPromptMode,
 } from "@/lib/organizers/visual-prompt-types";
 
+function titleDirective(resolvedTitle: string, isStudentTitle: boolean): string {
+  if (isStudentTitle) {
+    return `TÍTULO PRINCIPAL OBLIGATORIO (DEFINIDO POR EL ESTUDIANTE — USAR EXACTAMENTE):
+«${resolvedTitle}»
+PROHIBIDO cambiar este título. PROHIBIDO inventar marcas editoriales (Harvard Law, Oxford Law, La Brújula Legal, Atlas Jurídico IA, etc.).`;
+  }
+  return `TÍTULO PRINCIPAL DEL ATLAS:
+«${resolvedTitle}»
+Usar como encabezado principal. NO inventar títulos alternativos de marca editorial.`;
+}
+
 function unique(values: Array<string | undefined | null>, limit = 12): string[] {
   return [...new Set(values.map((v) => v?.trim()).filter(Boolean) as string[])].slice(0, limit);
 }
@@ -472,8 +483,11 @@ function buildFallbackPrompt(
   content: OrganizerContent,
   rubric?: RubricAnalysis | null,
   creativityLevel: VisualCreativityLevel = "balanced",
+  resolvedTitle?: string,
+  isStudentTitle = false,
 ): Omit<VisualPremiumPrompt, "prompt"> & { basePrompt: string } {
   const config = MODE_PROMPT_CONFIG[mode];
+  const title = resolvedTitle?.trim() || analysis.centralTopic;
   const rubricSection = rubric
     ? mode === "professor"
       ? `\n\n${rubricBlock(rubric)}`
@@ -483,7 +497,7 @@ function buildFallbackPrompt(
   const prompt = ensureQualityBlock(
     `Genera un atlas visual jurídico universitario ultra detallado (NO infografía escolar).
 
-TÍTULO: ${analysis.centralTopic}
+${titleDirective(title, isStudentTitle)}
 MODO EXCLUSIVO: ${config.label.toUpperCase()} — NO mezclar con otros estilos.
 
 ${ATLAS_ACADEMIC_MANDATE}
@@ -509,7 +523,7 @@ ${config.qualityTail}`,
   );
 
   return {
-    title: analysis.centralTopic,
+    title,
     mode,
     basePrompt: prompt,
     analysis,
@@ -518,6 +532,7 @@ ${config.qualityTail}`,
     hasRubric: Boolean(rubric),
     generatedAt: new Date().toISOString(),
     creativityLevel,
+    studentTitle: isStudentTitle ? title : undefined,
   };
 }
 
@@ -527,9 +542,21 @@ async function enrichPromptWithGemini(
   mode: VisualPromptMode,
   rubric?: RubricAnalysis | null,
   creativityLevel: VisualCreativityLevel = "balanced",
+  resolvedTitle?: string,
+  isStudentTitle = false,
 ): Promise<Omit<VisualPremiumPrompt, "prompt"> & { basePrompt: string }> {
+  const title = resolvedTitle?.trim() || analysis.centralTopic;
+
   if (!env.geminiApiKey) {
-    return buildFallbackPrompt(analysis, mode, content, rubric, creativityLevel);
+    return buildFallbackPrompt(
+      analysis,
+      mode,
+      content,
+      rubric,
+      creativityLevel,
+      title,
+      isStudentTitle,
+    );
   }
 
   const config = MODE_PROMPT_CONFIG[mode];
@@ -546,6 +573,8 @@ ${ATLAS_ACADEMIC_MANDATE}
 ${creativityDirective}
 
 === MODO ACTIVO: ${config.label.toUpperCase()} ===
+${titleDirective(title, isStudentTitle)}
+
 ${config.directive}
 
 ${config.layout}
@@ -602,23 +631,49 @@ Devuelve SOLO JSON:
 
   const payload = await response.json();
   if (!response.ok) {
-    return buildFallbackPrompt(analysis, mode, content, rubric, creativityLevel);
+    return buildFallbackPrompt(
+      analysis,
+      mode,
+      content,
+      rubric,
+      creativityLevel,
+      title,
+      isStudentTitle,
+    );
   }
 
   const text = payload.candidates?.[0]?.content?.parts?.[0]?.text;
   if (typeof text !== "string") {
-    return buildFallbackPrompt(analysis, mode, content, rubric, creativityLevel);
+    return buildFallbackPrompt(
+      analysis,
+      mode,
+      content,
+      rubric,
+      creativityLevel,
+      title,
+      isStudentTitle,
+    );
   }
 
   try {
     const parsed = parseJson(text);
     const prompt = parsed.prompt?.trim();
-    if (!prompt) return buildFallbackPrompt(analysis, mode, content, rubric, creativityLevel);
+    if (!prompt) {
+      return buildFallbackPrompt(
+        analysis,
+        mode,
+        content,
+        rubric,
+        creativityLevel,
+        title,
+        isStudentTitle,
+      );
+    }
 
     const basePrompt = ensureQualityBlock(prompt, config.qualityTail);
 
     return {
-      title: parsed.title?.trim() || analysis.centralTopic,
+      title: isStudentTitle ? title : parsed.title?.trim() || title,
       mode,
       basePrompt,
       analysis,
@@ -627,9 +682,18 @@ Devuelve SOLO JSON:
       hasRubric: Boolean(rubric),
       generatedAt: new Date().toISOString(),
       creativityLevel,
+      studentTitle: isStudentTitle ? title : undefined,
     };
   } catch {
-    return buildFallbackPrompt(analysis, mode, content, rubric, creativityLevel);
+    return buildFallbackPrompt(
+      analysis,
+      mode,
+      content,
+      rubric,
+      creativityLevel,
+      title,
+      isStudentTitle,
+    );
   }
 }
 
@@ -640,8 +704,11 @@ export async function generateVisualPremiumPrompt(
   rubricFileName?: string,
   studentPersonalization?: string | null,
   creativityLevel: VisualCreativityLevel = "balanced",
+  customTitle?: string | null,
 ): Promise<VisualPremiumPrompt> {
   const analysis = extractDocumentVisualAnalysis(content, mode);
+  const isStudentTitle = Boolean(customTitle?.trim());
+  const resolvedTitle = customTitle?.trim() || analysis.centralTopic;
 
   let rubricAnalysis: RubricAnalysis | null = null;
   if (rubricText?.trim()) {
@@ -654,7 +721,14 @@ export async function generateVisualPremiumPrompt(
     mode,
     rubricAnalysis,
     creativityLevel,
+    resolvedTitle,
+    isStudentTitle,
   );
 
-  return assembleVisualPremiumPrompt(base, studentPersonalization, creativityLevel);
+  const merged = assembleVisualPremiumPrompt(base, studentPersonalization, creativityLevel);
+  return {
+    ...merged,
+    studentTitle: isStudentTitle ? resolvedTitle : undefined,
+    title: isStudentTitle ? resolvedTitle : merged.title,
+  };
 }

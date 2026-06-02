@@ -46,6 +46,8 @@ export type VisualCreativityLevel = "conservative" | "balanced" | "creative" | "
 
 export type VisualPremiumPrompt = {
   title: string;
+  /** Título opcional definido por el estudiante */
+  studentTitle?: string;
   mode: VisualPromptMode;
   /** Prompt generado por IA a partir del PDF, modo y rúbrica */
   basePrompt: string;
@@ -70,6 +72,7 @@ export const VISUAL_PROMPT_MODES: Array<{
   emoji: string;
   description: string;
   expectedResult: string;
+  expectedHighlights: string[];
 }> = [
   {
     id: "infographic",
@@ -77,6 +80,13 @@ export const VISUAL_PROMPT_MODES: Array<{
     emoji: "",
     description: "Atlas visual universitario estilo Harvard / National Geographic.",
     expectedResult: "Atlas jurídico de posgrado, editorial premium.",
+    expectedHighlights: [
+      "Diagramas doctrinales profesionales",
+      "Tema central con nodos periféricos",
+      "Alta densidad informativa",
+      "Paleta petróleo, dorado y marfil",
+      "Estilo revista jurídica premium",
+    ],
   },
   {
     id: "memorization",
@@ -84,6 +94,13 @@ export const VISUAL_PROMPT_MODES: Array<{
     emoji: "",
     description: "Símbolos jurídicos elegantes para memoria de largo plazo.",
     expectedResult: "Mapa mnemotécnico doctrinal con rigor académico.",
+    expectedHighlights: [
+      "Símbolos jurídicos memorables",
+      "Asociaciones mentales formales",
+      "Anclajes visuales por concepto",
+      "Recordación rápida en examen",
+      "Sin estilo caricaturesco",
+    ],
   },
   {
     id: "exam",
@@ -91,6 +108,13 @@ export const VISUAL_PROMPT_MODES: Array<{
     emoji: "",
     description: "Repaso universitario: definiciones, artículos y excepciones.",
     expectedResult: "Lámina de repaso académica para evaluación.",
+    expectedHighlights: [
+      "Definiciones exactas visibles",
+      "Artículos numerados",
+      "Excepciones resaltadas",
+      "Comparaciones en columnas",
+      "Diseño funcional sin decoración",
+    ],
   },
   {
     id: "legal_premium",
@@ -98,6 +122,13 @@ export const VISUAL_PROMPT_MODES: Array<{
     emoji: "",
     description: "Tratado ilustrado: tribunales, códigos, expedientes, doctrina.",
     expectedResult: "Manual jurídico ilustrado de élite.",
+    expectedHighlights: [
+      "Expedientes y códigos",
+      "Tribunales y salas formales",
+      "Jurisprudencia citada",
+      "Diseño sobrio y académico",
+      "Tipografía editorial serif",
+    ],
   },
   {
     id: "jurisprudence",
@@ -105,6 +136,13 @@ export const VISUAL_PROMPT_MODES: Array<{
     emoji: "",
     description: "Líneas de tiempo, precedentes y evolución doctrinal.",
     expectedResult: "Mapa jurisprudencial de posgrado.",
+    expectedHighlights: [
+      "Línea de tiempo jurídica",
+      "Precedentes y sentencias",
+      "Evolución doctrinal",
+      "Ratios decidendi visibles",
+      "Conexiones entre fallos",
+    ],
   },
   {
     id: "professor",
@@ -112,6 +150,13 @@ export const VISUAL_PROMPT_MODES: Array<{
     emoji: "",
     description: "Atlas alineado a criterios, puntajes y formato del docente.",
     expectedResult: "Entrega visual alineada a la evaluación.",
+    expectedHighlights: [
+      "Adaptado a la rúbrica",
+      "Criterios de evaluación",
+      "Formato solicitado por el docente",
+      "Puntajes y profundidad exigida",
+      "Requisitos visuales del profesor",
+    ],
   },
 ];
 

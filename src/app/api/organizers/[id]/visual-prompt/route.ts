@@ -48,12 +48,14 @@ export async function POST(request: Request, context: RouteContext) {
     let rubricFileName: string | undefined;
     let studentPersonalization: string | null = null;
     let creativityLevel: VisualCreativityLevel = "balanced";
+    let customTitle: string | null = null;
 
     if (contentType.includes("multipart/form-data")) {
       const formData = await request.formData();
       mode = parseMode(formData.get("mode"));
       studentPersonalization = parsePersonalization(formData.get("personalization"));
       creativityLevel = parseCreativity(formData.get("creativityLevel"));
+      customTitle = parsePersonalization(formData.get("imageTitle"));
 
       const rubricEntry = formData.get("rubric");
       if (rubricEntry instanceof File && rubricEntry.size > 0) {
@@ -75,11 +77,13 @@ export async function POST(request: Request, context: RouteContext) {
         rubricFileName?: string;
         personalization?: string;
         creativityLevel?: VisualCreativityLevel;
+        imageTitle?: string;
       };
       mode = body.mode && VALID_MODES.has(body.mode) ? body.mode : "infographic";
       rubricText = body.rubricText?.trim() || null;
       rubricFileName = body.rubricFileName;
       studentPersonalization = body.personalization?.trim() || null;
+      customTitle = body.imageTitle?.trim() || null;
       creativityLevel =
         body.creativityLevel && VALID_CREATIVITY.has(body.creativityLevel)
           ? body.creativityLevel
@@ -120,6 +124,7 @@ export async function POST(request: Request, context: RouteContext) {
       rubricFileName,
       studentPersonalization,
       creativityLevel,
+      customTitle,
     );
 
     const mergedContent = {

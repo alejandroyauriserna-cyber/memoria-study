@@ -9,6 +9,23 @@ export const ATLAS_JURIDICO_MODULE_SUBTITLE =
 /** @deprecated Use ATLAS_JURIDICO_MODULE_SUBTITLE */
 export const VISUAL_IMAGE_MODULE_SUBTITLE = ATLAS_JURIDICO_MODULE_SUBTITLE;
 
+export const WHAT_MEMORIASTUDY_DOES = {
+  title: "¿Qué hace MemoriaStudy?",
+  steps: [
+    "Analiza el PDF de tu material.",
+    "Extrae conceptos clave y relaciones académicas.",
+    "Detecta doctrina, artículos y jurisprudencia.",
+    "Construye un prompt avanzado para Gemini.",
+    "Tú copias el prompt.",
+    "Lo pegas en Gemini Image.",
+    "Gemini genera el atlas visual.",
+  ],
+  note: "MemoriaStudy NO genera la imagen. Genera el mejor prompt posible para que Gemini cree material visual universitario profesional.",
+} as const;
+
+export const PERSONALIZATION_PLACEHOLDER =
+  "Ej.: Usa colores rojo petróleo y dorado. Incluye más jurisprudencia. Prioriza artículos del Código Civil…";
+
 export const HOW_IT_WORKS_STEPS = [
   "Analizamos tu PDF jurídico.",
   "Identificamos conceptos, doctrina y jurisprudencia.",

@@ -18,6 +18,7 @@ import {
   Paperclip,
   Rocket,
   Sparkles,
+  Trash2,
   Wand2,
   X,
 } from "lucide-react";
@@ -25,7 +26,9 @@ import {
   ATLAS_JURIDICO_MODULE_SUBTITLE,
   ATLAS_JURIDICO_MODULE_TITLE,
   CREATIVITY_LEVELS,
+  PERSONALIZATION_PLACEHOLDER,
   PERSONALIZATION_QUICK_CHIPS,
+  WHAT_MEMORIASTUDY_DOES,
   buildFinalPrompt,
 } from "@/lib/organizers/visual-prompt-mode-config";
 import {
@@ -86,10 +89,11 @@ export function VisualPremiumPromptPanel({
   const [personalization, setPersonalization] = useState(
     visualPremiumPrompt?.studentPersonalization ?? "",
   );
+  const [imageTitle, setImageTitle] = useState(visualPremiumPrompt?.studentTitle ?? "");
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [local, setLocal] = useState<VisualPremiumPrompt | null>(visualPremiumPrompt ?? null);
+  const [promptResult, setPromptResult] = useState<VisualPremiumPrompt | null>(null);
   const [rubricFile, setRubricFile] = useState<File | null>(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [showPromptDetails, setShowPromptDetails] = useState(false);
@@ -99,15 +103,15 @@ export function VisualPremiumPromptPanel({
 
   useEffect(() => {
     if (visualPremiumPrompt) {
-      setLocal(visualPremiumPrompt);
       setMode(visualPremiumPrompt.mode);
       setCreativityLevel(visualPremiumPrompt.creativityLevel ?? "balanced");
       setPersonalization(visualPremiumPrompt.studentPersonalization ?? "");
+      setImageTitle(visualPremiumPrompt.studentTitle ?? "");
     }
   }, [visualPremiumPrompt]);
 
-  const result = local ?? visualPremiumPrompt;
-  const basePrompt = result?.basePrompt ?? result?.prompt ?? "";
+  const hasPrompt = Boolean(promptResult);
+  const basePrompt = promptResult?.basePrompt ?? promptResult?.prompt ?? "";
   const finalPrompt = useMemo(
     () =>
       basePrompt
@@ -116,13 +120,19 @@ export function VisualPremiumPromptPanel({
     [basePrompt, creativityLevel, personalization],
   );
 
+  const generationStatus: "idle" | "generating" | "ready" = generating
+    ? "generating"
+    : hasPrompt && finalPrompt
+      ? "ready"
+      : "idle";
+
   useEffect(() => {
-    if (!result?.generatedAt || result.generatedAt === lastGeneratedAt.current) return;
-    lastGeneratedAt.current = result.generatedAt;
+    if (!promptResult?.generatedAt || promptResult.generatedAt === lastGeneratedAt.current) return;
+    lastGeneratedAt.current = promptResult.generatedAt;
     window.setTimeout(() => {
       scrollToSection(SECTION_IDS.prompt);
     }, 120);
-  }, [result?.generatedAt]);
+  }, [promptResult?.generatedAt]);
 
   useEffect(() => {
     const container = scrollRef.current;
@@ -137,7 +147,7 @@ export function VisualPremiumPromptPanel({
       const offset = el.scrollTop + 120;
       for (let index = NAV_ITEMS.length - 1; index >= 0; index -= 1) {
         const item = NAV_ITEMS[index];
-        if (item.requiresResult && !result) continue;
+        if (item.requiresResult && !hasPrompt) continue;
         const element = document.getElementById(item.id);
         if (element && element.offsetTop <= offset) {
           setActiveNav(item.id);
@@ -148,7 +158,7 @@ export function VisualPremiumPromptPanel({
 
     container.addEventListener("scroll", onScroll, { passive: true });
     return () => container.removeEventListener("scroll", onScroll);
-  }, [result]);
+  }, [hasPrompt]);
 
   function scrollToSection(id: string) {
     const container = scrollRef.current;
@@ -172,6 +182,9 @@ export function VisualPremiumPromptPanel({
       if (personalization.trim()) {
         formData.append("personalization", personalization.trim());
       }
+      if (imageTitle.trim()) {
+        formData.append("imageTitle", imageTitle.trim());
+      }
       if (rubricFile) {
         formData.append("rubric", rubricFile);
       }
@@ -187,9 +200,10 @@ export function VisualPremiumPromptPanel({
       }
 
       const next = payload.visualPremiumPrompt as VisualPremiumPrompt;
-      setLocal(next);
+      setPromptResult(next);
       setCreativityLevel(next.creativityLevel ?? creativityLevel);
       setPersonalization(next.studentPersonalization ?? personalization);
+      setImageTitle(next.studentTitle ?? imageTitle);
       onGenerated?.(payload.organizer?.content);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Error al generar la imagen educativa.");
@@ -218,6 +232,10 @@ export function VisualPremiumPromptPanel({
       if (prev.includes(text)) return prev;
       return prev.trim() ? `${prev.trim()}\n${text}` : text;
     });
+  }
+
+  function clearPersonalization() {
+    setPersonalization("");
   }
 
   const copyPrompt = useCallback(async () => {
@@ -249,22 +267,25 @@ export function VisualPremiumPromptPanel({
             {ATLAS_JURIDICO_MODULE_SUBTITLE}
           </p>
           </div>
-          {onClose ? (
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-[#F5F7FA]/70 transition hover:border-[#F59E0B]/40 hover:bg-[#F59E0B]/10 hover:text-[#FBBF24]"
-              aria-label="Cerrar"
-            >
-              <X size={18} />
-            </button>
-          ) : null}
+          <div className="flex shrink-0 items-center gap-2">
+            <GenerationStatusBadge status={generationStatus} />
+            {onClose ? (
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-[#F5F7FA]/70 transition hover:border-[#F59E0B]/40 hover:bg-[#F59E0B]/10 hover:text-[#FBBF24]"
+                aria-label="Cerrar"
+              >
+                <X size={18} />
+              </button>
+            ) : null}
+          </div>
         </div>
 
         {/* Nav móvil */}
         <nav className="mt-3 flex gap-1 overflow-x-auto pb-1 lg:hidden">
           {NAV_ITEMS.map((item) => {
-            if (item.requiresResult && !result) return null;
+            if (item.requiresResult && !hasPrompt) return null;
             const active = activeNav === item.id;
             return (
               <button
@@ -294,7 +315,7 @@ export function VisualPremiumPromptPanel({
                 Progreso
               </p>
               {NAV_ITEMS.map((item) => {
-                if (item.requiresResult && !result) return null;
+                if (item.requiresResult && !hasPrompt) return null;
                 const active = activeNav === item.id;
                 return (
                   <button
@@ -320,6 +341,8 @@ export function VisualPremiumPromptPanel({
           </nav>
 
           <div className="min-w-0 flex-1 space-y-10 pb-8">
+            <InfoCard />
+
             {/* PASO 1 — Tipo de atlas */}
             <StepSection id={SECTION_IDS.tipo} step={1} title="Tipo de atlas jurídico">
               <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
@@ -347,9 +370,27 @@ export function VisualPremiumPromptPanel({
                 })}
               </div>
               {selectedMode ? (
-                <div className="mt-4 rounded-xl border border-[#A855F7]/30 bg-[#A855F7]/10 px-4 py-3">
-                  <p className="text-xs font-semibold text-[#C4B5FD]">Resultado esperado:</p>
-                  <p className="mt-1 text-sm text-[#F5F7FA]/85">{selectedMode.expectedResult}</p>
+                <div className="mt-4 space-y-3">
+                  <div className="rounded-xl border border-[#A855F7]/30 bg-[#A855F7]/10 px-4 py-3">
+                    <p className="text-xs font-semibold text-[#C4B5FD]">Resultado esperado:</p>
+                    <p className="mt-1 text-sm text-[#F5F7FA]/85">{selectedMode.expectedResult}</p>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3">
+                    <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-[#F5F7FA]/45">
+                      Incluye
+                    </p>
+                    <ul className="grid gap-1.5 sm:grid-cols-2">
+                      {selectedMode.expectedHighlights.map((item) => (
+                        <li
+                          key={item}
+                          className="flex items-start gap-2 text-xs text-[#F5F7FA]/75"
+                        >
+                          <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-[#F59E0B]" />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
               ) : null}
             </StepSection>
@@ -399,13 +440,40 @@ export function VisualPremiumPromptPanel({
               step={3}
               title="Personalización adicional"
             >
-              <label className="mb-2 block text-sm font-medium text-[#F5F7FA]/80">
-                ¿Qué deseas agregar al prompt?
-              </label>
+              <div className="mb-6">
+                <label className="mb-2 block text-sm font-medium text-[#F5F7FA]/80">
+                  Título de la imagen (opcional)
+                </label>
+                <input
+                  type="text"
+                  value={imageTitle}
+                  onChange={(event) => setImageTitle(event.target.value)}
+                  placeholder="Ej.: Acto Jurídico, Nulidad del Acto Jurídico, Obligaciones Civiles…"
+                  className="w-full rounded-xl border border-white/10 bg-[#0a1018] px-4 py-3 text-sm text-[#F5F7FA] placeholder:text-[#F5F7FA]/30 focus:border-[#F59E0B]/40 focus:outline-none focus:ring-1 focus:ring-[#F59E0B]/25"
+                />
+                <p className="mt-1.5 text-[11px] text-[#F5F7FA]/45">
+                  Si lo dejas vacío, la IA genera un título automático a partir del PDF.
+                </p>
+              </div>
+
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <label className="text-sm font-medium text-[#F5F7FA]/80">
+                  ¿Qué deseas agregar al prompt?
+                </label>
+                <button
+                  type="button"
+                  onClick={clearPersonalization}
+                  disabled={!personalization.trim()}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-[11px] font-medium text-[#F5F7FA]/65 transition hover:border-red-400/40 hover:bg-red-400/10 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <Trash2 size={12} />
+                  Limpiar
+                </button>
+              </div>
               <textarea
                 value={personalization}
                 onChange={(event) => setPersonalization(event.target.value)}
-                placeholder="Ej.: Usa colores rojo petróleo y dorado. Incluye más jurisprudencia. Prioriza artículos del Código Civil…"
+                placeholder={PERSONALIZATION_PLACEHOLDER}
                 rows={5}
                 className="w-full resize-y rounded-xl border border-white/10 bg-[#0a1018] px-4 py-3 text-sm leading-relaxed text-[#F5F7FA] placeholder:text-[#F5F7FA]/30 focus:border-[#F59E0B]/40 focus:outline-none focus:ring-1 focus:ring-[#F59E0B]/25"
               />
@@ -485,12 +553,13 @@ export function VisualPremiumPromptPanel({
             </section>
 
             {/* PASO 5 — Prompt generado */}
-            {result && finalPrompt ? (
+            {hasPrompt && finalPrompt && promptResult ? (
               <StepSection id={SECTION_IDS.prompt} step={5} title="Prompt generado">
                 <PremiumPromptCard
-                  title={result.title}
+                  title={promptResult.title}
                   modeLabel={
-                    VISUAL_PROMPT_MODES.find((m) => m.id === result.mode)?.label ?? result.mode
+                    VISUAL_PROMPT_MODES.find((m) => m.id === promptResult.mode)?.label ??
+                    promptResult.mode
                   }
                   content={finalPrompt}
                   copied={copied}
@@ -525,33 +594,40 @@ export function VisualPremiumPromptPanel({
                   </div>
                 ) : null}
 
-                {result.rubricAnalysis ? (
+                {promptResult.rubricAnalysis ? (
                   <div className="mt-4">
-                    <RubricPreview analysis={result.rubricAnalysis} />
+                    <RubricPreview analysis={promptResult.rubricAnalysis} />
                   </div>
                 ) : null}
               </StepSection>
             ) : (
-              <div className="rounded-2xl border border-dashed border-[#F59E0B]/25 bg-[#F59E0B]/5 px-6 py-10 text-center">
-                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#F59E0B] to-[#A855F7] text-white shadow-lg">
+              <div
+                id={SECTION_IDS.prompt}
+                className="scroll-mt-4 rounded-2xl border border-dashed border-[#F59E0B]/25 bg-[#F59E0B]/5 px-6 py-10 text-center"
+              >
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#F59E0B]/20 to-[#A855F7]/20 text-[#FBBF24]">
                   <Sparkles size={24} />
                 </div>
                 <p className="mt-4 text-sm font-semibold text-[#F5F7FA]">
-                  Completa los pasos y genera tu prompt
+                  Tu prompt aparecerá aquí cuando lo generes
                 </p>
                 <p className="mt-1 text-xs text-[#F5F7FA]/55">
-                  El prompt aparecerá aquí, justo después del botón generar.
+                  Configura el atlas, pulsa «Generar atlas para Gemini» y el prompt completo
+                  aparecerá en esta sección.
                 </p>
               </div>
             )}
 
             {/* PASO 6 — Explicación */}
-            {result?.explanation?.length ? (
+            {hasPrompt && promptResult?.explanation?.length ? (
               <StepSection id={SECTION_IDS.explicacion} step={6} title="¿Por qué se generó así?">
-                <ExplanationBlock lines={result.explanation} hasRubric={result.hasRubric} />
-                {result.analysis ? (
+                <ExplanationBlock
+                  lines={promptResult.explanation}
+                  hasRubric={promptResult.hasRubric}
+                />
+                {promptResult.analysis ? (
                   <div className="mt-4">
-                    <AnalysisSummary analysis={result.analysis} />
+                    <AnalysisSummary analysis={promptResult.analysis} />
                   </div>
                 ) : null}
               </StepSection>
@@ -566,17 +642,21 @@ export function VisualPremiumPromptPanel({
           <p className="text-xs text-[#F5F7FA]/55">
             {copied ? (
               <span className="font-semibold text-[#22C55E]">✓ Prompt copiado correctamente</span>
-            ) : finalPrompt ? (
-              `${finalPrompt.length.toLocaleString("es-PE")} caracteres · Atlas listo para Gemini`
+            ) : generationStatus === "ready" ? (
+              <span className="font-semibold text-[#22C55E]">
+                Prompt listo para copiar · {finalPrompt.length.toLocaleString("es-PE")} caracteres
+              </span>
+            ) : generationStatus === "generating" ? (
+              <span className="font-semibold text-[#FBBF24]">Generando prompt…</span>
             ) : (
-              "Genera un atlas para habilitar la copia"
+              "Sin generar — configura y pulsa generar"
             )}
           </p>
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
               onClick={copyPrompt}
-              disabled={!finalPrompt}
+              disabled={!hasPrompt || !finalPrompt}
               className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#F59E0B] to-[#F97316] px-5 py-2.5 text-sm font-bold text-[#1a1005] shadow-lg transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-45"
             >
               {copied ? <Check size={16} /> : <ClipboardCopy size={16} />}
@@ -585,7 +665,7 @@ export function VisualPremiumPromptPanel({
             <button
               type="button"
               onClick={openGemini}
-              disabled={!finalPrompt}
+              disabled={!hasPrompt || !finalPrompt}
               className="inline-flex items-center gap-2 rounded-xl border border-[#4285F4]/45 bg-[#4285F4]/15 px-5 py-2.5 text-sm font-semibold text-[#93C5FD] transition hover:bg-[#4285F4]/25 disabled:cursor-not-allowed disabled:opacity-45"
             >
               <Rocket size={16} />
@@ -606,6 +686,63 @@ export function VisualPremiumPromptPanel({
           Volver arriba
         </button>
       ) : null}
+    </div>
+  );
+}
+
+function GenerationStatusBadge({
+  status,
+}: {
+  status: "idle" | "generating" | "ready";
+}) {
+  const config = {
+    idle: {
+      dot: "bg-[#F5F7FA]/35",
+      label: "Sin generar",
+      text: "text-[#F5F7FA]/55",
+    },
+    generating: {
+      dot: "bg-[#FBBF24] animate-pulse",
+      label: "Generando prompt…",
+      text: "text-[#FBBF24]",
+    },
+    ready: {
+      dot: "bg-[#22C55E]",
+      label: "Prompt listo",
+      text: "text-[#22C55E]",
+    },
+  }[status];
+
+  return (
+    <span
+      className={`inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-[11px] font-semibold ${config.text}`}
+    >
+      <span className={`h-2 w-2 rounded-full ${config.dot}`} />
+      {config.label}
+    </span>
+  );
+}
+
+function InfoCard() {
+  return (
+    <div className="rounded-2xl border border-[#4285F4]/25 bg-gradient-to-br from-[#4285F4]/10 to-transparent p-5">
+      <p className="text-sm font-bold text-[#F5F7FA]">{WHAT_MEMORIASTUDY_DOES.title}</p>
+      <ol className="mt-3 grid gap-2 sm:grid-cols-2">
+        {WHAT_MEMORIASTUDY_DOES.steps.map((step, index) => (
+          <li
+            key={step}
+            className="flex items-start gap-2 text-xs text-[#F5F7FA]/75"
+          >
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#4285F4]/20 text-[10px] font-bold text-[#93C5FD]">
+              {index + 1}
+            </span>
+            {step}
+          </li>
+        ))}
+      </ol>
+      <p className="mt-4 rounded-xl border border-[#F59E0B]/20 bg-[#F59E0B]/8 px-3 py-2 text-xs leading-relaxed text-[#FBBF24]/90">
+        {WHAT_MEMORIASTUDY_DOES.note}
+      </p>
     </div>
   );
 }
