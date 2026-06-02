@@ -1,9 +1,8 @@
-import { env } from "@/lib/env";
-
-const IMAGE_MODELS = [
-  "gemini-2.0-flash-preview-image-generation",
-  "gemini-2.0-flash-exp-image-generation",
-] as const;
+import {
+  generateGeminiImage,
+  quotaHint,
+  type GeminiImageResult,
+} from "@/lib/ai/gemini-image-generation";
 
 function svgFallback(label: string): Buffer {
   const safe = label.replace(/[<>&"']/g, "").slice(0, 40);
@@ -24,45 +23,20 @@ function svgFallback(label: string): Buffer {
 export async function generateConceptImage(
   prompt: string,
   label: string,
-): Promise<{ buffer: Buffer; mimeType: string; source: "gemini" | "svg" }> {
-  if (!env.geminiApiKey) {
-    return { buffer: svgFallback(label), mimeType: "image/svg+xml", source: "svg" };
+): Promise<GeminiImageResult> {
+  const gemini = await generateGeminiImage(prompt, { aspectRatio: "1:1" });
+
+  if (gemini.ok) {
+    return gemini.result;
   }
 
-  for (const model of IMAGE_MODELS) {
-    try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.geminiApiKey}`;
-      const response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: prompt }] }],
-          generationConfig: {
-            responseModalities: ["TEXT", "IMAGE"],
-          },
-        }),
-      });
-
-      const payload = await response.json();
-      if (!response.ok) continue;
-
-      const parts = payload.candidates?.[0]?.content?.parts ?? [];
-      for (const part of parts) {
-        const inline = part.inlineData ?? part.inline_data;
-        if (inline?.data) {
-          return {
-            buffer: Buffer.from(inline.data, "base64"),
-            mimeType: inline.mimeType ?? inline.mime_type ?? "image/png",
-            source: "gemini",
-          };
-        }
-      }
-    } catch {
-      /* try next model */
-    }
-  }
-
-  return { buffer: svgFallback(label), mimeType: "image/svg+xml", source: "svg" };
+  const hint = quotaHint(gemini.lastError);
+  return {
+    buffer: svgFallback(label),
+    mimeType: "image/svg+xml",
+    source: "fallback",
+    warning: hint ?? gemini.lastError.slice(0, 200),
+  };
 }
 
 export function extensionForMime(mime: string) {

@@ -4,5 +4,7 @@ export type AcademicInfographic = {
   imageUrl: string;
   prompt: string;
   generatedAt: string;
-  source: "gemini" | "svg";
+  source: "gemini" | "fallback";
+  warning?: string;
+  model?: string;
 };

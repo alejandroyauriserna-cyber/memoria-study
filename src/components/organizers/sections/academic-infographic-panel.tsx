@@ -77,6 +77,7 @@ export function AcademicInfographicPanel({
   const [generating, setGenerating] = useState(false);
   const [exporting, setExporting] = useState<"png" | "pdf" | "share" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [local, setLocal] = useState<AcademicInfographic | null>(academicInfographic ?? null);
 
   useEffect(() => {
@@ -102,6 +103,12 @@ export function AcademicInfographicPanel({
       const next = payload.academicInfographic as AcademicInfographic;
       setLocal(next);
       onGenerated?.(payload.organizer?.content);
+      setNotice(
+        (payload.warning as string | undefined) ??
+          (next.source === "fallback"
+            ? "Se mostró una vista previa local. Gemini imagen no respondió — revisa cuota en Google AI Studio."
+            : null),
+      );
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Error al generar la infografía.");
     } finally {
@@ -259,9 +266,13 @@ export function AcademicInfographicPanel({
             Infografía académica IA
           </p>
           <h3 className="truncate text-sm font-bold text-[#F5F7FA]">{infographic.centralTopic}</h3>
-          {infographic.source === "svg" ? (
-            <p className="text-[10px] text-amber-400/90">Vista previa · regenera para imagen Gemini</p>
-          ) : null}
+          {infographic.source === "gemini" ? (
+            <p className="text-[10px] text-[#00FFD5]">
+              Generada con Gemini{infographic.model ? ` · ${infographic.model}` : ""}
+            </p>
+          ) : (
+            <p className="text-[10px] text-amber-400/90">Vista previa local · Gemini imagen no disponible</p>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <ExportBtn
@@ -295,6 +306,11 @@ export function AcademicInfographicPanel({
       </div>
 
       {error ? <p className="shrink-0 px-4 py-2 text-xs text-red-400 sm:px-6">{error}</p> : null}
+      {notice ? (
+        <p className="shrink-0 border-b border-amber-500/20 bg-amber-500/10 px-4 py-2 text-xs leading-relaxed text-amber-200/90 sm:px-6">
+          {notice}
+        </p>
+      ) : null}
 
       <div className="min-h-0 flex-1 overflow-auto p-4 sm:p-6">
         <div className="mx-auto max-w-5xl">

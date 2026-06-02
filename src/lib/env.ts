@@ -14,6 +14,7 @@ export const env = {
   // GEMINI
   geminiApiKey: process.env.GEMINI_API_KEY,
   geminiModel: process.env.GEMINI_MODEL ?? "gemini-2.5-flash",
+  geminiImageModel: process.env.GEMINI_IMAGE_MODEL,
 
   // XAI
   xaiApiKey: process.env.XAI_API_KEY,

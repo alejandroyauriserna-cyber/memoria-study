@@ -1,10 +1,8 @@
-import { env } from "@/lib/env";
-
-const INFOGRAPHIC_MODELS = [
-  "gemini-2.0-flash-preview-image-generation",
-  "gemini-2.0-flash-exp-image-generation",
-  "gemini-2.5-flash-image-preview",
-] as const;
+import {
+  generateGeminiImage,
+  quotaHint,
+  type GeminiImageResult,
+} from "@/lib/ai/gemini-image-generation";
 
 function svgInfographicFallback(
   centralTopic: string,
@@ -66,52 +64,20 @@ export async function generateAcademicInfographicImage(
   prompt: string,
   centralTopic: string,
   subtopics: string[],
-): Promise<{ buffer: Buffer; mimeType: string; source: "gemini" | "svg" }> {
-  if (!env.geminiApiKey) {
-    return {
-      buffer: svgInfographicFallback(centralTopic, subtopics),
-      mimeType: "image/svg+xml",
-      source: "svg",
-    };
+): Promise<GeminiImageResult & { geminiError?: string }> {
+  const gemini = await generateGeminiImage(prompt, { aspectRatio: "16:9" });
+
+  if (gemini.ok) {
+    return gemini.result;
   }
 
-  for (const model of INFOGRAPHIC_MODELS) {
-    try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.geminiApiKey}`;
-      const response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: prompt }] }],
-          generationConfig: {
-            responseModalities: ["TEXT", "IMAGE"],
-          },
-        }),
-      });
-
-      const payload = await response.json();
-      if (!response.ok) continue;
-
-      const parts = payload.candidates?.[0]?.content?.parts ?? [];
-      for (const part of parts) {
-        const inline = part.inlineData ?? part.inline_data;
-        if (inline?.data) {
-          return {
-            buffer: Buffer.from(inline.data, "base64"),
-            mimeType: inline.mimeType ?? inline.mime_type ?? "image/png",
-            source: "gemini",
-          };
-        }
-      }
-    } catch {
-      /* try next model */
-    }
-  }
-
+  const hint = quotaHint(gemini.lastError);
   return {
     buffer: svgInfographicFallback(centralTopic, subtopics),
     mimeType: "image/svg+xml",
-    source: "svg",
+    source: "fallback",
+    warning: hint ?? `Gemini imagen no disponible: ${gemini.lastError.slice(0, 200)}`,
+    geminiError: gemini.lastError,
   };
 }
 

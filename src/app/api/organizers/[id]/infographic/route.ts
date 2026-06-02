@@ -65,7 +65,7 @@ export async function POST(_request: Request, context: RouteContext) {
     const { centralTopic, subtopics } = extractInfographicTopics(content);
     const prompt = buildAcademicInfographicPrompt(centralTopic, subtopics, content);
 
-    const { buffer, mimeType, source } = await generateAcademicInfographicImage(
+    const { buffer, mimeType, source, warning, model } = await generateAcademicInfographicImage(
       prompt,
       centralTopic,
       subtopics,
@@ -94,6 +94,8 @@ export async function POST(_request: Request, context: RouteContext) {
       prompt,
       generatedAt: new Date().toISOString(),
       source,
+      warning,
+      model,
     };
 
     const mergedContent = { ...content, academicInfographic };
@@ -111,6 +113,8 @@ export async function POST(_request: Request, context: RouteContext) {
     return NextResponse.json({
       organizer: updated,
       academicInfographic,
+      usedFallback: source === "fallback",
+      warning,
     });
   } catch (caught) {
     console.error("[organizers/infographic]", caught);
