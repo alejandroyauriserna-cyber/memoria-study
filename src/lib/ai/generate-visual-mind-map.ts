@@ -1,12 +1,22 @@
 import { env } from "@/lib/env";
 import type { OrganizerContent } from "@/lib/organizers/parse-content";
+import { layoutVisualMindMap } from "@/lib/organizers/visual-mind-map-layout";
 import {
   MAX_VISUAL_MIND_MAP_IMAGES,
   type VisualMindMap,
+  type VisualMindMapCategory,
   type VisualMindMapNode,
 } from "@/lib/organizers/visual-mind-map-types";
 
 const ICONS = ["scale", "book", "gavel", "users", "landmark", "lightbulb", "target", "brain"] as const;
+const CATEGORIES: VisualMindMapCategory[] = [
+  "concept",
+  "norm",
+  "principle",
+  "case",
+  "example",
+  "comparison",
+];
 
 function parseJson(raw: string) {
   const cleaned = raw
@@ -22,7 +32,10 @@ function parseJson(raw: string) {
     nodes?: Array<{
       id: string;
       explanation?: string;
+      example?: string;
+      reviewQuestion?: string;
       icon?: string;
+      category?: VisualMindMapCategory;
       imagePrompt?: string;
       relatedIds?: string[];
     }>;
@@ -45,83 +58,155 @@ export function buildVisualMindMapStructure(content: OrganizerContent): {
 
   const merged = [...new Set([...fromConcepts, ...fromHierarchy, ...fromKeyConcepts])]
     .filter((label) => label.toLowerCase() !== centralTopic.toLowerCase())
-    .slice(0, 10);
+    .slice(0, 8);
 
   return {
     centralTopic,
-    branchLabels: merged.length >= 2 ? merged : ["Concepto clave 1", "Concepto clave 2", "Concepto clave 3"],
+    branchLabels:
+      merged.length >= 2
+        ? merged
+        : ["Voluntad", "Objeto", "Forma", "Capacidad"],
   };
 }
 
-function layoutRadial(centralTopic: string, labels: string[]): VisualMindMap {
-  const cx = 480;
-  const cy = 360;
-  const radius = Math.max(180, 130 + labels.length * 12);
+function findDetailLabels(
+  topicLabel: string,
+  content: OrganizerContent,
+  topicIndex: number,
+): string[] {
+  const cards = content.visualSummary?.conceptCards ?? [];
+  const matched = cards
+    .filter(
+      (c) =>
+        c.title.toLowerCase().includes(topicLabel.toLowerCase()) ||
+        topicLabel.toLowerCase().includes(c.title.toLowerCase()),
+    )
+    .map((c) => c.title)
+    .slice(0, 2);
 
-  const centerNode: VisualMindMapNode = {
+  if (matched.length) return matched;
+
+  const flashcards = content.flashcards ?? [];
+  const fromFlash = flashcards
+    .filter((f) => f.question?.toLowerCase().includes(topicLabel.toLowerCase().slice(0, 6)))
+    .map((f) => f.question!.slice(0, 48))
+    .slice(0, 2);
+
+  if (fromFlash.length) return fromFlash;
+
+  return [`Aspecto clave de ${topicLabel}`, `Aplicación de ${topicLabel}`].slice(0, 2);
+}
+
+function buildHierarchy(centralTopic: string, branchLabels: string[], content: OrganizerContent): VisualMindMapNode[] {
+  const nodes: VisualMindMapNode[] = [];
+  const topicIds: string[] = [];
+
+  nodes.push({
     id: "center",
     label: centralTopic,
     explanation: "",
+    example: "",
+    reviewQuestion: "",
     icon: "brain",
-    relatedIds: labels.map((_, i) => `branch-${i}`),
-    x: cx,
-    y: cy,
-    ring: "center",
-  };
-
-  const branchNodes: VisualMindMapNode[] = labels.map((label, index) => {
-    const angle = (index / labels.length) * Math.PI * 2 - Math.PI / 2;
-    return {
-      id: `branch-${index}`,
-      label,
-      explanation: "",
-      icon: ICONS[index % ICONS.length]!,
-      relatedIds: ["center"],
-      x: cx + Math.cos(angle) * radius,
-      y: cy + Math.sin(angle) * radius,
-      ring: "branch",
-    };
+    category: "concept",
+    tier: "center",
+    relatedIds: [],
+    x: 0,
+    y: 0,
   });
 
-  const pad = 120;
-  const xs = [cx, ...branchNodes.map((n) => n.x)];
-  const ys = [cy, ...branchNodes.map((n) => n.y)];
+  branchLabels.slice(0, 6).forEach((label, index) => {
+    const id = `topic-${index}`;
+    topicIds.push(id);
 
-  return {
-    centralTopic,
-    generatedAt: new Date().toISOString(),
-    nodes: [centerNode, ...branchNodes],
-    width: Math.max(800, Math.max(...xs) - Math.min(...xs) + pad * 2),
-    height: Math.max(600, Math.max(...ys) - Math.min(...ys) + pad * 2),
-  };
+    nodes.push({
+      id,
+      label,
+      explanation: "",
+      example: "",
+      reviewQuestion: "",
+      icon: ICONS[index % ICONS.length]!,
+      category: CATEGORIES[index % CATEGORIES.length]!,
+      tier: "topic",
+      parentId: "center",
+      relatedIds: ["center"],
+      x: 0,
+      y: 0,
+    });
+
+    const detailLabels = findDetailLabels(label, content, index);
+    detailLabels.forEach((detailLabel, dIndex) => {
+      const detailId = `${id}-detail-${dIndex}`;
+      nodes.push({
+        id: detailId,
+        label: detailLabel,
+        explanation: "",
+        example: "",
+        reviewQuestion: "",
+        icon: ICONS[(index + dIndex + 1) % ICONS.length]!,
+        category: CATEGORIES[(index + dIndex + 2) % CATEGORIES.length]!,
+        tier: "detail",
+        parentId: id,
+        relatedIds: [id, "center"],
+        x: 0,
+        y: 0,
+      });
+    });
+  });
+
+  const center = nodes.find((n) => n.id === "center");
+  if (center) center.relatedIds = topicIds;
+
+  for (const topic of nodes.filter((n) => n.tier === "topic")) {
+    const childIds = nodes.filter((n) => n.parentId === topic.id).map((n) => n.id);
+    topic.relatedIds = ["center", ...childIds];
+  }
+
+  return nodes;
 }
 
 async function enrichWithGemini(
-  map: VisualMindMap,
+  nodes: VisualMindMapNode[],
+  centralTopic: string,
   content: OrganizerContent,
-): Promise<VisualMindMap> {
-  if (!env.geminiApiKey) return map;
+): Promise<VisualMindMapNode[]> {
+  if (!env.geminiApiKey) return nodes;
 
-  const branchNodes = map.nodes.filter((n) => n.ring === "branch");
-  const prompt = `Eres diseñador de mapas mentales jurídicos para estudiantes de Derecho UNT (Perú).
+  const prompt = `Eres un diseñador de mapas mentales jurídicos premium para estudiantes de Derecho UNT (Perú).
 
-Tema central: ${map.centralTopic}
+Tema central: ${centralTopic}
 
-Resumen del material:
-${content.summary?.slice(0, 1500) ?? ""}
+Resumen:
+${content.summary?.slice(0, 1800) ?? ""}
 
-Nodos a enriquecer:
-${branchNodes.map((n) => `- id: ${n.id}, label: ${n.label}`).join("\n")}
+Nodos del mapa (jerarquía center → topic → detail):
+${nodes.map((n) => `- id: ${n.id}, tier: ${n.tier}, label: ${n.label}, parentId: ${n.parentId ?? "none"}`).join("\n")}
+
+Para CADA nodo devuelve enriquecimiento visual y pedagógico.
+
+Categorías (category):
+- concept: conceptos principales (turquesa)
+- norm: normas legales (azul)
+- principle: principios jurídicos (verde)
+- case: casos (naranja)
+- example: ejemplos (morado)
+- comparison: comparaciones (amarillo)
+
+imagePrompt: ilustración miniatura SIN TEXTO, estilo Napkin/MindMeister, metáfora visual clara.
+Ej: Buena Fe → apretón de manos; Contrato → documento firmado; Código Civil → libro jurídico.
 
 Devuelve SOLO JSON:
 {
   "nodes": [
     {
-      "id": "branch-0",
-      "explanation": "explicación breve 1-2 oraciones",
+      "id": "topic-0",
+      "category": "concept",
+      "explanation": "2 oraciones claras",
+      "example": "ejemplo jurídico concreto Peru",
+      "reviewQuestion": "pregunta de repaso",
       "icon": "scale|book|gavel|users|landmark|lightbulb|target|brain",
-      "imagePrompt": "Minimal flat educational illustration for [concept], legal study, cyan and dark blue palette, no text, iconographic",
-      "relatedIds": ["center", "branch-1"]
+      "imagePrompt": "Minimal educational illustration...",
+      "relatedIds": ["center", "topic-0-detail-0"]
     }
   ]
 }`;
@@ -132,63 +217,93 @@ Devuelve SOLO JSON:
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       contents: [{ role: "user", parts: [{ text: prompt }] }],
-      generationConfig: { responseMimeType: "application/json", temperature: 0.3 },
+      generationConfig: { responseMimeType: "application/json", temperature: 0.35 },
     }),
   });
 
   const payload = await response.json();
-  if (!response.ok) return map;
+  if (!response.ok) return nodes;
 
   const text = payload.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (typeof text !== "string") return map;
+  if (typeof text !== "string") return nodes;
 
   const enriched = parseJson(text);
   const byId = new Map(enriched.nodes?.map((n) => [n.id, n]) ?? []);
 
-  return {
-    ...map,
-    nodes: map.nodes.map((node) => {
-      const extra = byId.get(node.id);
-      if (!extra) return node;
-      return {
-        ...node,
-        explanation: extra.explanation?.trim() || node.explanation,
-        icon: extra.icon && ICONS.includes(extra.icon as (typeof ICONS)[number]) ? extra.icon : node.icon,
-        imagePrompt: extra.imagePrompt?.trim() || node.imagePrompt,
-        relatedIds: extra.relatedIds?.length ? extra.relatedIds : node.relatedIds,
-      };
-    }),
-  };
+  return nodes.map((node) => {
+    const extra = byId.get(node.id);
+    if (!extra) return node;
+    return {
+      ...node,
+      explanation: extra.explanation?.trim() || node.explanation,
+      example: extra.example?.trim() || node.example,
+      reviewQuestion: extra.reviewQuestion?.trim() || node.reviewQuestion,
+      icon: extra.icon && ICONS.includes(extra.icon as (typeof ICONS)[number]) ? extra.icon : node.icon,
+      category:
+        extra.category && CATEGORIES.includes(extra.category) ? extra.category : node.category,
+      imagePrompt: extra.imagePrompt?.trim() || node.imagePrompt,
+      relatedIds: extra.relatedIds?.length ? extra.relatedIds : node.relatedIds,
+    };
+  });
 }
 
-export async function generateVisualMindMap(content: OrganizerContent): Promise<VisualMindMap> {
-  const { centralTopic, branchLabels } = buildVisualMindMapStructure(content);
-  let map = layoutRadial(centralTopic, branchLabels.slice(0, 8));
-  map = await enrichWithGemini(map, content);
-
-  const center = map.nodes.find((n) => n.id === "center");
+function fillFallbacks(nodes: VisualMindMapNode[], content: OrganizerContent, centralTopic: string) {
+  const center = nodes.find((n) => n.id === "center");
   if (center && !center.explanation) {
     center.explanation =
-      content.simplifiedExplanation?.slice(0, 220) ||
-      content.summary?.slice(0, 220) ||
-      `Tema central: ${centralTopic}`;
+      content.simplifiedExplanation?.slice(0, 260) ||
+      content.summary?.slice(0, 260) ||
+      `Tema central del mapa: ${centralTopic}`;
+    center.example =
+      content.visualSummary?.conceptCards?.[0]?.description?.slice(0, 180) ?? "";
+    center.reviewQuestion =
+      content.reviewBundle?.questions?.[0]?.question ??
+      `¿Cuál es la idea central de ${centralTopic}?`;
+    center.imagePrompt =
+      center.imagePrompt ??
+      `Central mind map hub illustration for ${centralTopic}, legal education, glowing turquoise, no text`;
   }
 
-  for (const node of map.nodes) {
-    if (node.ring === "branch" && !node.explanation) {
+  for (const node of nodes) {
+    if (node.tier !== "center" && !node.explanation) {
       const card = content.visualSummary?.conceptCards?.find(
         (c) =>
           c.title.toLowerCase().includes(node.label.toLowerCase()) ||
           node.label.toLowerCase().includes(c.title.toLowerCase()),
       );
-      node.explanation = card?.description ?? `Concepto clave: ${node.label}`;
+      node.explanation = card?.description ?? `${node.label}: concepto clave en ${centralTopic}.`;
+    }
+    if (!node.example) {
+      node.example = `Ejemplo aplicado a ${node.label} en el contexto del derecho peruano.`;
+    }
+    if (!node.reviewQuestion) {
+      node.reviewQuestion = `¿Cómo se relaciona ${node.label} con ${centralTopic}?`;
     }
     if (!node.imagePrompt) {
-      node.imagePrompt = `Educational legal concept illustration: ${node.label}, minimal vector, cyan glow, dark background, no text`;
+      node.imagePrompt = `Mini visual memory illustration for legal concept "${node.label}", flat iconographic, soft glow, no text, ${node.category} theme`;
     }
   }
+}
 
-  return map;
+export async function generateVisualMindMap(content: OrganizerContent): Promise<VisualMindMap> {
+  const { centralTopic, branchLabels } = buildVisualMindMapStructure(content);
+  let nodes = buildHierarchy(centralTopic, branchLabels, content);
+  nodes = await enrichWithGemini(nodes, centralTopic, content);
+  fillFallbacks(nodes, content, centralTopic);
+
+  const layout = layoutVisualMindMap(nodes);
+
+  return {
+    centralTopic,
+    generatedAt: new Date().toISOString(),
+    ...layout,
+  };
+}
+
+export function imagePriorityForNode(node: VisualMindMapNode): number {
+  if (node.tier === "center") return 100;
+  if (node.tier === "topic" || node.tier === "subtopic") return 80;
+  return 20;
 }
 
 export { MAX_VISUAL_MIND_MAP_IMAGES };

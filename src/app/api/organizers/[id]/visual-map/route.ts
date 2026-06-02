@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { extensionForMime, generateConceptImage } from "@/lib/ai/gemini-concept-image";
 import {
   generateVisualMindMap,
+  imagePriorityForNode,
   MAX_VISUAL_MIND_MAP_IMAGES,
 } from "@/lib/ai/generate-visual-mind-map";
 import { parseOrganizerContent } from "@/lib/organizers/parse-content";
@@ -64,11 +65,14 @@ export async function POST(_request: Request, context: RouteContext) {
     await ensureBucket(admin);
 
     let imagesGenerated = 0;
-    const updatedNodes = [];
+    const sortedForImages = [...visualMindMap.nodes].sort(
+      (a, b) => imagePriorityForNode(b) - imagePriorityForNode(a),
+    );
+    const imageByNodeId = new Map<string, string | null>();
 
-    for (const node of visualMindMap.nodes) {
+    for (const node of sortedForImages) {
       if (imagesGenerated >= MAX_VISUAL_MIND_MAP_IMAGES) {
-        updatedNodes.push(node);
+        imageByNodeId.set(node.id, node.imageUrl ?? null);
         continue;
       }
 
@@ -88,15 +92,21 @@ export async function POST(_request: Request, context: RouteContext) {
 
       if (uploadError) {
         console.error("[visual-map] upload failed:", uploadError);
-        updatedNodes.push({ ...node, imageUrl: null });
+        imageByNodeId.set(node.id, null);
         continue;
       }
 
       const { data: urlData } = admin.storage.from(BUCKET).getPublicUrl(storagePath);
-      updatedNodes.push({ ...node, imageUrl: urlData.publicUrl });
+      imageByNodeId.set(node.id, urlData.publicUrl);
     }
 
-    visualMindMap = { ...visualMindMap, nodes: updatedNodes };
+    visualMindMap = {
+      ...visualMindMap,
+      nodes: visualMindMap.nodes.map((node) => ({
+        ...node,
+        imageUrl: imageByNodeId.get(node.id) ?? node.imageUrl ?? null,
+      })),
+    };
 
     const mergedContent = {
       ...content,

@@ -58,11 +58,11 @@ export function VisualMindMapPanel({
         <div className="max-w-md space-y-2">
           <h4 className="text-lg font-bold text-[#F5F7FA]">Mapa mental visual con IA</h4>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            Genera un mapa interactivo con iconos e imágenes IA para cada concepto. Ideal para
-            recordar visualmente — inspirado en Napkin AI y MindMeister.
+            Genera un mapa mental radial con jerarquía visual, colores por categoría, imágenes IA
+            y modo tutor al hacer clic en cada concepto.
           </p>
           <p className="text-xs text-muted-foreground/80">
-            Generación opcional · hasta {MAX_VISUAL_MIND_MAP_IMAGES} imágenes IA por mapa
+            Generación opcional · hasta {MAX_VISUAL_MIND_MAP_IMAGES} mini ilustraciones IA
           </p>
         </div>
         <button

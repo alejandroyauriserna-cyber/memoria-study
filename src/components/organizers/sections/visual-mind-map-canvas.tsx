@@ -15,10 +15,25 @@ import {
   Scale,
   Target,
   Users,
-  X,
   type LucideIcon,
 } from "lucide-react";
-import type { VisualMindMap, VisualMindMapNode } from "@/lib/organizers/visual-mind-map-types";
+import { VisualMindMapStudyPanel } from "@/components/organizers/sections/visual-mind-map-study-panel";
+import {
+  getMindMapEdges,
+  layoutVisualMindMap,
+  organicEdgePath,
+} from "@/lib/organizers/visual-mind-map-layout";
+import {
+  CATEGORY_THEMES,
+  styleForTier,
+  themeForCategory,
+} from "@/lib/organizers/visual-mind-map-theme";
+import {
+  normalizeVisualMindMap,
+  normalizeVisualMindMapNode,
+  type VisualMindMap,
+  type VisualMindMapNode,
+} from "@/lib/organizers/visual-mind-map-types";
 
 const ICON_MAP: Record<string, LucideIcon> = {
   scale: Scale,
@@ -35,22 +50,17 @@ function getIcon(name: string): LucideIcon {
   return ICON_MAP[name] ?? Brain;
 }
 
-function computeFitTransform(vw: number, vh: number, map: VisualMindMap, padding = 48) {
+function computeFitTransform(vw: number, vh: number, map: VisualMindMap, padding = 56) {
   const scale = Math.min(
     (vw - padding * 2) / map.width,
     (vh - padding * 2) / map.height,
-    1.2,
+    1.15,
   );
-  return { x: 0, y: 0, scale: Math.max(0.35, scale) };
-}
-
-function bezierPath(x1: number, y1: number, x2: number, y2: number) {
-  const mx = (x1 + x2) / 2;
-  return `M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`;
+  return { x: 0, y: 0, scale: Math.max(0.32, scale) };
 }
 
 export function VisualMindMapCanvas({
-  map,
+  map: rawMap,
   fullscreen = false,
 }: {
   map: VisualMindMap;
@@ -63,32 +73,44 @@ export function VisualMindMapCanvas({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const canvasDragStart = useRef({ x: 0, y: 0, originX: 0, originY: 0 });
 
-  const nodeById = useMemo(() => new Map(map.nodes.map((n) => [n.id, n])), [map.nodes]);
+  const map = useMemo(() => {
+    const normalized = normalizeVisualMindMap(rawMap);
+    const needsLayout = normalized.nodes.some((n) => !n.x && !n.y && n.tier !== "center");
+    if (needsLayout && normalized.nodes.every((n) => n.x === 0 && n.y === 0)) {
+      const layout = layoutVisualMindMap(normalized.nodes.map(normalizeVisualMindMapNode));
+      return { ...normalized, ...layout };
+    }
+    return normalized;
+  }, [rawMap]);
+
+  const nodes = useMemo(
+    () => map.nodes.map(normalizeVisualMindMapNode),
+    [map.nodes],
+  );
+
+  const nodeById = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes]);
   const selected = selectedId ? (nodeById.get(selectedId) ?? null) : null;
+  const centerNode = nodes.find((n) => n.tier === "center");
 
   const relatedIds = useMemo(() => {
     if (!selected) return new Set<string>();
-    return new Set([selected.id, ...selected.relatedIds]);
-  }, [selected]);
-
-  const edges = useMemo(() => {
-    const result: Array<{ from: VisualMindMapNode; to: VisualMindMapNode }> = [];
-    for (const node of map.nodes) {
-      for (const relId of node.relatedIds) {
-        const target = nodeById.get(relId);
-        if (!target) continue;
-        if (node.id === "center" || relId === "center") {
-          const from = node.id === "center" ? node : target;
-          const to = node.id === "center" ? target : node;
-          const key = `${from.id}-${to.id}`;
-          if (!result.some((e) => `${e.from.id}-${e.to.id}` === key)) {
-            result.push({ from, to });
-          }
-        }
-      }
+    const ids = new Set<string>([selected.id]);
+    if (selected.parentId) ids.add(selected.parentId);
+    for (const rel of selected.relatedIds) ids.add(rel);
+    for (const n of nodes) {
+      if (n.parentId === selected.id) ids.add(n.id);
     }
-    return result;
-  }, [map.nodes, nodeById]);
+    return ids;
+  }, [selected, nodes]);
+
+  const edges = useMemo(() => getMindMapEdges(nodes), [nodes]);
+
+  const relatedNodes = useMemo(() => {
+    if (!selected) return [];
+    return selected.relatedIds
+      .map((id) => nodeById.get(id))
+      .filter((n): n is VisualMindMapNode => Boolean(n) && n!.id !== selected.id);
+  }, [selected, nodeById]);
 
   const applyFitView = useCallback(() => {
     const el = viewportRef.current;
@@ -103,10 +125,12 @@ export function VisualMindMapCanvas({
       const el = viewportRef.current;
       if (!el) return;
       const rect = el.getBoundingClientRect();
-      const targetScale = Math.min(1.6, Math.max(transform.scale, 0.9));
-      const offsetX = rect.width / 2 - node.x * targetScale;
-      const offsetY = rect.height / 2 - node.y * targetScale;
-      setTransform({ x: offsetX, y: offsetY, scale: targetScale });
+      const targetScale = Math.min(1.55, Math.max(transform.scale, 0.85));
+      setTransform({
+        x: rect.width / 2 - node.x * targetScale,
+        y: rect.height / 2 - node.y * targetScale,
+        scale: targetScale,
+      });
     },
     [transform.scale],
   );
@@ -121,7 +145,7 @@ export function VisualMindMapCanvas({
   const zoom = useCallback((delta: number) => {
     setTransform((current) => ({
       ...current,
-      scale: Math.min(2.4, Math.max(0.28, current.scale + delta)),
+      scale: Math.min(2.5, Math.max(0.25, current.scale + delta)),
     }));
   }, []);
 
@@ -164,7 +188,6 @@ export function VisualMindMapCanvas({
 
   const toPercent = (value: number, total: number) => `${(value / total) * 100}%`;
   const { width: w, height: h } = map;
-  const centerNode = map.nodes.find((n) => n.id === "center");
 
   const viewportHeight = fullscreen
     ? "h-full min-h-0 flex-1"
@@ -175,14 +198,41 @@ export function VisualMindMapCanvas({
       <div
         ref={viewportRef}
         onWheel={onWheel}
-        className={`study-map-viewport relative overflow-hidden rounded-2xl border border-[rgba(0,255,213,0.12)] bg-[#07131A] ${viewportHeight}`}
+        className={`visual-mind-map-viewport relative overflow-hidden rounded-[28px] ${viewportHeight}`}
+        style={{
+          background:
+            "radial-gradient(ellipse 80% 60% at 50% 45%, rgba(0,255,213,0.06), transparent 70%), #040d12",
+        }}
       >
+        <div className="pointer-events-none absolute inset-0 opacity-30">
+          <div
+            className="h-full w-full"
+            style={{
+              backgroundImage:
+                "radial-gradient(circle at 1px 1px, rgba(0,255,213,0.08) 1px, transparent 0)",
+              backgroundSize: "28px 28px",
+            }}
+          />
+        </div>
+
         <div className="absolute left-3 top-3 z-20">
           <MapControls
             onZoom={zoom}
             onFit={applyFitView}
             onCenter={() => setTransform((c) => ({ ...c, x: 0, y: 0 }))}
           />
+        </div>
+
+        <div className="absolute right-3 top-3 z-20 hidden flex-wrap gap-1.5 sm:flex">
+          {Object.values(CATEGORY_THEMES).map((cat) => (
+            <span
+              key={cat.id}
+              className="rounded-full px-2 py-0.5 text-[9px] font-semibold"
+              style={{ background: cat.soft, color: cat.color }}
+            >
+              {cat.label}
+            </span>
+          ))}
         </div>
 
         <div
@@ -198,171 +248,209 @@ export function VisualMindMapCanvas({
               width: w,
               height: h,
               transform: `translate(calc(-50% + ${transform.x}px), calc(-50% + ${transform.y}px)) scale(${transform.scale})`,
-              transition: canvasDragging ? "none" : "transform 280ms cubic-bezier(0.22, 1, 0.36, 1)",
+              transition: canvasDragging ? "none" : "transform 320ms cubic-bezier(0.22, 1, 0.36, 1)",
             }}
           >
-            <svg viewBox={`0 0 ${w} ${h}`} className="absolute inset-0 h-full w-full" aria-hidden>
-              {edges.map(({ from, to }) => {
+            <svg viewBox={`0 0 ${w} ${h}`} className="absolute inset-0 h-full w-full overflow-visible">
+              <defs>
+                {edges.map(({ key, to }) => {
+                  const theme = themeForCategory(to.category);
+                  return (
+                    <filter key={`glow-${key}`} id={`edge-glow-${key}`} x="-50%" y="-50%" width="200%" height="200%">
+                      <feGaussianBlur stdDeviation="3" result="blur" />
+                      <feMerge>
+                        <feMergeNode in="blur" />
+                        <feMergeNode in="SourceGraphic" />
+                      </feMerge>
+                    </filter>
+                  );
+                })}
+              </defs>
+
+              {edges.map(({ from, to, key }) => {
                 const dimmed = selected && !(relatedIds.has(from.id) && relatedIds.has(to.id));
                 const active = selected && relatedIds.has(from.id) && relatedIds.has(to.id);
+                const theme = themeForCategory(to.category);
+                const path = organicEdgePath(from.x, from.y, to.x, to.y, active ? 0.28 : 0.2);
+
                 return (
-                  <motion.path
-                    key={`${from.id}-${to.id}`}
-                    d={bezierPath(from.x, from.y, to.x, to.y)}
-                    fill="none"
-                    stroke="#00FFD5"
-                    strokeWidth={active ? 2.5 : 1.5}
-                    strokeLinecap="round"
-                    strokeOpacity={dimmed ? 0.08 : active ? 0.9 : 0.28}
-                    className={active ? "tron-edge-flow" : undefined}
-                  />
+                  <g key={key}>
+                    {active ? (
+                      <path
+                        d={path}
+                        fill="none"
+                        stroke={theme.color}
+                        strokeWidth={8}
+                        strokeLinecap="round"
+                        strokeOpacity={0.12}
+                      />
+                    ) : null}
+                    <motion.path
+                      d={path}
+                      fill="none"
+                      stroke={theme.color}
+                      strokeWidth={active ? 2.8 : 1.6}
+                      strokeLinecap="round"
+                      strokeOpacity={dimmed ? 0.06 : active ? 0.95 : 0.32}
+                      filter={active ? `url(#edge-glow-${key})` : undefined}
+                      className={active ? "visual-mind-edge-flow" : undefined}
+                      initial={false}
+                      animate={{ strokeOpacity: dimmed ? 0.06 : active ? 0.95 : 0.32 }}
+                    />
+                  </g>
                 );
               })}
             </svg>
 
-            {map.nodes.map((node, index) => {
-              const Icon = getIcon(node.icon);
-              const isCenter = node.ring === "center";
-              const dimmed = selected && !relatedIds.has(node.id);
-              const isSelected = selectedId === node.id;
-
-              return (
-                <motion.div
-                  key={node.id}
-                  data-visual-node
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{
-                    scale: isSelected ? 1.06 : dimmed ? 0.85 : 1,
-                    opacity: dimmed ? 0.15 : 1,
-                    filter: dimmed ? "blur(4px)" : "none",
-                  }}
-                  transition={{ duration: 0.25, delay: index * 0.03 }}
-                  className="absolute z-10 -translate-x-1/2 -translate-y-1/2"
-                  style={{ left: toPercent(node.x, w), top: toPercent(node.y, h) }}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    selectNode(node);
-                  }}
-                >
-                  <div
-                    className={`group relative cursor-pointer overflow-hidden rounded-2xl border transition ${
-                      isCenter ? "w-[min(200px,42vw)]" : "w-[min(168px,38vw)]"
-                    } ${
-                      isSelected
-                        ? "border-[#00FFD5] shadow-[0_0_36px_rgba(0,255,213,0.45)]"
-                        : "border-[rgba(0,255,213,0.25)] hover:border-[rgba(0,255,213,0.5)] hover:shadow-[0_0_24px_rgba(0,255,213,0.25)]"
-                    }`}
-                    style={{ background: "rgba(16,39,48,0.92)" }}
-                  >
-                    {node.imageUrl ? (
-                      <div className={`relative overflow-hidden ${isCenter ? "h-28" : "h-24"}`}>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={node.imageUrl}
-                          alt={node.label}
-                          className="h-full w-full object-cover transition group-hover:scale-105"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#07131A] via-transparent to-transparent" />
-                      </div>
-                    ) : (
-                      <div
-                        className={`flex items-center justify-center bg-gradient-to-br from-[rgba(0,255,213,0.15)] to-[rgba(0,191,255,0.08)] ${isCenter ? "h-28" : "h-24"}`}
-                      >
-                        <Icon size={isCenter ? 36 : 28} className="text-[#00FFD5]" />
-                      </div>
-                    )}
-
-                    <div className="p-3">
-                      <span className="mb-1.5 flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-br from-[#00FFD5] to-[#00BFFF] text-[#07131A]">
-                        <Icon size={12} />
-                      </span>
-                      <p className="text-xs font-bold leading-tight text-[#F5F7FA]">{node.label}</p>
-                      {!isCenter && node.explanation ? (
-                        <p className="mt-1 line-clamp-2 text-[10px] leading-snug text-muted-foreground">
-                          {node.explanation}
-                        </p>
-                      ) : null}
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })}
+            {nodes.map((node, index) => (
+              <MindMapNodeBubble
+                key={node.id}
+                node={node}
+                index={index}
+                mapWidth={w}
+                mapHeight={h}
+                selected={selectedId === node.id}
+                dimmed={Boolean(selected && !relatedIds.has(node.id))}
+                onSelect={() => selectNode(node)}
+                toPercent={toPercent}
+              />
+            ))}
           </div>
         </div>
 
         <AnimatePresence>
           {selected ? (
-            <motion.aside
-              data-visual-panel
-              initial={{ x: "100%", opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: "100%", opacity: 0 }}
-              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              className="absolute inset-y-0 right-0 z-40 flex w-[min(100%,380px)] flex-col border-l border-[rgba(0,255,213,0.15)] bg-[rgba(7,19,26,0.92)] backdrop-blur-xl"
-            >
-              <div className="flex items-center justify-between border-b border-[rgba(0,255,213,0.12)] px-4 py-3">
-                <h4 className="text-sm font-semibold text-[#F5F7FA]">{selected.label}</h4>
-                <button
-                  type="button"
-                  onClick={() => setSelectedId(null)}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-[rgba(0,255,213,0.08)] hover:text-[#00FFD5]"
-                  aria-label="Cerrar panel"
-                >
-                  <X size={16} />
-                </button>
-              </div>
-
-              <div className="flex-1 overflow-y-auto p-4">
-                {selected.imageUrl ? (
-                  <div className="mb-4 overflow-hidden rounded-xl border border-[rgba(0,255,213,0.2)]">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={selected.imageUrl} alt={selected.label} className="w-full object-cover" />
-                  </div>
-                ) : null}
-
-                <p className="text-sm leading-relaxed text-[#F5F7FA]/90">
-                  {selected.explanation || `Concepto: ${selected.label}`}
-                </p>
-
-                {selected.relatedIds.length ? (
-                  <div className="mt-5">
-                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-[#00FFD5]">
-                      Relacionado con
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {selected.relatedIds.map((relId) => {
-                        const rel = nodeById.get(relId);
-                        if (!rel) return null;
-                        return (
-                          <button
-                            key={relId}
-                            type="button"
-                            onClick={() => selectNode(rel)}
-                            className="rounded-full border border-[rgba(0,255,213,0.25)] bg-[rgba(0,255,213,0.08)] px-3 py-1 text-[11px] font-medium text-[#F5F7FA] transition hover:border-[#00FFD5] hover:bg-[rgba(0,255,213,0.15)]"
-                          >
-                            {rel.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ) : null}
-
-                {centerNode && selected.id !== "center" ? (
-                  <button
-                    type="button"
-                    onClick={() => centerNode && selectNode(centerNode)}
-                    className="mt-5 w-full rounded-xl border border-[rgba(0,255,213,0.2)] py-2.5 text-xs font-semibold text-[#00FFD5] transition hover:bg-[rgba(0,255,213,0.08)]"
-                  >
-                    Volver al tema central · {centerNode.label}
-                  </button>
-                ) : null}
-              </div>
-            </motion.aside>
+            <VisualMindMapStudyPanel
+              node={selected}
+              relatedNodes={relatedNodes}
+              centerNode={centerNode}
+              onSelectNode={selectNode}
+              onClose={() => setSelectedId(null)}
+            />
           ) : null}
         </AnimatePresence>
       </div>
     </div>
+  );
+}
+
+function MindMapNodeBubble({
+  node,
+  index,
+  mapWidth,
+  mapHeight,
+  selected,
+  dimmed,
+  onSelect,
+  toPercent,
+}: {
+  node: VisualMindMapNode;
+  index: number;
+  mapWidth: number;
+  mapHeight: number;
+  selected: boolean;
+  dimmed: boolean;
+  onSelect: () => void;
+  toPercent: (v: number, t: number) => string;
+}) {
+  const theme = themeForCategory(node.category);
+  const tierStyle = styleForTier(node.tier);
+  const Icon = getIcon(node.icon);
+  const isCenter = node.tier === "center";
+
+  return (
+    <motion.button
+      type="button"
+      data-visual-node
+      initial={{ scale: 0, opacity: 0 }}
+      animate={{
+        scale: selected ? 1.08 : dimmed ? 0.78 : 1,
+        opacity: dimmed ? 0.12 : 1,
+        filter: dimmed ? "blur(6px) saturate(0.4)" : "none",
+      }}
+      transition={{ duration: 0.35, delay: index * 0.025, ease: [0.22, 1, 0.36, 1] }}
+      className="absolute z-10 -translate-x-1/2 -translate-y-1/2 text-left"
+      style={{ left: toPercent(node.x, mapWidth), top: toPercent(node.y, mapHeight) }}
+      onClick={(event) => {
+        event.stopPropagation();
+        onSelect();
+      }}
+    >
+      <div
+        className="relative flex flex-col items-center"
+        style={{
+          minWidth: tierStyle.minWidth,
+          maxWidth: tierStyle.maxWidth,
+        }}
+      >
+        {isCenter ? (
+          <div
+            className="pointer-events-none absolute -inset-10 rounded-full blur-3xl"
+            style={{ background: theme.glow, opacity: 0.45 }}
+          />
+        ) : null}
+
+        <div
+          className={`relative overflow-hidden backdrop-blur-xl transition-all duration-300 ${
+            isCenter ? "rounded-full" : "rounded-[28px]"
+          }`}
+          style={{
+            padding: tierStyle.padding,
+            background: isCenter
+              ? `linear-gradient(145deg, rgba(0,255,213,0.28), rgba(0,120,180,0.15))`
+              : `linear-gradient(145deg, ${theme.soft}, rgba(5,14,20,0.75))`,
+            border: selected
+              ? `2px solid ${theme.color}`
+              : `1.5px solid ${theme.color}44`,
+            boxShadow: selected
+              ? `0 0 48px ${theme.glow}, 0 16px 40px rgba(0,0,0,0.35)`
+              : `0 8px 32px rgba(0,0,0,0.28), 0 0 20px ${theme.glow.replace("0.55", "0.15")}`,
+          }}
+        >
+          <div className="flex flex-col items-center text-center">
+            <div
+              className="relative mb-2 overflow-hidden rounded-full ring-2 ring-white/10"
+              style={{
+                width: tierStyle.thumbSize,
+                height: tierStyle.thumbSize,
+              }}
+            >
+              {node.imageUrl ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={node.imageUrl}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div
+                  className="flex h-full w-full items-center justify-center"
+                  style={{ background: theme.gradient }}
+                >
+                  <Icon size={tierStyle.iconSize} style={{ color: theme.color }} />
+                </div>
+              )}
+            </div>
+
+            {!isCenter ? (
+              <span
+                className="mb-1 rounded-full px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider"
+                style={{ background: theme.soft, color: theme.color }}
+              >
+                {theme.label}
+              </span>
+            ) : null}
+
+            <p
+              className="font-bold leading-tight text-[#F5F7FA]"
+              style={{ fontSize: tierStyle.fontSize }}
+            >
+              {node.label}
+            </p>
+          </div>
+        </div>
+      </div>
+    </motion.button>
   );
 }
 
@@ -376,7 +464,7 @@ function MapControls({
   onCenter: () => void;
 }) {
   return (
-    <div className="flex flex-col gap-1 rounded-xl border border-[rgba(0,255,213,0.2)] bg-[rgba(16,39,48,0.9)] p-1.5 shadow-[0_0_24px_rgba(0,255,213,0.12)] backdrop-blur-md">
+    <div className="flex flex-col gap-1 rounded-2xl border border-[rgba(0,255,213,0.2)] bg-[rgba(5,14,20,0.88)] p-1.5 shadow-[0_0_24px_rgba(0,255,213,0.1)] backdrop-blur-xl">
       <div className="flex gap-1">
         <IconBtn onClick={() => onZoom(-0.08)} label="Alejar">
           <Minus size={15} />
@@ -414,7 +502,7 @@ function IconBtn({
       type="button"
       aria-label={label}
       onClick={onClick}
-      className="flex h-8 w-8 items-center justify-center rounded-lg text-[#F5F7FA] transition hover:bg-[rgba(0,255,213,0.1)] hover:text-[#00FFD5]"
+      className="flex h-8 w-8 items-center justify-center rounded-xl text-[#F5F7FA] transition hover:bg-[rgba(0,255,213,0.1)] hover:text-[#00FFD5]"
     >
       {children}
     </button>

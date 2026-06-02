@@ -328,7 +328,8 @@ textarea.ms-input {
     0 0 60px rgba(0, 255, 213, 0.08);
 }
 
-.tron-edge-flow {
+.tron-edge-flow,
+.visual-mind-edge-flow {
   stroke-dasharray: 10 8;
   animation: tron-edge-flow 1.4s linear infinite;
 }
