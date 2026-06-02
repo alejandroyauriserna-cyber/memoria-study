@@ -1,18 +1,10 @@
 import Link from "next/link";
 import { AppShell } from "@/components/ui/shell";
+import { OrganizerContentView } from "@/components/organizers/organizer-content-view";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/env";
 import type { OrganizerRecord } from "@/types/organizer";
-
-function formatOrganizerContent(content: unknown) {
-  try {
-    const parsed = typeof content === "string" ? JSON.parse(content) : content;
-    return JSON.stringify(parsed, null, 2);
-  } catch {
-    return String(content ?? "");
-  }
-}
 
 export default async function OrganizersPage() {
   if (!hasSupabaseEnv()) {
@@ -79,24 +71,28 @@ export default async function OrganizersPage() {
         </div>
 
         {organizers.length ? (
-          <div className="mt-8 grid gap-6 lg:grid-cols-2">
+          <div className="mt-8 space-y-8">
             {organizers.map((organizer) => (
-              <article key={organizer.id} className="rounded-[32px] border border-border bg-background p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+              <article
+                key={organizer.id}
+                className="rounded-[32px] border border-border bg-background p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md sm:p-8"
+              >
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div>
-                    <p className="text-sm font-semibold uppercase tracking-[0.24em] text-accent">{String(organizer.organizer_type ?? "organizador").replace(/-/g, " ")}</p>
+                    <p className="text-sm font-semibold uppercase tracking-[0.24em] text-accent">
+                      {String(organizer.organizer_type ?? "organizador").replace(/-/g, " ")}
+                    </p>
                     <h2 className="mt-3 text-2xl font-semibold tracking-tight text-foreground">{organizer.title}</h2>
-                    <p className="mt-3 text-sm leading-6 text-muted-foreground">{organizer.description}</p>
+                    <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground">{organizer.description}</p>
                   </div>
                   <div className="rounded-3xl bg-muted px-4 py-3 text-right text-sm text-muted-foreground">
                     <p>{organizer.cycle_label}</p>
                     <p className="mt-1">{new Date(organizer.created_at).toLocaleDateString("es-PE")}</p>
                   </div>
                 </div>
-                <div className="mt-6 overflow-hidden rounded-3xl border border-border bg-muted px-4 py-4 text-sm">
-                  <pre className="whitespace-pre-wrap break-words text-sm leading-6">
-                    {formatOrganizerContent(organizer.content)}
-                  </pre>
+
+                <div className="mt-8">
+                  <OrganizerContentView content={organizer.content} />
                 </div>
               </article>
             ))}
