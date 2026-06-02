@@ -189,7 +189,7 @@ export function OrganizerContentView({
 
         <OrganizerFloatSheet
           open={activePanel === "visualPrompt"}
-          title="Prompt Visual IA"
+          title="Crear Imagen Educativa IA"
           wide
           onClose={() => setActivePanel(null)}
         >

@@ -25,7 +25,7 @@ const items = [
   { id: "flow" as const, label: "Flujo", icon: Workflow },
   { id: "tree" as const, label: "Ruta", icon: GitBranch },
   { id: "visualMap" as const, label: "Mapa visual", icon: Sparkles },
-  { id: "visualPrompt" as const, label: "Prompt IA", icon: Palette },
+  { id: "visualPrompt" as const, label: "Imagen IA", icon: Palette },
   { id: "flashcards" as const, label: "Estudio", icon: Layers },
   { id: "review" as const, label: "Repaso", icon: HelpCircle },
 ];

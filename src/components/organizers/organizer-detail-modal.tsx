@@ -127,7 +127,7 @@ export function OrganizerDetailModal({
               active={activeTab === "visualPrompt"}
               onClick={() => setActiveTab("visualPrompt")}
               icon={Palette}
-              label="Prompt Visual IA"
+              label="Crear Imagen IA"
               accent="#F59E0B"
             />
           </div>

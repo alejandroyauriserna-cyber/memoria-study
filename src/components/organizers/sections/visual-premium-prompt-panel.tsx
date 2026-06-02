@@ -9,10 +9,16 @@ import {
   Loader2,
   Palette,
   Paperclip,
+  Rocket,
   Sparkles,
   Wand2,
   X,
 } from "lucide-react";
+import {
+  HOW_IT_WORKS_STEPS,
+  VISUAL_IMAGE_MODULE_SUBTITLE,
+  VISUAL_IMAGE_MODULE_TITLE,
+} from "@/lib/organizers/visual-prompt-mode-config";
 import { isSupportedRubricFile } from "@/lib/organizers/visual-prompt-types";
 import type { VisualPremiumPrompt, VisualPromptMode } from "@/lib/organizers/visual-prompt-types";
 import {
@@ -39,6 +45,8 @@ export function VisualPremiumPromptPanel({
   const [copied, setCopied] = useState(false);
   const [local, setLocal] = useState<VisualPremiumPrompt | null>(visualPremiumPrompt ?? null);
   const [rubricFile, setRubricFile] = useState<File | null>(null);
+
+  const selectedMode = VISUAL_PROMPT_MODES.find((m) => m.id === mode);
 
   useEffect(() => {
     if (visualPremiumPrompt) {
@@ -68,14 +76,14 @@ export function VisualPremiumPromptPanel({
       const payload = await response.json();
 
       if (!response.ok) {
-        throw new Error(payload.error ?? "No se pudo generar el prompt visual.");
+        throw new Error(payload.error ?? "No se pudo generar el prompt.");
       }
 
       const next = payload.visualPremiumPrompt as VisualPremiumPrompt;
       setLocal(next);
       onGenerated?.(payload.organizer?.content);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Error al generar el prompt visual.");
+      setError(caught instanceof Error ? caught.message : "Error al generar la imagen educativa.");
     } finally {
       setGenerating(false);
     }
@@ -117,22 +125,39 @@ export function VisualPremiumPromptPanel({
         <div className="max-w-3xl">
           <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#FBBF24]">
             <Palette size={12} />
-            Generar Prompt Visual IA
+            {VISUAL_IMAGE_MODULE_TITLE}
           </p>
           <h3 className="mt-1 text-lg font-bold text-[#F5F7FA]">
-            Material + rúbrica del docente → prompt premium para Gemini
+            Convierte tu PDF en un prompt listo para Gemini
           </h3>
           <p className="mt-2 text-sm leading-relaxed text-[#F5F7FA]/70">
-            MemoriaStudy analiza tu PDF de estudio y, si adjuntas la rúbrica, adapta el prompt a los
-            criterios de evaluación de tu profesor. Copias, pegas en Gemini y generas la infografía
-            sin costo de imágenes en la plataforma.
+            {VISUAL_IMAGE_MODULE_SUBTITLE}
           </p>
         </div>
       </div>
 
+      <div className="shrink-0 border-b border-white/8 px-4 py-4 sm:px-6">
+        <p className="mb-3 text-[11px] font-bold uppercase tracking-wider text-[#86EFAC]">
+          ¿Cómo funciona?
+        </p>
+        <ol className="grid gap-2 sm:grid-cols-2">
+          {HOW_IT_WORKS_STEPS.map((step, index) => (
+            <li
+              key={step}
+              className="flex items-start gap-2 rounded-xl border border-white/8 bg-white/[0.02] px-3 py-2 text-xs text-[#F5F7FA]/75"
+            >
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#F59E0B]/20 text-[10px] font-bold text-[#FBBF24]">
+                {index + 1}
+              </span>
+              <span>{step}</span>
+            </li>
+          ))}
+        </ol>
+      </div>
+
       <div className="shrink-0 border-b border-white/8 px-4 py-3 sm:px-6">
         <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-[#F5F7FA]/50">
-          Modo visual
+          Elige el tipo de imagen
         </p>
         <div className="flex flex-wrap gap-2">
           {VISUAL_PROMPT_MODES.map((item) => {
@@ -159,12 +184,21 @@ export function VisualPremiumPromptPanel({
             );
           })}
         </div>
+
+        {selectedMode ? (
+          <div className="mt-3 rounded-xl border border-[#A855F7]/30 bg-[#A855F7]/10 px-4 py-3">
+            <p className="text-xs font-semibold text-[#C4B5FD]">
+              {selectedMode.emoji} Resultado esperado:
+            </p>
+            <p className="mt-1 text-sm text-[#F5F7FA]/85">{selectedMode.expectedResult}</p>
+          </div>
+        ) : null}
       </div>
 
       <div className="shrink-0 border-b border-white/8 px-4 py-3 sm:px-6">
         <p className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-[#F5F7FA]/50">
           <Paperclip size={11} />
-          Adjuntar rúbrica (opcional)
+          Adjuntar rúbrica (opcional — recomendado para modo Profesor)
         </p>
         <div className="flex flex-wrap items-center gap-3">
           <input
@@ -209,12 +243,12 @@ export function VisualPremiumPromptPanel({
           {generating ? (
             <>
               <Loader2 size={16} className="animate-spin" />
-              {rubricFile ? "Analizando material y rúbrica…" : "Analizando material…"}
+              {rubricFile ? "Analizando PDF y rúbrica…" : "Analizando tu PDF…"}
             </>
           ) : (
             <>
               <Wand2 size={16} />
-              Generar Prompt Visual IA
+              Generar prompt para Gemini
             </>
           )}
         </button>
@@ -224,10 +258,36 @@ export function VisualPremiumPromptPanel({
         <p className="shrink-0 px-4 py-2 text-xs text-red-400 sm:px-6">{error}</p>
       ) : null}
 
-      {copied ? (
-        <p className="shrink-0 px-4 py-2 text-xs font-semibold text-[#22C55E] sm:px-6">
-          ✓ Prompt copiado correctamente
-        </p>
+      {result ? (
+        <div className="sticky bottom-0 z-10 shrink-0 border-t border-[#F59E0B]/30 bg-[#02060a]/95 px-4 py-3 backdrop-blur-md sm:px-6">
+          <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3">
+            <p className="text-xs text-[#F5F7FA]/60">
+              {copied ? (
+                <span className="font-semibold text-[#22C55E]">✓ Prompt copiado correctamente</span>
+              ) : (
+                "Copia el prompt y pégalo en Gemini para generar tu imagen."
+              )}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={copyPrompt}
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#F59E0B] to-[#F97316] px-5 py-2.5 text-sm font-bold text-[#1a1005] shadow-lg transition hover:brightness-110"
+              >
+                {copied ? <Check size={16} /> : <ClipboardCopy size={16} />}
+                📋 Copiar prompt
+              </button>
+              <button
+                type="button"
+                onClick={openGemini}
+                className="inline-flex items-center gap-2 rounded-xl border border-[#A855F7]/45 bg-[#A855F7]/15 px-5 py-2.5 text-sm font-semibold text-[#C4B5FD] transition hover:bg-[#A855F7]/25"
+              >
+                <Rocket size={16} />
+                🚀 Abrir Gemini
+              </button>
+            </div>
+          </div>
+        </div>
       ) : null}
 
       <div className="min-h-0 flex-1 overflow-auto p-4 sm:p-6">
@@ -237,50 +297,32 @@ export function VisualPremiumPromptPanel({
               <Sparkles size={28} />
             </div>
             <div className="max-w-md space-y-2">
-              <p className="text-base font-bold text-[#F5F7FA]">Personaliza con la rúbrica de tu docente</p>
+              <p className="text-base font-bold text-[#F5F7FA]">
+                Tu PDF → prompt especializado → imagen en Gemini
+              </p>
               <p className="text-sm text-[#F5F7FA]/65">
-                Elige un modo, adjunta la rúbrica si la tienes, y obtén un prompt alineado a lo que
-                evaluará tu profesor.
+                Elige un modo arriba para ver qué tipo de imagen obtendrás. Cada modo genera un
+                prompt completamente diferente.
               </p>
             </div>
           </div>
         ) : (
-          <div className="mx-auto max-w-4xl space-y-4">
+          <div className="mx-auto max-w-4xl space-y-4 pb-4">
             {result.explanation?.length ? (
               <ExplanationBlock lines={result.explanation} hasRubric={result.hasRubric} />
             ) : null}
 
             <div className="overflow-hidden rounded-2xl border border-[#F59E0B]/30 bg-[#02060a] shadow-[0_0_48px_rgba(245,158,11,0.1)]">
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/8 px-4 py-3">
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-[#FBBF24]">
-                    Prompt generado
-                  </p>
-                  <h4 className="text-base font-bold text-[#F5F7FA]">{result.title}</h4>
-                  <p className="text-[10px] text-[#F5F7FA]/45">
-                    {VISUAL_PROMPT_MODES.find((m) => m.id === result.mode)?.emoji}{" "}
-                    {VISUAL_PROMPT_MODES.find((m) => m.id === result.mode)?.label}
-                    {result.hasRubric ? " · Con rúbrica del docente" : ""}
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={copyPrompt}
-                    className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#F59E0B] to-[#F97316] px-4 py-2.5 text-xs font-bold text-[#1a1005] shadow-lg transition hover:brightness-110"
-                  >
-                    {copied ? <Check size={14} /> : <ClipboardCopy size={14} />}
-                    {copied ? "Copiado" : "Copiar Prompt"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={openGemini}
-                    className="inline-flex items-center gap-2 rounded-xl border border-[#A855F7]/45 bg-[#A855F7]/15 px-4 py-2.5 text-xs font-semibold text-[#C4B5FD] transition hover:bg-[#A855F7]/25"
-                  >
-                    <ExternalLink size={14} />
-                    Abrir Gemini
-                  </button>
-                </div>
+              <div className="border-b border-white/8 px-4 py-3">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-[#FBBF24]">
+                  Prompt generado
+                </p>
+                <h4 className="text-base font-bold text-[#F5F7FA]">{result.title}</h4>
+                <p className="text-[10px] text-[#F5F7FA]/45">
+                  {VISUAL_PROMPT_MODES.find((m) => m.id === result.mode)?.emoji}{" "}
+                  {VISUAL_PROMPT_MODES.find((m) => m.id === result.mode)?.label}
+                  {result.hasRubric ? " · Con rúbrica del docente" : ""}
+                </p>
               </div>
               <pre className="max-h-[min(48vh,480px)] overflow-auto whitespace-pre-wrap p-4 text-xs leading-relaxed text-[#F5F7FA]/88">
                 {result.prompt}
@@ -293,11 +335,6 @@ export function VisualPremiumPromptPanel({
             {result.rubricAnalysis ? (
               <RubricPreview analysis={result.rubricAnalysis} />
             ) : null}
-
-            <p className="text-center text-xs text-[#F5F7FA]/45">
-              1. Copia el prompt · 2. Abre Gemini · 3. Pega en generación de imagen · 4. Obtén tu
-              infografía alineada a la rúbrica
-            </p>
           </div>
         )}
       </div>

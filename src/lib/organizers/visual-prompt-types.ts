@@ -53,47 +53,56 @@ export type VisualPremiumPrompt = {
   generatedAt: string;
 };
 
+export const VISUAL_IMAGE_FEATURE_NAME = "Crear Imagen Educativa IA";
+
 export const VISUAL_PROMPT_MODES: Array<{
   id: VisualPromptMode;
   label: string;
   emoji: string;
   description: string;
+  expectedResult: string;
 }> = [
   {
     id: "infographic",
     label: "Infografía",
     emoji: "🎨",
     description: "Enciclopedia visual premium, colorida y de alta densidad informativa.",
+    expectedResult: "Infografía educativa colorida.",
   },
   {
     id: "memorization",
     label: "Memorización",
     emoji: "🧠",
-    description: "Metáforas visuales, asociaciones memorables y colores intensos.",
+    description: "Metáforas visuales exageradas e imágenes imposibles de olvidar.",
+    expectedResult: "Mapa visual para memorizar.",
   },
   {
     id: "exam",
     label: "Examen",
     emoji: "🎓",
-    description: "Prioriza lo más preguntable: definiciones, artículos y excepciones.",
+    description: "Lámina de repaso: definiciones, artículos y excepciones sin decoración.",
+    expectedResult: "Lámina de repaso para examen.",
   },
   {
     id: "legal_premium",
     label: "Jurídico Premium",
     emoji: "⚖️",
-    description: "Diseño formal con tribunales, expedientes y códigos.",
+    description: "Manual jurídico formal con tribunales, expedientes y códigos.",
+    expectedResult: "Representación jurídica profesional.",
   },
   {
     id: "jurisprudence",
     label: "Jurisprudencia",
     emoji: "🏛️",
-    description: "Casos, precedentes, sentencias y líneas jurisprudenciales.",
+    description: "Línea de tiempo con precedentes, sentencias y evolución doctrinal.",
+    expectedResult: "Mapa jurisprudencial.",
   },
   {
     id: "professor",
     label: "Profesor",
-    emoji: "📚",
-    description: "Alineado a la rúbrica del docente: formato, criterios y puntajes.",
+    emoji: "👨‍🏫",
+    description: "Adaptado a la rúbrica: criterios, puntajes y formato del docente.",
+    expectedResult: "Trabajo alineado a la rúbrica.",
   },
 ];
 

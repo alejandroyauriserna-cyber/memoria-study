@@ -2,6 +2,10 @@ import { analyzeAcademicRubric } from "@/lib/ai/analyze-academic-rubric";
 import { extractInfographicTopics } from "@/lib/ai/build-academic-infographic-prompt";
 import { env } from "@/lib/env";
 import type { OrganizerContent } from "@/lib/organizers/parse-content";
+import {
+  MODE_PROMPT_CONFIG,
+  modeLabel,
+} from "@/lib/organizers/visual-prompt-mode-config";
 import type {
   DocumentVisualAnalysis,
   RubricAnalysis,
@@ -9,69 +13,79 @@ import type {
   VisualPromptMode,
 } from "@/lib/organizers/visual-prompt-types";
 
-const VISUAL_METAPHOR_GUIDE = `
-Traduce conceptos jurídicos a escenas visuales concretas (NO cajas ni nodos):
-- Buena Fe → personas negociando honestamente, apretón de manos
-- Contrato → firma de documentos, pluma sobre contrato
-- Nulidad → contrato roto en pedazos
-- Anulabilidad → contrato parcialmente dañado con grietas
-- Juez → tribunal con balanza
-- Principio jurídico → pilar de piedra sólido
-- Código Civil → gran libro jurídico dorado
-- Jurisprudencia → expedientes judiciales apilados
-- Derechos → escudos protectores
-- Obligaciones → cadenas de responsabilidad entre personas
-- Interpretación → juez analizando documentos con lupa
-- Calificación → clasificación de expedientes en estantería
-- Manifestación de voluntad → personas expresando decisiones con gestos claros
-- Normas imperativas → columnas sólidas imposibles de mover
-- Derecho peruano → Palacio de Justicia de Lima, bandera peruana sutil
-- Contratación en masa → múltiples contratos y personas en fila
-`.trim();
-
-const QUALITY_BLOCK = `
-Ultra detailed, 4K, educational infographic, visual learning, premium academic poster, professional illustration, rich colors, high information density, modern design, interactive feeling, realistic illustrations, cinematic lighting, depth, professional composition, university level.
-NO flowchart boxes. NO boring node diagrams. NO wireframes. NO empty circles. NO technical graphs.
-`.trim();
-
-const MODE_STYLE: Record<VisualPromptMode, string> = {
-  infographic: `Modo INFOGRAFÍA: enciclopedia visual moderna, atlas educativo colorido, póster académico premium, storyboard ilustrado, composición tipo Gemini Canvas.`,
-  memorization: `Modo MEMORIZACIÓN: metáforas visuales extremadamente memorables, personajes caricaturescos educativos, colores intensos, asociaciones visuales impactantes, elementos que faciliten recordar en examen.`,
-  exam: `Modo EXAMEN: resaltar definiciones exactas, artículos clave, comparaciones preguntables, excepciones, conceptos repetidos por el docente, jerarquía visual por relevancia examen.`,
-  legal_premium: `Modo JURÍDICO PREMIUM: diseño formal elegante, tribunales, jueces, expedientes, códigos, documentos legales, iconografía jurídica clásica peruana, tono académico universitario.`,
-  jurisprudence: `Modo JURISPRUDENCIA: casos emblemáticos, precedentes, sentencias, expedientes numerados, líneas jurisprudenciales conectadas visualmente, énfasis en fallos y ratios decidendi.`,
-  professor: `Modo PROFESOR: el prompt DEBE cumplir estrictamente la rúbrica del docente — formato solicitado, criterios de evaluación, puntajes, profundidad, cantidad de conceptos y requisitos visuales. Priorizar alineación con la rúbrica sobre estilo genérico.`,
-};
-
 function unique(values: Array<string | undefined | null>, limit = 12): string[] {
   return [...new Set(values.map((v) => v?.trim()).filter(Boolean) as string[])].slice(0, limit);
 }
 
-function inferVisualScenes(concepts: string[]): DocumentVisualAnalysis["visualScenes"] {
-  const rules: Array<{ match: RegExp; metaphor: string }> = [
-    { match: /buena fe|honestidad/i, metaphor: "personas negociando con honestidad, apretón de manos cálido" },
-    { match: /contrato|contratación|negocio jurídico/i, metaphor: "documento legal siendo firmado con pluma" },
-    { match: /nulidad/i, metaphor: "contrato roto en pedazos sobre mesa judicial" },
-    { match: /anulabilidad/i, metaphor: "contrato con grietas y sello de advertencia" },
-    { match: /juez|tribunal|magistrado/i, metaphor: "tribunal peruano con balanza de la justicia" },
-    { match: /código civil|código|civil/i, metaphor: "gran libro jurídico dorado con artículos visibles" },
-    { match: /jurisprudencia|precedente|fallo|sentencia/i, metaphor: "expedientes judiciales apilados con sello oficial" },
-    { match: /interpretación|hermenéutica/i, metaphor: "juez con lupa analizando documentos legales" },
-    { match: /obligación|obligacion/i, metaphor: "cadena de responsabilidad conectando a dos sujetos" },
-    { match: /derecho|garantía|garantia/i, metaphor: "escudo protector sobre ciudadano" },
-    { match: /voluntad|consentimiento/i, metaphor: "personas expresando decisión con gestos claros" },
-    { match: /empresa|sociedad|persona jurídica/i, metaphor: "edificio corporativo con documentos legales" },
-    { match: /masa|adhesión|estándar/i, metaphor: "múltiples contratos idénticos y filas de firmantes" },
-    { match: /peru|peruano/i, metaphor: "Palacio de Justicia de Lima con elementos patrios sutiles" },
-  ];
+const SCENE_RULES: Record<
+  VisualPromptMode,
+  Array<{ match: RegExp; metaphor: string }>
+> = {
+  infographic: [
+    { match: /buena fe|honestidad/i, metaphor: "personas negociando con honestidad, apretón de manos cálido iluminado" },
+    { match: /contrato|contratación|negocio jurídico/i, metaphor: "documento legal siendo firmado con pluma en escena ilustrada" },
+    { match: /nulidad/i, metaphor: "contrato roto en pedazos sobre mesa judicial, escena dramática ilustrada" },
+    { match: /juez|tribunal|magistrado/i, metaphor: "tribunal peruano con balanza de la justicia, ilustración premium" },
+    { match: /código civil|código|civil/i, metaphor: "gran libro jurídico dorado con artículos visibles, estilo atlas" },
+    { match: /interpretación|hermenéutica/i, metaphor: "juez con lupa analizando documentos legales en escena educativa" },
+  ],
+  memorization: [
+    { match: /nulidad/i, metaphor: "CONTRATO ROTO EXPLOTANDO con chispas y humo — imposible de olvidar" },
+    { match: /buena fe|honestidad/i, metaphor: "JUEZ o negociador con HALO DE LUZ dorada radiante" },
+    { match: /interpretación|hermenéutica/i, metaphor: "DETECTIVE JURÍDICO con lupa GIGANTE investigando documentos" },
+    { match: /obligación|obligacion/i, metaphor: "CADENA LUMINOSA imposible de romper conectando dos sujetos" },
+    { match: /código civil|código|civil/i, metaphor: "LIBRO JURÍDICO GIGANTE flotando con páginas que brillan" },
+    { match: /anulabilidad/i, metaphor: "contrato con GRIETAS NEÓN pulsantes y sello de advertencia gigante" },
+    { match: /voluntad|consentimiento/i, metaphor: "personas con GESTOS EXAGERADOS expresando decisión con rayos de energía" },
+    { match: /jurisprudencia|precedente|fallo|sentencia/i, metaphor: "TORRE de expedientes apilados hasta el cielo con sello oficial brillante" },
+  ],
+  exam: [
+    { match: /nulidad/i, metaphor: "etiqueta roja «NULIDAD» + definición breve en texto grande" },
+    { match: /buena fe|honestidad/i, metaphor: "badge «DEFINICIÓN» + texto legible de buena fe" },
+    { match: /art\.|artículo|articulo/i, metaphor: "recuadro «Art.» con número de artículo destacado en rojo" },
+    { match: /excepción|excepcion|salvo/i, metaphor: "fila «EXCEPCIÓN» resaltada en rojo con contraste máximo" },
+    { match: /interpretación|hermenéutica/i, metaphor: "columna comparativa: interpretación literal vs sistemática" },
+    { match: /contrato|contratación/i, metaphor: "definición + elementos esenciales en lista numerada" },
+  ],
+  legal_premium: [
+    { match: /juez|tribunal|magistrado/i, metaphor: "juez con toga en tribunal majestuoso, iluminación sobria" },
+    { match: /jurisprudencia|precedente|fallo|sentencia/i, metaphor: "expediente numerado con sello oficial sobre escritorio de madera" },
+    { match: /código civil|código|civil/i, metaphor: "código jurídico encuadernado en cuero con tipografía serif" },
+    { match: /contrato|contratación/i, metaphor: "documento legal formal con pluma estilográfica y sello notarial" },
+    { match: /doctrina/i, metaphor: "libros de doctrina apilados en biblioteca jurídica clásica" },
+  ],
+  jurisprudence: [
+    { match: /jurisprudencia|precedente|fallo|sentencia/i, metaphor: "nodo de línea de tiempo con nombre de sentencia, fecha y ratio decidendi" },
+    { match: /nulidad|anulabilidad/i, metaphor: "precedente histórico con flecha de evolución doctrinal hacia fallo posterior" },
+    { match: /interpretación|hermenéutica/i, metaphor: "cadena de precedentes conectados mostrando cambio interpretativo" },
+    { match: /tribunal constitucional|corte suprema/i, metaphor: "nodo principal del tribunal con expediente emblemático" },
+  ],
+  professor: [
+    { match: /./i, metaphor: "ilustración alineada a los criterios de la rúbrica del docente" },
+  ],
+};
 
+function inferVisualScenes(
+  concepts: string[],
+  mode: VisualPromptMode,
+): DocumentVisualAnalysis["visualScenes"] {
+  const rules = SCENE_RULES[mode];
   const scenes: DocumentVisualAnalysis["visualScenes"] = [];
 
   for (const concept of concepts) {
     const rule = rules.find((entry) => entry.match.test(concept));
+    const fallbackByMode: Record<VisualPromptMode, string> = {
+      infographic: `mini escena ilustrada premium de «${concept}» en contexto jurídico peruano`,
+      memorization: `metáfora visual EXAGERADA e INOLVIDABLE para «${concept}» con colores neón`,
+      exam: `ficha de repaso con definición legible de «${concept}» + artículo si aplica`,
+      legal_premium: `representación formal y sobria de «${concept}» estilo manual jurídico`,
+      jurisprudence: `nodo de precedente o sentencia relacionado con «${concept}» en línea de tiempo`,
+      professor: `elemento visual que cumple criterio de rúbrica sobre «${concept}»`,
+    };
+
     scenes.push({
       concept,
-      visualMetaphor: rule?.metaphor ?? `ilustración educativa premium de "${concept}" en contexto jurídico peruano`,
+      visualMetaphor: rule?.metaphor ?? fallbackByMode[mode],
     });
     if (scenes.length >= 14) break;
   }
@@ -79,7 +93,10 @@ function inferVisualScenes(concepts: string[]): DocumentVisualAnalysis["visualSc
   return scenes;
 }
 
-export function extractDocumentVisualAnalysis(content: OrganizerContent): DocumentVisualAnalysis {
+export function extractDocumentVisualAnalysis(
+  content: OrganizerContent,
+  mode: VisualPromptMode = "infographic",
+): DocumentVisualAnalysis {
   const { centralTopic, subtopics } = extractInfographicTopics(content);
 
   const concepts = unique([
@@ -164,33 +181,39 @@ export function extractDocumentVisualAnalysis(content: OrganizerContent): Docume
     practicalCases,
     conceptualRelations,
     examPriorities,
-    visualScenes: inferVisualScenes([centralTopic, ...concepts, ...subtopics]),
+    visualScenes: inferVisualScenes([centralTopic, ...concepts, ...subtopics], mode),
   };
 }
 
 export function buildPromptExplanation(
   analysis: DocumentVisualAnalysis,
+  mode: VisualPromptMode,
   rubric?: RubricAnalysis | null,
-  mode?: VisualPromptMode,
 ): string[] {
   const lines: string[] = [];
 
-  lines.push(`Se identificaron ${analysis.concepts.length} conceptos principales del material.`);
+  lines.push(`Se detectaron ${analysis.concepts.length} conceptos principales.`);
 
   if (analysis.subtopics.length) {
-    lines.push(`Se organizaron ${analysis.subtopics.length} subtemas alrededor de «${analysis.centralTopic}».`);
+    lines.push(
+      `Se organizaron ${analysis.subtopics.length} subtemas alrededor de «${analysis.centralTopic}».`,
+    );
   }
 
   if (analysis.articles.length) {
-    lines.push(`Se detectaron ${analysis.articles.length} referencias normativas o artículos de ley.`);
+    lines.push(`Se detectaron ${analysis.articles.length} artículos o referencias normativas relevantes.`);
   }
 
   if (analysis.comparisons.length) {
-    lines.push(`Se detectaron ${analysis.comparisons.length} comparaciones relevantes para ilustrar.`);
+    lines.push(`Se identificó ${analysis.comparisons.length === 1 ? "una comparación doctrinal" : `${analysis.comparisons.length} comparaciones doctrinales`}.`);
   }
 
-  if (analysis.jurisprudence.length) {
-    lines.push("Se incorporó jurisprudencia o casos del material de estudio.");
+  if (analysis.jurisprudence.length && mode === "jurisprudence") {
+    lines.push("Se incorporaron precedentes y casos para el mapa jurisprudencial.");
+  }
+
+  if (analysis.exceptions.length && mode === "exam") {
+    lines.push(`Se resaltaron ${analysis.exceptions.length} excepciones clave para repaso de examen.`);
   }
 
   if (rubric) {
@@ -198,7 +221,7 @@ export function buildPromptExplanation(
       lines.push(`La rúbrica solicita formato: ${rubric.requestedFormat}.`);
     }
     if (rubric.creativityRequired) {
-      lines.push("La rúbrica exige creatividad visual.");
+      lines.push("La rúbrica exige creatividad.");
     }
     if (rubric.clarityRequired) {
       lines.push("La rúbrica exige claridad en la presentación.");
@@ -207,7 +230,7 @@ export function buildPromptExplanation(
       lines.push("La rúbrica exige jerarquía visual clara.");
     }
     if (rubric.examplesRequired) {
-      lines.push("La rúbrica exige ejemplos concretos.");
+      lines.push("La rúbrica exige ejemplos.");
     }
     if (rubric.imagesRequired) {
       lines.push("La rúbrica exige uso de imágenes o ilustraciones.");
@@ -227,8 +250,10 @@ export function buildPromptExplanation(
       lines.push(`Profundidad requerida: ${rubric.depthRequired}.`);
     }
   } else if (mode === "professor") {
-    lines.push("Modo Profesor activo: adjunta la rúbrica para personalizar aún más el prompt.");
+    lines.push("Adjunta la rúbrica del docente para personalizar el prompt según sus criterios.");
   }
+
+  lines.push(`El modo seleccionado fue ${modeLabel(mode)}.`);
 
   return lines;
 }
@@ -253,7 +278,7 @@ function parseJson(raw: string) {
 
 function rubricBlock(rubric: RubricAnalysis) {
   return `
-RÚBRICA DEL DOCENTE (OBLIGATORIO CUMPLIR):
+RÚBRICA DEL DOCENTE (CAPA ADICIONAL — CUMPLIR SI APLICA AL MODO):
 Formato solicitado: ${rubric.requestedFormat ?? "Según rúbrica adjunta"}
 Criterios de evaluación:
 ${rubric.evaluationCriteria.map((c) => `- ${c}`).join("\n") || "- Ver rúbrica"}
@@ -268,36 +293,98 @@ ${rubric.depthRequired ? `Profundidad: ${rubric.depthRequired}` : ""}
 `.trim();
 }
 
-function buildFallbackPrompt(
-  analysis: DocumentVisualAnalysis,
-  mode: VisualPromptMode,
-  content: OrganizerContent,
-  rubric?: RubricAnalysis | null,
-): VisualPremiumPrompt {
+function buildModeContentBlock(analysis: DocumentVisualAnalysis, mode: VisualPromptMode): string {
   const sceneList = analysis.visualScenes
     .map((s) => `• ${s.concept} → ${s.visualMetaphor}`)
     .join("\n");
 
-  const effectiveMode =
-    rubric && (mode === "professor" || mode === "infographic") ? "professor" : mode;
+  switch (mode) {
+    case "exam":
+      return `
+DEFINICIONES PARA REPASO:
+${analysis.definitions.slice(0, 8).map((d) => `- ${d}`).join("\n") || analysis.concepts.slice(0, 8).map((c) => `- ${c}`).join("\n")}
 
-  const prompt = `Genera una imagen ultra detallada en 4K.
+ARTÍCULOS Y NORMAS:
+${[...analysis.norms, ...analysis.articles].map((n) => `- ${n}`).join("\n") || "- Normativa del tema"}
 
-TÍTULO PRINCIPAL: ${analysis.centralTopic}
-TEMA CENTRAL: ${analysis.centralTopic}
-MODO: ${effectiveMode.toUpperCase()}
-${MODE_STYLE[effectiveMode]}
+EXCEPCIONES (RESALTAR EN ROJO):
+${analysis.exceptions.map((e) => `- ${e}`).join("\n") || "- Excepciones del material"}
 
-${rubric ? rubricBlock(rubric) : ""}
+COMPARACIONES FRECUENTES EN EXAMEN:
+${analysis.comparisons.map((c) => `- ${c}`).join("\n") || "- Comparaciones clave"}
 
+PREGUNTAS / PRIORIDAD EXAMEN:
+${analysis.examPriorities.map((e) => `- ${e}`).join("\n")}
+
+ELEMENTOS VISUALES MÍNIMOS:
+${sceneList}`.trim();
+
+    case "memorization":
+      return `
+CONCEPTOS A MEMORIZAR CON METÁFORAS EXAGERADAS:
+${analysis.concepts.map((c) => `- ${c}`).join("\n")}
+
+METÁFORAS VISUALES OBLIGATORIAS (EXAGERADAS):
+${sceneList}
+
+ASOCIACIONES MEMORABLES:
+${analysis.conceptualRelations.map((r) => `- ${r}`).join("\n") || "- Relaciones clave del tema"}`.trim();
+
+    case "jurisprudence":
+      return `
+PRECEDENTES Y SENTENCIAS:
+${[...analysis.jurisprudence, ...analysis.practicalCases].map((j) => `- ${j}`).join("\n") || "- Casos del material"}
+
+EVOLUCIÓN DOCTRINAL:
+${analysis.conceptualRelations.map((r) => `- ${r}`).join("\n") || "- Relaciones entre fallos"}
+
+NODOS DE LÍNEA DE TIEMPO:
+${sceneList}
+
+COMPARACIONES JURISPRUDENCIALES:
+${analysis.comparisons.map((c) => `- ${c}`).join("\n") || "- Comparaciones relevantes"}`.trim();
+
+    case "legal_premium":
+      return `
+TEMA Y SUBTEMAS FORMALES:
+${analysis.subtopics.map((s) => `- ${s}`).join("\n")}
+
+CONCEPTOS JURÍDICOS:
+${analysis.concepts.map((c) => `- ${c}`).join("\n")}
+
+NORMAS, CÓDIGOS Y DOCTRINA:
+${[...analysis.norms, ...analysis.articles, ...analysis.doctrine].map((n) => `- ${n}`).join("\n")}
+
+JURISPRUDENCIA Y EXPEDIENTES:
+${analysis.jurisprudence.map((j) => `- ${j}`).join("\n") || "- Referencias jurisprudenciales"}
+
+ELEMENTOS VISUALES FORMALES:
+${sceneList}`.trim();
+
+    case "professor":
+      return `
+CONCEPTOS DEL MATERIAL:
+${analysis.concepts.map((c) => `- ${c}`).join("\n")}
+
+SUBTEMAS:
+${analysis.subtopics.map((s) => `- ${s}`).join("\n")}
+
+DEFINICIONES:
+${analysis.definitions.slice(0, 6).map((d) => `- ${d}`).join("\n") || "- Del material de estudio"}
+
+ESCENAS SEGÚN CRITERIOS DE RÚBRICA:
+${sceneList}`.trim();
+
+    default:
+      return `
 SUBTEMAS A ILUSTRAR:
 ${analysis.subtopics.map((s) => `- ${s}`).join("\n")}
 
 CONCEPTOS JURÍDICOS CLAVE:
 ${analysis.concepts.map((c) => `- ${c}`).join("\n")}
 
-DEFINICIONES IMPORTANTES:
-${analysis.definitions.slice(0, 6).map((d) => `- ${d}`).join("\n") || "- Extraer del material"}
+DEFINICIONES:
+${analysis.definitions.slice(0, 6).map((d) => `- ${d}`).join("\n") || "- Del material"}
 
 PRINCIPIOS:
 ${analysis.principles.map((p) => `- ${p}`).join("\n") || "- Principios del tema"}
@@ -305,46 +392,57 @@ ${analysis.principles.map((p) => `- ${p}`).join("\n") || "- Principios del tema"
 NORMAS Y ARTÍCULOS:
 ${[...analysis.norms, ...analysis.articles].map((n) => `- ${n}`).join("\n") || "- Normativa aplicable"}
 
-JURISPRUDENCIA Y CASOS:
-${[...analysis.jurisprudence, ...analysis.practicalCases].map((j) => `- ${j}`).join("\n") || "- Casos relevantes"}
-
 COMPARACIONES:
-${analysis.comparisons.map((c) => `- ${c}`).join("\n") || "- Comparaciones clave del tema"}
-
-PRIORIDAD EXAMEN:
-${analysis.examPriorities.map((e) => `- ${e}`).join("\n")}
+${analysis.comparisons.map((c) => `- ${c}`).join("\n") || "- Comparaciones clave"}
 
 ESCENAS VISUALES OBLIGATORIAS:
-${sceneList}
+${sceneList}`.trim();
+  }
+}
 
-${VISUAL_METAPHOR_GUIDE}
+function buildFallbackPrompt(
+  analysis: DocumentVisualAnalysis,
+  mode: VisualPromptMode,
+  content: OrganizerContent,
+  rubric?: RubricAnalysis | null,
+): VisualPremiumPrompt {
+  const config = MODE_PROMPT_CONFIG[mode];
+  const rubricSection = rubric
+    ? mode === "professor"
+      ? `\n\n${rubricBlock(rubric)}`
+      : `\n\n${rubricBlock(rubric)}\nNota: La rúbrica complementa el modo ${config.label}; no reemplaza su estilo visual.`
+    : "";
 
-DISTRIBUCIÓN VISUAL:
-- Composición horizontal 16:9 tipo póster académico premium
-- Tema central dominante con glow elegante
-- Subtemas distribuidos orgánicamente (NO diagrama de cajas)
-- Mini ilustraciones realistas por concepto
-- Flechas y conexiones curvas con profundidad
-- Iconografía jurídica peruana
-- Texto legible en español integrado en la infografía
-${rubric?.requestedFormat ? `- Formato alineado a: ${rubric.requestedFormat}` : ""}
+  const prompt = `Genera una imagen ultra detallada en 4K.
 
-PALETA:
-- Azul conceptos · Verde principios · Naranja casos · Morado ejemplos · Amarillo comparaciones · Rojo artículos
-- Fondo oscuro elegante con iluminación cinematográfica
+TÍTULO: ${analysis.centralTopic}
+MODO EXCLUSIVO: ${config.label.toUpperCase()} — NO mezclar con otros estilos.
+
+${config.directive}
+
+${config.layout}
+
+${config.visualRules}
+
+${buildModeContentBlock(analysis, mode)}
+${rubricSection}
 
 CONTEXTO DEL MATERIAL:
 ${content.summary?.slice(0, 900) ?? ""}
 
-${QUALITY_BLOCK}`;
+PROHIBIDO EN ESTE MODO:
+${config.forbidden}
+
+CALIDAD:
+${config.qualityTail}`;
 
   return {
     title: analysis.centralTopic,
-    mode: effectiveMode,
+    mode,
     prompt,
     analysis,
     rubricAnalysis: rubric ?? undefined,
-    explanation: buildPromptExplanation(analysis, rubric, mode),
+    explanation: buildPromptExplanation(analysis, mode, rubric),
     hasRubric: Boolean(rubric),
     generatedAt: new Date().toISOString(),
   };
@@ -360,47 +458,51 @@ async function enrichPromptWithGemini(
     return buildFallbackPrompt(analysis, mode, content, rubric);
   }
 
-  const effectiveMode =
-    rubric && (mode === "professor" || mode === "infographic") ? "professor" : mode;
+  const config = MODE_PROMPT_CONFIG[mode];
 
   const systemPrompt = `Eres un director de arte educativo especializado en Derecho peruano (UNT).
-Tu trabajo es crear PROMPTS HIPERDETALLADOS para Gemini Image (Nano Banana).
+Tu trabajo es crear UN PROMPT HIPERDETALLADO para Gemini Image según UN SOLO MODO visual.
 NO generes la imagen. Solo el prompt final listo para copiar y pegar.
 
-${MODE_STYLE[effectiveMode]}
+=== MODO ACTIVO: ${config.label.toUpperCase()} ===
+${config.directive}
 
-${rubric ? rubricBlock(rubric) : ""}
+${config.layout}
 
-${VISUAL_METAPHOR_GUIDE}
+${config.visualRules}
 
-Análisis estructurado del material:
+PROHIBIDO EN ESTE MODO:
+${config.forbidden}
+
+${mode === "professor" && rubric ? rubricBlock(rubric) : rubric ? `${rubricBlock(rubric)}\nLa rúbrica COMPLEMENTA el modo ${config.label}; el estilo visual principal sigue siendo el del modo.` : ""}
+
+CONTENIDO DEL MATERIAL PARA ESTE MODO:
+${buildModeContentBlock(analysis, mode)}
+
+Análisis estructurado:
 ${JSON.stringify(analysis, null, 2)}
-
-${rubric ? `Análisis de la rúbrica:\n${JSON.stringify(rubric, null, 2)}` : ""}
 
 Resumen del material:
 ${content.summary?.slice(0, 2000) ?? ""}
 
-Explicación simplificada:
-${content.simplifiedExplanation?.slice(0, 800) ?? ""}
-
-REGLAS:
-- Si hay rúbrica, el prompt DEBE cumplir formato, criterios y requisitos visuales del docente.
-- NO uses diagramas de cajas conectadas ni mapas mentales aburridos tipo wireframe.
-- Crea una infografía visual premium, atlas ilustrado o póster académico moderno.
+REGLAS CRÍTICAS:
+- El prompt debe ser RADICALMENTE DIFERENTE al de otros modos (infografía ≠ examen ≠ memorización).
+- NO mezcles estilos de otros modos.
+- NO uses diagramas de cajas conectadas ni wireframes.
+${mode === "exam" ? "- MINIMIZA decoración. MAXIMIZA definiciones, artículos y excepciones legibles." : ""}
+${mode === "memorization" ? "- EXAGERA metáforas visuales. Colores neón. Escenas imposibles de olvidar." : ""}
+${mode === "jurisprudence" ? "- Incluye línea de tiempo, precedentes y evolución doctrinal." : ""}
+${mode === "professor" && rubric ? "- PRIORIZA criterios de la rúbrica sobre cualquier estilo genérico." : ""}
 
 El prompt debe ser una sola instrucción larga en español, lista para pegar en Gemini Image.
-Incluir siempre: ${QUALITY_BLOCK}
+Terminar con: ${config.qualityTail}
 
 Devuelve SOLO JSON:
 {
   "title": "Título del póster visual",
-  "mode": "${effectiveMode}",
+  "mode": "${mode}",
   "prompt": "Prompt hiperdetallado completo en español...",
-  "explanation": [
-    "Se identificaron X conceptos principales.",
-    "La rúbrica exige creatividad."
-  ]
+  "explanation": ["Se detectaron X conceptos...", "El modo seleccionado fue ${config.label}."]
 }`;
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${env.geminiModel}:generateContent?key=${env.geminiApiKey}`;
@@ -409,7 +511,10 @@ Devuelve SOLO JSON:
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       contents: [{ role: "user", parts: [{ text: systemPrompt }] }],
-      generationConfig: { responseMimeType: "application/json", temperature: 0.45 },
+      generationConfig: {
+        responseMimeType: "application/json",
+        temperature: config.geminiTemperature,
+      },
     }),
   });
 
@@ -428,22 +533,22 @@ Devuelve SOLO JSON:
     const prompt = parsed.prompt?.trim();
     if (!prompt) return buildFallbackPrompt(analysis, mode, content, rubric);
 
-    const withQuality = prompt.includes("4K")
+    const withQuality = prompt.includes("4K") || prompt.includes(config.qualityTail.slice(0, 20))
       ? prompt
-      : `${prompt.trim()}\n\n${QUALITY_BLOCK}`;
+      : `${prompt.trim()}\n\n${config.qualityTail}`;
 
     const explanation =
       parsed.explanation?.filter(Boolean).length
-        ? parsed.explanation.filter(Boolean)
-        : buildPromptExplanation(analysis, rubric, effectiveMode);
+        ? [...parsed.explanation.filter(Boolean), `El modo seleccionado fue ${modeLabel(mode)}.`]
+        : buildPromptExplanation(analysis, mode, rubric);
 
     return {
       title: parsed.title?.trim() || analysis.centralTopic,
-      mode: parsed.mode ?? effectiveMode,
+      mode,
       prompt: withQuality,
       analysis,
       rubricAnalysis: rubric ?? undefined,
-      explanation,
+      explanation: [...new Set(explanation)],
       hasRubric: Boolean(rubric),
       generatedAt: new Date().toISOString(),
     };
@@ -458,15 +563,12 @@ export async function generateVisualPremiumPrompt(
   rubricText?: string | null,
   rubricFileName?: string,
 ): Promise<VisualPremiumPrompt> {
-  const analysis = extractDocumentVisualAnalysis(content);
+  const analysis = extractDocumentVisualAnalysis(content, mode);
 
   let rubricAnalysis: RubricAnalysis | null = null;
   if (rubricText?.trim()) {
     rubricAnalysis = await analyzeAcademicRubric(rubricText, rubricFileName);
   }
 
-  const resolvedMode =
-    rubricAnalysis && (mode === "professor" || mode === "infographic") ? "professor" : mode;
-
-  return enrichPromptWithGemini(analysis, content, resolvedMode, rubricAnalysis);
+  return enrichPromptWithGemini(analysis, content, mode, rubricAnalysis);
 }
