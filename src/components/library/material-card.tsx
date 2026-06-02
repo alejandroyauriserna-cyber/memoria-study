@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ArrowDown, BookOpen, CalendarDays, Eye, Heart, Search, Star, User } from "lucide-react";
+import { ArrowDown, BookOpen, CalendarDays, Eye, Heart, Loader2, Search, Sparkles, Star, User } from "lucide-react";
+import { StudyWithAiStatus } from "@/components/organizers/study-with-ai-status";
 import { Button } from "@/components/ui/button";
+import { useStudyWithAi } from "@/hooks/use-study-with-ai";
 import { getMaterialBadges } from "@/lib/materials/badges";
 import type { Material } from "@/types/material";
 
@@ -14,7 +16,15 @@ export function MaterialCard({ material }: { material: Material }) {
   const [favorite, setFavorite] = useState(material.isFavorite ?? false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const {
+    isGenerating,
+    stage,
+    displayPercent,
+    error: studyAiError,
+    generate: generateOrganizer,
+  } = useStudyWithAi(material.id);
   const badges = getMaterialBadges({ ...material, likes, views });
+  const actionsDisabled = busy || isGenerating;
 
   async function handleOpenPdf() {
     if (!material.id) return;
@@ -117,24 +127,8 @@ export function MaterialCard({ material }: { material: Material }) {
   }
 
   async function handleStudyWithAi() {
-    if (!material.id) return;
-
-    setBusy(true);
     setMessage("");
-
-    try {
-      const response = await fetch(`/api/organizers/create?materialId=${material.id}`);
-      const payload = await response.json();
-
-      if (!response.ok) {
-        throw new Error(payload.error ?? "No se pudo crear el organizador.");
-      }
-
-      window.location.href = "/organizers";
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Error creando el organizador.");
-      setBusy(false);
-    }
+    await generateOrganizer();
   }
 
   return (
@@ -192,16 +186,16 @@ export function MaterialCard({ material }: { material: Material }) {
           </span>
         </div>
         <div className="flex flex-wrap gap-2 justify-end">
-          <Button variant={favorite ? "secondary" : "ghost"} onClick={handleFavorite} disabled={busy} className="transition">
+          <Button variant={favorite ? "secondary" : "ghost"} onClick={handleFavorite} disabled={actionsDisabled} className="transition">
             <Star size={16} /> {favorite ? "Guardado" : "Guardar"}
           </Button>
-          <Button variant="secondary" onClick={handleLike} disabled={busy}>
+          <Button variant="secondary" onClick={handleLike} disabled={actionsDisabled}>
             <Heart size={16} /> Me gusta
           </Button>
-          <Button variant="secondary" onClick={handleOpenPdf} disabled={busy}>
+          <Button variant="secondary" onClick={handleOpenPdf} disabled={actionsDisabled}>
             <BookOpen size={16} /> Ver PDF
           </Button>
-          <Button onClick={handleDownload} disabled={busy}>
+          <Button onClick={handleDownload} disabled={actionsDisabled}>
             <ArrowDown size={16} /> Descargar
           </Button>
         </div>
@@ -220,13 +214,27 @@ export function MaterialCard({ material }: { material: Material }) {
           <button
             type="button"
             onClick={handleStudyWithAi}
-            disabled={busy}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-3xl border border-border bg-card px-4 font-semibold text-foreground hover:bg-muted"
+            disabled={actionsDisabled}
+            aria-busy={isGenerating}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-3xl border border-border bg-card px-4 font-semibold text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <Search size={16} /> Estudiar con IA
+            {isGenerating ? (
+              <Loader2 className="animate-spin" size={16} />
+            ) : (
+              <Sparkles size={16} />
+            )}
+            {isGenerating ? stage.label : "Estudiar con IA"}
           </button>
         ) : null}
       </div>
+
+      <StudyWithAiStatus
+        isGenerating={isGenerating}
+        stageLabel={stage.label}
+        message={stage.message}
+        percent={displayPercent}
+        error={studyAiError || undefined}
+      />
 
       {message ? <p className="mt-4 text-sm text-red-500">{message}</p> : null}
     </article>

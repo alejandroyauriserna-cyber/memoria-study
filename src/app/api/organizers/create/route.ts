@@ -95,7 +95,7 @@ export async function GET(request: Request) {
     const title = `Organizador IA para ${materialData.title}`;
     const description = `Organizador generado a partir del contenido del PDF "${materialData.title}".`;
 
-    const { error: insertError } = await admin.from("organizers").insert({
+    const { data: insertedOrganizer, error: insertError } = await admin.from("organizers").insert({
       user_id: user.id,
       material_id: materialId,
       title,
@@ -106,7 +106,7 @@ export async function GET(request: Request) {
       cycle_label: materialData.cycle_label,
       organizer_type: "resumen",
       content,
-    });
+    }).select("id").single();
 
     if (insertError) {
       throw insertError;
@@ -139,7 +139,7 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json({
-      organizer: { title, description, content },
+      organizer: { id: insertedOrganizer.id, title, description, content },
       extraction: {
         method: extractionMethod,
         truncated: prepared.truncated,

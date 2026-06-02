@@ -1,12 +1,18 @@
 import Link from "next/link";
 import { AppShell } from "@/components/ui/shell";
 import { OrganizerContentView } from "@/components/organizers/organizer-content-view";
+import { OrganizerCreatedNotice } from "@/components/organizers/organizer-created-notice";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/env";
 import type { OrganizerRecord } from "@/types/organizer";
 
-export default async function OrganizersPage() {
+export default async function OrganizersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ new?: string; created?: string }>;
+}) {
+  const { new: newOrganizerId, created } = await searchParams;
   if (!hasSupabaseEnv()) {
     return (
       <AppShell>
@@ -72,10 +78,19 @@ export default async function OrganizersPage() {
 
         {organizers.length ? (
           <div className="mt-8 space-y-8">
+            <OrganizerCreatedNotice
+              organizerId={newOrganizerId}
+              created={created === "1"}
+            />
             {organizers.map((organizer) => (
               <article
                 key={organizer.id}
-                className="rounded-[32px] border border-border bg-background p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md sm:p-8"
+                id={`organizer-${organizer.id}`}
+                className={`rounded-[32px] border bg-background p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md sm:p-8 ${
+                  organizer.id === newOrganizerId
+                    ? "border-accent ring-2 ring-accent/20"
+                    : "border-border"
+                }`}
               >
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div>

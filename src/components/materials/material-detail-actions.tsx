@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowDown, BookOpen, Heart, Star } from "lucide-react";
+import { ArrowDown, BookOpen, Heart, Loader2, Sparkles, Star } from "lucide-react";
+import { StudyWithAiStatus } from "@/components/organizers/study-with-ai-status";
 import { Button } from "@/components/ui/button";
+import { useStudyWithAi } from "@/hooks/use-study-with-ai";
 
 export function MaterialDetailActions({
   materialId,
@@ -24,6 +26,13 @@ export function MaterialDetailActions({
   const [views, setViews] = useState(initialViews);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const {
+    isGenerating,
+    stage,
+    displayPercent,
+    error: studyAiError,
+    generate: generateOrganizer,
+  } = useStudyWithAi(materialId);
 
   async function postJson(path: string) {
     const response = await fetch(path, { method: "POST" });
@@ -96,43 +105,50 @@ export function MaterialDetailActions({
   }
 
   async function handleStudyWithAi() {
-    setBusy(true);
     setMessage("");
-
-    try {
-      const response = await fetch(`/api/organizers/create?materialId=${materialId}`);
-      const payload = await response.json();
-
-      if (!response.ok) {
-        throw new Error(payload.error ?? "No se pudo crear el organizador.");
-      }
-
-      window.location.href = "/organizers";
-    } catch (caught) {
-      setMessage(caught instanceof Error ? caught.message : "Error creando el organizador.");
-      setBusy(false);
-    }
+    await generateOrganizer();
   }
+
+  const actionsDisabled = busy || isGenerating;
 
   return (
     <div className="space-y-4">
       <div className="grid gap-3">
-        <Button onClick={handleOpenPdf} disabled={busy} className="h-12">
+        <Button onClick={handleOpenPdf} disabled={actionsDisabled} className="h-12">
           <BookOpen size={16} /> Ver PDF
         </Button>
-        <Button variant="secondary" onClick={handleDownload} disabled={busy} className="h-12">
+        <Button variant="secondary" onClick={handleDownload} disabled={actionsDisabled} className="h-12">
           <ArrowDown size={16} /> Descargar PDF
         </Button>
-        <Button variant="secondary" onClick={handleFavorite} disabled={busy} className="h-12 transition">
+        <Button variant="secondary" onClick={handleFavorite} disabled={actionsDisabled} className="h-12 transition">
           <Star size={16} /> {favorite ? "Guardado" : "Guardar"}
         </Button>
-        <Button variant="secondary" onClick={handleLike} disabled={busy} className="h-12">
+        <Button variant="secondary" onClick={handleLike} disabled={actionsDisabled} className="h-12">
           <Heart size={16} /> Me gusta ({likes})
         </Button>
-        <Button variant="secondary" onClick={handleStudyWithAi} disabled={busy} className="h-12">
-          <BookOpen size={16} /> Estudiar con IA
+        <Button
+          variant="secondary"
+          onClick={handleStudyWithAi}
+          disabled={actionsDisabled}
+          className="h-12"
+          aria-busy={isGenerating}
+        >
+          {isGenerating ? (
+            <Loader2 className="animate-spin" size={16} />
+          ) : (
+            <Sparkles size={16} />
+          )}
+          {isGenerating ? stage.label : "Estudiar con IA"}
         </Button>
       </div>
+
+      <StudyWithAiStatus
+        isGenerating={isGenerating}
+        stageLabel={stage.label}
+        message={stage.message}
+        percent={displayPercent}
+        error={studyAiError}
+      />
 
       <div className="rounded-3xl border border-border bg-muted p-4 text-sm text-muted-foreground">
         <p>{views} vistas únicas</p>
