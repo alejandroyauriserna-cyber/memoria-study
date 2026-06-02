@@ -27,7 +27,6 @@ import { parseOrganizerContent } from "@/lib/organizers/parse-content";
 import {
   layoutStudyMapNodes,
   studyBezierPath,
-  studyMapViewport,
   branchForId,
 } from "@/lib/organizers/concept-map-study";
 import type { OrganizerRecord } from "@/types/organizer";
@@ -90,7 +89,6 @@ function CardMapPreview({ content }: { content: unknown }) {
   const parsed = parseOrganizerContent(content);
   const title = parsed.conceptMap?.title;
   const nodes = parsed.conceptMap?.nodes?.filter(Boolean).slice(0, 8) ?? [];
-  const { cx, cy, w, h } = studyMapViewport();
 
   if (!nodes.length) {
     return (
@@ -101,11 +99,12 @@ function CardMapPreview({ content }: { content: unknown }) {
   }
 
   const layout = layoutStudyMapNodes(title, nodes);
+  const { nodes: layoutNodes, cx, cy, w, h } = layout;
 
   return (
     <div className="study-map-viewport relative h-full min-h-[100px] overflow-hidden rounded-xl">
       <svg viewBox={`0 0 ${w} ${h}`} className="h-full w-full" aria-hidden>
-        {layout.map((node, index) => {
+        {layoutNodes.map((node, index) => {
           const branch = branchForId(node.branchId);
           return (
             <path
@@ -113,13 +112,13 @@ function CardMapPreview({ content }: { content: unknown }) {
               d={studyBezierPath(cx, cy, node.x, node.y)}
               fill="none"
               stroke={branch.color}
-              strokeWidth={1.5}
+              strokeWidth={1.2}
               strokeOpacity={0.4}
             />
           );
         })}
-        <circle cx={cx} cy={cy} r={28} fill="rgba(0,255,213,0.25)" />
-        {layout.map((node, index) => (
+        <circle cx={cx} cy={cy} r={20} fill="rgba(0,255,213,0.25)" />
+        {layoutNodes.map((node, index) => (
           <circle
             key={`n-${index}`}
             cx={node.x}

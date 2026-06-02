@@ -46,18 +46,18 @@ export function OrganizerDetailModal({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="organizers-studio fixed inset-0 z-50 flex flex-col"
+          className="organizers-studio fixed inset-0 z-50 flex h-[100dvh] max-h-[100dvh] flex-col bg-[#07131A]"
           role="dialog"
           aria-modal="true"
           aria-label={organizer.title}
         >
-          <div className="organizer-glass flex shrink-0 items-center justify-between gap-4 border-b border-white/40 px-4 py-3 sm:px-6">
+          <div className="flex shrink-0 items-center justify-between gap-4 border-b border-[rgba(0,255,213,0.15)] bg-[rgba(7,19,26,0.85)] px-4 py-3 backdrop-blur-xl sm:px-6">
             <div className="flex min-w-0 items-center gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-accent to-emerald-600 text-white shadow-lg shadow-accent/25">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#00FFD5] to-[#00BFFF] text-[#07131A] shadow-[0_0_20px_rgba(0,255,213,0.35)]">
                 <Sparkles size={18} />
               </span>
               <div className="min-w-0">
-                <h2 className="truncate text-base font-semibold tracking-tight text-foreground sm:text-lg">
+                <h2 className="truncate text-base font-bold tracking-tight text-[#F5F7FA] sm:text-lg">
                   {organizer.title}
                 </h2>
                 <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
@@ -69,7 +69,7 @@ export function OrganizerDetailModal({
                   {regenerated ? (
                     <>
                       <span>·</span>
-                      <span className="text-accent">Regenerado {formatOrganizerDate(organizer.updated_at)}</span>
+                      <span className="text-[#00FFD5]">Regenerado {formatOrganizerDate(organizer.updated_at)}</span>
                     </>
                   ) : null}
                 </div>
@@ -78,17 +78,15 @@ export function OrganizerDetailModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-foreground/8 bg-foreground/[0.03] transition hover:bg-foreground/[0.06]"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[rgba(0,255,213,0.2)] bg-[rgba(16,39,48,0.6)] text-[#F5F7FA] transition hover:border-[rgba(0,255,213,0.4)] hover:bg-[rgba(0,255,213,0.08)]"
               aria-label="Cerrar"
             >
               <X size={18} />
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-3 py-4 sm:px-6 sm:py-6">
-            <div className="mx-auto max-w-6xl">
-              <OrganizerContentView content={organizer.content} loading={loading} studio />
-            </div>
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            <OrganizerContentView content={organizer.content} loading={loading} studio />
           </div>
         </motion.div>
       ) : null}

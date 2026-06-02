@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@dagrejs/dagre": "^3.0.0",
     "@google/generative-ai": "^0.24.1",
     "@langchain/core": "^1.1.48",
     "@langchain/google-genai": "^2.1.31",

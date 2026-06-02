@@ -338,8 +338,30 @@ select {
   box-shadow: 0 0 40px var(--glow);
 }
 
-.smooth-scroll {
-  scroll-behavior: smooth;
+.tron-btn-primary:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+}
+
+.tron-btn-ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.tron-btn-ripple::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at var(--ripple-x, 50%) var(--ripple-y, 50%), rgba(255, 255, 255, 0.35), transparent 55%);
+  opacity: 0;
+  transition: opacity 300ms ease;
+}
+
+.tron-btn-ripple:active::after {
+  opacity: 1;
+}
+
+.search-dropdown-item {
+  transition: background 180ms ease, box-shadow 180ms ease;
 }
 
 .summary-menu {
