@@ -1,18 +1,14 @@
 import { NextResponse } from "next/server";
 import {
   OrganizerGenerationError,
-  generateOrganizerContent,
 } from "@/lib/ai/generate-organizer";
+import { generateOrganizerFromMaterial } from "@/lib/organizers/generate-from-material";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { env } from "@/lib/env";
-import { downloadMaterialPdf } from "@/lib/organizers/download-material-pdf";
-import { extractPdfFromBuffer, prepareOrganizerText } from "@/lib/pdf/extract";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
-
-const MIN_EXTRACTED_TEXT = 120;
 
 export async function GET(request: Request) {
   try {
@@ -51,18 +47,10 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Material no encontrado." }, { status: 404 });
     }
 
-    const { buffer, fileName } = await downloadMaterialPdf(materialData.file_url);
-
-    let extractedText = "";
-    let extractionMethod = "unknown";
+    let generated;
 
     try {
-      const extraction = await extractPdfFromBuffer(
-        buffer,
-        materialData.file_name || fileName,
-      );
-      extractedText = extraction.text;
-      extractionMethod = extraction.method;
+      generated = await generateOrganizerFromMaterial(materialData);
     } catch (extractionError) {
       return NextResponse.json(
         {
@@ -75,38 +63,22 @@ export async function GET(request: Request) {
       );
     }
 
-    if (!extractedText || extractedText.trim().length < MIN_EXTRACTED_TEXT) {
-      return NextResponse.json(
-        {
-          error:
-            "No se pudo extraer texto suficiente del PDF. Si es escaneado, verifica GEMINI_API_KEY para OCR.",
-        },
-        { status: 422 },
-      );
-    }
-
-    const prepared = prepareOrganizerText(extractedText);
-    const content = await generateOrganizerContent({
-      sourceName: materialData.file_name || fileName,
-      text: prepared.text,
-      materialTitle: materialData.title,
-    });
-
-    const title = `Organizador IA para ${materialData.title}`;
-    const description = `Organizador generado a partir del contenido del PDF "${materialData.title}".`;
-
-    const { data: insertedOrganizer, error: insertError } = await admin.from("organizers").insert({
-      user_id: user.id,
-      material_id: materialId,
-      title,
-      description,
-      course_id: materialData.course_id,
-      course_name: materialData.course_name,
-      cycle_number: materialData.cycle_number,
-      cycle_label: materialData.cycle_label,
-      organizer_type: "resumen",
-      content,
-    }).select("id").single();
+    const { data: insertedOrganizer, error: insertError } = await admin
+      .from("organizers")
+      .insert({
+        user_id: user.id,
+        material_id: materialId,
+        title: generated.title,
+        description: generated.description,
+        course_id: materialData.course_id,
+        course_name: materialData.course_name,
+        cycle_number: materialData.cycle_number,
+        cycle_label: materialData.cycle_label,
+        organizer_type: "resumen",
+        content: generated.content,
+      })
+      .select("id")
+      .single();
 
     if (insertError) {
       throw insertError;
@@ -139,12 +111,13 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json({
-      organizer: { id: insertedOrganizer.id, title, description, content },
-      extraction: {
-        method: extractionMethod,
-        truncated: prepared.truncated,
-        charCount: prepared.text.length,
+      organizer: {
+        id: insertedOrganizer.id,
+        title: generated.title,
+        description: generated.description,
+        content: generated.content,
       },
+      extraction: generated.extraction,
     });
   } catch (caught) {
     if (caught instanceof OrganizerGenerationError) {
