@@ -20,6 +20,7 @@ import { EasyExplanationBlock } from "@/components/organizers/sections/organizer
 import { ReviewPremiumModule } from "@/components/organizers/sections/review-premium-module";
 import { TimelineModern } from "@/components/organizers/sections/timeline-modern";
 import { VisualSummaryCard } from "@/components/organizers/sections/visual-summary-card";
+import { VisualMindMapPanel } from "@/components/organizers/sections/visual-mind-map-panel";
 import { OrganizerContentSkeleton } from "@/components/organizers/organizer-skeleton";
 import { useLearningAnalytics } from "@/components/organizers/sections/learning-analytics-panel";
 
@@ -28,11 +29,15 @@ export function OrganizerContentView({
   loading = false,
   studio = false,
   deckKey,
+  organizerId,
+  onContentUpdate,
 }: {
   content: unknown;
   loading?: boolean;
   studio?: boolean;
   deckKey?: string;
+  organizerId?: string;
+  onContentUpdate?: (content: unknown) => void;
 }) {
   const [activePanel, setActivePanel] = useState<StudioPanelId>(null);
   const analyticsKey = deckKey ?? "organizer";
@@ -158,6 +163,23 @@ export function OrganizerContentView({
               bare
             />
           ) : null}
+        </OrganizerFloatSheet>
+
+        <OrganizerFloatSheet
+          open={activePanel === "visualMap"}
+          title="Mapa mental visual IA"
+          wide
+          onClose={() => setActivePanel(null)}
+        >
+          <div className="-m-4 h-[min(78vh,720px)] sm:-m-5">
+            {organizerId ? (
+              <VisualMindMapPanel
+                organizerId={organizerId}
+                visualMindMap={parsed.visualMindMap}
+                onGenerated={onContentUpdate}
+              />
+            ) : null}
+          </div>
         </OrganizerFloatSheet>
 
         <OrganizerFloatSheet

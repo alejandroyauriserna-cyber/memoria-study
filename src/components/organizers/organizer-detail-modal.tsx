@@ -14,10 +14,12 @@ export function OrganizerDetailModal({
   organizer,
   loading,
   onClose,
+  onContentUpdate,
 }: {
   organizer: OrganizerRecord | null;
   loading?: boolean;
   onClose: () => void;
+  onContentUpdate?: (organizerId: string, content: unknown) => void;
 }) {
   useEffect(() => {
     if (!organizer) return;
@@ -86,7 +88,14 @@ export function OrganizerDetailModal({
           </div>
 
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-            <OrganizerContentView content={organizer.content} loading={loading} studio deckKey={organizer.id} />
+            <OrganizerContentView
+              content={organizer.content}
+              loading={loading}
+              studio
+              deckKey={organizer.id}
+              organizerId={organizer.id}
+              onContentUpdate={(content) => onContentUpdate?.(organizer.id, content)}
+            />
           </div>
         </motion.div>
       ) : null}

@@ -5,6 +5,7 @@ import {
   GitBranch,
   HelpCircle,
   Layers,
+  Sparkles,
   Workflow,
 } from "lucide-react";
 
@@ -14,12 +15,14 @@ export type StudioPanelId =
   | "tree"
   | "flashcards"
   | "review"
+  | "visualMap"
   | null;
 
 const items = [
   { id: "summary" as const, label: "Resumen", icon: BookOpen },
   { id: "flow" as const, label: "Flujo", icon: Workflow },
   { id: "tree" as const, label: "Ruta", icon: GitBranch },
+  { id: "visualMap" as const, label: "Mapa visual", icon: Sparkles },
   { id: "flashcards" as const, label: "Estudio", icon: Layers },
   { id: "review" as const, label: "Repaso", icon: HelpCircle },
 ];

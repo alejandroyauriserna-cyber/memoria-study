@@ -533,6 +533,17 @@ export function OrganizersWorkspace({
         organizer={selected}
         loading={Boolean(selected && regeneratingId === selected.id)}
         onClose={() => setSelected(null)}
+        onContentUpdate={(organizerId, content) => {
+          const nextContent = content as OrganizerRecord["content"];
+          setOrganizers((current) =>
+            current.map((item) =>
+              item.id === organizerId ? { ...item, content: nextContent } : item,
+            ),
+          );
+          setSelected((current) =>
+            current?.id === organizerId ? { ...current, content: nextContent } : current,
+          );
+        }}
       />
 
       <ConfirmDialog

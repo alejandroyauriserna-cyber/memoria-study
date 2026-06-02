@@ -1,3 +1,5 @@
+import type { VisualMindMap } from "@/lib/organizers/visual-mind-map-types";
+
 export type OrganizerFlashcard = {
   question?: string;
   answer?: string;
@@ -67,6 +69,7 @@ export type OrganizerContent = {
   flashcards?: OrganizerFlashcard[];
   reviewQuestions?: string[];
   simplifiedExplanation?: string;
+  visualMindMap?: VisualMindMap;
 };
 
 export function parseOrganizerContent(content: unknown): OrganizerContent {
@@ -102,6 +105,7 @@ export function hasOrganizerSections(content: OrganizerContent) {
       content.flashcards?.length ||
       content.reviewQuestions?.length ||
       content.simplifiedExplanation ||
-      content.aiAnalysis?.conceptsDetected?.length,
+      content.aiAnalysis?.conceptsDetected?.length ||
+      content.visualMindMap?.nodes?.length,
   );
 }
