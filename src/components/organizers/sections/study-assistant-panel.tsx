@@ -15,6 +15,10 @@ import {
   Target,
   X,
 } from "lucide-react";
+import {
+  GuidedStudyLaunchButton,
+  GuidedStudyWalkthrough,
+} from "@/components/organizers/sections/guided-study-walkthrough";
 import type { NodeStudyDetail, StudyBranch, StudyMapNode } from "@/lib/organizers/concept-map-study";
 import { branchForId } from "@/lib/organizers/concept-map-study";
 
@@ -63,6 +67,7 @@ export function StudyAssistantPanel({
 }) {
   const BranchIcon = branch.icon;
   const [collapsed, setCollapsed] = useState(false);
+  const [guidedMode, setGuidedMode] = useState(false);
 
   const content = (
     <>
@@ -70,7 +75,7 @@ export function StudyAssistantPanel({
         <div className="min-w-0">
           <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#00FFD5]">
             <Sparkles size={12} />
-            Study Assistant
+            Asistente de estudio
           </p>
           <div
             className="mb-1.5 mt-2 inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-semibold text-[#07131A]"
@@ -103,6 +108,17 @@ export function StudyAssistantPanel({
         </div>
       </div>
 
+      {guidedMode ? (
+        <div className="flex-1 overflow-y-auto px-4 py-3">
+          <GuidedStudyWalkthrough
+            conceptLabel={node.label}
+            detail={detail}
+            onComplete={() => setGuidedMode(false)}
+            onClose={() => setGuidedMode(false)}
+          />
+        </div>
+      ) : (
+        <>
       <div className="flex-1 space-y-4 overflow-y-auto px-4 py-3">
         <Section icon={<BookOpen size={11} />} label="Resumen IA" color="#00FFD5">
           {detail.summary}
@@ -171,7 +187,9 @@ export function StudyAssistantPanel({
         ) : null}
       </div>
 
-      <div className="flex flex-col gap-2 border-t border-[rgba(0,255,213,0.1)] p-3 sm:flex-row">
+      <div className="flex flex-col gap-2 border-t border-[rgba(0,255,213,0.1)] p-3">
+        <GuidedStudyLaunchButton onClick={() => setGuidedMode(true)} />
+        <div className="flex flex-col gap-2 sm:flex-row">
         <button
           type="button"
           onClick={onFocusBranch}
@@ -193,7 +211,10 @@ export function StudyAssistantPanel({
           <GraduationCap size={13} />
           Flashcards de rama
         </button>
+        </div>
       </div>
+        </>
+      )}
     </>
   );
 

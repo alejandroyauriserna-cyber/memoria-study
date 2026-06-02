@@ -306,8 +306,29 @@ export function studyBezierPath(x1: number, y1: number, x2: number, y2: number) 
 export type OrganizerStudyContext = {
   summary?: string;
   simplifiedExplanation?: string;
-  flashcards?: Array<{ question?: string; answer?: string }>;
+  flashcards?: Array<{ question?: string; answer?: string; difficulty?: string }>;
   reviewQuestions?: string[];
+  reviewBundle?: {
+    keyConcepts?: string[];
+    questions?: Array<{
+      question: string;
+      answer: string;
+      difficulty?: "basico" | "intermedio" | "avanzado";
+    }>;
+    examQuestions?: Array<{
+      question: string;
+      answer: string;
+      explanation?: string;
+    }>;
+  };
+  visualSummary?: {
+    conceptCards?: Array<{ title: string; description: string }>;
+  };
+  aiAnalysis?: {
+    studyFocus?: string;
+    difficulty?: "basico" | "intermedio" | "avanzado";
+    recommendations?: string[];
+  };
 };
 
 export type NodeStudyDetail = {
@@ -347,36 +368,64 @@ export function buildNodeStudyDetail(
       includesTerm(card.question ?? "", node.label) || includesTerm(card.answer ?? "", node.label),
   );
 
+  const conceptCard = context.visualSummary?.conceptCards?.find(
+    (c) => includesTerm(c.title, node.label) || includesTerm(c.description, node.label),
+  );
+
+  const reviewMatch = context.reviewBundle?.questions?.find(
+    (q) => includesTerm(q.question, node.label) || includesTerm(q.answer, node.label),
+  );
+
+  const examMatch = context.reviewBundle?.examQuestions?.find(
+    (q) => includesTerm(q.question, node.label) || includesTerm(q.answer, node.label),
+  );
+
   const summary =
+    conceptCard?.description?.trim() ||
     extractSentence(context.summary, node.label) ||
     matched?.answer?.trim() ||
+    reviewMatch?.answer?.trim() ||
     `«${node.label}» es un concepto clave dentro de «${centerTitle ?? "este tema"}».`;
 
   const simpleExplanation =
     extractSentence(context.simplifiedExplanation, node.label) ||
     matched?.question?.trim() ||
+    conceptCard?.description?.trim()?.slice(0, 220) ||
+    reviewMatch?.question?.trim() ||
     `Piensa en «${node.label}» como una pieza del puzzle jurídico que conecta norma, hecho y consecuencia.`;
 
   const examImportance =
-    node.ring === 1
-      ? "Alta probabilidad en examen: concepto estructural del tema."
-      : "Relevante para casos prácticos y preguntas de aplicación.";
+    context.aiAnalysis?.studyFocus && includesTerm(context.aiAnalysis.studyFocus, node.label)
+      ? `Prioridad del PDF: ${context.aiAnalysis.studyFocus}`
+      : node.ring === 1
+        ? "Alta probabilidad en examen: concepto estructural del tema."
+        : "Relevante para casos prácticos y preguntas de aplicación.";
 
   const legalExample =
     matched?.question?.trim() ||
+    examMatch?.explanation?.trim() ||
+    reviewMatch?.answer?.trim()?.slice(0, 280) ||
     `Caso tipo: identifica cómo interviene «${node.label}» en un supuesto del documento y qué efecto jurídico produce.`;
 
   const examQuestion =
+    examMatch?.question ||
+    reviewMatch?.question ||
     context.reviewQuestions?.find((q) => includesTerm(q, node.label)) ||
     `¿Puedes definir «${node.label}» y dar un ejemplo del PDF?`;
 
-  const commonMistake = `Confundir «${node.label}» con conceptos vecinos sin distinguir requisitos, efectos o ámbito de aplicación.`;
+  const commonMistake =
+    context.aiAnalysis?.recommendations?.find((r) => includesTerm(r, node.label)) ||
+    `Confundir «${node.label}» con conceptos vecinos sin distinguir requisitos, efectos o ámbito de aplicación.`;
 
-  const memoryTip = `Asocia «${node.label}» con la rama «${branchForId(node.branchId).name}» y repítelo en voz alta con un ejemplo propio.`;
+  const memoryTip =
+    context.aiAnalysis?.studyFocus && !includesTerm(context.aiAnalysis.studyFocus, node.label)
+      ? `Enfócate en: ${context.aiAnalysis.studyFocus}. Luego vuelve a «${node.label}».`
+      : `Asocia «${node.label}» con la rama «${branchForId(node.branchId).name}» y repítelo en voz alta con un ejemplo propio.`;
 
   const siblings = allNodes.filter((n) => n.branchId === node.branchId && n.id !== node.id);
   const relations = [
     centerTitle ? `Tema central: ${centerTitle}` : "",
+    ...(context.reviewBundle?.keyConcepts?.filter((k) => k !== node.label).slice(0, 2) ?? []),
     ...siblings.slice(0, 3).map((s) => s.label),
   ].filter(Boolean);
 

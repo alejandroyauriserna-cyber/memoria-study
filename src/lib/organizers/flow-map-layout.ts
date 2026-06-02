@@ -71,6 +71,30 @@ export function layoutFlowProcess(
   return { nodes: layoutNodes, width, height, orderedIds };
 }
 
+export function computeFlowFitTransform(
+  viewportW: number,
+  viewportH: number,
+  contentW: number,
+  contentH: number,
+  padding = 28,
+): { x: number; y: number; scale: number } {
+  if (!viewportW || !viewportH || !contentW || !contentH) {
+    return { x: 24, y: 24, scale: 1 };
+  }
+
+  const scale = Math.min(
+    (viewportW - padding * 2) / contentW,
+    (viewportH - padding * 2) / contentH,
+  );
+  const clamped = Math.max(0.45, Math.min(scale, 1.65));
+
+  return {
+    x: (viewportW - contentW * clamped) / 2,
+    y: (viewportH - contentH * clamped) / 2,
+    scale: clamped,
+  };
+}
+
 export function flowEdgePath(from: FlowLayoutNode, to: FlowLayoutNode): string {
   const x1 = from.x + from.w;
   const y1 = from.y + from.h / 2;

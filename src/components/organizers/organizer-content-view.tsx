@@ -10,7 +10,7 @@ import { mergeReviewContent } from "@/lib/organizers/review-fallback";
 import { ConceptMapCanvas } from "@/components/organizers/sections/concept-map-canvas";
 import { FlashcardPremium } from "@/components/organizers/sections/flashcard-premium";
 import { FlowProcessMap } from "@/components/organizers/sections/flow-process-map";
-import { KnowledgeTreeInteractive } from "@/components/organizers/sections/knowledge-tree-interactive";
+import { StudyPathInteractive } from "@/components/organizers/sections/study-path-interactive";
 import { OrganizerFloatSheet } from "@/components/organizers/sections/organizer-float-sheet";
 import {
   OrganizerStudioDock,
@@ -84,6 +84,10 @@ export function OrganizerContentView({
     simplifiedExplanation: parsed.simplifiedExplanation,
     flashcards: parsed.flashcards,
     reviewQuestions: parsed.reviewQuestions,
+    reviewBundle,
+    visualSummary: parsed.visualSummary,
+    aiAnalysis: parsed.aiAnalysis,
+    centerTitle: parsed.conceptMap?.title ?? parsed.hierarchy?.root,
   };
 
   const mapKey = `${analyticsKey}-concept-map`;
@@ -134,17 +138,25 @@ export function OrganizerContentView({
               title={flowProcess.title ?? "Flujo jurídico"}
               nodes={flowProcess.nodes}
               edges={flowProcess.edges}
+              studyContext={studyContext}
+              bare
             />
           ) : null}
         </OrganizerFloatSheet>
 
         <OrganizerFloatSheet
           open={activePanel === "tree"}
-          title="Knowledge Tree"
+          title="Ruta de estudio"
           onClose={() => setActivePanel(null)}
         >
           {parsed.hierarchy?.root && hierarchyBranches.length ? (
-            <KnowledgeTreeInteractive root={parsed.hierarchy.root} branches={hierarchyBranches} />
+            <StudyPathInteractive
+              root={parsed.hierarchy.root}
+              branches={hierarchyBranches}
+              pathKey={analyticsKey}
+              studyContext={studyContext}
+              bare
+            />
           ) : null}
         </OrganizerFloatSheet>
 
@@ -195,10 +207,16 @@ export function OrganizerContentView({
           title={flowProcess.title ?? "Proceso jurídico"}
           nodes={flowProcess.nodes}
           edges={flowProcess.edges}
+          studyContext={studyContext}
         />
       ) : null}
       {parsed.hierarchy?.root && hierarchyBranches.length ? (
-        <KnowledgeTreeInteractive root={parsed.hierarchy.root} branches={hierarchyBranches} />
+        <StudyPathInteractive
+          root={parsed.hierarchy.root}
+          branches={hierarchyBranches}
+          pathKey={analyticsKey}
+          studyContext={studyContext}
+        />
       ) : null}
       {timelineEvents.length ? <TimelineModern events={timelineEvents} /> : null}
       {parsed.flashcards?.length ? (
