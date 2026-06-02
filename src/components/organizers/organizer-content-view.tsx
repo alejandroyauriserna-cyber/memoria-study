@@ -189,7 +189,7 @@ export function OrganizerContentView({
 
         <OrganizerFloatSheet
           open={activePanel === "visualPrompt"}
-          title="Crear Imagen Educativa IA"
+          title="Atlas Jurídico IA"
           fullscreen
           onClose={() => setActivePanel(null)}
         >

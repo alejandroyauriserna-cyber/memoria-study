@@ -22,10 +22,10 @@ import {
   X,
 } from "lucide-react";
 import {
+  ATLAS_JURIDICO_MODULE_SUBTITLE,
+  ATLAS_JURIDICO_MODULE_TITLE,
   CREATIVITY_LEVELS,
   PERSONALIZATION_QUICK_CHIPS,
-  VISUAL_IMAGE_MODULE_SUBTITLE,
-  VISUAL_IMAGE_MODULE_TITLE,
   buildFinalPrompt,
 } from "@/lib/organizers/visual-prompt-mode-config";
 import {
@@ -55,7 +55,7 @@ type NavItem = {
 };
 
 const NAV_ITEMS: NavItem[] = [
-  { id: SECTION_IDS.tipo, label: "Tipo" },
+  { id: SECTION_IDS.tipo, label: "Atlas" },
   { id: SECTION_IDS.rubrica, label: "Rúbrica" },
   { id: SECTION_IDS.personalizacion, label: "Personalización" },
   { id: SECTION_IDS.prompt, label: "Prompt", requiresResult: true },
@@ -241,13 +241,13 @@ export function VisualPremiumPromptPanel({
       <header className="z-20 shrink-0 border-b border-[#F59E0B]/20 bg-[#060b10]/95 px-4 py-3 backdrop-blur-xl sm:px-6">
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
-            <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#FBBF24]">
-              <Sparkles size={12} />
-              🖼️ {VISUAL_IMAGE_MODULE_TITLE}
-            </p>
-            <p className="mt-0.5 truncate text-sm text-[#F5F7FA]/60">
-              {VISUAL_IMAGE_MODULE_SUBTITLE}
-            </p>
+          <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#FBBF24]">
+            <Sparkles size={12} />
+            {ATLAS_JURIDICO_MODULE_TITLE}
+          </p>
+          <p className="mt-0.5 truncate text-sm text-[#F5F7FA]/60">
+            {ATLAS_JURIDICO_MODULE_SUBTITLE}
+          </p>
           </div>
           {onClose ? (
             <button
@@ -320,8 +320,8 @@ export function VisualPremiumPromptPanel({
           </nav>
 
           <div className="min-w-0 flex-1 space-y-10 pb-8">
-            {/* PASO 1 — Tipo */}
-            <StepSection id={SECTION_IDS.tipo} step={1} title="Tipo de imagen">
+            {/* PASO 1 — Tipo de atlas */}
+            <StepSection id={SECTION_IDS.tipo} step={1} title="Tipo de atlas jurídico">
               <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
                 {VISUAL_PROMPT_MODES.map((item) => {
                   const active = mode === item.id;
@@ -337,7 +337,6 @@ export function VisualPremiumPromptPanel({
                       }`}
                     >
                       <span className="flex items-center gap-2 text-sm font-bold text-[#F5F7FA]">
-                        <span>{item.emoji}</span>
                         {item.label}
                       </span>
                       <span className="mt-1 block text-[11px] leading-snug text-[#F5F7FA]/55">
@@ -349,9 +348,7 @@ export function VisualPremiumPromptPanel({
               </div>
               {selectedMode ? (
                 <div className="mt-4 rounded-xl border border-[#A855F7]/30 bg-[#A855F7]/10 px-4 py-3">
-                  <p className="text-xs font-semibold text-[#C4B5FD]">
-                    {selectedMode.emoji} Resultado esperado:
-                  </p>
+                  <p className="text-xs font-semibold text-[#C4B5FD]">Resultado esperado:</p>
                   <p className="mt-1 text-sm text-[#F5F7FA]/85">{selectedMode.expectedResult}</p>
                 </div>
               ) : null}
@@ -376,7 +373,7 @@ export function VisualPremiumPromptPanel({
                   className="inline-flex items-center gap-2 rounded-xl border border-dashed border-[#F59E0B]/40 bg-[#F59E0B]/8 px-4 py-2.5 text-sm font-semibold text-[#FBBF24] transition hover:border-[#F59E0B]/60 hover:bg-[#F59E0B]/12"
                 >
                   <FileUp size={16} />
-                  📎 Subir rúbrica
+                  Subir rúbrica
                 </button>
                 <span className="text-xs text-[#F5F7FA]/45">PDF · DOCX · JPG · PNG</span>
                 {rubricFile ? (
@@ -408,7 +405,7 @@ export function VisualPremiumPromptPanel({
               <textarea
                 value={personalization}
                 onChange={(event) => setPersonalization(event.target.value)}
-                placeholder="Ej.: Usa colores rojo y negro. Incluye más jurisprudencia. Quiero estilo anime…"
+                placeholder="Ej.: Usa colores rojo petróleo y dorado. Incluye más jurisprudencia. Prioriza artículos del Código Civil…"
                 rows={5}
                 className="w-full resize-y rounded-xl border border-white/10 bg-[#0a1018] px-4 py-3 text-sm leading-relaxed text-[#F5F7FA] placeholder:text-[#F5F7FA]/30 focus:border-[#F59E0B]/40 focus:outline-none focus:ring-1 focus:ring-[#F59E0B]/25"
               />
@@ -420,14 +417,14 @@ export function VisualPremiumPromptPanel({
                     onClick={() => appendChip(chip.text)}
                     className="rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-[11px] font-medium text-[#F5F7FA]/75 transition hover:border-[#F59E0B]/35 hover:bg-[#F59E0B]/10 hover:text-[#FBBF24]"
                   >
-                    {chip.emoji} {chip.label}
+                    {chip.label}
                   </button>
                 ))}
               </div>
 
               <div className="mt-6">
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#F5F7FA]/50">
-                  🧑‍🎨 Nivel de creatividad
+                  Nivel de creatividad editorial
                 </p>
                 <div className="grid gap-2 sm:grid-cols-2">
                   {CREATIVITY_LEVELS.map((level) => {
@@ -451,7 +448,7 @@ export function VisualPremiumPromptPanel({
                         />
                         <span>
                           <span className="block text-xs font-bold text-[#F5F7FA]">
-                            {level.emoji} {level.label}
+                            {level.label}
                           </span>
                           <span className="mt-0.5 block text-[10px] leading-snug text-[#F5F7FA]/55">
                             {level.description}
@@ -480,7 +477,7 @@ export function VisualPremiumPromptPanel({
                 ) : (
                   <>
                     <Wand2 size={18} />
-                    Generar prompt para Gemini
+                    Generar atlas para Gemini
                   </>
                 )}
               </button>
@@ -570,9 +567,9 @@ export function VisualPremiumPromptPanel({
             {copied ? (
               <span className="font-semibold text-[#22C55E]">✓ Prompt copiado correctamente</span>
             ) : finalPrompt ? (
-              `${finalPrompt.length.toLocaleString("es-PE")} caracteres · Listo para Gemini`
+              `${finalPrompt.length.toLocaleString("es-PE")} caracteres · Atlas listo para Gemini`
             ) : (
-              "Genera un prompt para habilitar la copia"
+              "Genera un atlas para habilitar la copia"
             )}
           </p>
           <div className="flex flex-wrap gap-2">
@@ -583,7 +580,7 @@ export function VisualPremiumPromptPanel({
               className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#F59E0B] to-[#F97316] px-5 py-2.5 text-sm font-bold text-[#1a1005] shadow-lg transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-45"
             >
               {copied ? <Check size={16} /> : <ClipboardCopy size={16} />}
-              📋 Copiar prompt
+              Copiar atlas
             </button>
             <button
               type="button"
@@ -592,7 +589,7 @@ export function VisualPremiumPromptPanel({
               className="inline-flex items-center gap-2 rounded-xl border border-[#4285F4]/45 bg-[#4285F4]/15 px-5 py-2.5 text-sm font-semibold text-[#93C5FD] transition hover:bg-[#4285F4]/25 disabled:cursor-not-allowed disabled:opacity-45"
             >
               <Rocket size={16} />
-              🚀 Abrir Gemini
+              Abrir Gemini
             </button>
           </div>
         </div>
@@ -663,7 +660,7 @@ function PremiumPromptCard({
             </div>
             <div>
               <p className="text-[10px] font-bold uppercase tracking-wider text-[#93C5FD]">
-                Prompt final · Gemini Image
+                Atlas jurídico final · Gemini Image
               </p>
               <h3 className="text-base font-bold text-[#F5F7FA]">{title}</h3>
               <p className="text-[11px] text-[#F5F7FA]/45">Modo: {modeLabel}</p>
@@ -685,7 +682,7 @@ function PremiumPromptCard({
             className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#F59E0B] to-[#F97316] px-5 py-3 text-sm font-bold text-[#1a1005] shadow-lg transition hover:brightness-110 sm:flex-none"
           >
             {copied ? <Check size={16} /> : <ClipboardCopy size={16} />}
-            📋 Copiar prompt final
+            Copiar atlas final
           </button>
           <button
             type="button"
@@ -693,7 +690,7 @@ function PremiumPromptCard({
             className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#4285F4]/45 bg-[#4285F4]/15 px-5 py-3 text-sm font-semibold text-[#93C5FD] transition hover:bg-[#4285F4]/25 sm:flex-none"
           >
             <Rocket size={16} />
-            🚀 Abrir Gemini
+            Abrir Gemini
           </button>
         </div>
       </div>

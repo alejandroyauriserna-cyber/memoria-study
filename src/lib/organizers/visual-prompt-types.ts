@@ -61,7 +61,8 @@ export type VisualPremiumPrompt = {
   generatedAt: string;
 };
 
-export const VISUAL_IMAGE_FEATURE_NAME = "Crear Imagen Educativa IA";
+export const VISUAL_IMAGE_FEATURE_NAME = "Atlas Jurídico IA";
+export const ATLAS_JURIDICO_FEATURE_NAME = VISUAL_IMAGE_FEATURE_NAME;
 
 export const VISUAL_PROMPT_MODES: Array<{
   id: VisualPromptMode;
@@ -72,45 +73,45 @@ export const VISUAL_PROMPT_MODES: Array<{
 }> = [
   {
     id: "infographic",
-    label: "Infografía",
-    emoji: "🎨",
-    description: "Enciclopedia visual premium, colorida y de alta densidad informativa.",
-    expectedResult: "Infografía educativa colorida.",
+    label: "Atlas Jurídico",
+    emoji: "",
+    description: "Atlas visual universitario estilo Harvard / National Geographic.",
+    expectedResult: "Atlas jurídico de posgrado, editorial premium.",
   },
   {
     id: "memorization",
-    label: "Memorización",
-    emoji: "🧠",
-    description: "Metáforas visuales exageradas e imágenes imposibles de olvidar.",
-    expectedResult: "Mapa visual para memorizar.",
+    label: "Mapa Mnemotécnico",
+    emoji: "",
+    description: "Símbolos jurídicos elegantes para memoria de largo plazo.",
+    expectedResult: "Mapa mnemotécnico doctrinal con rigor académico.",
   },
   {
     id: "exam",
-    label: "Examen",
-    emoji: "🎓",
-    description: "Lámina de repaso: definiciones, artículos y excepciones sin decoración.",
-    expectedResult: "Lámina de repaso para examen.",
+    label: "Lámina de Examen",
+    emoji: "",
+    description: "Repaso universitario: definiciones, artículos y excepciones.",
+    expectedResult: "Lámina de repaso académica para evaluación.",
   },
   {
     id: "legal_premium",
-    label: "Jurídico Premium",
-    emoji: "⚖️",
-    description: "Manual jurídico formal con tribunales, expedientes y códigos.",
-    expectedResult: "Representación jurídica profesional.",
+    label: "Manual Jurídico",
+    emoji: "",
+    description: "Tratado ilustrado: tribunales, códigos, expedientes, doctrina.",
+    expectedResult: "Manual jurídico ilustrado de élite.",
   },
   {
     id: "jurisprudence",
-    label: "Jurisprudencia",
-    emoji: "🏛️",
-    description: "Línea de tiempo con precedentes, sentencias y evolución doctrinal.",
-    expectedResult: "Mapa jurisprudencial.",
+    label: "Atlas Jurisprudencial",
+    emoji: "",
+    description: "Líneas de tiempo, precedentes y evolución doctrinal.",
+    expectedResult: "Mapa jurisprudencial de posgrado.",
   },
   {
     id: "professor",
-    label: "Profesor",
-    emoji: "👨‍🏫",
-    description: "Adaptado a la rúbrica: criterios, puntajes y formato del docente.",
-    expectedResult: "Trabajo alineado a la rúbrica.",
+    label: "Rúbrica Docente",
+    emoji: "",
+    description: "Atlas alineado a criterios, puntajes y formato del docente.",
+    expectedResult: "Entrega visual alineada a la evaluación.",
   },
 ];
 

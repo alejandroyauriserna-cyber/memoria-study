@@ -3,6 +3,7 @@ import { extractInfographicTopics } from "@/lib/ai/build-academic-infographic-pr
 import { env } from "@/lib/env";
 import type { OrganizerContent } from "@/lib/organizers/parse-content";
 import {
+  ATLAS_ACADEMIC_MANDATE,
   MODE_PROMPT_CONFIG,
   UNIVERSAL_QUALITY_BLOCK,
   buildFinalPrompt,
@@ -26,22 +27,21 @@ const SCENE_RULES: Record<
   Array<{ match: RegExp; metaphor: string }>
 > = {
   infographic: [
-    { match: /buena fe|honestidad/i, metaphor: "personas negociando con honestidad, apretón de manos cálido iluminado" },
-    { match: /contrato|contratación|negocio jurídico/i, metaphor: "documento legal siendo firmado con pluma en escena ilustrada" },
-    { match: /nulidad/i, metaphor: "contrato roto en pedazos sobre mesa judicial, escena dramática ilustrada" },
-    { match: /juez|tribunal|magistrado/i, metaphor: "tribunal peruano con balanza de la justicia, ilustración premium" },
-    { match: /código civil|código|civil/i, metaphor: "gran libro jurídico dorado con artículos visibles, estilo atlas" },
-    { match: /interpretación|hermenéutica/i, metaphor: "juez con lupa analizando documentos legales en escena educativa" },
+    { match: /buena fe|honestidad/i, metaphor: "nodo doctrinal: balanza equilibrada + definición breve + cita conceptual" },
+    { match: /contrato|contratación|negocio jurídico/i, metaphor: "manuscrito legal firmado, pluma estilográfica, sello notarial — esquema doctrinal" },
+    { match: /nulidad/i, metaphor: "documento anulado con sello institucional rojo, artículo correlativo visible" },
+    { match: /juez|tribunal|magistrado/i, metaphor: "iconografía de tribunal clásico, columnas, balanza — sin personajes caricaturescos" },
+    { match: /código civil|código|civil/i, metaphor: "tomo del Código Civil encuadernado en cuero, artículos numerados en tipografía serif" },
+    { match: /interpretación|hermenéutica/i, metaphor: "lupa sobre texto manuscrito histórico, flechas de interpretación sistemática" },
+    { match: /jurisprudencia|precedente|fallo|sentencia/i, metaphor: "expediente numerado con ratio decidendi en recuadro dorado" },
   ],
   memorization: [
-    { match: /nulidad/i, metaphor: "CONTRATO ROTO EXPLOTANDO con chispas y humo — imposible de olvidar" },
-    { match: /buena fe|honestidad/i, metaphor: "JUEZ o negociador con HALO DE LUZ dorada radiante" },
-    { match: /interpretación|hermenéutica/i, metaphor: "DETECTIVE JURÍDICO con lupa GIGANTE investigando documentos" },
-    { match: /obligación|obligacion/i, metaphor: "CADENA LUMINOSA imposible de romper conectando dos sujetos" },
-    { match: /código civil|código|civil/i, metaphor: "LIBRO JURÍDICO GIGANTE flotando con páginas que brillan" },
-    { match: /anulabilidad/i, metaphor: "contrato con GRIETAS NEÓN pulsantes y sello de advertencia gigante" },
-    { match: /voluntad|consentimiento/i, metaphor: "personas con GESTOS EXAGERADOS expresando decisión con rayos de energía" },
-    { match: /jurisprudencia|precedente|fallo|sentencia/i, metaphor: "TORRE de expedientes apilados hasta el cielo con sello oficial brillante" },
+    { match: /nulidad/i, metaphor: "símbolo mnemotécnico: documento anulado con sello rojo institucional (formal, memorable)" },
+    { match: /buena fe|honestidad/i, metaphor: "símbolo: balanza dorada equilibrada sobre fondo petróleo" },
+    { match: /interpretación|hermenéutica/i, metaphor: "símbolo: lupa sobre pergamino con texto subrayado" },
+    { match: /obligación|obligacion/i, metaphor: "símbolo: cadena estilizada dorada conectando sujetos jurídicos" },
+    { match: /código civil|código|civil/i, metaphor: "símbolo: tomo jurídico monumental en cuero con lomo dorado" },
+    { match: /jurisprudencia|precedente|fallo|sentencia/i, metaphor: "símbolo: torre de expedientes con sello judicial" },
   ],
   exam: [
     { match: /nulidad/i, metaphor: "etiqueta roja «NULIDAD» + definición breve en texto grande" },
@@ -79,12 +79,12 @@ function inferVisualScenes(
   for (const concept of concepts) {
     const rule = rules.find((entry) => entry.match.test(concept));
     const fallbackByMode: Record<VisualPromptMode, string> = {
-      infographic: `mini escena ilustrada premium de «${concept}» en contexto jurídico peruano`,
-      memorization: `metáfora visual EXAGERADA e INOLVIDABLE para «${concept}» con colores neón`,
-      exam: `ficha de repaso con definición legible de «${concept}» + artículo si aplica`,
-      legal_premium: `representación formal y sobria de «${concept}» estilo manual jurídico`,
-      jurisprudence: `nodo de precedente o sentencia relacionado con «${concept}» en línea de tiempo`,
-      professor: `elemento visual que cumple criterio de rúbrica sobre «${concept}»`,
+      infographic: `nodo de atlas jurídico: «${concept}» con título, definición breve y conexión doctrinal`,
+      memorization: `símbolo mnemotécnico formal para «${concept}» — iconografía jurídica elegante`,
+      exam: `recuadro académico: definición de «${concept}» + artículo correlativo si aplica`,
+      legal_premium: `elemento de manual jurídico premium sobre «${concept}»`,
+      jurisprudence: `nodo jurisprudencial con precedente relacionado a «${concept}»`,
+      professor: `elemento visual alineado a rúbrica sobre «${concept}»`,
     };
 
     scenes.push({
@@ -481,10 +481,12 @@ function buildFallbackPrompt(
     : "";
 
   const prompt = ensureQualityBlock(
-    `Genera una imagen ultra detallada en 4K.
+    `Genera un atlas visual jurídico universitario ultra detallado (NO infografía escolar).
 
 TÍTULO: ${analysis.centralTopic}
 MODO EXCLUSIVO: ${config.label.toUpperCase()} — NO mezclar con otros estilos.
+
+${ATLAS_ACADEMIC_MANDATE}
 
 ${config.directive}
 
@@ -536,10 +538,11 @@ async function enrichPromptWithGemini(
       ? `\nNivel de creatividad solicitado: ${creativityLabel(creativityLevel)} — ajusta el estilo visual en consecuencia.`
       : "";
 
-  const systemPrompt = `Eres un director de arte educativo especializado en Derecho peruano (UNT).
-Tu trabajo es crear UN PROMPT BASE HIPERDETALLADO para Gemini Image según UN SOLO MODO visual.
+  const systemPrompt = `Eres un director de arte editorial especializado en visualización jurídica de posgrado (UNT, Harvard, Oxford).
+Tu trabajo es crear UN PROMPT BASE para Gemini Image que genere un ATLAS VISUAL JURÍDICO UNIVERSITARIO — NO una infografía escolar.
 NO generes la imagen. Solo el prompt base listo para personalización posterior.
-NO incluyas instrucciones del estudiante — eso se fusionará después.
+
+${ATLAS_ACADEMIC_MANDATE}
 ${creativityDirective}
 
 === MODO ACTIVO: ${config.label.toUpperCase()} ===
@@ -564,12 +567,13 @@ Resumen del material:
 ${content.summary?.slice(0, 2000) ?? ""}
 
 REGLAS CRÍTICAS:
-- El prompt debe ser RADICALMENTE DIFERENTE al de otros modos (infografía ≠ examen ≠ memorización).
+- Generar ATLAS JURÍDICO UNIVERSITARIO, nunca infografía escolar ni material infantil.
+- El prompt debe ser RADICALMENTE DIFERENTE al de otros modos.
+- NO caricaturas, NO emojis, NO personajes sonrientes, NO estilo Canva juvenil.
 - NO mezcles estilos de otros modos.
-- NO uses diagramas de cajas conectadas ni wireframes.
 ${mode === "exam" ? "- MINIMIZA decoración. MAXIMIZA definiciones, artículos y excepciones legibles." : ""}
-${mode === "memorization" ? "- EXAGERA metáforas visuales. Colores neón. Escenas imposibles de olvidar." : ""}
-${mode === "jurisprudence" ? "- Incluye línea de tiempo, precedentes y evolución doctrinal." : ""}
+${mode === "memorization" ? "- Símbolos mnemotécnicos formales y elegantes, paleta petróleo/dorado/marfil." : ""}
+${mode === "jurisprudence" ? "- Incluye línea de tiempo, precedentes y evolución doctrinal con nombres de fallos." : ""}
 ${mode === "professor" && rubric ? "- PRIORIZA criterios de la rúbrica sobre cualquier estilo genérico." : ""}
 
 El prompt debe ser una sola instrucción larga en español.
