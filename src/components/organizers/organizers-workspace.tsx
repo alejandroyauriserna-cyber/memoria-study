@@ -269,15 +269,16 @@ function CardActionBar({
         {regenerating ? <Loader2 className="animate-spin" size={13} /> : <RefreshCw size={13} />}
         {compact ? null : "Regenerar"}
       </button>
-      <button type="button" onClick={onShare} className={btnClass}>
-        <Share2 size={13} />
+      <button type="button" onClick={onShare} className={btnClass} title="Compartir">
+        <Share2 size={13} /> {compact ? null : "Compartir"}
       </button>
       <button
         type="button"
         onClick={onDelete}
-        className={`${btnClass} text-red-600 hover:bg-red-500/10`}
+        className={`${btnClass} text-red-400 hover:bg-red-500/10`}
+        title="Eliminar"
       >
-        <Trash2 size={13} />
+        <Trash2 size={13} /> {compact ? null : "Eliminar"}
       </button>
     </div>
   );
@@ -417,14 +418,14 @@ export function OrganizersWorkspace({
     <>
       <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[rgba(0,255,213,0.25)] bg-[rgba(0,255,213,0.08)] px-3 py-1 text-xs font-medium text-[#00FFD5]">
-            <Sparkles size={12} /> MemoriaStudy · Canvas IA
+          <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[rgba(0,255,213,0.2)] bg-[rgba(0,255,213,0.08)] px-3 py-1 text-xs font-medium text-[#00FFD5]">
+            <Sparkles size={12} /> MemoriaStudy
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-[#F5F7FA] sm:text-4xl">
-            Red de conocimiento
+            Organizadores visuales
           </h1>
           <p className="mt-1 max-w-lg text-sm text-muted-foreground">
-            {organizers.length} espacio{organizers.length === 1 ? "" : "s"} visual
+            {organizers.length} organizador{organizers.length === 1 ? "" : "es"} · mapas conceptuales generados por IA
             {filtered.length !== organizers.length ? ` · ${filtered.length} visibles` : ""}
           </p>
         </div>

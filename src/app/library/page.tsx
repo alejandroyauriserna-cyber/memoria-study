@@ -113,11 +113,11 @@ export default async function LibraryHomePage() {
     <AppShell>
       <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <div className="grid gap-8 lg:grid-cols-[1.35fr_0.85fr] lg:items-start">
-          <div className="tron-panel rounded-2xl p-10 md:p-12">
+          <div className="ms-panel p-10 md:p-12">
             <div className="flex flex-col gap-6">
               <div className="max-w-2xl">
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#00FFD5]">Biblioteca · IA</p>
-                <h1 className="mt-4 text-4xl font-bold tracking-tight text-[#F5F7FA] sm:text-5xl">Red de materiales</h1>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#00FFD5]">Biblioteca académica colaborativa</p>
+                <h1 className="mt-4 text-4xl font-bold tracking-tight text-[#F5F7FA] sm:text-5xl">Materiales de estudio</h1>
                 <p className="mt-4 text-base leading-7 text-muted-foreground">
                   Explora materiales por ciclo y curso, con estadísticas reales para estudiar y volver rápido a tus recursos.
                 </p>

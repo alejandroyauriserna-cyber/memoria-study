@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { GraduationCap } from "lucide-react";
+import { SelectionCard, SelectionGroup } from "@/components/ui/selection-cards";
 import { UNT_DERECHO } from "@/lib/academic/unt-derecho";
 import { loadAcademicSelection, saveAcademicSelection } from "@/lib/academic/storage";
 import type { AcademicSelection } from "@/types/academic";
@@ -75,135 +76,106 @@ export function AcademicNavigator({ value, onChange }: Props) {
   }, [year, cycle, course, week]);
 
   useEffect(() => {
-    if (!selection) {
-      return;
-    }
+    if (!selection) return;
     saveAcademicSelection(selection);
     onChange(selection);
   }, [selection, onChange]);
 
   return (
-    <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
-      <div className="mb-4 flex items-center gap-2">
-        <GraduationCap className="text-accent" size={20} />
+    <section className="ms-panel p-5 md:p-6">
+      <div className="mb-5 flex items-center gap-2">
+        <GraduationCap className="text-[#00FFD5]" size={20} />
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-accent">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#00FFD5]">
             {UNT_DERECHO.university}
           </p>
-          <h2 className="text-lg font-semibold">Carrera de {UNT_DERECHO.career}</h2>
+          <h2 className="text-lg font-semibold text-[#F5F7FA]">Contexto académico</h2>
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <label>
-          <span className="text-sm font-semibold">Año de la carrera</span>
-          <select
-            value={state.yearNumber}
-            onChange={(event) => {
-              const yearNumber = Number(event.target.value);
-              const nextYear = UNT_DERECHO.years.find((item) => item.number === yearNumber);
-              const nextCycle = nextYear?.cycles[0];
-              setState({
-                yearNumber,
-                cycleNumber: nextCycle?.number ?? 1,
-                courseId: nextCycle?.courses[0]?.id ?? "",
-                weekNumber: 1,
-              });
-            }}
-            className="mt-2 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm"
-          >
-            {UNT_DERECHO.years.map((item) => (
-              <option key={item.number} value={item.number}>
-                {item.label}
-              </option>
-            ))}
-          </select>
-        </label>
+      <div className="space-y-5">
+        <SelectionGroup label="Año">
+          {UNT_DERECHO.years.map((item) => (
+            <SelectionCard
+              key={item.number}
+              selected={state.yearNumber === item.number}
+              onClick={() => {
+                const nextCycle = item.cycles[0];
+                setState({
+                  yearNumber: item.number,
+                  cycleNumber: nextCycle?.number ?? 1,
+                  courseId: nextCycle?.courses[0]?.id ?? "",
+                  weekNumber: 1,
+                });
+              }}
+            >
+              {item.label.replace("Año ", "")}
+            </SelectionCard>
+          ))}
+        </SelectionGroup>
 
-        <label>
-          <span className="text-sm font-semibold">Ciclo</span>
-          <select
-            value={state.cycleNumber}
-            onChange={(event) => {
-              const cycleNumber = Number(event.target.value);
-              const nextCycle = year?.cycles.find((item) => item.number === cycleNumber);
-              setState((current) => ({
-                ...current,
-                cycleNumber,
-                courseId: nextCycle?.courses[0]?.id ?? "",
-                weekNumber: 1,
-              }));
-            }}
-            className="mt-2 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm"
-          >
-            {year?.cycles.map((item) => (
-              <option key={item.number} value={item.number}>
-                {item.label}
-              </option>
-            ))}
-          </select>
-        </label>
+        <SelectionGroup label="Ciclo">
+          {year?.cycles.map((item) => (
+            <SelectionCard
+              key={item.number}
+              selected={state.cycleNumber === item.number}
+              onClick={() => {
+                setState((current) => ({
+                  ...current,
+                  cycleNumber: item.number,
+                  courseId: item.courses[0]?.id ?? "",
+                  weekNumber: 1,
+                }));
+              }}
+            >
+              {item.label.replace("Ciclo ", "")}
+            </SelectionCard>
+          ))}
+        </SelectionGroup>
 
-        <label>
-          <span className="text-sm font-semibold">Curso</span>
-          <select
-            value={effectiveCourseId}
-            onChange={(event) =>
-              setState((current) => ({
-                ...current,
-                courseId: event.target.value,
-                weekNumber: 1,
-              }))
-            }
-            className="mt-2 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm"
-          >
-            {cycle?.courses.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <SelectionGroup label="Curso">
+          {cycle?.courses.map((item) => (
+            <SelectionCard
+              key={item.id}
+              selected={effectiveCourseId === item.id}
+              onClick={() =>
+                setState((current) => ({
+                  ...current,
+                  courseId: item.id,
+                  weekNumber: 1,
+                }))
+              }
+            >
+              {item.name}
+            </SelectionCard>
+          ))}
+        </SelectionGroup>
 
-        <label>
-          <span className="text-sm font-semibold">Semana</span>
-          <select
-            value={week?.number ?? 1}
-            onChange={(event) =>
-              setState((current) => ({
-                ...current,
-                weekNumber: Number(event.target.value),
-              }))
-            }
-            className="mt-2 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm"
-          >
-            {course?.weeks.map((item) => (
-              <option key={item.number} value={item.number}>
-                {item.title}
-              </option>
-            ))}
-          </select>
-        </label>
+        <SelectionGroup label="Semana">
+          {course?.weeks.map((item) => (
+            <SelectionCard
+              key={item.number}
+              selected={(week?.number ?? 1) === item.number}
+              onClick={() =>
+                setState((current) => ({
+                  ...current,
+                  weekNumber: item.number,
+                }))
+              }
+            >
+              {item.title.replace("Semana ", "S")}
+            </SelectionCard>
+          ))}
+        </SelectionGroup>
       </div>
 
       {(value ?? selection) ? (
-        <p className="mt-4 rounded-lg border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">
-          Material para:{" "}
-          <strong className="text-foreground">
-            {(value ?? selection)?.yearLabel}
-          </strong>{" "}
-          ·{" "}
-          <strong className="text-foreground">
-            {(value ?? selection)?.cycleLabel}
-          </strong>{" "}
-          ·{" "}
-          <strong className="text-foreground">
-            {(value ?? selection)?.courseName}
-          </strong>{" "}
-          ·{" "}
-          <strong className="text-foreground">
-            {(value ?? selection)?.weekTitle}
-          </strong>
+        <p className="ms-input mt-5 rounded-lg px-3 py-2.5 text-sm text-muted-foreground">
+          Ubicación:{" "}
+          <span className="font-semibold text-[#F5F7FA]">
+            {(value ?? selection)?.yearLabel} · {(value ?? selection)?.cycleLabel} ·{" "}
+            {(value ?? selection)?.courseName} · {(value ?? selection)?.weekTitle}
+          </span>
         </p>
       ) : null}
     </section>

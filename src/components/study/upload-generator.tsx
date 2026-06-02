@@ -47,18 +47,14 @@ async function readPdfExtractStream(
 
   while (true) {
     const { done, value } = await reader.read();
-    if (done) {
-      break;
-    }
+    if (done) break;
 
     buffer += decoder.decode(value, { stream: true });
     const lines = buffer.split("\n");
     buffer = lines.pop() ?? "";
 
     for (const line of lines) {
-      if (!line.trim()) {
-        continue;
-      }
+      if (!line.trim()) continue;
       onEvent(JSON.parse(line) as PdfExtractStreamEvent);
     }
   }
@@ -68,21 +64,24 @@ async function readPdfExtractStream(
   }
 }
 
+function formatFileSize(bytes: number) {
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export function UploadGenerator() {
   const [deck, setDeck] = useState<StudyDeck | null>(null);
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
   const [fileName, setFileName] = useState("");
+  const [fileSize, setFileSize] = useState(0);
   const [forceScanned, setForceScanned] = useState(false);
   const [extractionMethod, setExtractionMethod] = useState("");
   const [textTruncated, setTextTruncated] = useState(false);
   const [progress, setProgress] = useState<ProgressState | null>(null);
-  const [counts, setCounts] = useState<StudyGenerationCounts>(
-    DEFAULT_GENERATION_COUNTS,
-  );
-  const [academic, setAcademic] = useState<AcademicSelection | null>(
-    () => loadAcademicSelection(),
-  );
+  const [counts, setCounts] = useState<StudyGenerationCounts>(DEFAULT_GENERATION_COUNTS);
+  const [academic, setAcademic] = useState<AcademicSelection | null>(() => loadAcademicSelection());
+  const [step, setStep] = useState<1 | 2 | 3>(1);
 
   const handleAcademicChange = useCallback((selection: AcademicSelection) => {
     setAcademic(selection);
@@ -95,8 +94,8 @@ export function UploadGenerator() {
     setDeck(null);
     setProgress({
       percent: 2,
-      message: "Preparando tu PDF jurídico...",
-      stageLabel: "Inicio",
+      message: "Analizando PDF...",
+      stageLabel: "Analizando PDF",
     });
 
     const form = event.currentTarget;
@@ -139,10 +138,8 @@ export function UploadGenerator() {
             responseMessage = `Error de extracción: ${payload.error}`;
           }
         } catch {
-          console.error("PDF extract HTTP error body:", errorText);
           responseMessage = `Error de extracción: ${errorText}`;
         }
-        console.error("PDF extract request failed:", extractResponse.status, responseMessage);
         throw new Error(responseMessage);
       }
 
@@ -150,7 +147,6 @@ export function UploadGenerator() {
 
       await readPdfExtractStream(extractResponse, (event) => {
         if (event.stage === "error") {
-          console.error("PDF extract event error:", event.message, event);
           extractError = event.message;
           return;
         }
@@ -161,8 +157,8 @@ export function UploadGenerator() {
           truncated = Boolean(event.truncated);
           setProgress({
             percent: 50,
-            message: event.message,
-            stageLabel: "Lectura del PDF",
+            message: "Extrayendo conceptos...",
+            stageLabel: "Extrayendo conceptos",
           });
           return;
         }
@@ -201,13 +197,13 @@ export function UploadGenerator() {
       try {
         await set("pdfText", extractedText);
       } catch (err) {
-        console.warn("No se pudo guardar el texto del PDF antes de la generación:", err);
+        console.warn("No se pudo guardar el texto del PDF:", err);
       }
 
       setProgress({
         percent: 55,
-        message: "Generando flashcards, definiciones, pares y quiz con IA...",
-        stageLabel: "Generación con IA",
+        message: "Generando organizador y material de estudio...",
+        stageLabel: "Generando con IA",
       });
 
       const generateResponse = await fetch("/api/generate", {
@@ -225,8 +221,8 @@ export function UploadGenerator() {
 
       setProgress({
         percent: 88,
-        message: "Finalizando mazo de estudio...",
-        stageLabel: "Generación con IA",
+        message: "Guardando material de estudio...",
+        stageLabel: "Guardando",
       });
 
       const payload = await generateResponse.json();
@@ -238,7 +234,7 @@ export function UploadGenerator() {
       setDeck(payload.deck);
       setExtractionMethod(method);
       setTextTruncated(truncated || Boolean(payload.truncated));
-      
+
       try {
         await set("pdfText", payload.pdfText ?? extractedText);
       } catch (err) {
@@ -247,13 +243,12 @@ export function UploadGenerator() {
 
       setProgress({
         percent: 100,
-        message: "¡Material listo para estudiar!",
+        message: "Material listo para estudiar.",
         stageLabel: "Completado",
       });
 
       setStatus("idle");
     } catch (caught) {
-      console.error("PDF generation error:", caught);
       const message = caught instanceof Error ? caught.message : String(caught);
       const isTransient = /429|503|límite de solicitudes|quota exceeded|service unavailable/i.test(
         message,
@@ -261,7 +256,7 @@ export function UploadGenerator() {
 
       setError(
         isTransient
-          ? "La IA alcanzó temporalmente el límite de solicitudes. El texto del PDF ya está guardado y puedes intentar de nuevo más tarde."
+          ? "La IA alcanzó temporalmente el límite de solicitudes. Intenta de nuevo más tarde."
           : message,
       );
       setStatus("error");
@@ -308,139 +303,166 @@ export function UploadGenerator() {
   const maxMb = Math.round(MAX_FILE_SIZE / (1024 * 1024));
   const isWorking = status === "working";
 
+  const steps = [
+    { n: 1, label: "PDF" },
+    { n: 2, label: "Contexto académico" },
+    { n: 3, label: "Configuración" },
+  ] as const;
+
   return (
     <div className="space-y-5">
-      <AcademicNavigator value={academic} onChange={handleAcademicChange} />
+      <div className="flex flex-wrap gap-2">
+        {steps.map((s) => (
+          <button
+            key={s.n}
+            type="button"
+            onClick={() => setStep(s.n)}
+            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+              step === s.n
+                ? "bg-[rgba(0,255,213,0.15)] text-[#00FFD5]"
+                : "text-muted-foreground hover:text-[#F5F7FA]"
+            }`}
+          >
+            {s.n}. {s.label}
+          </button>
+        ))}
+      </div>
 
-      <GenerationSettings value={counts} onChange={setCounts} />
-
-      <form
-        onSubmit={handleSubmit}
-        className="rounded-lg border border-border bg-card p-5 shadow-sm"
-      >
-        <div className="flex flex-col gap-4">
-          <div className="flex-1">
-            <span className="text-sm font-semibold">PDF de estudio</span>
-            <label className="mt-2 flex min-h-28 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-border bg-muted px-4 text-center hover:border-accent">
-              <FileUp className="mb-2 text-accent" size={22} />
-              <span className="text-sm font-semibold">
-                {fileName || "Elegir archivo PDF"}
+      {step === 1 ? (
+        <form onSubmit={handleSubmit} className="ms-panel p-5 md:p-6">
+          <h3 className="text-sm font-semibold text-[#F5F7FA]">Paso 1 · Seleccionar PDF</h3>
+          <label className="mt-4 flex min-h-40 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-[rgba(0,255,213,0.25)] bg-[rgba(7,19,26,0.5)] px-4 text-center transition hover:border-[rgba(0,255,213,0.45)]">
+            <FileUp className="mb-2 text-[#00FFD5]" size={28} />
+            <span className="text-sm font-semibold text-[#F5F7FA]">
+              {fileName || "Arrastra o elige un PDF"}
+            </span>
+            {fileName ? (
+              <span className="mt-1 text-xs text-[#00FFD5]">
+                {fileName} · {formatFileSize(fileSize)}
               </span>
-              <span className="mt-1 text-xs text-muted-foreground">
-                Códigos y lecturas pesadas hasta {maxMb} MB
-              </span>
-              <input
-                name="file"
-                type="file"
-                accept="application/pdf"
-                className="sr-only"
-                required
-                disabled={isWorking}
-                onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  if (!file) return;
+            ) : (
+              <span className="mt-1 text-xs text-muted-foreground">Hasta {maxMb} MB</span>
+            )}
+            <input
+              name="file"
+              type="file"
+              accept="application/pdf"
+              className="sr-only"
+              required
+              disabled={isWorking}
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (!file) return;
 
-                  if (file.size > MAX_FILE_SIZE) {
-                    setError(`El PDF supera el límite de ${maxMb} MB.`);
-                    event.target.value = "";
-                    setFileName("");
-                    return;
-                  }
+                if (file.size > MAX_FILE_SIZE) {
+                  setError(`El PDF supera el límite de ${maxMb} MB.`);
+                  event.target.value = "";
+                  setFileName("");
+                  setFileSize(0);
+                  return;
+                }
 
-                  setError("");
-                  setFileName(file.name);
-                }}
-              />
-            </label>
-          </div>
+                setError("");
+                setFileName(file.name);
+                setFileSize(file.size);
+              }}
+            />
+          </label>
 
-          <label className="flex items-start gap-2 text-sm">
+          <label className="mt-4 flex items-start gap-2 text-sm text-muted-foreground">
             <input
               type="checkbox"
               checked={forceScanned}
               disabled={isWorking}
               onChange={(event) => setForceScanned(event.target.checked)}
-              className="mt-1 size-4 rounded border-border"
+              className="mt-1 size-4 accent-[#00FFD5]"
             />
-            <span>
-              <strong>PDF escaneado</strong> — OCR por partes con Gemini (libros,
-              fotocopias y códigos escaneados; soporta archivos grandes)
-            </span>
+            <span>PDF escaneado — usar OCR para libros y fotocopias</span>
           </label>
 
-          <Button
-            type="submit"
-            className="w-full sm:w-auto"
-            disabled={isWorking || !academic}
-          >
-            {isWorking ? (
-              <Loader2 className="animate-spin" size={16} />
-            ) : (
-              <WandSparkles size={16} />
-            )}
-            {isWorking ? "Procesando..." : "Generar material"}
-          </Button>
-        </div>
-
-        {progress && isWorking ? (
-          <div className="mt-4">
-            <GenerationProgress
-              percent={progress.percent}
-              message={progress.message}
-              stageLabel={progress.stageLabel}
-              currentChunk={progress.currentChunk}
-              totalChunks={progress.totalChunks}
-            />
+          <div className="mt-5 flex flex-wrap gap-2">
+            <Button type="button" variant="secondary" onClick={() => setStep(2)} disabled={!fileName}>
+              Continuar
+            </Button>
+            <Button type="submit" disabled={isWorking || !academic || !fileName}>
+              {isWorking ? <Loader2 className="animate-spin" size={16} /> : <WandSparkles size={16} />}
+              {isWorking ? "Procesando..." : "Generar material"}
+            </Button>
           </div>
-        ) : null}
 
-        {error ? (
-          <p className="mt-4 text-sm font-medium text-red-500">{error}</p>
-        ) : null}
-      </form>
+          {progress && isWorking ? (
+            <div className="mt-4">
+              <GenerationProgress
+                percent={progress.percent}
+                message={progress.message}
+                stageLabel={progress.stageLabel}
+                currentChunk={progress.currentChunk}
+                totalChunks={progress.totalChunks}
+              />
+            </div>
+          ) : null}
+
+          {error ? <p className="mt-4 text-sm text-[#FF8A00]">{error}</p> : null}
+        </form>
+      ) : null}
+
+      {step === 2 ? (
+        <div className="space-y-4">
+          <AcademicNavigator value={academic} onChange={handleAcademicChange} />
+          <div className="flex gap-2">
+            <Button type="button" variant="ghost" onClick={() => setStep(1)}>
+              Atrás
+            </Button>
+            <Button type="button" variant="secondary" onClick={() => setStep(3)} disabled={!academic}>
+              Continuar
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
+      {step === 3 ? (
+        <div className="space-y-4">
+          <GenerationSettings value={counts} onChange={setCounts} />
+          <div className="flex gap-2">
+            <Button type="button" variant="ghost" onClick={() => setStep(2)}>
+              Atrás
+            </Button>
+            <Button type="button" variant="secondary" onClick={() => setStep(1)}>
+              Ir a generar PDF
+            </Button>
+          </div>
+        </div>
+      ) : null}
 
       {deck ? (
         <>
-          <div className="rounded-lg border border-border bg-card p-5 shadow-sm">
+          <div className="ms-panel p-5 md:p-6">
             <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
               <div>
-                <p className="text-sm font-semibold text-accent">{deck.sourceName}</p>
-                <h1 className="mt-1 text-3xl font-semibold tracking-tight">{deck.title}</h1>
-
+                <p className="text-xs font-semibold text-[#00FFD5]">{deck.sourceName}</p>
+                <h1 className="mt-1 text-2xl font-bold text-[#F5F7FA]">{deck.title}</h1>
                 {deck.academic ? (
-                  <p className="mt-2 text-sm font-medium text-muted-foreground">
-                    {deck.academic.yearLabel} · {deck.academic.cycleLabel} ·{" "}
-                    {deck.academic.courseName} · {deck.academic.weekTitle}
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {deck.academic.yearLabel} · {deck.academic.cycleLabel} · {deck.academic.courseName} ·{" "}
+                    {deck.academic.weekTitle}
                   </p>
                 ) : null}
-
                 {deck.generatedWith ? (
-                  <p className="mt-3 inline-flex items-center gap-2 rounded-lg border border-border bg-muted px-3 py-2 text-xs font-semibold text-muted-foreground">
-                    <Sparkles size={14} className="text-accent" />
-                    {deck.generatedWith.label}. {deck.generatedWith.note}
-                    {extractionMethod === "gemini-ocr" ? " · PDF escaneado (OCR)" : null}
-                    {textTruncated
-                      ? " · Se usó la parte inicial del documento por longitud"
-                      : null}
+                  <p className="mt-3 inline-flex items-center gap-2 rounded-lg border border-[rgba(0,255,213,0.12)] bg-[rgba(0,255,213,0.06)] px-3 py-2 text-xs text-muted-foreground">
+                    <Sparkles size={14} className="text-[#00FFD5]" />
+                    {deck.generatedWith.label}
+                    {extractionMethod === "gemini-ocr" ? " · OCR" : null}
+                    {textTruncated ? " · Texto truncado por longitud" : null}
                   </p>
                 ) : null}
-
-                <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground">
-                  {deck.summary}
-                </p>
+                <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground">{deck.summary}</p>
               </div>
-
               <Button variant="secondary" onClick={saveDeck} disabled={status === "saving"}>
-                {status === "saving" ? (
-                  <Loader2 className="animate-spin" size={16} />
-                ) : (
-                  <Save size={16} />
-                )}
+                {status === "saving" ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
                 {status === "saved" ? "Guardado" : "Guardar en la semana"}
               </Button>
             </div>
           </div>
-
           <StudyHub deck={deck} />
         </>
       ) : null}

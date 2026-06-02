@@ -57,8 +57,8 @@ export default async function OrganizersPage({
   return (
     <AppShell>
       <ToastProvider>
-        <div className="organizers-studio min-h-[calc(100vh-5rem)]">
-          <section className="mx-auto max-w-[1400px] px-3 py-6 sm:px-5 sm:py-8">
+        <div className="organizers-studio min-h-0 flex-1">
+          <section className="ms-page mx-auto max-w-[1400px] px-3 py-6 sm:px-5 sm:py-8">
             <OrganizersWorkspace
               initialOrganizers={organizers}
               highlightId={newOrganizerId}

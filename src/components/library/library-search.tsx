@@ -155,13 +155,13 @@ export function LibrarySearch() {
   const showDropdown = open && hasQuery;
 
   return (
-    <section className="tron-panel rounded-2xl p-8">
+    <section className="ms-panel p-8">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#00FFD5]">Buscador · IA</p>
-        <h2 className="mt-2 text-3xl font-bold tracking-tight text-[#F5F7FA]">Encuentra al instante</h2>
-        <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
-          Escribe y obtén sugerencias en tiempo real. Materiales, PDFs y organizadores IA.
-        </p>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#00FFD5]">Buscador académico</p>
+          <h2 className="mt-2 text-3xl font-bold tracking-tight text-[#F5F7FA]">Encuentra materiales al instante</h2>
+          <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
+            Escribe y obtén sugerencias en tiempo real: títulos, PDFs, cursos y organizadores generados.
+          </p>
       </div>
 
       <div ref={containerRef} className="relative mt-6">

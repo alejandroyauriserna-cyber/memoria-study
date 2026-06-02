@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "MemoriaStudy · IA Futurista",
+  title: "MemoriaStudy · Estudio jurídico con IA",
   description:
-    "Plataforma de estudio con IA para Derecho UNT. Organizadores visuales, flashcards y tutor inteligente.",
+    "Plataforma académica para estudiantes de Derecho UNT. Biblioteca colaborativa, organizadores visuales y tutor inteligente.",
 };
 
 export default function RootLayout({

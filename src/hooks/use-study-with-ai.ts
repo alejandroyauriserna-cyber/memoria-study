@@ -5,22 +5,32 @@ import { useCallback, useEffect, useState } from "react";
 const STUDY_AI_STAGES = [
   {
     label: "Analizando PDF...",
-    percent: 18,
-    message: "Descargando y extrayendo el contenido del documento.",
+    percent: 12,
+    message: "Descargando y leyendo el contenido del documento.",
+  },
+  {
+    label: "Extrayendo conceptos...",
+    percent: 32,
+    message: "Identificando ideas clave del material jurídico.",
   },
   {
     label: "Generando organizador...",
-    percent: 52,
-    message: "La IA está estructurando los conceptos del material.",
+    percent: 55,
+    message: "La IA estructura el contenido para tu estudio.",
   },
   {
-    label: "Creando organizador con IA...",
-    percent: 82,
-    message: "Preparando mapas, tarjetas y preguntas de repaso.",
+    label: "Construyendo mapa conceptual...",
+    percent: 78,
+    message: "Preparando mapas, flashcards y preguntas de repaso.",
+  },
+  {
+    label: "Guardando organizador...",
+    percent: 92,
+    message: "Finalizando y guardando en tu biblioteca.",
   },
 ] as const;
 
-const STAGE_INTERVAL_MS = 4500;
+const STAGE_INTERVAL_MS = 4000;
 
 export function useStudyWithAi(materialId: string | undefined) {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -43,8 +53,8 @@ export function useStudyWithAi(materialId: string | undefined) {
     }, STAGE_INTERVAL_MS);
 
     const percentTimer = window.setInterval(() => {
-      setDisplayPercent((current) => Math.min(current + 2, 92));
-    }, 700);
+      setDisplayPercent((current) => Math.min(current + 2, 94));
+    }, 650);
 
     return () => {
       window.clearInterval(stageTimer);

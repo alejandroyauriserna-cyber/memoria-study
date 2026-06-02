@@ -33,7 +33,7 @@ export function StudyWithAiStatus({
 
       {error ? (
         <div
-          className="rounded-3xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700"
+          className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-medium text-red-300"
           role="alert"
         >
           {error}

@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import { ChevronDown } from "lucide-react";
 import {
   DEFAULT_GENERATION_COUNTS,
   GENERATION_LIMITS,
@@ -20,41 +22,58 @@ const fields: { key: keyof StudyGenerationCounts; label: string }[] = [
 ];
 
 export function GenerationSettings({ value, onChange }: Props) {
+  const [open, setOpen] = useState(false);
+
   return (
-    <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
-      <h3 className="text-sm font-semibold">Cantidad por método de estudio</h3>
-      <p className="mt-1 text-xs text-muted-foreground">
-        Elige cuántos ítems generar de cada tipo (0–{GENERATION_LIMITS.max}).
-      </p>
-
-      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        {fields.map((field) => (
-          <label key={field.key}>
-            <span className="text-xs font-semibold">{field.label}</span>
-            <input
-              type="number"
-              min={GENERATION_LIMITS.min}
-              max={GENERATION_LIMITS.max}
-              value={value[field.key]}
-              onChange={(event) =>
-                onChange({
-                  ...value,
-                  [field.key]: Number(event.target.value),
-                })
-              }
-              className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm"
-            />
-          </label>
-        ))}
-      </div>
-
+    <section className="ms-panel overflow-hidden">
       <button
         type="button"
-        onClick={() => onChange(DEFAULT_GENERATION_COUNTS)}
-        className="mt-3 text-xs font-semibold text-accent hover:underline"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between px-5 py-4 text-left"
       >
-        Restaurar cantidades recomendadas
+        <div>
+          <h3 className="text-sm font-semibold text-[#F5F7FA]">Configuración avanzada</h3>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Cantidad por método de estudio (0–{GENERATION_LIMITS.max})
+          </p>
+        </div>
+        <ChevronDown
+          size={18}
+          className={`text-muted-foreground transition ${open ? "rotate-180" : ""}`}
+        />
       </button>
+
+      {open ? (
+        <div className="border-t border-[rgba(0,255,213,0.1)] px-5 pb-5 pt-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            {fields.map((field) => (
+              <label key={field.key}>
+                <span className="text-xs font-semibold text-muted-foreground">{field.label}</span>
+                <input
+                  type="number"
+                  min={GENERATION_LIMITS.min}
+                  max={GENERATION_LIMITS.max}
+                  value={value[field.key]}
+                  onChange={(event) =>
+                    onChange({
+                      ...value,
+                      [field.key]: Number(event.target.value),
+                    })
+                  }
+                  className="ms-input mt-1.5"
+                />
+              </label>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => onChange(DEFAULT_GENERATION_COUNTS)}
+            className="mt-3 text-xs font-semibold text-[#00FFD5] hover:underline"
+          >
+            Restaurar cantidades recomendadas
+          </button>
+        </div>
+      ) : null}
     </section>
   );
 }
