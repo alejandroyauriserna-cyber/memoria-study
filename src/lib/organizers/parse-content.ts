@@ -1,4 +1,5 @@
 import type { VisualMindMap } from "@/lib/organizers/visual-mind-map-types";
+import type { AcademicInfographic } from "@/lib/organizers/academic-infographic-types";
 
 export type OrganizerFlashcard = {
   question?: string;
@@ -70,6 +71,7 @@ export type OrganizerContent = {
   reviewQuestions?: string[];
   simplifiedExplanation?: string;
   visualMindMap?: VisualMindMap;
+  academicInfographic?: AcademicInfographic;
 };
 
 export function parseOrganizerContent(content: unknown): OrganizerContent {

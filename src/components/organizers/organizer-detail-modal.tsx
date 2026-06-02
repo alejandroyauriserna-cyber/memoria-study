@@ -1,14 +1,18 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Sparkles, X } from "lucide-react";
+import { ImageIcon, Map, Sparkles, X } from "lucide-react";
 import { OrganizerContentView } from "@/components/organizers/organizer-content-view";
+import { AcademicInfographicPanel } from "@/components/organizers/sections/academic-infographic-panel";
 import {
   formatOrganizerDate,
   wasOrganizerRegenerated,
 } from "@/lib/organizers/format";
+import { parseOrganizerContent } from "@/lib/organizers/parse-content";
 import type { OrganizerRecord } from "@/types/organizer";
+
+export type OrganizerStudioTab = "interactive" | "infographic";
 
 export function OrganizerDetailModal({
   organizer,
@@ -21,6 +25,14 @@ export function OrganizerDetailModal({
   onClose: () => void;
   onContentUpdate?: (organizerId: string, content: unknown) => void;
 }) {
+  const [activeTab, setActiveTab] = useState<OrganizerStudioTab>("interactive");
+  const [content, setContent] = useState<unknown>(organizer?.content);
+
+  useEffect(() => {
+    setContent(organizer?.content);
+    setActiveTab("interactive");
+  }, [organizer?.id, organizer?.content]);
+
   useEffect(() => {
     if (!organizer) return;
 
@@ -40,6 +52,13 @@ export function OrganizerDetailModal({
   const regenerated = organizer
     ? wasOrganizerRegenerated(organizer.created_at, organizer.updated_at)
     : false;
+
+  const parsed = parseOrganizerContent(content);
+
+  function handleContentUpdate(next: unknown) {
+    setContent(next);
+    if (organizer) onContentUpdate?.(organizer.id, next);
+  }
 
   return (
     <AnimatePresence>
@@ -71,7 +90,9 @@ export function OrganizerDetailModal({
                   {regenerated ? (
                     <>
                       <span>·</span>
-                      <span className="text-[#00FFD5]">Regenerado {formatOrganizerDate(organizer.updated_at)}</span>
+                      <span className="text-[#00FFD5]">
+                        Regenerado {formatOrganizerDate(organizer.updated_at)}
+                      </span>
                     </>
                   ) : null}
                 </div>
@@ -87,18 +108,80 @@ export function OrganizerDetailModal({
             </button>
           </div>
 
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-            <OrganizerContentView
-              content={organizer.content}
-              loading={loading}
-              studio
-              deckKey={organizer.id}
-              organizerId={organizer.id}
-              onContentUpdate={(content) => onContentUpdate?.(organizer.id, content)}
+          <div className="flex shrink-0 gap-1 border-b border-[rgba(0,255,213,0.1)] bg-[rgba(7,19,26,0.6)] px-4 py-2 sm:px-6">
+            <StudioTab
+              active={activeTab === "interactive"}
+              onClick={() => setActiveTab("interactive")}
+              icon={Map}
+              label="Organizador Interactivo"
             />
+            <StudioTab
+              active={activeTab === "infographic"}
+              onClick={() => setActiveTab("infographic")}
+              icon={ImageIcon}
+              label="Infografía IA"
+              accent="#A78BFA"
+            />
+          </div>
+
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            {activeTab === "interactive" ? (
+              <OrganizerContentView
+                content={content}
+                loading={loading}
+                studio
+                deckKey={organizer.id}
+                organizerId={organizer.id}
+                onContentUpdate={handleContentUpdate}
+              />
+            ) : (
+              <AcademicInfographicPanel
+                organizerId={organizer.id}
+                organizerTitle={organizer.title}
+                academicInfographic={parsed.academicInfographic}
+                onGenerated={handleContentUpdate}
+              />
+            )}
           </div>
         </motion.div>
       ) : null}
     </AnimatePresence>
+  );
+}
+
+function StudioTab({
+  active,
+  onClick,
+  icon: Icon,
+  label,
+  accent = "#00FFD5",
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: typeof Map;
+  label: string;
+  accent?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`relative flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold transition sm:text-sm ${
+        active
+          ? "text-[#F5F7FA]"
+          : "text-muted-foreground hover:bg-[rgba(255,255,255,0.04)] hover:text-[#F5F7FA]/80"
+      }`}
+      style={active ? { background: `${accent}18`, color: active ? accent : undefined } : undefined}
+    >
+      <Icon size={15} style={active ? { color: accent } : undefined} />
+      {label}
+      {active ? (
+        <motion.span
+          layoutId="studio-tab-indicator"
+          className="absolute inset-x-3 -bottom-2 h-0.5 rounded-full"
+          style={{ background: accent }}
+        />
+      ) : null}
+    </button>
   );
 }
