@@ -24,7 +24,12 @@ import {
   wasOrganizerRegenerated,
 } from "@/lib/organizers/format";
 import { parseOrganizerContent } from "@/lib/organizers/parse-content";
-import { bezierConnector, conceptMapCenter, layoutConceptNodes } from "@/lib/organizers/concept-map-layout";
+import {
+  layoutStudyMapNodes,
+  studyBezierPath,
+  studyMapViewport,
+  branchForId,
+} from "@/lib/organizers/concept-map-study";
 import type { OrganizerRecord } from "@/types/organizer";
 
 type ViewMode = "grid" | "list";
@@ -85,40 +90,43 @@ function CardMapPreview({ content }: { content: unknown }) {
   const parsed = parseOrganizerContent(content);
   const title = parsed.conceptMap?.title;
   const nodes = parsed.conceptMap?.nodes?.filter(Boolean).slice(0, 8) ?? [];
-  const { x: cx, y: cy, w, h } = conceptMapCenter();
+  const { cx, cy, w, h } = studyMapViewport();
 
   if (!nodes.length) {
     return (
-      <div className="organizer-dot-grid flex h-full min-h-[100px] items-center justify-center rounded-xl bg-gradient-to-br from-accent/5 to-indigo-500/5">
-        <Sparkles className="text-accent/40" size={28} />
+      <div className="study-map-viewport flex h-full min-h-[100px] items-center justify-center rounded-xl">
+        <Sparkles className="text-indigo-400/50" size={28} />
       </div>
     );
   }
 
-  const layout = layoutConceptNodes(title, nodes);
+  const layout = layoutStudyMapNodes(title, nodes);
 
   return (
-    <div className="organizer-dot-grid relative h-full min-h-[100px] overflow-hidden rounded-xl">
-      <svg viewBox={`0 0 ${w} ${h}`} className="h-full w-full opacity-90" aria-hidden>
-        {layout.map((node, index) => (
-          <path
-            key={`${node.label}-${index}`}
-            d={bezierConnector(cx, cy, node.x, node.y)}
-            fill="none"
-            stroke="rgba(31,107,67,0.25)"
-            strokeWidth={1.5}
-          />
-        ))}
-        <circle cx={cx} cy={cy} r={20} fill="rgba(31,107,67,0.2)" />
+    <div className="study-map-viewport relative h-full min-h-[100px] overflow-hidden rounded-xl">
+      <svg viewBox={`0 0 ${w} ${h}`} className="h-full w-full" aria-hidden>
+        {layout.map((node, index) => {
+          const branch = branchForId(node.branchId);
+          return (
+            <path
+              key={`${node.label}-${index}`}
+              d={studyBezierPath(cx, cy, node.x, node.y)}
+              fill="none"
+              stroke={branch.color}
+              strokeWidth={1.5}
+              strokeOpacity={0.4}
+            />
+          );
+        })}
+        <circle cx={cx} cy={cy} r={28} fill="rgba(99,102,241,0.25)" />
         {layout.map((node, index) => (
           <circle
             key={`n-${index}`}
             cx={node.x}
             cy={node.y}
-            r={10}
-            fill="white"
-            stroke="rgba(31,107,67,0.35)"
-            strokeWidth={1}
+            r={9}
+            fill={branchForId(node.branchId).color}
+            fillOpacity={0.85}
           />
         ))}
       </svg>

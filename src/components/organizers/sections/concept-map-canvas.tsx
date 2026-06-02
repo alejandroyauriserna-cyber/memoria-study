@@ -1,50 +1,89 @@
 "use client";
 
 import { useCallback, useMemo, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { Map, Minus, Plus, RotateCcw } from "lucide-react";
+import { ConceptMapBranchStudyModal } from "@/components/organizers/sections/concept-map-branch-study";
 import {
-  bezierConnector,
-  conceptMapCenter,
-  layoutConceptNodes,
-} from "@/lib/organizers/concept-map-layout";
+  ConceptMapNodePanel,
+  getBranchForNode,
+} from "@/components/organizers/sections/concept-map-node-panel";
+import {
+  branchForId,
+  branchSectorPath,
+  buildNodeStudyDetail,
+  flashcardsForBranch,
+  layoutStudyMapNodes,
+  nodesInBranch,
+  studyBezierPath,
+  studyMapViewport,
+  type OrganizerStudyContext,
+} from "@/lib/organizers/concept-map-study";
 
 export function ConceptMapCanvas({
   title,
   nodes,
   hero = false,
+  studyContext = {},
 }: {
   title?: string;
   nodes: string[];
   hero?: boolean;
+  studyContext?: OrganizerStudyContext;
 }) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 });
   const [dragging, setDragging] = useState(false);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [focusBranchId, setFocusBranchId] = useState<number | null>(null);
+  const [branchStudyOpen, setBranchStudyOpen] = useState(false);
   const dragStart = useRef({ x: 0, y: 0, originX: 0, originY: 0 });
 
-  const { x: cx, y: cy, w, h } = conceptMapCenter();
-  const layout = useMemo(() => layoutConceptNodes(title, nodes), [title, nodes]);
+  const { cx, cy, w, h } = studyMapViewport();
+  const layout = useMemo(() => layoutStudyMapNodes(title, nodes), [title, nodes]);
+  const branchCount = useMemo(
+    () => Math.min(6, Math.max(2, Math.ceil(nodes.length / 2))),
+    [nodes.length],
+  );
+
+  const selectedNode = layout.find((n) => n.id === selectedNodeId) ?? null;
+  const selectedBranch = selectedNode ? getBranchForNode(selectedNode) : null;
+
+  const nodeDetail = useMemo(() => {
+    if (!selectedNode) return null;
+    const siblings = nodesInBranch(layout, selectedNode.branchId);
+    return buildNodeStudyDetail(selectedNode, siblings, title, studyContext);
+  }, [layout, selectedNode, studyContext, title]);
+
+  const branchFlashcards = useMemo(() => {
+    if (!selectedNode) return [];
+    return flashcardsForBranch(
+      nodesInBranch(layout, selectedNode.branchId),
+      studyContext,
+      title,
+    );
+  }, [layout, selectedNode, studyContext, title]);
 
   const zoom = useCallback((delta: number) => {
     setTransform((current) => ({
       ...current,
-      scale: Math.min(2.2, Math.max(0.45, current.scale + delta)),
+      scale: Math.min(2.4, Math.max(0.5, current.scale + delta)),
     }));
   }, []);
 
   const reset = useCallback(() => {
     setTransform({ x: 0, y: 0, scale: 1 });
+    setFocusBranchId(null);
+    setSelectedNodeId(null);
   }, []);
 
   function onWheel(event: React.WheelEvent) {
     event.preventDefault();
-    const delta = event.deltaY > 0 ? -0.08 : 0.08;
-    zoom(delta);
+    zoom(event.deltaY > 0 ? -0.07 : 0.07);
   }
 
   function onPointerDown(event: React.PointerEvent) {
-    if ((event.target as HTMLElement).closest("[data-node]")) return;
+    if ((event.target as HTMLElement).closest("[data-study-node]")) return;
     setDragging(true);
     dragStart.current = {
       x: event.clientX,
@@ -69,20 +108,19 @@ export function ConceptMapCanvas({
     event.currentTarget.releasePointerCapture(event.pointerId);
   }
 
+  function isDimmed(nodeBranchId: number) {
+    return focusBranchId !== null && focusBranchId !== nodeBranchId;
+  }
+
   const toPercent = (value: number, total: number) => `${(value / total) * 100}%`;
 
   return (
-    <div className={hero ? "w-full" : "organizer-float-card organizer-glass rounded-[24px] p-4 sm:p-5"}>
+    <div className={hero ? "w-full" : "rounded-[24px] p-1"}>
       {!hero ? (
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-accent/20 to-indigo-500/10 text-accent">
-              <Map size={17} />
-            </span>
-            <div>
-              <h3 className="text-sm font-semibold text-foreground">Mapa conceptual</h3>
-              <p className="text-xs text-muted-foreground">Arrastra · zoom con rueda</p>
-            </div>
+        <div className="mb-3 flex items-center justify-between px-1">
+          <div className="flex items-center gap-2">
+            <Map size={16} className="text-accent" />
+            <span className="text-sm font-semibold text-foreground">Mapa de estudio</span>
           </div>
           <CanvasControls onZoom={zoom} onReset={reset} />
         </div>
@@ -91,13 +129,19 @@ export function ConceptMapCanvas({
       <div
         ref={viewportRef}
         onWheel={onWheel}
-        className={`organizer-dot-grid relative overflow-hidden rounded-[20px] border border-white/60 bg-gradient-to-br from-white/50 via-transparent to-accent/5 shadow-inner dark:border-white/10 dark:from-white/5 ${
-          hero ? "h-[min(72vh,560px)] min-h-[380px]" : "h-[min(56vh,480px)] min-h-[320px]"
+        className={`study-map-viewport relative overflow-hidden rounded-[22px] border border-white/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_24px_80px_rgba(15,23,42,0.12)] ${
+          hero ? "h-[min(78vh,620px)] min-h-[420px]" : "h-[min(62vh,520px)] min-h-[360px]"
         }`}
       >
         {hero ? (
-          <div className="absolute right-4 top-4 z-20">
+          <div className="absolute right-3 top-3 z-20">
             <CanvasControls onZoom={zoom} onReset={reset} />
+          </div>
+        ) : null}
+
+        {focusBranchId !== null ? (
+          <div className="absolute left-3 top-3 z-20 rounded-full bg-black/50 px-3 py-1 text-[11px] font-medium text-white backdrop-blur-md">
+            Modo enfoque · {branchForId(focusBranchId).name}
           </div>
         ) : null}
 
@@ -114,72 +158,168 @@ export function ConceptMapCanvas({
               width: w,
               height: h,
               transform: `translate(calc(-50% + ${transform.x}px), calc(-50% + ${transform.y}px)) scale(${transform.scale})`,
-              transition: dragging ? "none" : "transform 200ms cubic-bezier(0.22, 1, 0.36, 1)",
+              transition: dragging ? "none" : "transform 220ms cubic-bezier(0.22, 1, 0.36, 1)",
             }}
           >
-            <svg
-              viewBox={`0 0 ${w} ${h}`}
-              className="pointer-events-none absolute inset-0 h-full w-full"
-              aria-hidden
-            >
-              <defs>
-                <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="rgba(31,107,67,0.15)" />
-                  <stop offset="50%" stopColor="rgba(99,102,241,0.35)" />
-                  <stop offset="100%" stopColor="rgba(31,107,67,0.5)" />
-                </linearGradient>
-              </defs>
-              {layout.map((node, index) => (
-                <motion.path
-                  key={`edge-${node.id}`}
-                  d={bezierConnector(cx, cy, node.x, node.y)}
-                  fill="none"
-                  stroke="url(#lineGrad)"
-                  strokeWidth={2.2}
-                  strokeLinecap="round"
-                  initial={{ pathLength: 0, opacity: 0 }}
-                  animate={{ pathLength: 1, opacity: 1 }}
-                  transition={{ duration: 0.6, delay: index * 0.04, ease: "easeOut" }}
-                />
-              ))}
+            <svg viewBox={`0 0 ${w} ${h}`} className="absolute inset-0 h-full w-full" aria-hidden>
+              {Array.from({ length: branchCount }).map((_, branchId) => {
+                const branch = branchForId(branchId);
+                const dimmed = focusBranchId !== null && focusBranchId !== branchId;
+                return (
+                  <motion.path
+                    key={`sector-${branchId}`}
+                    d={branchSectorPath(cx, cy, branchId, branchCount, Math.min(w, h) * 0.42)}
+                    fill={branch.soft}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: dimmed ? 0.03 : 0.55 }}
+                    transition={{ duration: 0.4, delay: branchId * 0.05 }}
+                  />
+                );
+              })}
+
+              {layout.map((node) => {
+                const branch = branchForId(node.branchId);
+                const dimmed = isDimmed(node.branchId);
+                const active =
+                  selectedNodeId === node.id ||
+                  (focusBranchId !== null && focusBranchId === node.branchId);
+
+                return (
+                  <motion.path
+                    key={`edge-${node.id}`}
+                    d={studyBezierPath(cx, cy, node.x, node.y)}
+                    fill="none"
+                    stroke={branch.color}
+                    strokeWidth={active ? 3.2 : 2.2}
+                    strokeLinecap="round"
+                    strokeOpacity={dimmed ? 0.08 : active ? 0.85 : 0.45}
+                    initial={{ pathLength: 0, opacity: 0 }}
+                    animate={{
+                      pathLength: 1,
+                      opacity: dimmed ? 0.15 : 1,
+                      filter: dimmed ? "blur(1px)" : "none",
+                    }}
+                    transition={{ duration: 0.55, delay: node.branchId * 0.06 }}
+                  />
+                );
+              })}
             </svg>
 
             {title ? (
-              <motion.div
-                data-node
-                initial={{ scale: 0.85, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.4 }}
-                className="absolute z-10 -translate-x-1/2 -translate-y-1/2"
+              <motion.button
+                type="button"
+                data-study-node
+                initial={{ scale: 0.7, opacity: 0 }}
+                animate={{
+                  scale: 1,
+                  opacity: focusBranchId !== null ? 0.35 : 1,
+                  filter: focusBranchId !== null ? "blur(2px)" : "none",
+                }}
+                transition={{ duration: 0.45, type: "spring", stiffness: 180 }}
+                whileHover={{ scale: 1.04 }}
+                onClick={() => {
+                  setSelectedNodeId(null);
+                  setFocusBranchId(null);
+                }}
+                className="absolute z-20 -translate-x-1/2 -translate-y-1/2"
                 style={{ left: toPercent(cx, w), top: toPercent(cy, h) }}
               >
                 <div className="relative">
-                  <div className="absolute inset-0 scale-150 rounded-full bg-accent/20 blur-2xl" />
-                  <div className="relative max-w-[200px] rounded-2xl border border-accent/25 bg-gradient-to-br from-accent to-emerald-700 px-5 py-3.5 text-center text-sm font-semibold leading-snug text-white shadow-[0_16px_40px_rgba(31,107,67,0.35)]">
+                  <div
+                    className="absolute -inset-8 rounded-full blur-3xl"
+                    style={{ background: "rgba(99,102,241,0.25)" }}
+                  />
+                  <div className="relative flex min-h-[120px] min-w-[120px] max-w-[240px] items-center justify-center rounded-full border-4 border-white/80 bg-gradient-to-br from-indigo-500 via-violet-600 to-emerald-600 px-8 py-8 text-center text-base font-bold leading-snug text-white shadow-[0_20px_60px_rgba(99,102,241,0.45)] sm:min-h-[140px] sm:min-w-[140px] sm:text-lg">
                     {title}
                   </div>
                 </div>
-              </motion.div>
+              </motion.button>
             ) : null}
 
-            {layout.map((node, index) => (
-              <motion.div
-                key={node.id}
-                data-node
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.35, delay: 0.1 + index * 0.05 }}
-                whileHover={{ scale: 1.06, y: -2 }}
-                className="absolute z-10 -translate-x-1/2 -translate-y-1/2"
-                style={{ left: toPercent(node.x, w), top: toPercent(node.y, h) }}
-              >
-                <div className="organizer-glass max-w-[148px] rounded-2xl px-3.5 py-2.5 text-center text-[11px] font-medium leading-4 text-foreground shadow-lg">
-                  {node.label}
-                </div>
-              </motion.div>
-            ))}
+            {layout.map((node, index) => {
+              const branch = branchForId(node.branchId);
+              const BranchIcon = branch.icon;
+              const dimmed = isDimmed(node.branchId);
+              const selected = selectedNodeId === node.id;
+
+              return (
+                <motion.button
+                  key={node.id}
+                  type="button"
+                  data-study-node
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{
+                    scale: selected ? 1.12 : dimmed ? 0.88 : 1,
+                    opacity: dimmed ? 0.2 : 1,
+                    filter: dimmed ? "blur(3px)" : "none",
+                  }}
+                  transition={{
+                    duration: 0.35,
+                    delay: 0.08 + index * 0.04,
+                    type: "spring",
+                    stiffness: 260,
+                    damping: 22,
+                  }}
+                  whileHover={dimmed ? undefined : { scale: selected ? 1.14 : 1.08, y: -3 }}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setSelectedNodeId(node.id);
+                  }}
+                  className="absolute z-10 -translate-x-1/2 -translate-y-1/2 text-left"
+                  style={{ left: toPercent(node.x, w), top: toPercent(node.y, h) }}
+                >
+                  <div
+                    className={`relative max-w-[160px] rounded-2xl border-2 px-3.5 py-2.5 shadow-lg transition-shadow ${
+                      selected ? "ring-4 ring-white/60" : ""
+                    }`}
+                    style={{
+                      borderColor: branch.color,
+                      background: `linear-gradient(145deg, white 0%, ${branch.soft} 100%)`,
+                      boxShadow: selected
+                        ? `0 16px 40px ${branch.glow}`
+                        : `0 8px 24px ${branch.glow.replace("0.45", "0.2")}`,
+                    }}
+                  >
+                    <span
+                      className="mb-1.5 flex h-7 w-7 items-center justify-center rounded-lg text-white"
+                      style={{ background: branch.color }}
+                    >
+                      <BranchIcon size={14} />
+                    </span>
+                    <p className="text-[11px] font-semibold leading-4 text-foreground sm:text-xs">
+                      {node.label}
+                    </p>
+                  </div>
+                </motion.button>
+              );
+            })}
           </div>
         </div>
+
+        <AnimatePresence>
+          {selectedNode && selectedBranch && nodeDetail ? (
+            <ConceptMapNodePanel
+              node={selectedNode}
+              branch={selectedBranch}
+              detail={nodeDetail}
+              focusMode={focusBranchId === selectedNode.branchId}
+              onClose={() => setSelectedNodeId(null)}
+              onFocusBranch={() =>
+                setFocusBranchId((current) =>
+                  current === selectedNode.branchId ? null : selectedNode.branchId,
+                )
+              }
+              onStudyBranch={() => setBranchStudyOpen(true)}
+            />
+          ) : null}
+        </AnimatePresence>
+
+        <ConceptMapBranchStudyModal
+          open={branchStudyOpen}
+          branch={selectedBranch}
+          flashcards={branchFlashcards}
+          onClose={() => setBranchStudyOpen(false)}
+        />
       </div>
     </div>
   );
@@ -193,19 +333,19 @@ function CanvasControls({
   onReset: () => void;
 }) {
   return (
-    <div className="organizer-glass flex items-center gap-1 rounded-2xl p-1">
+    <div className="flex items-center gap-1 rounded-2xl border border-white/40 bg-white/70 p-1 shadow-lg backdrop-blur-md dark:bg-black/40">
       <button
         type="button"
-        onClick={() => onZoom(-0.12)}
-        className="flex h-8 w-8 items-center justify-center rounded-xl text-foreground transition hover:bg-foreground/5"
+        onClick={() => onZoom(-0.1)}
+        className="flex h-8 w-8 items-center justify-center rounded-xl transition hover:bg-black/5"
         aria-label="Alejar"
       >
         <Minus size={15} />
       </button>
       <button
         type="button"
-        onClick={() => onZoom(0.12)}
-        className="flex h-8 w-8 items-center justify-center rounded-xl text-foreground transition hover:bg-foreground/5"
+        onClick={() => onZoom(0.1)}
+        className="flex h-8 w-8 items-center justify-center rounded-xl transition hover:bg-black/5"
         aria-label="Acercar"
       >
         <Plus size={15} />
@@ -213,7 +353,8 @@ function CanvasControls({
       <button
         type="button"
         onClick={onReset}
-        className="flex h-8 items-center gap-1.5 rounded-xl px-2.5 text-xs font-medium text-muted-foreground transition hover:bg-foreground/5 hover:text-foreground"
+        className="flex h-8 w-8 items-center justify-center rounded-xl transition hover:bg-black/5"
+        aria-label="Restablecer"
       >
         <RotateCcw size={13} />
       </button>

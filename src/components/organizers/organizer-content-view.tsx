@@ -56,6 +56,12 @@ export function OrganizerContentView({
           title={parsed.conceptMap?.title}
           nodes={conceptNodes}
           hero={studio}
+          studyContext={{
+            summary: parsed.summary,
+            simplifiedExplanation: parsed.simplifiedExplanation,
+            flashcards: parsed.flashcards,
+            reviewQuestions: parsed.reviewQuestions,
+          }}
         />
       ) : null}
 

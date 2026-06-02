@@ -170,3 +170,18 @@ textarea {
     grid-column: 1 / -1 !important;
   }
 }
+
+.study-map-viewport {
+  background:
+    radial-gradient(ellipse 90% 70% at 50% 0%, rgba(99, 102, 241, 0.14), transparent 55%),
+    radial-gradient(ellipse 70% 60% at 100% 100%, rgba(16, 185, 129, 0.12), transparent 50%),
+    radial-gradient(ellipse 60% 50% at 0% 80%, rgba(236, 72, 153, 0.08), transparent 45%),
+    linear-gradient(165deg, #f8fafc 0%, #eef2ff 35%, #ecfdf5 100%);
+}
+
+.dark .study-map-viewport {
+  background:
+    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(99, 102, 241, 0.22), transparent 55%),
+    radial-gradient(ellipse 60% 50% at 100% 100%, rgba(16, 185, 129, 0.15), transparent 50%),
+    linear-gradient(165deg, #0f172a 0%, #1e1b4b 40%, #0f172a 100%);
+}

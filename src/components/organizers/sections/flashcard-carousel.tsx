@@ -7,7 +7,13 @@ import { OrganizerFloatPanel } from "@/components/organizers/sections/organizer-
 
 type Flashcard = { question?: string; answer?: string };
 
-export function FlashcardCarousel({ flashcards }: { flashcards: Flashcard[] }) {
+export function FlashcardCarousel({
+  flashcards,
+  embedded = false,
+}: {
+  flashcards: Flashcard[];
+  embedded?: boolean;
+}) {
   const cards = flashcards.filter((card) => card.question || card.answer);
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
@@ -16,8 +22,8 @@ export function FlashcardCarousel({ flashcards }: { flashcards: Flashcard[] }) {
 
   const card = cards[index];
 
-  return (
-    <OrganizerFloatPanel title="Flashcards" hint="Toca para voltear" icon={<Layers size={17} />} span={6}>
+  const body = (
+    <>
       <button
         type="button"
         onClick={() => setFlipped((value) => !value)}
@@ -66,6 +72,16 @@ export function FlashcardCarousel({ flashcards }: { flashcards: Flashcard[] }) {
           </button>
         </div>
       </div>
+    </>
+  );
+
+  if (embedded) {
+    return body;
+  }
+
+  return (
+    <OrganizerFloatPanel title="Flashcards" hint="Toca para voltear" icon={<Layers size={17} />} span={6}>
+      {body}
     </OrganizerFloatPanel>
   );
 }
