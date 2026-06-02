@@ -114,14 +114,32 @@ export function LearningAnalyticsPanel({
   questionsWrong: number;
   organizerProgress: number;
 }) {
+  const hasQuestions = questionsCorrect + questionsWrong > 0;
+  const hasConcepts = conceptsStudied > 0;
+  const hasMastery = hasQuestions || organizerProgress > 0;
+  const hasReading = readingMinutes >= 2;
+
   const stats = [
-    { label: "Dominio estimado", value: `${mastery}%`, icon: Target, accent: true },
-    { label: "Conceptos estudiados", value: String(conceptsStudied), icon: Brain },
-    { label: "Tiempo de lectura", value: `${readingMinutes} min`, icon: Clock },
-    { label: "Preguntas acertadas", value: String(questionsCorrect), icon: CheckCircle2 },
-    { label: "Preguntas falladas", value: String(questionsWrong), icon: XCircle },
-    { label: "Progreso organizador", value: `${organizerProgress}%`, icon: BarChart3 },
-  ];
+    hasMastery ? { label: "Dominio estimado", value: `${mastery}%`, icon: Target, accent: true } : null,
+    hasConcepts ? { label: "Conceptos estudiados", value: String(conceptsStudied), icon: Brain } : null,
+    hasReading ? { label: "Tiempo de lectura", value: `${readingMinutes} min`, icon: Clock } : null,
+    hasQuestions && questionsCorrect > 0
+      ? { label: "Preguntas acertadas", value: String(questionsCorrect), icon: CheckCircle2 }
+      : null,
+    hasQuestions && questionsWrong > 0
+      ? { label: "Preguntas falladas", value: String(questionsWrong), icon: XCircle }
+      : null,
+    organizerProgress > 0
+      ? { label: "Progreso organizador", value: `${organizerProgress}%`, icon: BarChart3 }
+      : null,
+  ].filter(Boolean) as Array<{
+    label: string;
+    value: string;
+    icon: typeof Target;
+    accent?: boolean;
+  }>;
+
+  if (!stats.length) return null;
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-[rgba(0,255,213,0.15)] bg-[rgba(16,39,48,0.88)] backdrop-blur-2xl">

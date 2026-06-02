@@ -2,16 +2,25 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Map as MapIcon, Maximize2, Minus, Plus, RotateCcw } from "lucide-react";
+import {
+  Crosshair,
+  Map as MapIcon,
+  Maximize2,
+  Minus,
+  Plus,
+  RotateCcw,
+} from "lucide-react";
 import { ConceptMapBranchStudyModal } from "@/components/organizers/sections/concept-map-branch-study";
 import {
   StudyAssistantPanel,
   getBranchForNode,
 } from "@/components/organizers/sections/study-assistant-panel";
 import {
+  applyCustomPositions,
   branchForId,
   buildNodeStudyDetail,
   CENTER_NODE_SIZE,
+  computeCenterTransform,
   computeFitTransform,
   flashcardsForBranch,
   getMapEdges,
@@ -20,18 +29,24 @@ import {
   layoutStudyMapNodes,
   nodesInBranch,
   OUTER_RADIUS,
+  recomputeLayoutBounds,
   studyBezierPath,
   type NodeStudyDetail,
   type OrganizerStudyContext,
   type StudyMapNode,
 } from "@/lib/organizers/concept-map-study";
+import {
+  clearMapPositions,
+  loadMapPositions,
+  saveMapPositions,
+} from "@/lib/organizers/map-positions-storage";
 
 export function ConceptMapCanvas({
   title,
   nodes,
   hero = false,
   fullscreen = false,
-  externalPanel = false,
+  mapKey = "default-map",
   studyContext = {},
   onNodeSelect,
   onConceptStudied,
@@ -40,7 +55,7 @@ export function ConceptMapCanvas({
   nodes: string[];
   hero?: boolean;
   fullscreen?: boolean;
-  externalPanel?: boolean;
+  mapKey?: string;
   studyContext?: OrganizerStudyContext;
   onNodeSelect?: (node: StudyMapNode | null, detail: NodeStudyDetail | null) => void;
   onConceptStudied?: (label: string) => void;
@@ -48,14 +63,27 @@ export function ConceptMapCanvas({
   const viewportRef = useRef<HTMLDivElement>(null);
   const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 });
   const [fitApplied, setFitApplied] = useState(false);
-  const [dragging, setDragging] = useState(false);
+  const [canvasDragging, setCanvasDragging] = useState(false);
+  const [nodeDraggingId, setNodeDraggingId] = useState<string | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [hoveredEdge, setHoveredEdge] = useState<string | null>(null);
   const [focusBranchId, setFocusBranchId] = useState<number | null>(null);
   const [branchStudyOpen, setBranchStudyOpen] = useState(false);
-  const dragStart = useRef({ x: 0, y: 0, originX: 0, originY: 0 });
+  const [customPositions, setCustomPositions] = useState<Record<string, { x: number; y: number }>>({});
+  const canvasDragStart = useRef({ x: 0, y: 0, originX: 0, originY: 0 });
+  const nodeDragStart = useRef({ x: 0, y: 0, originX: 0, originY: 0, id: "", moved: false });
 
-  const layout = useMemo(() => layoutStudyMapNodes(title, nodes), [title, nodes]);
+  const baseLayout = useMemo(() => layoutStudyMapNodes(title, nodes), [title, nodes]);
+
+  useEffect(() => {
+    setCustomPositions(loadMapPositions(mapKey));
+  }, [mapKey, baseLayout]);
+
+  const layout = useMemo(() => {
+    const merged = applyCustomPositions(baseLayout, customPositions);
+    return recomputeLayoutBounds(merged);
+  }, [baseLayout, customPositions]);
+
   const { cx, cy, w, h } = layout;
   const edges = useMemo(() => getMapEdges(layout), [layout]);
 
@@ -89,57 +117,59 @@ export function ConceptMapCanvas({
     const el = viewportRef.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
-    const next = computeFitTransform(rect.width, rect.height, layout);
-    setTransform(next);
+    setTransform(computeFitTransform(rect.width, rect.height, layout, fullscreen ? 12 : 16));
     setFitApplied(true);
-  }, [layout]);
+  }, [fullscreen, layout]);
 
-  useLayoutEffect(() => {
-    setFitApplied(false);
+  const centerMap = useCallback(() => {
+    const el = viewportRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    setTransform(computeCenterTransform(rect.width, rect.height, layout, transform.scale));
+  }, [layout, transform.scale]);
+
+  const resetLayout = useCallback(() => {
+    clearMapPositions(mapKey);
+    setCustomPositions({});
     setSelectedNodeId(null);
     setFocusBranchId(null);
-  }, [layout]);
+    setFitApplied(false);
+  }, [mapKey]);
 
   useLayoutEffect(() => {
     if (fitApplied) return;
     applyFitView();
     const t = window.setTimeout(applyFitView, 80);
     return () => window.clearTimeout(t);
-  }, [applyFitView, fitApplied]);
+  }, [applyFitView, fitApplied, layout]);
 
   useEffect(() => {
     const el = viewportRef.current;
     if (!el) return;
     const ro = new ResizeObserver(() => {
-      if (!dragging && !selectedNodeId) applyFitView();
+      if (!canvasDragging && !nodeDraggingId && !selectedNodeId) applyFitView();
     });
     ro.observe(el);
     return () => ro.disconnect();
-  }, [applyFitView, dragging, selectedNodeId]);
+  }, [applyFitView, canvasDragging, nodeDraggingId, selectedNodeId]);
 
   const zoom = useCallback((delta: number) => {
     setTransform((current) => ({
       ...current,
-      scale: Math.min(2.2, Math.max(0.28, current.scale + delta)),
+      scale: Math.min(2.4, Math.max(0.28, current.scale + delta)),
     }));
   }, []);
-
-  const reset = useCallback(() => {
-    applyFitView();
-    setFocusBranchId(null);
-    setSelectedNodeId(null);
-  }, [applyFitView]);
 
   function onWheel(event: React.WheelEvent) {
     event.preventDefault();
     zoom(event.deltaY > 0 ? -0.06 : 0.06);
   }
 
-  function onPointerDown(event: React.PointerEvent) {
+  function onCanvasPointerDown(event: React.PointerEvent) {
     if ((event.target as HTMLElement).closest("[data-study-node]")) return;
     if ((event.target as HTMLElement).closest("[data-study-panel]")) return;
-    setDragging(true);
-    dragStart.current = {
+    setCanvasDragging(true);
+    canvasDragStart.current = {
       x: event.clientX,
       y: event.clientY,
       originX: transform.x,
@@ -148,34 +178,67 @@ export function ConceptMapCanvas({
     event.currentTarget.setPointerCapture(event.pointerId);
   }
 
-  function onPointerMove(event: React.PointerEvent) {
-    if (!dragging) return;
+  function onCanvasPointerMove(event: React.PointerEvent) {
+    if (nodeDraggingId) {
+      const dx = (event.clientX - nodeDragStart.current.x) / transform.scale;
+      const dy = (event.clientY - nodeDragStart.current.y) / transform.scale;
+      if (Math.hypot(event.clientX - nodeDragStart.current.x, event.clientY - nodeDragStart.current.y) > 4) {
+        nodeDragStart.current.moved = true;
+      }
+      const next = {
+        ...customPositions,
+        [nodeDraggingId]: {
+          x: nodeDragStart.current.originX + dx,
+          y: nodeDragStart.current.originY + dy,
+        },
+      };
+      setCustomPositions(next);
+      saveMapPositions(mapKey, next);
+      return;
+    }
+    if (!canvasDragging) return;
     setTransform((current) => ({
       ...current,
-      x: dragStart.current.originX + (event.clientX - dragStart.current.x),
-      y: dragStart.current.originY + (event.clientY - dragStart.current.y),
+      x: canvasDragStart.current.originX + (event.clientX - canvasDragStart.current.x),
+      y: canvasDragStart.current.originY + (event.clientY - canvasDragStart.current.y),
     }));
   }
 
-  function onPointerUp(event: React.PointerEvent) {
-    setDragging(false);
+  function onCanvasPointerUp(event: React.PointerEvent) {
+    setCanvasDragging(false);
+    setNodeDraggingId(null);
     event.currentTarget.releasePointerCapture(event.pointerId);
   }
 
+  function startNodeDrag(event: React.PointerEvent, node: StudyMapNode) {
+    event.stopPropagation();
+    event.preventDefault();
+    setNodeDraggingId(node.id);
+    nodeDragStart.current = {
+      id: node.id,
+      x: event.clientX,
+      y: event.clientY,
+      originX: node.x,
+      originY: node.y,
+      moved: false,
+    };
+    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+  }
+
   function isDimmed(nodeBranchId: number, nodeId: string) {
-    if (selectedNodeId) {
-      return !relatedIds.has(nodeId);
-    }
+    if (selectedNodeId) return !relatedIds.has(nodeId);
     return focusBranchId !== null && focusBranchId !== nodeBranchId;
   }
 
-  function selectNode(node: StudyMapNode) {
+  function selectNode(node: StudyMapNode, dragged = false) {
+    if (dragged) return;
     setSelectedNodeId(node.id);
     setFocusBranchId(null);
     onConceptStudied?.(node.label);
   }
 
   const toPercent = (value: number, total: number) => `${(value / total) * 100}%`;
+  const nodeById = useMemo(() => new Map(layout.nodes.map((n) => [n.id, n])), [layout.nodes]);
 
   const viewportHeight = fullscreen
     ? "h-full min-h-0 flex-1"
@@ -183,43 +246,37 @@ export function ConceptMapCanvas({
       ? "h-[min(78vh,620px)] min-h-[360px]"
       : "h-[min(62vh,480px)] min-h-[320px]";
 
-  const nodeById = useMemo(() => new Map(layout.nodes.map((n) => [n.id, n])), [layout.nodes]);
-
   return (
-    <div className={fullscreen ? "flex h-full min-h-0 flex-1 flex-col" : hero ? "w-full" : "rounded-2xl p-1"}>
+    <div className={fullscreen ? "relative flex h-full min-h-0 flex-1 flex-col" : hero ? "w-full" : "rounded-2xl p-1"}>
       {!hero && !fullscreen ? (
         <div className="mb-3 flex items-center justify-between px-1">
           <div className="flex items-center gap-2">
             <MapIcon size={16} className="text-[#00FFD5]" />
             <span className="text-sm font-semibold text-[#F5F7FA]">Red de conocimiento</span>
           </div>
-          <CanvasControls onZoom={zoom} onReset={reset} onFit={applyFitView} />
+          <MapControls onZoom={zoom} onResetLayout={resetLayout} onCenter={centerMap} onFit={applyFitView} compact />
         </div>
       ) : null}
 
-      <div
-        ref={viewportRef}
-        onWheel={onWheel}
-        className={`study-map-viewport relative overflow-hidden rounded-2xl ${viewportHeight}`}
-      >
-        {hero || fullscreen ? (
-          <div className="absolute right-3 top-3 z-20">
-            <CanvasControls onZoom={zoom} onReset={reset} onFit={applyFitView} />
+      <div ref={viewportRef} onWheel={onWheel} className={`study-map-viewport relative overflow-hidden rounded-2xl ${viewportHeight}`}>
+        {(hero || fullscreen) && (
+          <div className="absolute left-3 top-3 z-20">
+            <MapControls onZoom={zoom} onResetLayout={resetLayout} onCenter={centerMap} onFit={applyFitView} />
           </div>
-        ) : null}
+        )}
 
         {focusBranchId !== null ? (
-          <div className="absolute left-3 top-3 z-20 rounded-full border border-[rgba(0,255,213,0.25)] bg-[rgba(7,19,26,0.75)] px-3 py-1 text-[11px] font-medium text-[#00FFD5] backdrop-blur-md">
+          <div className="absolute right-3 top-3 z-20 rounded-full border border-[rgba(0,255,213,0.25)] bg-[rgba(7,19,26,0.75)] px-3 py-1 text-[11px] font-medium text-[#00FFD5] backdrop-blur-md">
             Enfoque · {branchForId(focusBranchId).name}
           </div>
         ) : null}
 
         <div
-          className={`absolute inset-0 touch-none ${dragging ? "cursor-grabbing" : "cursor-grab"}`}
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          onPointerLeave={onPointerUp}
+          className={`absolute inset-0 touch-none ${canvasDragging ? "cursor-grabbing" : nodeDraggingId ? "cursor-move" : "cursor-grab"}`}
+          onPointerDown={onCanvasPointerDown}
+          onPointerMove={onCanvasPointerMove}
+          onPointerUp={onCanvasPointerUp}
+          onPointerLeave={onCanvasPointerUp}
         >
           <div
             className="absolute left-1/2 top-1/2 origin-center will-change-transform"
@@ -227,7 +284,7 @@ export function ConceptMapCanvas({
               width: w,
               height: h,
               transform: `translate(calc(-50% + ${transform.x}px), calc(-50% + ${transform.y}px)) scale(${transform.scale})`,
-              transition: dragging ? "none" : "transform 280ms cubic-bezier(0.22, 1, 0.36, 1)",
+              transition: canvasDragging || nodeDraggingId ? "none" : "transform 280ms cubic-bezier(0.22, 1, 0.36, 1)",
             }}
           >
             <svg viewBox={`0 0 ${w} ${h}`} className="absolute inset-0 h-full w-full" aria-hidden>
@@ -236,9 +293,9 @@ export function ConceptMapCanvas({
                   key={`ring-${i}`}
                   cx={cx}
                   cy={cy}
-                  r={radius}
+                  r={radius * (1 + layout.nodes.length * 0.015)}
                   fill="none"
-                  stroke="rgba(0,255,213,0.06)"
+                  stroke="rgba(0,255,213,0.05)"
                   strokeWidth={1}
                   strokeDasharray="4 8"
                 />
@@ -251,8 +308,6 @@ export function ConceptMapCanvas({
 
                 const x1 = fromNode ? fromNode.x : cx;
                 const y1 = fromNode ? fromNode.y : cy;
-                const x2 = toNode.x;
-                const y2 = toNode.y;
                 const edgeKey = `${edge.from}-${edge.to}`;
                 const branch = branchForId(toNode.branchId);
                 const dimmed =
@@ -268,20 +323,13 @@ export function ConceptMapCanvas({
                 return (
                   <motion.path
                     key={edgeKey}
-                    d={studyBezierPath(x1, y1, x2, y2)}
+                    d={studyBezierPath(x1, y1, toNode.x, toNode.y)}
                     fill="none"
                     stroke={branch.color}
                     strokeWidth={active ? 2.6 : 1.6}
                     strokeLinecap="round"
                     strokeOpacity={dimmed ? 0.06 : active ? 0.95 : 0.32}
                     className={active ? "tron-edge-flow" : undefined}
-                    initial={{ pathLength: 0, opacity: 0 }}
-                    animate={{
-                      pathLength: 1,
-                      opacity: dimmed ? 0.1 : 1,
-                      filter: dimmed ? "blur(2px)" : "none",
-                    }}
-                    transition={{ duration: 0.5 }}
                     onMouseEnter={() => setHoveredEdge(edgeKey)}
                     onMouseLeave={() => setHoveredEdge(null)}
                     style={{ pointerEvents: "stroke" }}
@@ -291,21 +339,7 @@ export function ConceptMapCanvas({
             </svg>
 
             {title ? (
-              <motion.button
-                type="button"
-                data-study-node
-                initial={{ scale: 0.7, opacity: 0 }}
-                animate={{
-                  scale: selectedNodeId ? 0.92 : 1,
-                  opacity: selectedNodeId ? 0.55 : 1,
-                }}
-                transition={{ duration: 0.4, type: "spring", stiffness: 200 }}
-                whileHover={{ scale: 1.04 }}
-                onClick={() => {
-                  setSelectedNodeId(null);
-                  setFocusBranchId(null);
-                  onNodeSelect?.(null, null);
-                }}
+              <div
                 className="absolute z-20 -translate-x-1/2 -translate-y-1/2"
                 style={{ left: toPercent(cx, w), top: toPercent(cy, h) }}
               >
@@ -316,7 +350,7 @@ export function ConceptMapCanvas({
                     style={{
                       minWidth: CENTER_NODE_SIZE,
                       minHeight: CENTER_NODE_SIZE,
-                      maxWidth: 200,
+                      maxWidth: 220,
                       padding: "12px 16px",
                       fontSize: title.length > 28 ? "11px" : "13px",
                     }}
@@ -324,7 +358,7 @@ export function ConceptMapCanvas({
                     {title}
                   </div>
                 </div>
-              </motion.button>
+              </div>
             ) : null}
 
             {layout.nodes.map((node, index) => {
@@ -333,36 +367,30 @@ export function ConceptMapCanvas({
               const dimmed = isDimmed(node.branchId, node.id);
               const selected = selectedNodeId === node.id;
               const related = !selectedNodeId || relatedIds.has(node.id);
+              const dragging = nodeDraggingId === node.id;
 
               return (
-                <motion.button
+                <motion.div
                   key={node.id}
-                  type="button"
                   data-study-node
                   initial={{ scale: 0, opacity: 0 }}
                   animate={{
-                    scale: selected ? 1.1 : dimmed ? 0.82 : 1,
+                    scale: dragging ? 1.08 : selected ? 1.08 : dimmed ? 0.82 : 1,
                     opacity: dimmed ? 0.12 : related ? 1 : 0.3,
                     filter: dimmed ? "blur(5px)" : "none",
                   }}
-                  transition={{
-                    duration: 0.3,
-                    delay: 0.04 + index * 0.02,
-                    type: "spring",
-                    stiffness: 280,
-                    damping: 24,
-                  }}
-                  whileHover={dimmed ? undefined : { scale: selected ? 1.12 : 1.06, y: -2 }}
+                  transition={{ duration: 0.25, delay: index * 0.02 }}
+                  className="absolute z-10 -translate-x-1/2 -translate-y-1/2"
+                  style={{ left: toPercent(node.x, w), top: toPercent(node.y, h) }}
+                  onPointerDown={(event) => startNodeDrag(event, node)}
                   onClick={(event) => {
                     event.stopPropagation();
-                    selectNode(node);
+                    selectNode(node, nodeDragStart.current.moved);
                   }}
-                  className="absolute z-10 -translate-x-1/2 -translate-y-1/2 text-left"
-                  style={{ left: toPercent(node.x, w), top: toPercent(node.y, h) }}
                 >
                   <div
-                    className={`tron-node-glass relative max-w-[128px] rounded-xl px-2.5 py-2 transition-all duration-200 ${
-                      selected
+                    className={`tron-node-glass relative w-[min(148px,38vw)] cursor-grab rounded-xl px-3 py-2.5 active:cursor-grabbing ${
+                      selected || dragging
                         ? "ring-2 ring-[#00FFD5] shadow-[0_0_32px_rgba(0,255,213,0.5)]"
                         : "hover:shadow-[0_0_24px_rgba(0,255,213,0.3)]"
                     }`}
@@ -372,28 +400,32 @@ export function ConceptMapCanvas({
                     }}
                   >
                     <span
-                      className="mb-1 flex h-5 w-5 items-center justify-center rounded-md text-[#07131A]"
+                      className="mb-1.5 flex h-5 w-5 items-center justify-center rounded-md text-[#07131A]"
                       style={{ background: `linear-gradient(135deg, ${branch.color}, rgba(0,191,255,0.8))` }}
                     >
                       <BranchIcon size={10} />
                     </span>
-                    <p className="text-[10px] font-semibold leading-3.5 text-[#F5F7FA] line-clamp-2">
-                      {node.label}
-                    </p>
-                    <span className="mt-1 inline-block rounded px-1 text-[8px] uppercase tracking-wider text-[#00FFD5]/80">
-                      {node.ring === 1 ? "Núcleo" : "Detalle"}
-                    </span>
+                    <p className="text-[11px] font-semibold leading-4 text-[#F5F7FA]">{node.label}</p>
                   </div>
-                </motion.button>
+                </motion.div>
               );
             })}
           </div>
         </div>
 
-        {!externalPanel ? (
-          <AnimatePresence>
-            {selectedNode && selectedBranch && nodeDetail ? (
+        <AnimatePresence>
+          {selectedNode && selectedBranch && nodeDetail ? (
+            <motion.div
+              data-study-panel
+              initial={{ x: "100%", opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: "100%", opacity: 0 }}
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              className="absolute inset-y-0 right-0 z-40 w-[min(100%,400px)] border-l border-[rgba(0,255,213,0.15)] bg-[rgba(7,19,26,0.88)] p-3 shadow-[-12px_0_48px_rgba(0,0,0,0.45)] backdrop-blur-xl"
+            >
               <StudyAssistantPanel
+                embedded
+                drawer
                 node={selectedNode}
                 branch={selectedBranch}
                 detail={nodeDetail}
@@ -403,15 +435,13 @@ export function ConceptMapCanvas({
                   onNodeSelect?.(null, null);
                 }}
                 onFocusBranch={() =>
-                  setFocusBranchId((current) =>
-                    current === selectedNode.branchId ? null : selectedNode.branchId,
-                  )
+                  setFocusBranchId((c) => (c === selectedNode.branchId ? null : selectedNode.branchId))
                 }
                 onStudyBranch={() => setBranchStudyOpen(true)}
               />
-            ) : null}
-          </AnimatePresence>
-        ) : null}
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
 
         <ConceptMapBranchStudyModal
           open={branchStudyOpen}
@@ -424,29 +454,69 @@ export function ConceptMapCanvas({
   );
 }
 
-function CanvasControls({
+function MapControls({
   onZoom,
-  onReset,
+  onResetLayout,
+  onCenter,
   onFit,
+  compact = false,
 }: {
   onZoom: (delta: number) => void;
-  onReset: () => void;
+  onResetLayout: () => void;
+  onCenter: () => void;
   onFit: () => void;
+  compact?: boolean;
 }) {
+  if (compact) {
+    return (
+      <div className="flex items-center gap-1 rounded-xl border border-[rgba(0,255,213,0.2)] bg-[rgba(16,39,48,0.9)] p-1 backdrop-blur-md">
+        <IconBtn onClick={() => onZoom(-0.08)} label="Alejar"><Minus size={15} /></IconBtn>
+        <IconBtn onClick={() => onZoom(0.08)} label="Acercar"><Plus size={15} /></IconBtn>
+        <IconBtn onClick={onFit} label="Fit View"><Maximize2 size={13} /></IconBtn>
+        <IconBtn onClick={onResetLayout} label="Restablecer"><RotateCcw size={13} /></IconBtn>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex items-center gap-1 rounded-xl border border-[rgba(0,255,213,0.2)] bg-[rgba(16,39,48,0.9)] p-1 shadow-[0_0_24px_rgba(0,255,213,0.12)] backdrop-blur-md">
-      <button type="button" onClick={() => onZoom(-0.08)} className="flex h-8 w-8 items-center justify-center rounded-lg text-[#F5F7FA] transition hover:bg-[rgba(0,255,213,0.1)] hover:text-[#00FFD5]" aria-label="Alejar">
-        <Minus size={15} />
+    <div className="flex flex-col gap-2 rounded-xl border border-[rgba(0,255,213,0.2)] bg-[rgba(16,39,48,0.9)] p-2 shadow-[0_0_24px_rgba(0,255,213,0.12)] backdrop-blur-md">
+      <div className="flex gap-1">
+        <IconBtn onClick={() => onZoom(-0.08)} label="Alejar"><Minus size={15} /></IconBtn>
+        <IconBtn onClick={() => onZoom(0.08)} label="Acercar"><Plus size={15} /></IconBtn>
+      </div>
+      <button type="button" onClick={onFit} className="rounded-lg px-2.5 py-1.5 text-[10px] font-semibold text-[#00FFD5] hover:bg-[rgba(0,255,213,0.1)]">
+        <Maximize2 size={12} className="mr-1 inline" />
+        Fit View
       </button>
-      <button type="button" onClick={() => onZoom(0.08)} className="flex h-8 w-8 items-center justify-center rounded-lg text-[#F5F7FA] transition hover:bg-[rgba(0,255,213,0.1)] hover:text-[#00FFD5]" aria-label="Acercar">
-        <Plus size={15} />
+      <button type="button" onClick={onCenter} className="rounded-lg px-2.5 py-1.5 text-[10px] font-semibold text-muted-foreground hover:bg-[rgba(0,255,213,0.08)] hover:text-[#F5F7FA]">
+        <Crosshair size={12} className="mr-1 inline" />
+        Centrar mapa
       </button>
-      <button type="button" onClick={onFit} className="flex h-8 w-8 items-center justify-center rounded-lg text-[#F5F7FA] transition hover:bg-[rgba(0,255,213,0.1)] hover:text-[#00FFD5]" aria-label="Ajustar vista">
-        <Maximize2 size={13} />
-      </button>
-      <button type="button" onClick={onReset} className="flex h-8 w-8 items-center justify-center rounded-lg text-[#F5F7FA] transition hover:bg-[rgba(0,255,213,0.1)] hover:text-[#00FFD5]" aria-label="Restablecer">
-        <RotateCcw size={13} />
+      <button type="button" onClick={onResetLayout} className="rounded-lg px-2.5 py-1.5 text-[10px] font-semibold text-muted-foreground hover:bg-[rgba(0,255,213,0.08)] hover:text-[#F5F7FA]">
+        <RotateCcw size={12} className="mr-1 inline" />
+        Restablecer layout
       </button>
     </div>
+  );
+}
+
+function IconBtn({
+  children,
+  onClick,
+  label,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      onClick={onClick}
+      className="flex h-8 w-8 items-center justify-center rounded-lg text-[#F5F7FA] transition hover:bg-[rgba(0,255,213,0.1)] hover:text-[#00FFD5]"
+    >
+      {children}
+    </button>
   );
 }

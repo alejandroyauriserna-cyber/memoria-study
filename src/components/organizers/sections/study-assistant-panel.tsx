@@ -49,6 +49,7 @@ export function StudyAssistantPanel({
   onFocusBranch,
   onStudyBranch,
   embedded = false,
+  drawer = false,
 }: {
   node: StudyMapNode;
   branch: StudyBranch;
@@ -58,6 +59,7 @@ export function StudyAssistantPanel({
   onFocusBranch: () => void;
   onStudyBranch: () => void;
   embedded?: boolean;
+  drawer?: boolean;
 }) {
   const BranchIcon = branch.icon;
   const [collapsed, setCollapsed] = useState(false);
@@ -216,7 +218,11 @@ export function StudyAssistantPanel({
     return (
       <div
         data-study-panel
-        className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-[rgba(0,255,213,0.2)] bg-[rgba(16,39,48,0.88)] shadow-[0_0_48px_rgba(0,255,213,0.1)] backdrop-blur-2xl"
+        className={`flex h-full min-h-0 flex-col overflow-hidden ${
+          drawer
+            ? ""
+            : "rounded-2xl border border-[rgba(0,255,213,0.2)] bg-[rgba(16,39,48,0.88)] shadow-[0_0_48px_rgba(0,255,213,0.1)] backdrop-blur-2xl"
+        }`}
       >
         {content}
       </div>

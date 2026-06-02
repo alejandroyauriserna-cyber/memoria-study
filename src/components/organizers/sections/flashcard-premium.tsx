@@ -75,10 +75,12 @@ export function FlashcardPremium({
   flashcards,
   deckKey = "default",
   embedded = false,
+  quizlet = false,
 }: {
   flashcards: Flashcard[];
   deckKey?: string;
   embedded?: boolean;
+  quizlet?: boolean;
 }) {
   const cards = flashcards.filter((card) => card.question || card.answer);
   const [index, setIndex] = useState(0);
@@ -176,21 +178,27 @@ export function FlashcardPremium({
       <button
         type="button"
         onClick={() => setFlipped((value) => !value)}
-        className="relative mx-auto block min-h-48 w-full [perspective:1400px]"
+        className={`relative mx-auto block w-full [perspective:1600px] ${
+          quizlet ? "min-h-[min(52vh,420px)]" : "min-h-48"
+        }`}
       >
         <motion.div
           animate={{ rotateY: flipped ? 180 : 0 }}
           transition={{ type: "spring", stiffness: 180, damping: 22 }}
-          className="relative min-h-48 w-full [transform-style:preserve-3d]"
+          className={`relative w-full [transform-style:preserve-3d] ${quizlet ? "min-h-[min(52vh,420px)]" : "min-h-48"}`}
         >
-          <div className="tron-flashcard-front absolute inset-0 flex flex-col items-center justify-center rounded-2xl px-6 py-8 text-center [backface-visibility:hidden]">
+          <div className="tron-flashcard-front absolute inset-0 flex flex-col items-center justify-center rounded-2xl px-8 py-10 text-center [backface-visibility:hidden]">
             <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#00FFD5]">Pregunta</p>
-            <p className="mt-4 text-lg font-semibold leading-8 text-[#F5F7FA]">{card.question}</p>
-            <p className="mt-6 text-xs text-muted-foreground">Toca para voltear</p>
+            <p className={`mt-4 font-semibold leading-relaxed text-[#F5F7FA] ${quizlet ? "text-2xl md:text-3xl" : "text-lg leading-8"}`}>
+              {card.question}
+            </p>
+            <p className="mt-8 text-xs text-muted-foreground">Toca para voltear</p>
           </div>
-          <div className="tron-flashcard-back absolute inset-0 flex flex-col items-center justify-center rounded-2xl px-6 py-8 text-center text-[#07131A] [backface-visibility:hidden] [transform:rotateY(180deg)]">
+          <div className="tron-flashcard-back absolute inset-0 flex flex-col items-center justify-center rounded-2xl px-8 py-10 text-center text-[#07131A] [backface-visibility:hidden] [transform:rotateY(180deg)]">
             <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#07131A]/70">Respuesta</p>
-            <p className="mt-4 text-lg font-semibold leading-8">{card.answer}</p>
+            <p className={`mt-4 font-semibold leading-relaxed ${quizlet ? "text-xl md:text-2xl" : "text-lg leading-8"}`}>
+              {card.answer}
+            </p>
           </div>
         </motion.div>
       </button>
@@ -237,9 +245,10 @@ export function FlashcardPremium({
         </div>
       ) : null}
 
-      <div className="mt-5 flex items-center justify-between">
-        <p className="text-xs text-muted-foreground">
-          {index + 1} / {cards.length} · Tarjeta {progress.mastery}% dominada
+      <div className={`mt-5 flex items-center justify-between ${quizlet ? "px-2" : ""}`}>
+        <p className="text-sm text-muted-foreground">
+          {index + 1} / {cards.length}
+          {overallMastery > 0 ? ` · ${overallMastery}% dominio global` : ""}
         </p>
         <div className="flex gap-2">
           <button
@@ -248,9 +257,12 @@ export function FlashcardPremium({
               setFlipped(false);
               setIndex((v) => (v - 1 + cards.length) % cards.length);
             }}
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-[rgba(0,255,213,0.15)] text-[#F5F7FA] transition hover:text-[#00FFD5]"
+            className={`flex items-center justify-center rounded-xl border border-[rgba(0,255,213,0.2)] text-[#F5F7FA] transition hover:border-[rgba(0,255,213,0.4)] hover:text-[#00FFD5] ${
+              quizlet ? "h-11 px-4 text-sm font-semibold" : "h-9 w-9"
+            }`}
           >
-            <ChevronLeft size={16} />
+            <ChevronLeft size={quizlet ? 18 : 16} />
+            {quizlet ? <span className="ml-1">Anterior</span> : null}
           </button>
           <button
             type="button"
@@ -258,16 +270,19 @@ export function FlashcardPremium({
               setFlipped(false);
               setIndex((v) => (v + 1) % cards.length);
             }}
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-[rgba(0,255,213,0.15)] text-[#F5F7FA] transition hover:text-[#00FFD5]"
+            className={`flex items-center justify-center rounded-xl border border-[rgba(0,255,213,0.2)] bg-[rgba(0,255,213,0.08)] text-[#00FFD5] transition hover:bg-[rgba(0,255,213,0.15)] ${
+              quizlet ? "h-11 px-4 text-sm font-semibold" : "h-9 w-9"
+            }`}
           >
-            <ChevronRight size={16} />
+            {quizlet ? <span className="mr-1">Siguiente</span> : null}
+            <ChevronRight size={quizlet ? 18 : 16} />
           </button>
         </div>
       </div>
     </>
   );
 
-  if (embedded) return body;
+  if (embedded || quizlet) return body;
 
   return (
     <OrganizerFloatPanel title="Flashcards inteligentes" hint="Repetición espaciada · Anki-style" icon={<Layers size={17} />} span={6}>

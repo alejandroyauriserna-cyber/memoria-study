@@ -45,9 +45,9 @@ export type StudyMapLayout = {
   h: number;
 };
 
-export const NODE_W = 108;
-export const NODE_H = 32;
-export const CENTER_NODE_SIZE = 88;
+export const NODE_W = 128;
+export const NODE_H = 52;
+export const CENTER_NODE_SIZE = 96;
 
 const INNER_RADIUS = 148;
 const OUTER_RADIUS = 248;
@@ -58,29 +58,85 @@ function hashLabel(label: string) {
   return label.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0);
 }
 
-/** Layout radial: centro → anillo interno → anillo externo por sector. */
+function nodeCollisionRadius(label: string) {
+  return Math.max(72, Math.min(110, 56 + label.length * 2.2));
+}
+
+/** Empuja nodos superpuestos hasta separación mínima. */
+export function resolveCollisions(
+  nodes: Array<{ id: string; label: string; x: number; y: number }>,
+  center?: { x: number; y: number },
+  iterations = 80,
+) {
+  for (let iter = 0; iter < iterations; iter += 1) {
+    let moved = false;
+
+    if (center) {
+      for (const node of nodes) {
+        const dx = node.x - center.x;
+        const dy = node.y - center.y;
+        const dist = Math.hypot(dx, dy) || 0.01;
+        const minFromCenter = CENTER_NODE_SIZE * 0.65 + nodeCollisionRadius(node.label) * 0.5;
+        if (dist < minFromCenter) {
+          const push = (minFromCenter - dist) / dist;
+          node.x += dx * push;
+          node.y += dy * push;
+          moved = true;
+        }
+      }
+    }
+
+    for (let i = 0; i < nodes.length; i += 1) {
+      for (let j = i + 1; j < nodes.length; j += 1) {
+        const a = nodes[i]!;
+        const b = nodes[j]!;
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const dist = Math.hypot(dx, dy) || 0.01;
+        const required = nodeCollisionRadius(a.label) * 0.5 + nodeCollisionRadius(b.label) * 0.5 + 24;
+        if (dist < required) {
+          const push = (required - dist) / 2;
+          const nx = dx / dist;
+          const ny = dy / dist;
+          a.x -= nx * push;
+          a.y -= ny * push;
+          b.x += nx * push;
+          b.y += ny * push;
+          moved = true;
+        }
+      }
+    }
+
+    if (!moved) break;
+  }
+}
+
+/** Layout radial adaptativo + resolución de colisiones. */
 export function layoutStudyMapNodes(title: string | undefined, labels: string[]): StudyMapLayout {
-  const cx = 420;
-  const cy = 320;
-  const pad = 96;
+  const cx = 480;
+  const cy = 360;
+  const pad = 72;
 
   if (!labels.length) {
-    return { nodes: [], cx, cy, w: 840, h: 640 };
+    return { nodes: [], cx, cy, w: 960, h: 720 };
   }
 
-  const branchCount = Math.min(STUDY_BRANCHES.length, Math.max(2, Math.ceil(labels.length / 2)));
+  const branchCount = Math.min(STUDY_BRANCHES.length, Math.max(3, Math.ceil(Math.sqrt(labels.length))));
   const perBranch = Math.max(1, Math.ceil(labels.length / branchCount));
+  const density = Math.max(1, labels.length / branchCount);
+  const innerR = Math.max(INNER_RADIUS, 130 + density * 22);
+  const outerR = innerR + Math.max(90, 70 + density * 18);
 
   const rawNodes: StudyMapNode[] = labels.map((label, index) => {
     const branchId = Math.floor(index / perBranch) % branchCount;
     const branchIndex = index % perBranch;
     const half = Math.max(1, Math.ceil(perBranch / 2));
     const ring: 1 | 2 = branchIndex < half ? 1 : 2;
-    const radius = ring === 1 ? INNER_RADIUS : OUTER_RADIUS;
+    const radius = ring === 1 ? innerR : outerR;
 
     const sectorSize = (2 * Math.PI) / branchCount;
-    const sectorStart = branchId * sectorSize - Math.PI / 2 + sectorSize * 0.12;
-    const sectorEnd = (branchId + 1) * sectorSize - Math.PI / 2 - sectorSize * 0.12;
+    const sectorStart = branchId * sectorSize - Math.PI / 2 + sectorSize * 0.1;
+    const sectorEnd = (branchId + 1) * sectorSize - Math.PI / 2 - sectorSize * 0.1;
 
     const ringPeers = labels
       .map((_, i) => i)
@@ -110,6 +166,8 @@ export function layoutStudyMapNodes(title: string | undefined, labels: string[])
     };
   });
 
+  resolveCollisions(rawNodes, { x: cx, y: cy });
+
   const allX = [cx, ...rawNodes.map((n) => n.x)];
   const allY = [cy, ...rawNodes.map((n) => n.y)];
   const minX = Math.min(...allX) - CENTER_NODE_SIZE - pad;
@@ -117,8 +175,8 @@ export function layoutStudyMapNodes(title: string | undefined, labels: string[])
   const minY = Math.min(...allY) - CENTER_NODE_SIZE - pad;
   const maxY = Math.max(...allY) + NODE_H + pad;
 
-  const w = Math.max(720, maxX - minX);
-  const h = Math.max(520, maxY - minY);
+  const w = Math.max(800, maxX - minX);
+  const h = Math.max(600, maxY - minY);
 
   const nodes = rawNodes.map((n) => ({
     ...n,
@@ -135,19 +193,64 @@ export function layoutStudyMapNodes(title: string | undefined, labels: string[])
   };
 }
 
+export function applyCustomPositions(
+  layout: StudyMapLayout,
+  custom: Record<string, { x: number; y: number }>,
+): StudyMapLayout {
+  if (!Object.keys(custom).length) return layout;
+
+  const nodes = layout.nodes.map((node) => ({
+    ...node,
+    x: custom[node.id]?.x ?? node.x,
+    y: custom[node.id]?.y ?? node.y,
+  }));
+
+  const pad = 72;
+  const allX = [layout.cx, ...nodes.map((n) => n.x)];
+  const allY = [layout.cy, ...nodes.map((n) => n.y)];
+  const minX = Math.min(...allX) - CENTER_NODE_SIZE - pad;
+  const maxX = Math.max(...allX) + NODE_W + pad;
+  const minY = Math.min(...allY) - CENTER_NODE_SIZE - pad;
+  const maxY = Math.max(...allY) + NODE_H + pad;
+
+  return {
+    nodes,
+    cx: layout.cx,
+    cy: layout.cy,
+    w: Math.max(layout.w, maxX - minX),
+    h: Math.max(layout.h, maxY - minY),
+  };
+}
+
+export function recomputeLayoutBounds(layout: StudyMapLayout): StudyMapLayout {
+  const pad = 72;
+  const allX = [layout.cx, ...layout.nodes.map((n) => n.x)];
+  const allY = [layout.cy, ...layout.nodes.map((n) => n.y)];
+  const minX = Math.min(...allX) - CENTER_NODE_SIZE - pad;
+  const maxX = Math.max(...allX) + NODE_W + pad;
+  const minY = Math.min(...allY) - CENTER_NODE_SIZE - pad;
+  const maxY = Math.max(...allY) + NODE_H + pad;
+
+  return {
+    ...layout,
+    w: Math.max(800, maxX - minX),
+    h: Math.max(600, maxY - minY),
+  };
+}
+
 export type CanvasTransform = { x: number; y: number; scale: number };
 
 export function computeFitTransform(
   viewportW: number,
   viewportH: number,
   layout: StudyMapLayout,
-  padding = 28,
+  padding = 16,
 ): CanvasTransform {
   if (!viewportW || !viewportH) {
     return { x: 0, y: 0, scale: 1 };
   }
 
-  const nodePad = 56;
+  const nodePad = 48;
   const xs = [layout.cx, ...layout.nodes.map((n) => n.x)];
   const ys = [layout.cy, ...layout.nodes.map((n) => n.y)];
   const minX = Math.min(...xs) - nodePad;
@@ -163,14 +266,28 @@ export function computeFitTransform(
   const scale = Math.min(
     (viewportW - padding * 2) / contentW,
     (viewportH - padding * 2) / contentH,
-    1.05,
   );
-  const clampedScale = Math.max(0.32, Math.min(scale, 1.1));
+  const clampedScale = Math.max(0.35, Math.min(scale, 1.45));
 
   return {
     x: -(contentCx - layout.w / 2) * clampedScale,
     y: -(contentCy - layout.h / 2) * clampedScale,
     scale: clampedScale,
+  };
+}
+
+export function computeCenterTransform(
+  viewportW: number,
+  viewportH: number,
+  layout: StudyMapLayout,
+  scale: number,
+): CanvasTransform {
+  const contentCx = layout.w / 2;
+  const contentCy = layout.h / 2;
+  return {
+    x: -(contentCx - layout.w / 2) * scale,
+    y: -(contentCy - layout.h / 2) * scale,
+    scale,
   };
 }
 
