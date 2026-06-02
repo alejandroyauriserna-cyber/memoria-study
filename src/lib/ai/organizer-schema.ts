@@ -4,17 +4,61 @@ const MAX_CONCEPT_NODES = 14;
 const MAX_HIERARCHY_BRANCHES = 12;
 const MAX_TIMELINE_EVENTS = 10;
 const MAX_FLOW_STEPS = 10;
+const MAX_FLOW_NODES = 12;
 const MAX_FLASHCARDS = 12;
 const MAX_REVIEW_QUESTIONS = 10;
+const MAX_KEY_CONCEPTS = 8;
+const MAX_EXAM_QUESTIONS = 8;
 
 const organizerFlashcardSchema = z.object({
   question: z.string().min(5),
   answer: z.string().min(5),
+  difficulty: z.enum(["basico", "intermedio", "avanzado"]).nullable(),
 });
 
 const organizerTimelineEventSchema = z.object({
   date: z.string().nullable(),
   label: z.string().min(3),
+});
+
+const flowProcessNodeSchema = z.object({
+  id: z.string().min(1),
+  label: z.string().min(2),
+  group: z.string().nullable(),
+  explanation: z.string().min(10).nullable(),
+  legalBasis: z.string().nullable(),
+  example: z.string().nullable(),
+  relatedConcepts: z.array(z.string()).nullable(),
+});
+
+const flowProcessEdgeSchema = z.object({
+  from: z.string().min(1),
+  to: z.string().min(1),
+  label: z.string().nullable(),
+});
+
+const reviewQuestionSchema = z.object({
+  question: z.string().min(10),
+  answer: z.string().min(10),
+  difficulty: z.enum(["basico", "intermedio", "avanzado"]).nullable(),
+  type: z.enum(["abierta", "opcion_multiple", "verdadero_falso", "caso_practico"]).nullable(),
+  options: z.array(z.string()).nullable(),
+});
+
+const examQuestionSchema = z.object({
+  question: z.string().min(10),
+  type: z.enum(["opcion_multiple", "verdadero_falso", "caso_practico"]),
+  options: z.array(z.string()).nullable(),
+  answer: z.string().min(1),
+  explanation: z.string().nullable(),
+});
+
+const aiAnalysisSchema = z.object({
+  conceptsDetected: z.array(z.string()).nullable(),
+  relationsFound: z.array(z.string()).nullable(),
+  difficulty: z.enum(["basico", "intermedio", "avanzado"]).nullable(),
+  recommendations: z.array(z.string()).nullable(),
+  studyFocus: z.string().nullable(),
 });
 
 /** Compatible con OpenAI Structured Outputs: required + nullable, sin .optional(). */
@@ -45,6 +89,54 @@ export const organizerContentSchema = z.object({
       steps: z.array(z.string().min(3)).max(MAX_FLOW_STEPS).nullable(),
     })
     .nullable(),
+  flowProcess: z
+    .object({
+      title: z.string().min(3),
+      nodes: z.array(flowProcessNodeSchema).min(2).max(MAX_FLOW_NODES),
+      edges: z.array(flowProcessEdgeSchema).min(1).max(MAX_FLOW_NODES * 2),
+    })
+    .nullable(),
+  visualSummary: z
+    .object({
+      conceptCards: z
+        .array(
+          z.object({
+            title: z.string().min(2),
+            description: z.string().min(10),
+          }),
+        )
+        .max(MAX_KEY_CONCEPTS)
+        .nullable(),
+      comparisons: z
+        .array(
+          z.object({
+            title: z.string().min(2),
+            left: z.string().min(5),
+            right: z.string().min(5),
+          }),
+        )
+        .max(4)
+        .nullable(),
+      legalTables: z
+        .array(
+          z.object({
+            title: z.string().min(2),
+            headers: z.array(z.string()).min(2).max(5),
+            rows: z.array(z.array(z.string())).min(1).max(8),
+          }),
+        )
+        .max(3)
+        .nullable(),
+    })
+    .nullable(),
+  reviewBundle: z
+    .object({
+      keyConcepts: z.array(z.string().min(3)).max(MAX_KEY_CONCEPTS).nullable(),
+      questions: z.array(reviewQuestionSchema).max(MAX_REVIEW_QUESTIONS).nullable(),
+      examQuestions: z.array(examQuestionSchema).max(MAX_EXAM_QUESTIONS).nullable(),
+    })
+    .nullable(),
+  aiAnalysis: aiAnalysisSchema.nullable(),
   flashcards: z.array(organizerFlashcardSchema).min(2).max(MAX_FLASHCARDS).nullable(),
   reviewQuestions: z.array(z.string().min(10)).min(2).max(MAX_REVIEW_QUESTIONS).nullable(),
 });
@@ -70,7 +162,49 @@ export type StoredOrganizerContent = {
     end: string;
     steps?: string[];
   };
-  flashcards?: Array<{ question: string; answer: string }>;
+  flowProcess?: {
+    title: string;
+    nodes: Array<{
+      id: string;
+      label: string;
+      group?: string;
+      explanation?: string;
+      legalBasis?: string;
+      example?: string;
+      relatedConcepts?: string[];
+    }>;
+    edges: Array<{ from: string; to: string; label?: string }>;
+  };
+  visualSummary?: {
+    conceptCards?: Array<{ title: string; description: string }>;
+    comparisons?: Array<{ title: string; left: string; right: string }>;
+    legalTables?: Array<{ title: string; headers: string[]; rows: string[][] }>;
+  };
+  reviewBundle?: {
+    keyConcepts?: string[];
+    questions?: Array<{
+      question: string;
+      answer: string;
+      difficulty?: "basico" | "intermedio" | "avanzado";
+      type?: "abierta" | "opcion_multiple" | "verdadero_falso" | "caso_practico";
+      options?: string[];
+    }>;
+    examQuestions?: Array<{
+      question: string;
+      type: "opcion_multiple" | "verdadero_falso" | "caso_practico";
+      options?: string[];
+      answer: string;
+      explanation?: string;
+    }>;
+  };
+  aiAnalysis?: {
+    conceptsDetected?: string[];
+    relationsFound?: string[];
+    difficulty?: "basico" | "intermedio" | "avanzado";
+    recommendations?: string[];
+    studyFocus?: string;
+  };
+  flashcards?: Array<{ question: string; answer: string; difficulty?: "basico" | "intermedio" | "avanzado" }>;
   reviewQuestions?: string[];
 };
 
@@ -204,12 +338,106 @@ export function normalizeOrganizerContent(content: OrganizerContentOutput): Stor
     };
   }
 
+  if (content.flowProcess?.nodes?.length && content.flowProcess.edges?.length) {
+    normalized.flowProcess = {
+      title: content.flowProcess.title.trim(),
+      nodes: content.flowProcess.nodes.slice(0, MAX_FLOW_NODES).map((node) => ({
+        id: node.id.trim(),
+        label: node.label.trim(),
+        group: node.group?.trim() || undefined,
+        explanation: node.explanation?.trim() || undefined,
+        legalBasis: node.legalBasis?.trim() || undefined,
+        example: node.example?.trim() || undefined,
+        relatedConcepts: node.relatedConcepts?.map((item) => item.trim()).filter(Boolean) || undefined,
+      })),
+      edges: content.flowProcess.edges.slice(0, MAX_FLOW_NODES * 2).map((edge) => ({
+        from: edge.from.trim(),
+        to: edge.to.trim(),
+        label: edge.label?.trim() || undefined,
+      })),
+    };
+  }
+
+  if (content.visualSummary) {
+    normalized.visualSummary = {
+      conceptCards: content.visualSummary.conceptCards
+        ?.map((card) => ({ title: card.title.trim(), description: card.description.trim() }))
+        .filter((card) => card.title && card.description)
+        .slice(0, MAX_KEY_CONCEPTS),
+      comparisons: content.visualSummary.comparisons
+        ?.map((item) => ({
+          title: item.title.trim(),
+          left: item.left.trim(),
+          right: item.right.trim(),
+        }))
+        .filter((item) => item.title && item.left && item.right)
+        .slice(0, 4),
+      legalTables: content.visualSummary.legalTables
+        ?.map((table) => ({
+          title: table.title.trim(),
+          headers: table.headers.map((header) => header.trim()).filter(Boolean),
+          rows: table.rows.map((row) => row.map((cell) => cell.trim())).filter((row) => row.some(Boolean)),
+        }))
+        .filter((table) => table.title && table.headers.length >= 2 && table.rows.length >= 1)
+        .slice(0, 3),
+    };
+  }
+
+  if (content.reviewBundle) {
+    normalized.reviewBundle = {
+      keyConcepts: content.reviewBundle.keyConcepts
+        ?.map((item) => item.trim())
+        .filter(Boolean)
+        .slice(0, MAX_KEY_CONCEPTS),
+      questions: content.reviewBundle.questions
+        ?.slice(0, MAX_REVIEW_QUESTIONS)
+        .map((item) => ({
+          question: item.question.trim(),
+          answer: item.answer.trim(),
+          difficulty: item.difficulty ?? undefined,
+          type: item.type ?? undefined,
+          options: item.options?.map((option) => option.trim()).filter(Boolean) || undefined,
+        }))
+        .filter((item) => item.question && item.answer),
+      examQuestions: content.reviewBundle.examQuestions
+        ?.slice(0, MAX_EXAM_QUESTIONS)
+        .map((item) => ({
+          question: item.question.trim(),
+          type: item.type,
+          options: item.options?.map((option) => option.trim()).filter(Boolean) || undefined,
+          answer: item.answer.trim(),
+          explanation: item.explanation?.trim() || undefined,
+        }))
+        .filter((item) => item.question && item.answer),
+    };
+  }
+
+  if (content.aiAnalysis) {
+    normalized.aiAnalysis = {
+      conceptsDetected: content.aiAnalysis.conceptsDetected
+        ?.map((item) => item.trim())
+        .filter(Boolean)
+        .slice(0, MAX_KEY_CONCEPTS),
+      relationsFound: content.aiAnalysis.relationsFound
+        ?.map((item) => item.trim())
+        .filter(Boolean)
+        .slice(0, 8),
+      difficulty: content.aiAnalysis.difficulty ?? undefined,
+      recommendations: content.aiAnalysis.recommendations
+        ?.map((item) => item.trim())
+        .filter(Boolean)
+        .slice(0, 5),
+      studyFocus: content.aiAnalysis.studyFocus?.trim() || undefined,
+    };
+  }
+
   if (content.flashcards?.length) {
     normalized.flashcards = content.flashcards
       .slice(0, MAX_FLASHCARDS)
       .map((card) => ({
         question: card.question.trim(),
         answer: card.answer.trim(),
+        difficulty: card.difficulty ?? undefined,
       }))
       .filter((card) => card.question && card.answer);
   }
@@ -237,6 +465,28 @@ export const ORGANIZER_JSON_SHAPE = `{
   "hierarchy": { "root": "string", "branches": ["string (máx. 12)"] } | null,
   "timeline": { "events": [{ "date": "string | null", "label": "string" }] } | null,
   "flowChart": { "start": "string", "end": "string", "steps": ["string (máx. 10)"] | null } | null,
-  "flashcards": [{ "question": "string", "answer": "string" }] | null,
+  "flowProcess": {
+    "title": "string",
+    "nodes": [{ "id": "string", "label": "string", "group": "string | null", "explanation": "string | null", "legalBasis": "string | null", "example": "string | null", "relatedConcepts": ["string"] | null }],
+    "edges": [{ "from": "string", "to": "string", "label": "string | null" }]
+  } | null,
+  "visualSummary": {
+    "conceptCards": [{ "title": "string", "description": "string" }] | null,
+    "comparisons": [{ "title": "string", "left": "string", "right": "string" }] | null,
+    "legalTables": [{ "title": "string", "headers": ["string"], "rows": [["string"]] }] | null
+  } | null,
+  "reviewBundle": {
+    "keyConcepts": ["string"] | null,
+    "questions": [{ "question": "string", "answer": "string", "difficulty": "basico|intermedio|avanzado | null", "type": "abierta|opcion_multiple|verdadero_falso|caso_practico | null", "options": ["string"] | null }] | null,
+    "examQuestions": [{ "question": "string", "type": "opcion_multiple|verdadero_falso|caso_practico", "options": ["string"] | null, "answer": "string", "explanation": "string | null" }] | null
+  } | null,
+  "aiAnalysis": {
+    "conceptsDetected": ["string"] | null,
+    "relationsFound": ["string"] | null,
+    "difficulty": "basico|intermedio|avanzado | null",
+    "recommendations": ["string"] | null,
+    "studyFocus": "string | null"
+  } | null,
+  "flashcards": [{ "question": "string", "answer": "string", "difficulty": "basico|intermedio|avanzado | null" }] | null,
   "reviewQuestions": ["string"] | null
 }`;

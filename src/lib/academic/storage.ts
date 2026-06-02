@@ -1,3 +1,4 @@
+import { sanitizeAcademicSelection } from "@/lib/academic/helpers";
 import type { AcademicSelection } from "@/types/academic";
 
 const STORAGE_KEY = "memoria-unt-academic-selection";
@@ -12,7 +13,7 @@ export function loadAcademicSelection(): AcademicSelection | null {
     if (!raw) {
       return null;
     }
-    return JSON.parse(raw) as AcademicSelection;
+    return sanitizeAcademicSelection(JSON.parse(raw) as AcademicSelection);
   } catch {
     return null;
   }

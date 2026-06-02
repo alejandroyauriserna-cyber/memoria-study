@@ -1,19 +1,24 @@
 "use client";
 
+import { Sparkles } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { GraduationCap } from "lucide-react";
 import { SelectionCard, SelectionGroup } from "@/components/ui/selection-cards";
+import { sanitizeAcademicSelection } from "@/lib/academic/helpers";
 import { UNT_DERECHO } from "@/lib/academic/unt-derecho";
 import { loadAcademicSelection, saveAcademicSelection } from "@/lib/academic/storage";
 import type { AcademicSelection } from "@/types/academic";
+import type { CourseDetectionResult } from "@/types/course-detection";
 
 type Props = {
   value: AcademicSelection | null;
   onChange: (selection: AcademicSelection) => void;
+  detection?: CourseDetectionResult | null;
+  onApplyDetection?: () => void;
 };
 
 function initialState() {
-  const saved = loadAcademicSelection();
+  const saved = sanitizeAcademicSelection(loadAcademicSelection());
   const defaultYear = UNT_DERECHO.years[0];
   const defaultCycle = defaultYear?.cycles[0];
   const defaultCourse = defaultCycle?.courses[0];
@@ -26,7 +31,7 @@ function initialState() {
   };
 }
 
-export function AcademicNavigator({ value, onChange }: Props) {
+export function AcademicNavigator({ value, onChange, detection, onApplyDetection }: Props) {
   const [state, setState] = useState(initialState);
 
   const year = useMemo(
@@ -81,6 +86,12 @@ export function AcademicNavigator({ value, onChange }: Props) {
     onChange(selection);
   }, [selection, onChange]);
 
+  const detectionMatches =
+    detection &&
+    selection &&
+    detection.courseId === selection.courseId &&
+    detection.cycleNumber === selection.cycleNumber;
+
   return (
     <section className="ms-panel p-5 md:p-6">
       <div className="mb-5 flex items-center gap-2">
@@ -89,9 +100,51 @@ export function AcademicNavigator({ value, onChange }: Props) {
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#00FFD5]">
             {UNT_DERECHO.university}
           </p>
-          <h2 className="text-lg font-semibold text-[#F5F7FA]">Contexto académico</h2>
+          <h2 className="text-lg font-semibold text-[#F5F7FA]">Contexto académico UNT</h2>
         </div>
       </div>
+
+      {detection ? (
+        <div className="mb-5 rounded-xl border border-[rgba(0,255,213,0.2)] bg-[rgba(0,255,213,0.06)] p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#00FFD5]">
+                <Sparkles size={14} />
+                Sugerencia IA · {Math.round(detection.confidence * 100)}% confianza
+              </p>
+              <p className="mt-2 text-sm font-semibold text-[#F5F7FA]">
+                {detection.cycleLabel} · {detection.courseName}
+              </p>
+              {detection.matchedKeywords.length ? (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Detectado: {detection.matchedKeywords.join(", ")}
+                </p>
+              ) : null}
+            </div>
+            {!detectionMatches && onApplyDetection ? (
+              <button
+                type="button"
+                onClick={onApplyDetection}
+                className="rounded-lg border border-[rgba(0,255,213,0.35)] bg-[rgba(0,255,213,0.1)] px-3 py-2 text-xs font-semibold text-[#00FFD5] transition hover:bg-[rgba(0,255,213,0.18)]"
+              >
+                Aplicar sugerencia
+              </button>
+            ) : null}
+          </div>
+          {detection.alternatives.length ? (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {detection.alternatives.map((alt) => (
+                <span
+                  key={alt.courseId}
+                  className="rounded-full border border-[rgba(0,255,213,0.12)] px-2.5 py-1 text-[10px] text-muted-foreground"
+                >
+                  Alternativa: {alt.courseName}
+                </span>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="space-y-5">
         <SelectionGroup label="Año">
@@ -109,7 +162,7 @@ export function AcademicNavigator({ value, onChange }: Props) {
                 });
               }}
             >
-              {item.label.replace("Año ", "")}
+              {item.label.replace("Primer ", "1°").replace("Segundo ", "2°").replace("Tercer ", "3°").replace("Cuarto ", "4°").replace("Quinto ", "5°")}
             </SelectionCard>
           ))}
         </SelectionGroup>
@@ -133,7 +186,7 @@ export function AcademicNavigator({ value, onChange }: Props) {
           ))}
         </SelectionGroup>
 
-        <SelectionGroup label="Curso">
+        <SelectionGroup label="Curso (malla oficial)">
           {cycle?.courses.map((item) => (
             <SelectionCard
               key={item.id}

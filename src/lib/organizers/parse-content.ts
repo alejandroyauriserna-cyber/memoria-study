@@ -1,6 +1,7 @@
 export type OrganizerFlashcard = {
   question?: string;
   answer?: string;
+  difficulty?: "basico" | "intermedio" | "avanzado";
 };
 
 export type OrganizerContent = {
@@ -20,6 +21,48 @@ export type OrganizerContent = {
     start?: string;
     end?: string;
     steps?: string[];
+  };
+  flowProcess?: {
+    title?: string;
+    nodes?: Array<{
+      id: string;
+      label: string;
+      group?: string;
+      explanation?: string;
+      legalBasis?: string;
+      example?: string;
+      relatedConcepts?: string[];
+    }>;
+    edges?: Array<{ from: string; to: string; label?: string }>;
+  };
+  visualSummary?: {
+    conceptCards?: Array<{ title: string; description: string }>;
+    comparisons?: Array<{ title: string; left: string; right: string }>;
+    legalTables?: Array<{ title: string; headers: string[]; rows: string[][] }>;
+  };
+  reviewBundle?: {
+    keyConcepts?: string[];
+    questions?: Array<{
+      question: string;
+      answer: string;
+      difficulty?: "basico" | "intermedio" | "avanzado";
+      type?: "abierta" | "opcion_multiple" | "verdadero_falso" | "caso_practico";
+      options?: string[];
+    }>;
+    examQuestions?: Array<{
+      question: string;
+      type: "opcion_multiple" | "verdadero_falso" | "caso_practico";
+      options?: string[];
+      answer: string;
+      explanation?: string;
+    }>;
+  };
+  aiAnalysis?: {
+    conceptsDetected?: string[];
+    relationsFound?: string[];
+    difficulty?: "basico" | "intermedio" | "avanzado";
+    recommendations?: string[];
+    studyFocus?: string;
   };
   flashcards?: OrganizerFlashcard[];
   reviewQuestions?: string[];
@@ -49,8 +92,16 @@ export function hasOrganizerSections(content: OrganizerContent) {
       content.flowChart?.start ||
       content.flowChart?.end ||
       content.flowChart?.steps?.length ||
+      content.flowProcess?.nodes?.length ||
+      content.visualSummary?.conceptCards?.length ||
+      content.visualSummary?.comparisons?.length ||
+      content.visualSummary?.legalTables?.length ||
+      content.reviewBundle?.keyConcepts?.length ||
+      content.reviewBundle?.questions?.length ||
+      content.reviewBundle?.examQuestions?.length ||
       content.flashcards?.length ||
       content.reviewQuestions?.length ||
-      content.simplifiedExplanation,
+      content.simplifiedExplanation ||
+      content.aiAnalysis?.conceptsDetected?.length,
   );
 }

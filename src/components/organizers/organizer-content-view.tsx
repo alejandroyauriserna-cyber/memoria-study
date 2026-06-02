@@ -4,26 +4,28 @@ import {
   hasOrganizerSections,
   parseOrganizerContent,
 } from "@/lib/organizers/parse-content";
+import { convertLegacyFlowChart } from "@/lib/organizers/flow-map-layout";
+import { AiAnalysisBanner } from "@/components/study/ai-analysis-banner";
 import { ConceptMapCanvas } from "@/components/organizers/sections/concept-map-canvas";
-import { FlashcardCarousel } from "@/components/organizers/sections/flashcard-carousel";
-import { FlowChartModern } from "@/components/organizers/sections/flow-chart-modern";
+import { FlashcardPremium } from "@/components/organizers/sections/flashcard-premium";
+import { FlowProcessMap } from "@/components/organizers/sections/flow-process-map";
 import { HierarchyTree } from "@/components/organizers/sections/hierarchy-tree";
-import {
-  EasyExplanationBlock,
-  ExecutiveSummaryCard,
-} from "@/components/organizers/sections/organizer-section-shell";
-import { ReviewQuestionsAccordion } from "@/components/organizers/sections/review-questions-accordion";
+import { EasyExplanationBlock } from "@/components/organizers/sections/organizer-section-shell";
+import { ReviewPremiumModule } from "@/components/organizers/sections/review-premium-module";
 import { TimelineModern } from "@/components/organizers/sections/timeline-modern";
+import { VisualSummaryCard } from "@/components/organizers/sections/visual-summary-card";
 import { OrganizerContentSkeleton } from "@/components/organizers/organizer-skeleton";
 
 export function OrganizerContentView({
   content,
   loading = false,
   studio = false,
+  deckKey,
 }: {
   content: unknown;
   loading?: boolean;
   studio?: boolean;
+  deckKey?: string;
 }) {
   if (loading) {
     return <OrganizerContentSkeleton studio={studio} />;
@@ -49,6 +51,17 @@ export function OrganizerContentView({
       ?? [];
   const hierarchyBranches = parsed.hierarchy?.branches?.filter(Boolean) ?? [];
 
+  const flowProcess =
+    parsed.flowProcess?.nodes?.length && parsed.flowProcess.edges?.length
+      ? parsed.flowProcess
+      : parsed.flowChart?.start && parsed.flowChart.end
+        ? convertLegacyFlowChart({
+            start: parsed.flowChart.start,
+            end: parsed.flowChart.end,
+            steps: parsed.flowChart.steps,
+          })
+        : null;
+
   const studyContext = {
     summary: parsed.summary,
     simplifiedExplanation: parsed.simplifiedExplanation,
@@ -58,24 +71,49 @@ export function OrganizerContentView({
 
   const secondarySections = (
     <div className="organizer-bento space-y-4 p-4 sm:p-6">
-      {parsed.summary ? <ExecutiveSummaryCard summary={parsed.summary} /> : null}
+      {parsed.aiAnalysis || parsed.summary ? (
+        <AiAnalysisBanner
+          analysis={{
+            conceptsDetected: parsed.aiAnalysis?.conceptsDetected,
+            relationsFound: parsed.aiAnalysis?.relationsFound,
+            difficulty: parsed.aiAnalysis?.difficulty,
+            recommendations: parsed.aiAnalysis?.recommendations,
+            summary: parsed.aiAnalysis?.studyFocus ?? parsed.summary,
+          }}
+        />
+      ) : null}
+
+      {parsed.summary ? (
+        <VisualSummaryCard summary={parsed.summary} visualSummary={parsed.visualSummary} />
+      ) : null}
+
       {parsed.simplifiedExplanation ? (
         <EasyExplanationBlock explanation={parsed.simplifiedExplanation} />
       ) : null}
+
+      {flowProcess?.nodes?.length && flowProcess.edges?.length ? (
+        <FlowProcessMap
+          title={flowProcess.title ?? "Flujo jurídico"}
+          nodes={flowProcess.nodes}
+          edges={flowProcess.edges}
+        />
+      ) : null}
+
       {parsed.hierarchy?.root && hierarchyBranches.length ? (
         <HierarchyTree root={parsed.hierarchy.root} branches={hierarchyBranches} />
       ) : null}
+
       {timelineEvents.length ? <TimelineModern events={timelineEvents} /> : null}
-      {parsed.flowChart?.start && parsed.flowChart?.end ? (
-        <FlowChartModern
-          start={parsed.flowChart.start}
-          end={parsed.flowChart.end}
-          steps={parsed.flowChart.steps}
-        />
+
+      {parsed.flashcards?.length ? (
+        <FlashcardPremium flashcards={parsed.flashcards} deckKey={deckKey ?? "organizer"} />
       ) : null}
-      {parsed.flashcards?.length ? <FlashcardCarousel flashcards={parsed.flashcards} /> : null}
-      {parsed.reviewQuestions?.length ? (
-        <ReviewQuestionsAccordion questions={parsed.reviewQuestions} />
+
+      {parsed.reviewBundle || parsed.reviewQuestions?.length ? (
+        <ReviewPremiumModule
+          reviewBundle={parsed.reviewBundle}
+          legacyQuestions={parsed.reviewQuestions}
+        />
       ) : null}
     </div>
   );

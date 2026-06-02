@@ -1,17 +1,18 @@
 import { ORGANIZER_JSON_SHAPE } from "@/lib/ai/organizer-schema";
+import { getOfficialCourseNames } from "@/lib/academic/helpers";
 
 export const SYSTEM_PROMPT_ORGANIZER = `
-Eres un asistente académico especializado en crear organizadores visuales de estudio.
+Eres un asistente académico especializado en crear organizadores visuales de estudio jurídico universitario (Derecho UNT).
 
 REGLAS ESTRICTAS:
 - Usa EXCLUSIVAMENTE el texto fuente del PDF proporcionado.
 - NO inventes conceptos, fechas, autores, definiciones ni ejemplos que no aparezcan en el documento.
-- NO uses metadatos del curso, ciclo académico ni placeholders genéricos.
-- PROHIBIDO usar frases vacías como "conceptos clave", "Leer material", "Aplicar en estudio" o preguntas genéricas sin contenido del PDF.
-- La clave "summary" es OBLIGATORIA: siempre debe incluir una síntesis fiel del documento.
-- Si otra sección no puede construirse con evidencia del texto, OMITE esa clave del JSON (no la rellenes).
-- Todo el contenido debe estar en español claro y fiel al documento.
-- Prioriza precisión sobre creatividad.
+- NO uses placeholders genéricos ni frases vacías.
+- PROHIBIDO copiar párrafos del PDF: transforma el contenido en herramientas visuales de estudio.
+- La clave "summary" es OBLIGATORIA: síntesis fiel del documento (3-6 oraciones).
+- Incluye "aiAnalysis" con conceptos detectados, relaciones, dificultad y recomendaciones basadas en el PDF.
+- Prioriza precisión académica sobre creatividad.
+- Todo el contenido en español claro.
 `;
 
 export function buildOrganizerUserPrompt(input: {
@@ -19,22 +20,24 @@ export function buildOrganizerUserPrompt(input: {
   text: string;
   materialTitle: string;
 }) {
+  const officialCourses = getOfficialCourseNames().slice(0, 30).join("; ");
+
   return `
 Documento: ${input.sourceName}
-Título del material (solo referencia): ${input.materialTitle}
+Título del material (referencia): ${input.materialTitle}
 
-Genera un organizador de estudio basado ÚNICAMENTE en el texto fuente del PDF.
+Cursos oficiales UNT (referencia, no inventar otros): ${officialCourses}...
+
+Genera un organizador premium basado ÚNICAMENTE en el texto del PDF.
 
 Requisitos por sección:
-- summary (OBLIGATORIO): síntesis fiel del documento (3-6 oraciones).
-- Incluye las demás secciones solo si el PDF permite sustentarlas:
-- simplifiedExplanation: explicación sencilla del contenido real del PDF.
-- conceptMap: title + nodes con conceptos/términos que aparezcan en el PDF (máximo 14 nodos).
-- hierarchy: root = tema central del PDF; branches = subtemas reales del documento.
-- timeline: eventos, etapas o secuencias mencionadas en el PDF (date solo si aparece).
-- flowChart: start/end/steps describiendo un proceso REAL del documento (no pasos genéricos de estudio).
-- flashcards: 4-8 tarjetas con preguntas y respuestas basadas en el PDF.
-- reviewQuestions: 3-6 preguntas de repaso concretas sobre el contenido del PDF.
+- summary (OBLIGATORIO): síntesis transformada, no copia literal.
+- aiAnalysis: conceptos detectados, relaciones entre conceptos, nivel de dificultad, recomendaciones de estudio.
+- visualSummary: conceptCards (conceptos clave visuales), comparisons (comparaciones jurídicas), legalTables (tablas si aplica).
+- flowProcess: mapa de proceso con nodes (id, label, explanation, legalBasis, example, relatedConcepts) y edges conectados. Proceso REAL del documento.
+- reviewBundle: keyConcepts + questions (básico/intermedio/avanzado con answer) + examQuestions (opción múltiple, V/F, casos prácticos).
+- conceptMap, hierarchy, timeline, flashcards: solo si el PDF lo sustenta.
+- flashcards: incluir difficulty (basico|intermedio|avanzado).
 
 Texto fuente del PDF:
 ${input.text}
@@ -48,7 +51,7 @@ export function buildOrganizerProviderJsonPrompt(input: {
 }) {
   return `${SYSTEM_PROMPT_ORGANIZER}
 
-Devuelve SOLO JSON válido con esta forma (summary siempre requerido; usa null en secciones no sustentadas):
+Devuelve SOLO JSON válido con esta forma (summary siempre requerido; null en secciones no sustentadas):
 ${ORGANIZER_JSON_SHAPE}
 
 ${buildOrganizerUserPrompt(input)}`;

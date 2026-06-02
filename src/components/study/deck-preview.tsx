@@ -32,20 +32,20 @@ export function DeckPreview({
 
   if (mode === "quiz") {
     return (
-      <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
+      <section className="organizer-float-card organizer-glass rounded-[22px] p-5">
         <div className="mb-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
-            Quiz jurídico
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#00FFD5]">
+            Examen IA · Quiz jurídico
           </p>
-          <h2 className="mt-1 text-xl font-semibold tracking-tight">
+          <h2 className="mt-1 text-xl font-semibold tracking-tight text-[#F5F7FA]">
             Puntaje {score}/{deck.quiz.length}
           </h2>
         </div>
 
         <div className="space-y-4">
           {deck.quiz.map((question) => (
-            <div key={question.id} className="rounded-lg border border-border p-4">
-              <p className="font-medium">{question.question}</p>
+            <div key={question.id} className="rounded-xl border border-[rgba(0,255,213,0.1)] bg-[rgba(7,19,26,0.35)] p-4">
+              <p className="font-medium text-[#F5F7FA]">{question.question}</p>
               <div className="mt-3 grid gap-2">
                 {question.options.map((option, index) => {
                   const selected = answers[question.id] === index;
@@ -61,12 +61,12 @@ export function DeckPreview({
                           [question.id]: index,
                         }))
                       }
-                      className={`flex min-h-10 items-center justify-between rounded-lg border px-3 py-2 text-left text-sm ${
+                      className={`flex min-h-10 items-center justify-between rounded-lg border px-3 py-2 text-left text-sm transition ${
                         selected
                           ? correct
-                            ? "border-accent bg-accent/10"
-                            : "border-red-400 bg-red-500/10"
-                          : "border-border hover:bg-muted"
+                            ? "border-[rgba(0,255,213,0.4)] bg-[rgba(0,255,213,0.1)] text-[#00FFD5]"
+                            : "border-red-400/50 bg-red-500/10 text-red-200"
+                          : "border-[rgba(0,255,213,0.1)] text-muted-foreground hover:border-[rgba(0,255,213,0.25)]"
                       }`}
                     >
                       <span>{option}</span>

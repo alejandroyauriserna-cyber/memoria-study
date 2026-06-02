@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
-import { FlashcardCarousel } from "@/components/organizers/sections/flashcard-carousel";
+import { FlashcardPremium } from "@/components/organizers/sections/flashcard-premium";
 import type { StudyBranch } from "@/lib/organizers/concept-map-study";
 
 export function ConceptMapBranchStudyModal({
@@ -61,7 +61,7 @@ export function ConceptMapBranchStudyModal({
                 <X size={16} />
               </button>
             </div>
-            <FlashcardCarousel flashcards={flashcards} embedded />
+            <FlashcardPremium flashcards={flashcards} embedded deckKey={`branch-${branch.id}`} />
           </motion.div>
         </motion.div>
       ) : null}

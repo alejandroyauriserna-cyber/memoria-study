@@ -4,9 +4,11 @@ import { FileUp, Loader2, Save, Sparkles, WandSparkles } from "lucide-react";
 import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { AcademicNavigator } from "@/components/study/academic-navigator";
+import { AiAnalysisBanner } from "@/components/study/ai-analysis-banner";
 import { GenerationProgress } from "@/components/study/generation-progress";
 import { GenerationSettings } from "@/components/study/generation-settings";
 import { StudyHub } from "@/components/study/study-hub";
+import { detectionToSelection } from "@/lib/academic/detect-course";
 import { UNT_DERECHO_AUDIENCE } from "@/lib/ai/prompts";
 import { MAX_FILE_SIZE } from "@/lib/pdf/constants";
 import { loadAcademicSelection } from "@/lib/academic/storage";
@@ -15,6 +17,7 @@ import { DEFAULT_GENERATION_COUNTS } from "@/types/generation";
 import type { PdfExtractStreamEvent } from "@/types/pdf-progress";
 import type { StudyGenerationCounts } from "@/types/generation";
 import type { AcademicSelection } from "@/types/academic";
+import type { CourseDetectionResult } from "@/types/course-detection";
 import type { StudyDeck } from "@/types/study";
 
 type Status = "idle" | "working" | "saving" | "error" | "saved";
@@ -81,11 +84,81 @@ export function UploadGenerator() {
   const [progress, setProgress] = useState<ProgressState | null>(null);
   const [counts, setCounts] = useState<StudyGenerationCounts>(DEFAULT_GENERATION_COUNTS);
   const [academic, setAcademic] = useState<AcademicSelection | null>(() => loadAcademicSelection());
+  const [detection, setDetection] = useState<CourseDetectionResult | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
   const handleAcademicChange = useCallback((selection: AcademicSelection) => {
     setAcademic(selection);
   }, []);
+
+  const applyDetection = useCallback(() => {
+    if (!detection) return;
+    const selection = detectionToSelection(detection);
+    if (selection) setAcademic(selection);
+  }, [detection]);
+
+  async function analyzePdfFile(file: File) {
+    setAnalyzing(true);
+    setError("");
+    setDetection(null);
+
+    try {
+      const extractData = new FormData();
+      extractData.set("file", file);
+      extractData.set("forceScanned", String(forceScanned));
+
+      const extractResponse = await fetch("/api/pdf/extract", {
+        method: "POST",
+        body: extractData,
+      });
+
+      if (!extractResponse.ok) {
+        throw new Error("No se pudo leer el PDF para detectar el curso.");
+      }
+
+      let extractedText = "";
+      let extractError = "";
+
+      await readPdfExtractStream(extractResponse, (event) => {
+        if (event.stage === "error") {
+          extractError = event.message;
+          return;
+        }
+        if (isExtractDone(event)) {
+          extractedText = event.text;
+        }
+      });
+
+      if (extractError) throw new Error(extractError);
+      if (!extractedText) throw new Error("No se extrajo texto del PDF.");
+
+      await set("pdfText", extractedText);
+
+      const detectResponse = await fetch("/api/academic/detect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: extractedText }),
+      });
+
+      const detectPayload = await detectResponse.json();
+      if (!detectResponse.ok) {
+        throw new Error(detectPayload.error ?? "No se pudo detectar el curso.");
+      }
+
+      const nextDetection = detectPayload.detection as CourseDetectionResult;
+      setDetection(nextDetection);
+
+      const selection = detectionToSelection(nextDetection);
+      if (selection) setAcademic(selection);
+
+      setStep(2);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Error al analizar el PDF.");
+    } finally {
+      setAnalyzing(false);
+    }
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -381,8 +454,18 @@ export function UploadGenerator() {
           </label>
 
           <div className="mt-5 flex flex-wrap gap-2">
-            <Button type="button" variant="secondary" onClick={() => setStep(2)} disabled={!fileName}>
-              Continuar
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={!fileName || analyzing}
+              onClick={() => {
+                const input = document.querySelector<HTMLInputElement>('input[name="file"]');
+                const file = input?.files?.[0];
+                if (file) void analyzePdfFile(file);
+              }}
+            >
+              {analyzing ? <Loader2 className="animate-spin" size={16} /> : <Sparkles size={16} />}
+              {analyzing ? "Analizando..." : "Analizar y detectar curso"}
             </Button>
             <Button type="submit" disabled={isWorking || !academic || !fileName}>
               {isWorking ? <Loader2 className="animate-spin" size={16} /> : <WandSparkles size={16} />}
@@ -408,7 +491,25 @@ export function UploadGenerator() {
 
       {step === 2 ? (
         <div className="space-y-4">
-          <AcademicNavigator value={academic} onChange={handleAcademicChange} />
+          {detection ? (
+            <AiAnalysisBanner
+              detection={detection}
+              analysis={{
+                conceptsDetected: detection.conceptsDetected,
+                difficulty: detection.difficulty,
+                recommendations: [
+                  "Revisa la sugerencia de curso antes de generar.",
+                  "Corrige manualmente si el PDF corresponde a otro ciclo.",
+                ],
+              }}
+            />
+          ) : null}
+          <AcademicNavigator
+            value={academic}
+            onChange={handleAcademicChange}
+            detection={detection}
+            onApplyDetection={applyDetection}
+          />
           <div className="flex gap-2">
             <Button type="button" variant="ghost" onClick={() => setStep(1)}>
               Atrás
