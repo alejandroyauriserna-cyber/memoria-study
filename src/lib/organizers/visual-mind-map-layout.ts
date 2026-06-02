@@ -4,10 +4,10 @@ import {
 } from "@/lib/organizers/visual-mind-map-theme";
 import type { VisualMindMap, VisualMindMapNode } from "@/lib/organizers/visual-mind-map-types";
 
-const CX = 520;
-const CY = 400;
-const TOPIC_RADIUS_BASE = 220;
-const DETAIL_RADIUS = 108;
+const CX = 420;
+const CY = 340;
+const TOPIC_RADIUS_BASE = 168;
+const DETAIL_RADIUS = 92;
 
 function nodeRadius(label: string, tier: VisualMindMapNode["tier"]) {
   return collisionRadiusForNode(label, tier);
@@ -23,10 +23,12 @@ export function resolveMindMapCollisions(
     y: number;
   }>,
   center: { x: number; y: number },
-  iterations = 100,
+  iterations = 120,
 ) {
   const centerNode = nodes.find((n) => n.tier === "center");
-  const centerR = centerNode ? nodeRadius(centerNode.label, "center") : styleForTier("center").collisionRadius;
+  const centerR = centerNode
+    ? nodeRadius(centerNode.label, "center")
+    : styleForTier("center").collisionRadius;
 
   for (let iter = 0; iter < iterations; iter += 1) {
     let moved = false;
@@ -36,7 +38,7 @@ export function resolveMindMapCollisions(
       const dx = node.x - center.x;
       const dy = node.y - center.y;
       const dist = Math.hypot(dx, dy) || 0.01;
-      const minFromCenter = centerR + nodeRadius(node.label, node.tier) + 28;
+      const minFromCenter = centerR + nodeRadius(node.label, node.tier) + 22;
       if (dist < minFromCenter) {
         const push = (minFromCenter - dist) / dist;
         node.x += dx * push;
@@ -52,10 +54,11 @@ export function resolveMindMapCollisions(
         const dx = b.x - a.x;
         const dy = b.y - a.y;
         const dist = Math.hypot(dx, dy) || 0.01;
+        const sibling = a.parentId && a.parentId === b.parentId;
         const required =
           nodeRadius(a.label, a.tier) * 0.5 +
           nodeRadius(b.label, b.tier) * 0.5 +
-          (a.parentId === b.parentId && a.parentId ? 20 : 32);
+          (sibling ? 16 : 28);
         if (dist < required) {
           const push = (required - dist) / 2;
           const nx = dx / dist;
@@ -85,7 +88,7 @@ export function layoutVisualMindMap(nodes: VisualMindMapNode[]): Pick<VisualMind
     centerNode.y = CY;
   }
 
-  const topicRadius = TOPIC_RADIUS_BASE + Math.max(0, topics.length - 4) * 14;
+  const topicRadius = TOPIC_RADIUS_BASE + Math.max(0, topics.length - 5) * 10;
 
   topics.forEach((topic, index) => {
     const angle = (index / Math.max(topics.length, 1)) * Math.PI * 2 - Math.PI / 2;
@@ -101,7 +104,7 @@ export function layoutVisualMindMap(nodes: VisualMindMapNode[]): Pick<VisualMind
     if (!parent || !children.length) continue;
 
     const parentAngle = Math.atan2(parent.y - CY, parent.x - CX);
-    const spread = Math.min(Math.PI * 0.85, children.length * 0.42 + 0.35);
+    const spread = Math.min(Math.PI * 0.75, children.length * 0.38 + 0.28);
     const start = parentAngle - spread / 2;
 
     children.forEach((child, index) => {
@@ -126,7 +129,7 @@ export function layoutVisualMindMap(nodes: VisualMindMapNode[]): Pick<VisualMind
     { x: CX, y: CY },
   );
 
-  const pad = 140;
+  const pad = 72;
   const xs = positioned.map((n) => n.x);
   const ys = positioned.map((n) => n.y);
   const radii = positioned.map((n) => nodeRadius(n.label, n.tier));
@@ -136,8 +139,8 @@ export function layoutVisualMindMap(nodes: VisualMindMapNode[]): Pick<VisualMind
   const minY = Math.min(...ys.map((y, i) => y - radii[i]!));
   const maxY = Math.max(...ys.map((y, i) => y + radii[i]!));
 
-  const width = Math.max(960, maxX - minX + pad * 2);
-  const height = Math.max(720, maxY - minY + pad * 2);
+  const width = Math.max(820, maxX - minX + pad * 2);
+  const height = Math.max(620, maxY - minY + pad * 2);
   const offsetX = pad - minX;
   const offsetY = pad - minY;
 
@@ -157,7 +160,7 @@ export function organicEdgePath(
   y1: number,
   x2: number,
   y2: number,
-  curvature = 0.22,
+  curvature = 0.26,
 ) {
   const dx = x2 - x1;
   const dy = y2 - y1;
@@ -168,7 +171,7 @@ export function organicEdgePath(
 
 export function getMindMapEdges(nodes: VisualMindMapNode[]) {
   const byId = new Map(nodes.map((n) => [n.id, n]));
-  const edges: Array<{ from: VisualMindMapNode; to: VisualMindMapNode; key: string }> = [];
+  const edges: Array<{ from: VisualMindMapNode; to: VisualMindMapNode; key: string; kind: "hierarchy" | "relation" }> = [];
   const seen = new Set<string>();
 
   for (const node of nodes) {
@@ -178,7 +181,7 @@ export function getMindMapEdges(nodes: VisualMindMapNode[]) {
         const key = `${parent.id}-${node.id}`;
         if (!seen.has(key)) {
           seen.add(key);
-          edges.push({ from: parent, to: node, key });
+          edges.push({ from: parent, to: node, key, kind: "hierarchy" });
         }
       }
     }
@@ -190,7 +193,7 @@ export function getMindMapEdges(nodes: VisualMindMapNode[]) {
       if (seen.has(key)) continue;
       if (node.parentId === relId || target.parentId === node.id) continue;
       seen.add(key);
-      edges.push({ from: node, to: target, key });
+      edges.push({ from: node, to: target, key, kind: "relation" });
     }
   }
 

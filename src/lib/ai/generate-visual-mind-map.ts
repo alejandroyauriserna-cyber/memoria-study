@@ -38,6 +38,7 @@ function parseJson(raw: string) {
       category?: VisualMindMapCategory;
       imagePrompt?: string;
       relatedIds?: string[];
+      legalReferences?: string[];
     }>;
   };
 }
@@ -185,8 +186,8 @@ ${nodes.map((n) => `- id: ${n.id}, tier: ${n.tier}, label: ${n.label}, parentId:
 Para CADA nodo devuelve enriquecimiento visual y pedagógico.
 
 Categorías (category):
-- concept: conceptos principales (turquesa)
-- norm: normas legales (azul)
+- concept: conceptos principales (azul)
+- norm: normas legales (cian)
 - principle: principios jurídicos (verde)
 - case: casos (naranja)
 - example: ejemplos (morado)
@@ -206,7 +207,8 @@ Devuelve SOLO JSON:
       "reviewQuestion": "pregunta de repaso",
       "icon": "scale|book|gavel|users|landmark|lightbulb|target|brain",
       "imagePrompt": "Minimal educational illustration...",
-      "relatedIds": ["center", "topic-0-detail-0"]
+      "relatedIds": ["center", "topic-0-detail-0"],
+      "legalReferences": ["Art. 1351 CC", "Ley 26887 art. 5"]
     }
   ]
 }`;
@@ -243,6 +245,9 @@ Devuelve SOLO JSON:
         extra.category && CATEGORIES.includes(extra.category) ? extra.category : node.category,
       imagePrompt: extra.imagePrompt?.trim() || node.imagePrompt,
       relatedIds: extra.relatedIds?.length ? extra.relatedIds : node.relatedIds,
+      legalReferences: extra.legalReferences?.filter(Boolean).length
+        ? extra.legalReferences.filter(Boolean)
+        : node.legalReferences,
     };
   });
 }

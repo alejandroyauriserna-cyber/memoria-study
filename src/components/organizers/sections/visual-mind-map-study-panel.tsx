@@ -11,6 +11,7 @@ import {
   Lightbulb,
   Link2,
   Scale,
+  ScrollText,
   Sparkles,
   Target,
   Users,
@@ -116,6 +117,29 @@ export function VisualMindMapStudyPanel({
             accent={theme.color}
             content={node.example}
           />
+        ) : null}
+
+        {node.legalReferences?.length ? (
+          <div
+            className="rounded-2xl border p-4"
+            style={{ borderColor: theme.soft, background: "rgba(255,255,255,0.02)" }}
+          >
+            <p className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-[#F5F7FA]/70">
+              <ScrollText size={14} style={{ color: theme.color }} />
+              Artículos relacionados
+            </p>
+            <ul className="space-y-1.5">
+              {node.legalReferences.map((ref) => (
+                <li
+                  key={ref}
+                  className="rounded-lg px-3 py-2 text-xs font-medium leading-snug text-[#F5F7FA]/90"
+                  style={{ background: theme.soft }}
+                >
+                  {ref}
+                </li>
+              ))}
+            </ul>
+          </div>
         ) : null}
 
         {node.reviewQuestion ? (

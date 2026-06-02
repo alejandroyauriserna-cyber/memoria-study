@@ -7,105 +7,112 @@ export type CategoryTheme = {
   glow: string;
   soft: string;
   gradient: string;
+  chip: string;
 };
 
 export const CATEGORY_THEMES: Record<VisualMindMapCategory, CategoryTheme> = {
   concept: {
     id: "concept",
     label: "Concepto",
-    color: "#00FFD5",
-    glow: "rgba(0,255,213,0.55)",
-    soft: "rgba(0,255,213,0.14)",
-    gradient: "linear-gradient(135deg, rgba(0,255,213,0.35), rgba(0,191,255,0.12))",
+    color: "#3B82F6",
+    glow: "rgba(59,130,246,0.6)",
+    soft: "rgba(59,130,246,0.16)",
+    gradient: "linear-gradient(135deg, rgba(59,130,246,0.45), rgba(37,99,235,0.15))",
+    chip: "rgba(59,130,246,0.22)",
   },
   norm: {
     id: "norm",
     label: "Norma",
-    color: "#00BFFF",
-    glow: "rgba(0,191,255,0.55)",
-    soft: "rgba(0,191,255,0.14)",
-    gradient: "linear-gradient(135deg, rgba(0,191,255,0.32), rgba(0,120,255,0.1))",
+    color: "#0EA5E9",
+    glow: "rgba(14,165,233,0.55)",
+    soft: "rgba(14,165,233,0.14)",
+    gradient: "linear-gradient(135deg, rgba(14,165,233,0.35), rgba(2,132,199,0.12))",
+    chip: "rgba(14,165,233,0.2)",
   },
   principle: {
     id: "principle",
     label: "Principio",
-    color: "#34D399",
-    glow: "rgba(52,211,153,0.55)",
-    soft: "rgba(52,211,153,0.14)",
-    gradient: "linear-gradient(135deg, rgba(52,211,153,0.3), rgba(16,185,129,0.1))",
+    color: "#22C55E",
+    glow: "rgba(34,197,94,0.55)",
+    soft: "rgba(34,197,94,0.16)",
+    gradient: "linear-gradient(135deg, rgba(34,197,94,0.38), rgba(21,128,61,0.12))",
+    chip: "rgba(34,197,94,0.22)",
   },
   case: {
     id: "case",
     label: "Caso",
-    color: "#FF8A00",
-    glow: "rgba(255,138,0,0.55)",
-    soft: "rgba(255,138,0,0.14)",
-    gradient: "linear-gradient(135deg, rgba(255,138,0,0.32), rgba(255,100,0,0.1))",
+    color: "#F97316",
+    glow: "rgba(249,115,22,0.55)",
+    soft: "rgba(249,115,22,0.16)",
+    gradient: "linear-gradient(135deg, rgba(249,115,22,0.38), rgba(194,65,12,0.12))",
+    chip: "rgba(249,115,22,0.22)",
   },
   example: {
     id: "example",
     label: "Ejemplo",
-    color: "#A78BFA",
-    glow: "rgba(167,139,250,0.55)",
-    soft: "rgba(167,139,250,0.14)",
-    gradient: "linear-gradient(135deg, rgba(167,139,250,0.32), rgba(139,92,246,0.1))",
+    color: "#A855F7",
+    glow: "rgba(168,85,247,0.55)",
+    soft: "rgba(168,85,247,0.16)",
+    gradient: "linear-gradient(135deg, rgba(168,85,247,0.38), rgba(126,34,206,0.12))",
+    chip: "rgba(168,85,247,0.22)",
   },
   comparison: {
     id: "comparison",
     label: "Comparación",
-    color: "#FBBF24",
-    glow: "rgba(251,191,36,0.55)",
-    soft: "rgba(251,191,36,0.14)",
-    gradient: "linear-gradient(135deg, rgba(251,191,36,0.28), rgba(245,158,11,0.1))",
+    color: "#EAB308",
+    glow: "rgba(234,179,8,0.55)",
+    soft: "rgba(234,179,8,0.16)",
+    gradient: "linear-gradient(135deg, rgba(234,179,8,0.32), rgba(202,138,4,0.1))",
+    chip: "rgba(234,179,8,0.22)",
   },
 };
 
 export type TierStyle = {
   collisionRadius: number;
-  thumbSize: number;
-  minWidth: number;
-  maxWidth: number;
+  cardWidth: number;
+  cardHeight: number;
+  thumbWidth: number;
   fontSize: number;
   iconSize: number;
-  padding: string;
+  labelLines: number;
 };
 
 export const TIER_STYLES: Record<VisualMindMapTier, TierStyle> = {
   center: {
-    collisionRadius: 96,
-    thumbSize: 72,
-    minWidth: 168,
-    maxWidth: 220,
-    fontSize: 15,
-    iconSize: 28,
-    padding: "20px 22px",
+    collisionRadius: 130,
+    cardWidth: 280,
+    cardHeight: 200,
+    thumbWidth: 280,
+    fontSize: 17,
+    iconSize: 44,
+    labelLines: 3,
   },
   topic: {
-    collisionRadius: 68,
-    thumbSize: 52,
-    minWidth: 128,
-    maxWidth: 168,
-    fontSize: 12,
-    iconSize: 18,
-    padding: "14px 16px",
+    collisionRadius: 88,
+    cardWidth: 196,
+    cardHeight: 112,
+    thumbWidth: 72,
+    fontSize: 13,
+    iconSize: 22,
+    labelLines: 2,
   },
   subtopic: {
-    collisionRadius: 58,
-    thumbSize: 44,
-    minWidth: 112,
-    maxWidth: 148,
-    fontSize: 11,
-    iconSize: 16,
-    padding: "12px 14px",
+    collisionRadius: 72,
+    cardWidth: 168,
+    cardHeight: 96,
+    thumbWidth: 64,
+    fontSize: 12,
+    iconSize: 18,
+    labelLines: 2,
   },
   detail: {
-    collisionRadius: 44,
-    thumbSize: 34,
-    minWidth: 88,
-    maxWidth: 120,
+    collisionRadius: 52,
+    cardWidth: 132,
+    cardHeight: 44,
+    thumbWidth: 36,
     fontSize: 10,
-    iconSize: 13,
-    padding: "10px 12px",
+    iconSize: 14,
+    labelLines: 1,
   },
 };
 
@@ -119,5 +126,13 @@ export function styleForTier(tier: VisualMindMapTier): TierStyle {
 
 export function collisionRadiusForNode(label: string, tier: VisualMindMapTier): number {
   const base = styleForTier(tier).collisionRadius;
-  return base + Math.min(label.length * 0.6, tier === "detail" ? 8 : 16);
+  return base + Math.min(label.length * 0.45, tier === "detail" ? 6 : 12);
 }
+
+export const LEGEND_CATEGORIES: VisualMindMapCategory[] = [
+  "concept",
+  "principle",
+  "case",
+  "example",
+  "comparison",
+];

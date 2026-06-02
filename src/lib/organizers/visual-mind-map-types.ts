@@ -21,6 +21,7 @@ export type VisualMindMapNode = {
   imageUrl?: string | null;
   imagePrompt?: string;
   relatedIds: string[];
+  legalReferences?: string[];
   x: number;
   y: number;
   /** @deprecated — use tier */
@@ -33,6 +34,7 @@ export type VisualMindMap = {
   nodes: VisualMindMapNode[];
   width: number;
   height: number;
+  illustratedImageUrl?: string | null;
 };
 
 export const MAX_VISUAL_MIND_MAP_IMAGES = 8;
