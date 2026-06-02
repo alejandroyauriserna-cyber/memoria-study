@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { extractRubricText } from "@/lib/ai/extract-rubric-text";
 import { generateVisualPremiumPrompt } from "@/lib/ai/generate-visual-premium-prompt";
 import { parseOrganizerContent } from "@/lib/organizers/parse-content";
 import type { VisualPromptMode } from "@/lib/organizers/visual-prompt-types";
@@ -8,11 +9,17 @@ import { createClient } from "@/lib/supabase/server";
 import { env } from "@/lib/env";
 
 export const runtime = "nodejs";
-export const maxDuration = 120;
+export const maxDuration = 180;
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 const VALID_MODES = new Set(VISUAL_PROMPT_MODES.map((m) => m.id));
+const MAX_RUBRIC_BYTES = 12 * 1024 * 1024;
+
+function parseMode(value: FormDataEntryValue | null): VisualPromptMode {
+  const mode = typeof value === "string" ? value : "infographic";
+  return VALID_MODES.has(mode as VisualPromptMode) ? (mode as VisualPromptMode) : "infographic";
+}
 
 export async function POST(request: Request, context: RouteContext) {
   try {
@@ -22,8 +29,38 @@ export async function POST(request: Request, context: RouteContext) {
       return NextResponse.json({ error: "Supabase no está configurado." }, { status: 503 });
     }
 
-    const body = (await request.json().catch(() => ({}))) as { mode?: VisualPromptMode };
-    const mode = body.mode && VALID_MODES.has(body.mode) ? body.mode : "infographic";
+    const contentType = request.headers.get("content-type") ?? "";
+    let mode: VisualPromptMode = "infographic";
+    let rubricText: string | null = null;
+    let rubricFileName: string | undefined;
+
+    if (contentType.includes("multipart/form-data")) {
+      const formData = await request.formData();
+      mode = parseMode(formData.get("mode"));
+
+      const rubricEntry = formData.get("rubric");
+      if (rubricEntry instanceof File && rubricEntry.size > 0) {
+        if (rubricEntry.size > MAX_RUBRIC_BYTES) {
+          return NextResponse.json(
+            { error: "La rúbrica supera el tamaño máximo de 12 MB." },
+            { status: 400 },
+          );
+        }
+
+        const buffer = Buffer.from(await rubricEntry.arrayBuffer());
+        rubricFileName = rubricEntry.name;
+        rubricText = await extractRubricText(buffer, rubricEntry.name, rubricEntry.type);
+      }
+    } else {
+      const body = (await request.json().catch(() => ({}))) as {
+        mode?: VisualPromptMode;
+        rubricText?: string;
+        rubricFileName?: string;
+      };
+      mode = body.mode && VALID_MODES.has(body.mode) ? body.mode : "infographic";
+      rubricText = body.rubricText?.trim() || null;
+      rubricFileName = body.rubricFileName;
+    }
 
     const supabase = await createClient();
     const {
@@ -52,7 +89,12 @@ export async function POST(request: Request, context: RouteContext) {
     }
 
     const content = parseOrganizerContent(organizer.content);
-    const visualPremiumPrompt = await generateVisualPremiumPrompt(content, mode);
+    const visualPremiumPrompt = await generateVisualPremiumPrompt(
+      content,
+      mode,
+      rubricText,
+      rubricFileName,
+    );
 
     const mergedContent = {
       ...content,
@@ -72,13 +114,16 @@ export async function POST(request: Request, context: RouteContext) {
     return NextResponse.json({
       organizer: updated,
       visualPremiumPrompt,
+      rubricDetected: Boolean(rubricText),
     });
   } catch (caught) {
     console.error("[organizers/visual-prompt]", caught);
 
-    return NextResponse.json(
-      { error: "Ocurrió un error al generar el prompt visual. Inténtalo de nuevo." },
-      { status: 500 },
-    );
+    const message =
+      caught instanceof Error
+        ? caught.message
+        : "Ocurrió un error al generar el prompt visual. Inténtalo de nuevo.";
+
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

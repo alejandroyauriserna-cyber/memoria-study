@@ -1,11 +1,13 @@
+import { analyzeAcademicRubric } from "@/lib/ai/analyze-academic-rubric";
+import { extractInfographicTopics } from "@/lib/ai/build-academic-infographic-prompt";
 import { env } from "@/lib/env";
 import type { OrganizerContent } from "@/lib/organizers/parse-content";
 import type {
   DocumentVisualAnalysis,
+  RubricAnalysis,
   VisualPremiumPrompt,
   VisualPromptMode,
 } from "@/lib/organizers/visual-prompt-types";
-import { extractInfographicTopics } from "@/lib/ai/build-academic-infographic-prompt";
 
 const VISUAL_METAPHOR_GUIDE = `
 Traduce conceptos jurídicos a escenas visuales concretas (NO cajas ni nodos):
@@ -38,6 +40,7 @@ const MODE_STYLE: Record<VisualPromptMode, string> = {
   exam: `Modo EXAMEN: resaltar definiciones exactas, artículos clave, comparaciones preguntables, excepciones, conceptos repetidos por el docente, jerarquía visual por relevancia examen.`,
   legal_premium: `Modo JURÍDICO PREMIUM: diseño formal elegante, tribunales, jueces, expedientes, códigos, documentos legales, iconografía jurídica clásica peruana, tono académico universitario.`,
   jurisprudence: `Modo JURISPRUDENCIA: casos emblemáticos, precedentes, sentencias, expedientes numerados, líneas jurisprudenciales conectadas visualmente, énfasis en fallos y ratios decidendi.`,
+  professor: `Modo PROFESOR: el prompt DEBE cumplir estrictamente la rúbrica del docente — formato solicitado, criterios de evaluación, puntajes, profundidad, cantidad de conceptos y requisitos visuales. Priorizar alineación con la rúbrica sobre estilo genérico.`,
 };
 
 function unique(values: Array<string | undefined | null>, limit = 12): string[] {
@@ -165,6 +168,71 @@ export function extractDocumentVisualAnalysis(content: OrganizerContent): Docume
   };
 }
 
+export function buildPromptExplanation(
+  analysis: DocumentVisualAnalysis,
+  rubric?: RubricAnalysis | null,
+  mode?: VisualPromptMode,
+): string[] {
+  const lines: string[] = [];
+
+  lines.push(`Se identificaron ${analysis.concepts.length} conceptos principales del material.`);
+
+  if (analysis.subtopics.length) {
+    lines.push(`Se organizaron ${analysis.subtopics.length} subtemas alrededor de «${analysis.centralTopic}».`);
+  }
+
+  if (analysis.articles.length) {
+    lines.push(`Se detectaron ${analysis.articles.length} referencias normativas o artículos de ley.`);
+  }
+
+  if (analysis.comparisons.length) {
+    lines.push(`Se detectaron ${analysis.comparisons.length} comparaciones relevantes para ilustrar.`);
+  }
+
+  if (analysis.jurisprudence.length) {
+    lines.push("Se incorporó jurisprudencia o casos del material de estudio.");
+  }
+
+  if (rubric) {
+    if (rubric.requestedFormat) {
+      lines.push(`La rúbrica solicita formato: ${rubric.requestedFormat}.`);
+    }
+    if (rubric.creativityRequired) {
+      lines.push("La rúbrica exige creatividad visual.");
+    }
+    if (rubric.clarityRequired) {
+      lines.push("La rúbrica exige claridad en la presentación.");
+    }
+    if (rubric.hierarchyRequired) {
+      lines.push("La rúbrica exige jerarquía visual clara.");
+    }
+    if (rubric.examplesRequired) {
+      lines.push("La rúbrica exige ejemplos concretos.");
+    }
+    if (rubric.imagesRequired) {
+      lines.push("La rúbrica exige uso de imágenes o ilustraciones.");
+    }
+    if (rubric.comparisonsRequired) {
+      lines.push("La rúbrica prioriza comparaciones visuales.");
+    }
+    if (rubric.evaluationCriteria.length) {
+      lines.push(
+        `Se alinearon ${rubric.evaluationCriteria.length} criterios de evaluación del docente.`,
+      );
+    }
+    if (rubric.conceptCountHint) {
+      lines.push(`La rúbrica indica: ${rubric.conceptCountHint}.`);
+    }
+    if (rubric.depthRequired) {
+      lines.push(`Profundidad requerida: ${rubric.depthRequired}.`);
+    }
+  } else if (mode === "professor") {
+    lines.push("Modo Profesor activo: adjunta la rúbrica para personalizar aún más el prompt.");
+  }
+
+  return lines;
+}
+
 function parseJson(raw: string) {
   const cleaned = raw
     .trim()
@@ -179,24 +247,48 @@ function parseJson(raw: string) {
     title?: string;
     mode?: VisualPromptMode;
     prompt?: string;
+    explanation?: string[];
   };
+}
+
+function rubricBlock(rubric: RubricAnalysis) {
+  return `
+RÚBRICA DEL DOCENTE (OBLIGATORIO CUMPLIR):
+Formato solicitado: ${rubric.requestedFormat ?? "Según rúbrica adjunta"}
+Criterios de evaluación:
+${rubric.evaluationCriteria.map((c) => `- ${c}`).join("\n") || "- Ver rúbrica"}
+Puntajes / niveles:
+${rubric.scoringLevels.map((s) => `- ${s}`).join("\n") || "- Según escala de la rúbrica"}
+Requisitos visuales:
+${rubric.visualRequirements.map((r) => `- ${r}`).join("\n") || "- Creatividad, claridad y diseño profesional"}
+Estructura solicitada:
+${rubric.structureRequirements.map((s) => `- ${s}`).join("\n") || "- Estructura académica clara"}
+${rubric.conceptCountHint ? `Cantidad de conceptos: ${rubric.conceptCountHint}` : ""}
+${rubric.depthRequired ? `Profundidad: ${rubric.depthRequired}` : ""}
+`.trim();
 }
 
 function buildFallbackPrompt(
   analysis: DocumentVisualAnalysis,
   mode: VisualPromptMode,
   content: OrganizerContent,
+  rubric?: RubricAnalysis | null,
 ): VisualPremiumPrompt {
   const sceneList = analysis.visualScenes
     .map((s) => `• ${s.concept} → ${s.visualMetaphor}`)
     .join("\n");
 
+  const effectiveMode =
+    rubric && (mode === "professor" || mode === "infographic") ? "professor" : mode;
+
   const prompt = `Genera una imagen ultra detallada en 4K.
 
 TÍTULO PRINCIPAL: ${analysis.centralTopic}
 TEMA CENTRAL: ${analysis.centralTopic}
-MODO: ${mode.toUpperCase()}
-${MODE_STYLE[mode]}
+MODO: ${effectiveMode.toUpperCase()}
+${MODE_STYLE[effectiveMode]}
+
+${rubric ? rubricBlock(rubric) : ""}
 
 SUBTEMAS A ILUSTRAR:
 ${analysis.subtopics.map((s) => `- ${s}`).join("\n")}
@@ -235,6 +327,7 @@ DISTRIBUCIÓN VISUAL:
 - Flechas y conexiones curvas con profundidad
 - Iconografía jurídica peruana
 - Texto legible en español integrado en la infografía
+${rubric?.requestedFormat ? `- Formato alineado a: ${rubric.requestedFormat}` : ""}
 
 PALETA:
 - Azul conceptos · Verde principios · Naranja casos · Morado ejemplos · Amarillo comparaciones · Rojo artículos
@@ -247,9 +340,12 @@ ${QUALITY_BLOCK}`;
 
   return {
     title: analysis.centralTopic,
-    mode,
+    mode: effectiveMode,
     prompt,
     analysis,
+    rubricAnalysis: rubric ?? undefined,
+    explanation: buildPromptExplanation(analysis, rubric, mode),
+    hasRubric: Boolean(rubric),
     generatedAt: new Date().toISOString(),
   };
 }
@@ -258,21 +354,29 @@ async function enrichPromptWithGemini(
   analysis: DocumentVisualAnalysis,
   content: OrganizerContent,
   mode: VisualPromptMode,
+  rubric?: RubricAnalysis | null,
 ): Promise<VisualPremiumPrompt> {
   if (!env.geminiApiKey) {
-    return buildFallbackPrompt(analysis, mode, content);
+    return buildFallbackPrompt(analysis, mode, content, rubric);
   }
+
+  const effectiveMode =
+    rubric && (mode === "professor" || mode === "infographic") ? "professor" : mode;
 
   const systemPrompt = `Eres un director de arte educativo especializado en Derecho peruano (UNT).
 Tu trabajo es crear PROMPTS HIPERDETALLADOS para Gemini Image (Nano Banana).
 NO generes la imagen. Solo el prompt final listo para copiar y pegar.
 
-${MODE_STYLE[mode]}
+${MODE_STYLE[effectiveMode]}
+
+${rubric ? rubricBlock(rubric) : ""}
 
 ${VISUAL_METAPHOR_GUIDE}
 
-Análisis estructurado del documento:
+Análisis estructurado del material:
 ${JSON.stringify(analysis, null, 2)}
+
+${rubric ? `Análisis de la rúbrica:\n${JSON.stringify(rubric, null, 2)}` : ""}
 
 Resumen del material:
 ${content.summary?.slice(0, 2000) ?? ""}
@@ -280,15 +384,23 @@ ${content.summary?.slice(0, 2000) ?? ""}
 Explicación simplificada:
 ${content.simplifiedExplanation?.slice(0, 800) ?? ""}
 
+REGLAS:
+- Si hay rúbrica, el prompt DEBE cumplir formato, criterios y requisitos visuales del docente.
+- NO uses diagramas de cajas conectadas ni mapas mentales aburridos tipo wireframe.
+- Crea una infografía visual premium, atlas ilustrado o póster académico moderno.
+
 El prompt debe ser una sola instrucción larga en español, lista para pegar en Gemini Image.
-Debe describir: título, tema central, subtemas, escenas visuales, iconografía, estilo gráfico, distribución, paleta, relaciones conceptuales y nivel académico universitario.
 Incluir siempre: ${QUALITY_BLOCK}
 
 Devuelve SOLO JSON:
 {
   "title": "Título del póster visual",
-  "mode": "${mode}",
-  "prompt": "Prompt hiperdetallado completo en español..."
+  "mode": "${effectiveMode}",
+  "prompt": "Prompt hiperdetallado completo en español...",
+  "explanation": [
+    "Se identificaron X conceptos principales.",
+    "La rúbrica exige creatividad."
+  ]
 }`;
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${env.geminiModel}:generateContent?key=${env.geminiApiKey}`;
@@ -303,39 +415,58 @@ Devuelve SOLO JSON:
 
   const payload = await response.json();
   if (!response.ok) {
-    return buildFallbackPrompt(analysis, mode, content);
+    return buildFallbackPrompt(analysis, mode, content, rubric);
   }
 
   const text = payload.candidates?.[0]?.content?.parts?.[0]?.text;
   if (typeof text !== "string") {
-    return buildFallbackPrompt(analysis, mode, content);
+    return buildFallbackPrompt(analysis, mode, content, rubric);
   }
 
   try {
     const parsed = parseJson(text);
     const prompt = parsed.prompt?.trim();
-    if (!prompt) return buildFallbackPrompt(analysis, mode, content);
+    if (!prompt) return buildFallbackPrompt(analysis, mode, content, rubric);
 
     const withQuality = prompt.includes("4K")
       ? prompt
       : `${prompt.trim()}\n\n${QUALITY_BLOCK}`;
 
+    const explanation =
+      parsed.explanation?.filter(Boolean).length
+        ? parsed.explanation.filter(Boolean)
+        : buildPromptExplanation(analysis, rubric, effectiveMode);
+
     return {
       title: parsed.title?.trim() || analysis.centralTopic,
-      mode: parsed.mode ?? mode,
+      mode: parsed.mode ?? effectiveMode,
       prompt: withQuality,
       analysis,
+      rubricAnalysis: rubric ?? undefined,
+      explanation,
+      hasRubric: Boolean(rubric),
       generatedAt: new Date().toISOString(),
     };
   } catch {
-    return buildFallbackPrompt(analysis, mode, content);
+    return buildFallbackPrompt(analysis, mode, content, rubric);
   }
 }
 
 export async function generateVisualPremiumPrompt(
   content: OrganizerContent,
   mode: VisualPromptMode,
+  rubricText?: string | null,
+  rubricFileName?: string,
 ): Promise<VisualPremiumPrompt> {
   const analysis = extractDocumentVisualAnalysis(content);
-  return enrichPromptWithGemini(analysis, content, mode);
+
+  let rubricAnalysis: RubricAnalysis | null = null;
+  if (rubricText?.trim()) {
+    rubricAnalysis = await analyzeAcademicRubric(rubricText, rubricFileName);
+  }
+
+  const resolvedMode =
+    rubricAnalysis && (mode === "professor" || mode === "infographic") ? "professor" : mode;
+
+  return enrichPromptWithGemini(analysis, content, resolvedMode, rubricAnalysis);
 }
