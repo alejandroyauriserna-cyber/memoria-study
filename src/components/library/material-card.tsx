@@ -116,6 +116,27 @@ export function MaterialCard({ material }: { material: Material }) {
     }
   }
 
+  async function handleStudyWithAi() {
+    if (!material.id) return;
+
+    setBusy(true);
+    setMessage("");
+
+    try {
+      const response = await fetch(`/api/organizers/create?materialId=${material.id}`);
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload.error ?? "No se pudo crear el organizador.");
+      }
+
+      window.location.href = "/organizers";
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Error creando el organizador.");
+      setBusy(false);
+    }
+  }
+
   return (
     <article className="rounded-[32px] border border-border bg-card p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
       <div className="flex flex-col gap-5 sm:flex-row sm:justify-between sm:items-start">
@@ -196,12 +217,14 @@ export function MaterialCard({ material }: { material: Material }) {
           </Link>
         ) : null}
         {material.id ? (
-          <a
-            href={`/api/organizers/create?materialId=${material.id}`}
+          <button
+            type="button"
+            onClick={handleStudyWithAi}
+            disabled={busy}
             className="inline-flex h-11 items-center justify-center gap-2 rounded-3xl border border-border bg-card px-4 font-semibold text-foreground hover:bg-muted"
           >
             <Search size={16} /> Estudiar con IA
-          </a>
+          </button>
         ) : null}
       </div>
 

@@ -5,11 +5,22 @@ import { hasSupabaseEnv } from "@/lib/env";
 
 export const runtime = "nodejs";
 
+const VIEW_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+
 async function canOpenFile(fileUrl: string, origin: string) {
   try {
     const targetUrl = new URL(fileUrl, origin);
     const response = await fetch(targetUrl, { method: "HEAD", cache: "no-store" });
-    return response.ok;
+    if (response.ok) {
+      return true;
+    }
+
+    const rangeResponse = await fetch(targetUrl, {
+      headers: { Range: "bytes=0-0" },
+      cache: "no-store",
+    });
+
+    return rangeResponse.ok;
   } catch {
     return false;
   }
@@ -36,7 +47,7 @@ export async function POST(request: Request, context: any) {
     const { data: material, error: materialError } = await admin
       .schema("public")
       .from("materials")
-      .select("id,file_url,views")
+      .select("id,file_url")
       .eq("id", id)
       .maybeSingle();
 
@@ -53,24 +64,25 @@ export async function POST(request: Request, context: any) {
       return NextResponse.json({ error: "No se pudo abrir el PDF." }, { status: 502 });
     }
 
-    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    const { data: existingView, error: viewError } = await admin
+    const since = new Date(Date.now() - VIEW_COOLDOWN_MS).toISOString();
+    const { data: recentView, error: viewError } = await admin
       .schema("public")
       .from("material_views")
       .select("id")
       .eq("material_id", id)
       .eq("user_id", user.id)
       .gte("viewed_at", since)
+      .order("viewed_at", { ascending: false })
+      .limit(1)
       .maybeSingle();
 
     if (viewError) {
       throw viewError;
     }
 
-    let views = material.views ?? 0;
     let counted = false;
 
-    if (!existingView) {
+    if (!recentView) {
       const { error: insertError } = await admin
         .schema("public")
         .from("material_views")
@@ -83,18 +95,27 @@ export async function POST(request: Request, context: any) {
         throw insertError;
       }
 
-      views += 1;
       counted = true;
+    }
 
-      const { error: updateError } = await admin
-        .schema("public")
-        .from("materials")
-        .update({ views })
-        .eq("id", id);
+    const { count: views, error: countError } = await admin
+      .schema("public")
+      .from("material_views")
+      .select("id", { count: "exact", head: true })
+      .eq("material_id", id);
 
-      if (updateError) {
-        throw updateError;
-      }
+    if (countError) {
+      throw countError;
+    }
+
+    const { error: updateError } = await admin
+      .schema("public")
+      .from("materials")
+      .update({ views: views ?? 0 })
+      .eq("id", id);
+
+    if (updateError) {
+      throw updateError;
     }
 
     await admin
@@ -109,7 +130,7 @@ export async function POST(request: Request, context: any) {
         { onConflict: "user_id,material_id" },
       );
 
-    return NextResponse.json({ counted, fileUrl: material.file_url, views });
+    return NextResponse.json({ counted, fileUrl: material.file_url, views: views ?? 0 });
   } catch (caught) {
     return NextResponse.json(
       { error: caught instanceof Error ? caught.message : "Error registrando vista." },

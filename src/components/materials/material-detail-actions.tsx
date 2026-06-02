@@ -95,6 +95,25 @@ export function MaterialDetailActions({
     }
   }
 
+  async function handleStudyWithAi() {
+    setBusy(true);
+    setMessage("");
+
+    try {
+      const response = await fetch(`/api/organizers/create?materialId=${materialId}`);
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload.error ?? "No se pudo crear el organizador.");
+      }
+
+      window.location.href = "/organizers";
+    } catch (caught) {
+      setMessage(caught instanceof Error ? caught.message : "Error creando el organizador.");
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="space-y-4">
       <div className="grid gap-3">
@@ -109,6 +128,9 @@ export function MaterialDetailActions({
         </Button>
         <Button variant="secondary" onClick={handleLike} disabled={busy} className="h-12">
           <Heart size={16} /> Me gusta ({likes})
+        </Button>
+        <Button variant="secondary" onClick={handleStudyWithAi} disabled={busy} className="h-12">
+          <BookOpen size={16} /> Estudiar con IA
         </Button>
       </div>
 

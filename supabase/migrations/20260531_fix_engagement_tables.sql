@@ -18,10 +18,15 @@ create table if not exists public.favorites (
   unique (user_id, material_id)
 );
 
-insert into public.favorites (user_id, material_id, created_at)
-select user_id, material_id, created_at
-from public.material_favorites
-on conflict (user_id, material_id) do nothing;
+do $$
+begin
+  if to_regclass('public.material_favorites') is not null then
+    insert into public.favorites (user_id, material_id, created_at)
+    select user_id, material_id, created_at
+    from public.material_favorites
+    on conflict (user_id, material_id) do nothing;
+  end if;
+end $$;
 
 create table if not exists public.material_views (
   id uuid primary key default gen_random_uuid(),

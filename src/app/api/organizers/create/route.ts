@@ -128,6 +128,7 @@ export async function GET(request: Request) {
       const { error: profileInsertError } = await admin.from("user_profiles").insert({
         user_id: user.id,
         email: user.email,
+        academic_context: {},
         total_organizers: 1,
         reputation_points: 15,
       });

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { BookOpen, CalendarDays, Heart, User } from "lucide-react";
+import { CalendarDays, Heart, User } from "lucide-react";
 import { AppShell } from "@/components/ui/shell";
 import { MaterialDetailActions } from "@/components/materials/material-detail-actions";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -140,13 +140,6 @@ export default async function MaterialPage({
                 initialLikes={material.likes}
                 initialViews={material.views}
               />
-
-              <a
-                href={`/api/organizers/create?materialId=${material.id}`}
-                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-3xl border border-border bg-card px-6 text-sm font-semibold text-foreground hover:bg-muted"
-              >
-                <BookOpen size={16} /> Estudiar con IA
-              </a>
             </aside>
           </div>
         </div>

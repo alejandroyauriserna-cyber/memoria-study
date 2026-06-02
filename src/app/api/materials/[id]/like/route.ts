@@ -34,8 +34,6 @@ export async function POST(request: Request, context: any) {
       throw likeError;
     }
 
-    let likes = 0;
-
     if (existingLike) {
       const { error: deleteError } = await admin
         .schema("public")
@@ -60,38 +58,33 @@ export async function POST(request: Request, context: any) {
       }
     }
 
-    const { data: material, error: materialError } = await admin
+    const { count: likes, error: countError } = await admin
+      .schema("public")
+      .from("material_likes")
+      .select("id", { count: "exact", head: true })
+      .eq("material_id", id);
+
+    if (countError) {
+      throw countError;
+    }
+
+    const { data: material, error: updateError } = await admin
       .schema("public")
       .from("materials")
-      .select("likes")
+      .update({ likes: likes ?? 0 })
       .eq("id", id)
+      .select("id")
       .maybeSingle();
 
-    if (materialError) {
-      throw materialError;
+    if (updateError) {
+      throw updateError;
     }
 
     if (!material) {
       return NextResponse.json({ error: "Material no encontrado." }, { status: 404 });
     }
 
-    if (existingLike) {
-      likes = Math.max(0, material.likes - 1);
-    } else {
-      likes = (material.likes ?? 0) + 1;
-    }
-
-    const { error: updateError } = await admin
-      .schema("public")
-      .from("materials")
-      .update({ likes })
-      .eq("id", id);
-
-    if (updateError) {
-      throw updateError;
-    }
-
-    return NextResponse.json({ likes });
+    return NextResponse.json({ likes: likes ?? 0 });
   } catch (caught) {
     return NextResponse.json(
       { error: caught instanceof Error ? caught.message : "Error registrando like." },
