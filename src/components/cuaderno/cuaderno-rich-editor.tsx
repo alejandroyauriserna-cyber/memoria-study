@@ -6,8 +6,10 @@ import { bodyToEditorHtml } from "@/lib/cuaderno/rich-text";
 import { getFontStack, getGoogleFontsHref, DEFAULT_FONT_ID } from "@/lib/cuaderno/editor-fonts";
 import { createCuadernoEditorExtensions } from "@/lib/cuaderno/cuaderno-editor-extensions";
 import { CuadernoFormatBubble } from "@/components/cuaderno/cuaderno-format-bubble";
+import { CuadernoBlockHandles, useBlockClickSelect } from "@/components/cuaderno/cuaderno-block-handles";
 import type { CuadernoAskAction } from "@/types/cuaderno";
 import "./cuaderno-rich-editor.css";
+import "./cuaderno-blocks.css";
 
 function normalizeHtml(html: string): string {
   return html.replace(/\s+/g, " ").trim();
@@ -57,6 +59,17 @@ export function CuadernoRichEditor({
         class: "cn-prosemirror",
         style: `--cn-course-accent: ${courseAccent}; font-family: ${getFontStack(DEFAULT_FONT_ID)}`,
       },
+      handleDOMEvents: {
+        contextmenu: (view, event) => {
+          const target = event.target as HTMLElement;
+          if (
+            target.closest("[data-study-block], .cn-image-block-view, table, .cn-prosemirror hr")
+          ) {
+            event.preventDefault();
+          }
+          return false;
+        },
+      },
     },
     onUpdate: ({ editor: ed }) => {
       emitChange(ed.getHTML());
@@ -97,6 +110,8 @@ export function CuadernoRichEditor({
     editor.commands.setContent(next, { emitUpdate: false });
   }, [body, editor]);
 
+  useBlockClickSelect(editor);
+
   if (!editor) {
     return <div className={`cn-rich-editor-skeleton ${className}`} aria-hidden />;
   }
@@ -109,11 +124,14 @@ export function CuadernoRichEditor({
     >
       <EditorContent editor={editor} className="cn-rich-editor-content" />
       {editable ? (
-        <CuadernoFormatBubble
-          editor={editor}
-          courseAccent={courseAccent}
-          onAiAction={onSelectionAction}
-        />
+        <>
+          <CuadernoFormatBubble
+            editor={editor}
+            courseAccent={courseAccent}
+            onAiAction={onSelectionAction}
+          />
+          <CuadernoBlockHandles editor={editor} />
+        </>
       ) : null}
     </div>
   );

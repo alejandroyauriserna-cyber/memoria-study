@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Editor } from "@tiptap/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -14,6 +14,22 @@ import {
   useEditorChromeState,
 } from "@/components/cuaderno/cuaderno-editor-chrome";
 import { CuadernoInlineTemplatePicker } from "@/components/cuaderno/cuaderno-inline-template-picker";
+import { CuadernoPageSidebar } from "@/components/cuaderno/cuaderno-page-sidebar";
+import { CuadernoBlockInspector } from "@/components/cuaderno/cuaderno-block-inspector";
+import { getSelectedBlock } from "@/lib/cuaderno/cuaderno-block-utils";
+import {
+  addPage,
+  duplicatePage,
+  getActivePage,
+  movePage,
+  parseCuadernoDocument,
+  removePage,
+  serializeCuadernoDocument,
+  setActivePageBody,
+  setActivePageTemplate,
+  switchActivePage,
+  updatePageCover,
+} from "@/lib/cuaderno/cuaderno-pages";
 import {
   saveExamItemAsync,
   saveSummaryItemAsync,
@@ -21,7 +37,7 @@ import {
 } from "@/lib/cuaderno/smart-collections";
 import { getCourseCoverArt } from "@/lib/cuaderno/course-covers";
 import { getCourseVisualPrefs } from "@/lib/cuaderno/preferences";
-import { parseNoteContent, serializeNoteContent } from "@/lib/cuaderno/note-meta";
+import { parseNoteContent } from "@/lib/cuaderno/note-meta";
 import type { CuadernoTemplateId } from "@/lib/cuaderno/templates";
 import { useCuadernoSyncContextOptional } from "@/components/cuaderno/cuaderno-sync-context";
 import { isCachedFavorite } from "@/lib/cuaderno/collections-client";
@@ -53,9 +69,12 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
   const [error, setError] = useState<string | null>(null);
   const [tiptapEditor, setTiptapEditor] = useState<Editor | null>(null);
   const [canvasWriteMode, setCanvasWriteMode] = useState(true);
+  const [inspectorOpen, setInspectorOpen] = useState(false);
 
   const sync = useCuadernoSyncContextOptional();
-  const { meta } = parseNoteContent(notes);
+  const doc = useMemo(() => parseCuadernoDocument(notes), [notes]);
+  const activePage = getActivePage(doc);
+  const meta = doc.meta;
 
   const prefs = getCourseVisualPrefs(cuadernoClass.courseId);
   const coverArt = getCourseCoverArt(cuadernoClass.courseId, prefs);
@@ -92,10 +111,25 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
     };
   }, [notes, cuadernoClass.notes, persist]);
 
-  function changeTemplate(templateId: CuadernoTemplateId) {
-    const parsed = parseNoteContent(notes);
-    setNotes(serializeNoteContent({ ...parsed.meta, templateId }, parsed.body));
+  function applyDoc(next: ReturnType<typeof parseCuadernoDocument>) {
+    setNotes(serializeCuadernoDocument(next));
   }
+
+  function changeTemplate(templateId: CuadernoTemplateId) {
+    applyDoc(setActivePageTemplate(doc, templateId));
+  }
+
+  useEffect(() => {
+    if (!tiptapEditor) return;
+    const syncInspector = () => {
+      setInspectorOpen(!!getSelectedBlock(tiptapEditor)?.kind);
+    };
+    syncInspector();
+    tiptapEditor.on("selectionUpdate", syncInspector);
+    return () => {
+      tiptapEditor.off("selectionUpdate", syncInspector);
+    };
+  }, [tiptapEditor]);
 
   async function lookupTerm(term: string) {
     const query = term.trim();
@@ -297,7 +331,7 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
       </header>
 
       <CuadernoEditorChrome
-        templateId={meta.templateId}
+        templateId={activePage.templateId}
         onTemplateChange={changeTemplate}
         layoutMode={chrome.layoutMode}
         onLayoutChange={chrome.setLayoutMode}
@@ -309,11 +343,35 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
 
       <CuadernoInlineTemplatePicker
         open={chrome.templatePickerOpen}
-        currentId={meta.templateId}
+        currentId={activePage.templateId}
         onSelect={changeTemplate}
         onClose={() => chrome.setTemplatePickerOpen(false)}
       />
 
+      <div className="cn-immersive-workspace">
+        <CuadernoPageSidebar
+          pages={doc.pages}
+          activePageId={doc.activePageId}
+          onSelect={(id) => applyDoc(switchActivePage(doc, id))}
+          onAdd={() => applyDoc(addPage(doc, activePage.templateId, "<p></p>"))}
+          onDuplicate={(id) => applyDoc(duplicatePage(doc, id))}
+          onRemove={(id) => applyDoc(removePage(doc, id))}
+          onMove={(id, dir) => applyDoc(movePage(doc, id, dir))}
+          onCoverClick={(id) => {
+            const emoji = window.prompt("Emoji de portada", "📘");
+            if (!emoji) return;
+            applyDoc(
+              updatePageCover(doc, id, {
+                icon: emoji,
+                emoji,
+                keyword: activePage.title,
+                tint: coverArt.accent,
+              }),
+            );
+          }}
+        />
+
+        <div className="cn-immersive-editor-column">
       <CuadernoEditorToolbar
         editor={tiptapEditor}
         courseAccent={coverArt.accent}
@@ -343,7 +401,7 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
       <main className="cn-immersive-main">
         <motion.div
           className="cn-immersive-paper-shell"
-          key={`${meta.templateId}-${chrome.layoutMode}-${chrome.paperTone}`}
+          key={`${doc.activePageId}-${activePage.templateId}-${chrome.layoutMode}-${chrome.paperTone}`}
           initial={{ opacity: 0, y: 16, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
@@ -352,10 +410,10 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
             immersive
             externalToolbar
             notes={notes}
-            onChange={setNotes}
+            onChange={(raw) => applyDoc(parseCuadernoDocument(raw))}
             layoutMode={chrome.layoutMode}
             paperTone={chrome.paperTone}
-            templateId={meta.templateId}
+            templateId={activePage.templateId}
             courseAccent={coverArt.accent}
             onEditorReady={setTiptapEditor}
             onModeChange={(m) => setCanvasWriteMode(m === "write")}
@@ -378,6 +436,15 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
           />
         </motion.div>
       </main>
+        </div>
+
+        <CuadernoBlockInspector
+          editor={tiptapEditor}
+          open={inspectorOpen}
+          onClose={() => setInspectorOpen(false)}
+          courseAccent={coverArt.accent}
+        />
+      </div>
 
       <CuadernoAiSidebar
         open={aiOpen}

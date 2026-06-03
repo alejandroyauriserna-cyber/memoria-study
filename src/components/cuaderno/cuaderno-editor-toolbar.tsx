@@ -24,7 +24,8 @@ import {
   Table,
   Underline,
 } from "lucide-react";
-import { CUADERNO_FONTS } from "@/lib/cuaderno/editor-fonts";
+import { CUADERNO_FONTS, type CuadernoFontId } from "@/lib/cuaderno/editor-fonts";
+import { ToolbarSelect } from "@/components/cuaderno/toolbar-select";
 import { LEGAL_TOOLBAR_BLOCKS, insertStudyBlock } from "@/lib/cuaderno/academic-styles";
 import type { StudyBlockId } from "@/lib/cuaderno/academic-styles";
 import type { CuadernoAskAction } from "@/types/cuaderno";
@@ -126,6 +127,8 @@ export function CuadernoEditorToolbar({
   const [legalOpen, setLegalOpen] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
   const [colorOpen, setColorOpen] = useState(false);
+  const [fontId, setFontId] = useState<CuadernoFontId | "">("");
+  const [fontSize, setFontSize] = useState("");
   const imageInputRef = useRef<HTMLInputElement>(null);
   const railRef = useRef<HTMLDivElement>(null);
 
@@ -179,42 +182,26 @@ export function CuadernoEditorToolbar({
       <div className="cn-editor-toolbar-scroll">
         {/* Formato */}
         <div className="cn-tb-group" role="group" aria-label="Formato">
-          <select
-            className="cn-tb-select"
-            title="Fuente"
-            defaultValue=""
-            onChange={(e) => {
-              const font = CUADERNO_FONTS.find((f) => f.id === e.target.value);
+          <ToolbarSelect
+            label="Fuente"
+            value={fontId}
+            options={CUADERNO_FONTS.map((f) => ({ value: f.id, label: f.label }))}
+            onChange={(id) => {
+              setFontId(id);
+              const font = CUADERNO_FONTS.find((f) => f.id === id);
               if (font) editor.chain().focus().setFontFamily(font.stack).run();
             }}
-          >
-            <option value="" disabled>
-              Fuente
-            </option>
-            {CUADERNO_FONTS.map((f) => (
-              <option key={f.id} value={f.id}>
-                {f.label}
-              </option>
-            ))}
-          </select>
-          <select
-            className="cn-tb-select cn-tb-select--sm"
-            title="Tamaño"
-            defaultValue=""
-            onChange={(e) => {
-              const v = e.target.value;
-              if (v) editor.chain().focus().setFontSize(v).run();
+          />
+          <ToolbarSelect
+            label="Tamaño"
+            compact
+            value={fontSize as (typeof FONT_SIZES)[number] | ""}
+            options={FONT_SIZES.map((s) => ({ value: s, label: s.replace("px", " pt") }))}
+            onChange={(v) => {
+              setFontSize(v);
+              editor.chain().focus().setFontSize(v).run();
             }}
-          >
-            <option value="" disabled>
-              Tamaño
-            </option>
-            {FONT_SIZES.map((s) => (
-              <option key={s} value={s}>
-                {s.replace("px", "")}
-              </option>
-            ))}
-          </select>
+          />
           <ToolbarDivider />
           <ToolbarBtn
             title="Negrita"

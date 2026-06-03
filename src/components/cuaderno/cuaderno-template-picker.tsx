@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { CUADERNO_TEMPLATES, type CuadernoTemplateId } from "@/lib/cuaderno/templates";
+import { TEMPLATE_GALLERY_GROUPS, templatesByCategory, type CuadernoTemplateId } from "@/lib/cuaderno/templates";
 import { CuadernoPaperPreview } from "@/components/cuaderno/cuaderno-paper-preview";
 import { X } from "lucide-react";
 import "./cuaderno-paper.css";
@@ -15,94 +15,71 @@ export function CuadernoTemplatePicker({
   onClose: () => void;
   onSelect: (templateId: CuadernoTemplateId) => void;
 }) {
-  const base = CUADERNO_TEMPLATES.filter((t) => t.category === "base");
-  const legal = CUADERNO_TEMPLATES.filter((t) => t.category === "juridica");
-
   return (
     <AnimatePresence>
       {open ? (
         <motion.div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/75 p-4 backdrop-blur-md sm:items-center"
+          className="cn-template-gallery-backdrop"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
         >
           <motion.div
-            className="cn-template-picker-panel w-full max-w-4xl max-h-[92vh] overflow-y-auto rounded-2xl border border-white/10 bg-[#0c1018]/95 p-6 shadow-2xl"
+            className="cn-template-gallery-panel"
             role="dialog"
-            aria-labelledby="template-picker-title"
+            aria-labelledby="template-gallery-title"
             initial={{ opacity: 0, y: 40, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 24, scale: 0.98 }}
             transition={{ type: "spring", stiffness: 400, damping: 32 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-start justify-between gap-4">
+            <div className="cn-template-gallery-header">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#00FFD5]">
-                  Nueva hoja
-                </p>
-                <h2 id="template-picker-title" className="cn-hero-title mt-1 text-2xl font-bold text-[#F5F7FA]">
-                  Elige tu plantilla
+                <p className="cn-template-gallery-eyebrow">Nueva hoja</p>
+                <h2 id="template-gallery-title" className="cn-template-gallery-title">
+                  Galería de plantillas
                 </h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Cada plantilla cambia el fondo de la hoja — como GoodNotes o Notability.
+                <p className="cn-template-gallery-sub">
+                  Elige una plantilla con estructura visual real — como GoodNotes.
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={onClose}
-                className="rounded-lg p-2 text-muted-foreground hover:bg-white/5 hover:text-[#F5F7FA]"
-                aria-label="Cerrar"
-              >
+              <button type="button" onClick={onClose} className="cn-template-gallery-close" aria-label="Cerrar">
                 <X size={20} />
               </button>
             </div>
 
-            <TemplateGroup title="Básicas" templates={base} onSelect={onSelect} />
-            <TemplateGroup title="Plantillas jurídicas" templates={legal} onSelect={onSelect} />
+            {TEMPLATE_GALLERY_GROUPS.map((group) => (
+              <section key={group.key} className="cn-template-gallery-section">
+                <h3>{group.title}</h3>
+                <div className="cn-template-gallery-grid">
+                  {templatesByCategory(group.key).map((template, i) => (
+                    <motion.button
+                      key={template.id}
+                      type="button"
+                      className="cn-template-gallery-card"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.02 }}
+                      onClick={() => onSelect(template.id)}
+                    >
+                      <CuadernoPaperPreview template={template} size="lg" />
+                      <div className="cn-template-gallery-card-text">
+                        <span className="cn-template-gallery-card-icon">{template.icon}</span>
+                        <div>
+                          <p className="cn-template-gallery-card-name">{template.label}</p>
+                          <p className="cn-template-gallery-card-desc">{template.description}</p>
+                        </div>
+                      </div>
+                    </motion.button>
+                  ))}
+                </div>
+              </section>
+            ))}
           </motion.div>
         </motion.div>
       ) : null}
     </AnimatePresence>
-  );
-}
-
-function TemplateGroup({
-  title,
-  templates,
-  onSelect,
-}: {
-  title: string;
-  templates: typeof CUADERNO_TEMPLATES;
-  onSelect: (id: CuadernoTemplateId) => void;
-}) {
-  return (
-    <div className="mt-8">
-      <h3 className="mb-4 text-xs font-bold uppercase tracking-wider text-muted-foreground">{title}</h3>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {templates.map((template, i) => (
-          <motion.button
-            key={template.id}
-            type="button"
-            className="cn-template-card"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.03 }}
-            onClick={() => onSelect(template.id)}
-          >
-            <CuadernoPaperPreview template={template} size="lg" />
-            <div className="cn-template-card-text">
-              <span className="cn-template-card-icon">{template.icon}</span>
-              <div>
-                <p className="text-sm font-semibold text-[#F5F7FA]">{template.label}</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">{template.description}</p>
-              </div>
-            </div>
-          </motion.button>
-        ))}
-      </div>
-    </div>
   );
 }

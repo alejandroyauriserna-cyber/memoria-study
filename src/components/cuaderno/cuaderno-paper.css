@@ -237,3 +237,116 @@
 .cn-paper-preview.tpl-flashcards {
   background-size: 100% 56px;
 }
+
+/* —— Plantillas ampliadas —— */
+.tpl-ivory,
+.cn-paper-preview.tpl-ivory {
+  --paper-bg: #faf8f3;
+  background-color: #faf8f3;
+}
+
+.tpl-beige,
+.cn-paper-preview.tpl-beige {
+  --paper-bg: #ede6d6;
+  background-color: #ede6d6;
+}
+
+.tpl-dark-sheet,
+.cn-paper-preview.tpl-dark-sheet {
+  --paper-bg: #1a1f2e;
+  --paper-ink: #e2e8f0;
+  --paper-line: rgba(148, 163, 184, 0.14);
+  background-color: #1a1f2e;
+  color: #e2e8f0;
+}
+
+.tpl-grid-fine,
+.cn-paper-preview.tpl-grid-fine {
+  background-image:
+    linear-gradient(var(--paper-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--paper-line) 1px, transparent 1px);
+  background-size: 12px 12px;
+}
+
+.tpl-grid-bold,
+.cn-paper-preview.tpl-grid-bold {
+  background-image:
+    linear-gradient(var(--paper-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--paper-line) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.tpl-ruled-uni,
+.cn-paper-preview.tpl-ruled-uni {
+  background-image: repeating-linear-gradient(
+    transparent 0,
+    transparent 35px,
+    var(--paper-line) 35px,
+    var(--paper-line) 36px
+  );
+  border-left: 3px solid var(--paper-margin);
+}
+
+.tpl-ruled-legal,
+.cn-paper-preview.tpl-ruled-legal {
+  background-image: repeating-linear-gradient(
+    transparent 0,
+    transparent 23px,
+    var(--paper-line) 23px,
+    var(--paper-line) 24px
+  );
+}
+
+.tpl-expo,
+.tpl-magistral,
+.tpl-seminar {
+  background-image: repeating-linear-gradient(
+    transparent 0,
+    transparent 31px,
+    var(--paper-line) 31px,
+    var(--paper-line) 32px
+  );
+}
+
+.tpl-concept-map {
+  background-image:
+    radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--cn-course-accent, #0d9488) 8%, transparent), transparent 45%),
+    linear-gradient(var(--paper-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--paper-line) 1px, transparent 1px);
+  background-size: 100% 100%, 40px 40px, 40px 40px;
+}
+
+.tpl-compare-grid {
+  background-image:
+    linear-gradient(90deg, transparent 32%, var(--paper-line) 32%, var(--paper-line) 33%, transparent 33%, transparent 66%, var(--paper-line) 66%, var(--paper-line) 67%, transparent 67%),
+    repeating-linear-gradient(transparent 0, transparent 31px, var(--paper-line) 31px, var(--paper-line) 32px);
+}
+
+.tpl-legal-casacion,
+.tpl-legal-doctrina,
+.tpl-legal-contrato {
+  border-left: 4px solid var(--paper-margin);
+  background-image: repeating-linear-gradient(
+    transparent 0,
+    transparent 27px,
+    var(--paper-line) 27px,
+    var(--paper-line) 28px
+  );
+}
+
+.tpl-study-exam,
+.tpl-study-qa,
+.tpl-study-quick,
+.tpl-study-memorize {
+  background-image:
+    repeating-linear-gradient(
+      transparent 0,
+      transparent 47px,
+      color-mix(in srgb, var(--paper-line) 80%, transparent) 47px,
+      color-mix(in srgb, var(--paper-line) 80%, transparent) 48px
+    );
+}
+
+.tpl-study-qa {
+  background-size: 100% 96px;
+}

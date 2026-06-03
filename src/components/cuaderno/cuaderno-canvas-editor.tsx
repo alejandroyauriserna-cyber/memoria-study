@@ -5,7 +5,12 @@ import type { Editor } from "@tiptap/react";
 import { Minus, Plus, Type } from "lucide-react";
 import { CuadernoRichEditor } from "@/components/cuaderno/cuaderno-rich-editor";
 import { CuadernoEditorToolbar } from "@/components/cuaderno/cuaderno-editor-toolbar";
-import { parseNoteContent, serializeNoteContent } from "@/lib/cuaderno/note-meta";
+import {
+  parseCuadernoDocument,
+  serializeCuadernoDocument,
+  setActivePageBody,
+  getActivePage,
+} from "@/lib/cuaderno/cuaderno-pages";
 import { getPaperClasses } from "@/lib/cuaderno/paper-styles";
 import type { CuadernoLayoutMode, CuadernoPaperTone } from "@/lib/cuaderno/editor-preferences";
 import { getTemplate, type CuadernoTemplateId } from "@/lib/cuaderno/templates";
@@ -45,16 +50,17 @@ export function CuadernoCanvasEditor({
   const [mode, setMode] = useState<"write" | "pan">("write");
   const [editor, setEditor] = useState<Editor | null>(null);
 
-  const { meta, body } = parseNoteContent(notes);
-  const templateId = templateIdProp ?? meta.templateId;
+  const doc = parseCuadernoDocument(notes);
+  const activePage = getActivePage(doc);
+  const templateId = templateIdProp ?? activePage.templateId;
   const template = getTemplate(templateId);
   const paperClass = `${getPaperClasses(templateId)} tone-${paperTone}`;
 
   const syncBody = useCallback(
     (html: string) => {
-      onChange(serializeNoteContent({ ...meta, templateId }, html));
+      onChange(serializeCuadernoDocument(setActivePageBody(doc, html)));
     },
-    [meta, templateId, onChange],
+    [doc, onChange],
   );
 
   const handleEditorReady = useCallback(
@@ -87,7 +93,7 @@ export function CuadernoCanvasEditor({
       style={{ "--cn-course-accent": courseAccent } as React.CSSProperties}
     >
       <CuadernoRichEditor
-        body={body}
+        body={activePage.body}
         onBodyChange={syncBody}
         onEditorReady={handleEditorReady}
         placeholder={placeholder || template.description}

@@ -1,4 +1,6 @@
 import { Node, mergeAttributes } from "@tiptap/core";
+import { ReactNodeViewRenderer } from "@tiptap/react";
+import { StudyBlockView } from "@/components/cuaderno/blocks/study-block-view";
 
 export type StudyBlockVariant =
   | "caso"
@@ -22,6 +24,10 @@ export const StudyBlock = Node.create({
   content: "block+",
 
   defining: true,
+
+  addNodeView() {
+    return ReactNodeViewRenderer(StudyBlockView);
+  },
 
   addAttributes() {
     return {

@@ -1,0 +1,112 @@
+/* Bloques Notion-style — handles y selección */
+
+.cn-study-block-view.is-selected,
+.cn-image-block-view.is-selected,
+.ProseMirror-selectednode {
+  outline: 2px solid color-mix(in srgb, var(--cn-course-accent, #0d9488) 55%, transparent);
+  outline-offset: 3px;
+}
+
+.cn-block-handle-bar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 6px;
+  border-radius: 10px;
+  background: rgba(12, 16, 22, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+  margin-bottom: 8px;
+}
+
+.cn-block-handle-bar button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.cn-block-handle-bar button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.cn-block-handle-danger:hover {
+  background: rgba(239, 68, 68, 0.25) !important;
+  color: #fca5a5 !important;
+}
+
+.cn-block-handle-drag {
+  cursor: grab;
+  opacity: 0.65;
+}
+
+.cn-block-floating-handle {
+  position: absolute;
+  z-index: 55;
+  pointer-events: auto;
+}
+
+.cn-block-context-menu {
+  position: fixed;
+  z-index: 60;
+  min-width: 160px;
+  padding: 6px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(14, 18, 26, 0.98);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
+}
+
+.cn-block-context-menu button {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  text-align: left;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.cn-block-context-menu button:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.cn-block-context-menu button.is-danger {
+  color: #fca5a5;
+}
+
+.cn-image-block-view {
+  margin: 0.75em 0;
+  position: relative;
+}
+
+.cn-image-block-view img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 10px;
+}
+
+.cn-image-block-view.align-left img {
+  margin-right: auto;
+}
+
+.cn-image-block-view.align-center img {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.cn-image-block-view.align-right img {
+  margin-left: auto;
+}
+
+.cn-prosemirror table {
+  cursor: pointer;
+}
+
+.cn-prosemirror table.ProseMirror-selectednode {
+  outline: 2px solid var(--cn-course-accent, #0d9488);
+}

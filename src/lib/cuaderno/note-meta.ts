@@ -7,11 +7,23 @@ export type SheetCoverMeta = {
   icon: string;
   keyword: string;
   tint: string;
+  emoji?: string;
+  imageUrl?: string;
+};
+
+export type CuadernoPageMeta = {
+  id: string;
+  title?: string;
+  templateId?: CuadernoTemplateId;
+  body?: string;
+  cover?: SheetCoverMeta;
 };
 
 export type CuadernoNoteMeta = {
   templateId: CuadernoTemplateId;
   sheetCover?: SheetCoverMeta;
+  pages?: CuadernoPageMeta[];
+  activePageId?: string;
 };
 
 export function parseNoteContent(raw: string): { meta: CuadernoNoteMeta; body: string } {
@@ -26,6 +38,8 @@ export function parseNoteContent(raw: string): { meta: CuadernoNoteMeta; body: s
       meta: {
         templateId: parsed.templateId ?? "blank",
         sheetCover: parsed.sheetCover,
+        pages: parsed.pages,
+        activePageId: parsed.activePageId,
       },
       body: raw.slice(match[0].length),
     };
