@@ -1,63 +1,143 @@
-import dagre from "@dagrejs/dagre";
 import {
   collisionRadiusForNode,
-  nodeDimensions,
   styleForTier,
 } from "@/lib/organizers/visual-mind-map-theme";
 import type { VisualMindMap, VisualMindMapNode } from "@/lib/organizers/visual-mind-map-types";
 
-export function layoutVisualMindMap(nodes: VisualMindMapNode[]): Pick<VisualMindMap, "nodes" | "width" | "height"> {
-  const positioned = nodes.map((n) => ({ ...n }));
-  const graph = new dagre.graphlib.Graph();
-  graph.setDefaultEdgeLabel(() => ({}));
-  graph.setGraph({
-    rankdir: "LR",
-    align: "UL",
-    nodesep: 48,
-    ranksep: 96,
-    edgesep: 24,
-    marginx: 80,
-    marginy: 80,
-  });
+const CX = 520;
+const CY = 400;
+const TOPIC_RADIUS_BASE = 220;
+const DETAIL_RADIUS = 108;
 
-  for (const node of positioned) {
-    const { width, height } = nodeDimensions(node);
-    graph.setNode(node.id, { width, height });
-  }
+function nodeRadius(label: string, tier: VisualMindMapNode["tier"]) {
+  return collisionRadiusForNode(label, tier);
+}
 
-  for (const node of positioned) {
-    if (node.parentId && positioned.some((n) => n.id === node.parentId)) {
-      graph.setEdge(node.parentId, node.id);
+export function resolveMindMapCollisions(
+  nodes: Array<{
+    id: string;
+    label: string;
+    tier: VisualMindMapNode["tier"];
+    parentId?: string;
+    x: number;
+    y: number;
+  }>,
+  center: { x: number; y: number },
+  iterations = 100,
+) {
+  const centerNode = nodes.find((n) => n.tier === "center");
+  const centerR = centerNode ? nodeRadius(centerNode.label, "center") : styleForTier("center").collisionRadius;
+
+  for (let iter = 0; iter < iterations; iter += 1) {
+    let moved = false;
+
+    for (const node of nodes) {
+      if (node.tier === "center") continue;
+      const dx = node.x - center.x;
+      const dy = node.y - center.y;
+      const dist = Math.hypot(dx, dy) || 0.01;
+      const minFromCenter = centerR + nodeRadius(node.label, node.tier) + 28;
+      if (dist < minFromCenter) {
+        const push = (minFromCenter - dist) / dist;
+        node.x += dx * push;
+        node.y += dy * push;
+        moved = true;
+      }
     }
+
+    for (let i = 0; i < nodes.length; i += 1) {
+      for (let j = i + 1; j < nodes.length; j += 1) {
+        const a = nodes[i]!;
+        const b = nodes[j]!;
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const dist = Math.hypot(dx, dy) || 0.01;
+        const required =
+          nodeRadius(a.label, a.tier) * 0.5 +
+          nodeRadius(b.label, b.tier) * 0.5 +
+          (a.parentId === b.parentId && a.parentId ? 20 : 32);
+        if (dist < required) {
+          const push = (required - dist) / 2;
+          const nx = dx / dist;
+          const ny = dy / dist;
+          a.x -= nx * push;
+          a.y -= ny * push;
+          b.x += nx * push;
+          b.y += ny * push;
+          moved = true;
+        }
+      }
+    }
+
+    if (!moved) break;
+  }
+}
+
+export function layoutVisualMindMap(nodes: VisualMindMapNode[]): Pick<VisualMindMap, "nodes" | "width" | "height"> {
+  const topics = nodes.filter((n) => n.tier === "topic" || (n.tier === "subtopic" && n.parentId === "center"));
+  const details = nodes.filter((n) => n.tier === "detail" || (n.tier === "subtopic" && n.parentId !== "center"));
+
+  const positioned = nodes.map((n) => ({ ...n }));
+
+  const centerNode = positioned.find((n) => n.tier === "center");
+  if (centerNode) {
+    centerNode.x = CX;
+    centerNode.y = CY;
   }
 
-  dagre.layout(graph);
+  const topicRadius = TOPIC_RADIUS_BASE + Math.max(0, topics.length - 4) * 14;
 
-  for (const node of positioned) {
-    const layoutNode = graph.node(node.id);
-    if (!layoutNode) continue;
-    node.x = layoutNode.x;
-    node.y = layoutNode.y;
-  }
-
-  const pad = 88;
-  const bounds = positioned.map((node) => {
-    const radius = collisionRadiusForNode(node);
-    return {
-      minX: node.x - radius,
-      maxX: node.x + radius,
-      minY: node.y - radius,
-      maxY: node.y + radius,
-    };
+  topics.forEach((topic, index) => {
+    const angle = (index / Math.max(topics.length, 1)) * Math.PI * 2 - Math.PI / 2;
+    const node = positioned.find((n) => n.id === topic.id);
+    if (!node) return;
+    node.x = CX + Math.cos(angle) * topicRadius;
+    node.y = CY + Math.sin(angle) * topicRadius;
   });
 
-  const minX = Math.min(...bounds.map((b) => b.minX));
-  const maxX = Math.max(...bounds.map((b) => b.maxX));
-  const minY = Math.min(...bounds.map((b) => b.minY));
-  const maxY = Math.max(...bounds.map((b) => b.maxY));
+  for (const topic of topics) {
+    const children = details.filter((d) => d.parentId === topic.id);
+    const parent = positioned.find((n) => n.id === topic.id);
+    if (!parent || !children.length) continue;
+
+    const parentAngle = Math.atan2(parent.y - CY, parent.x - CX);
+    const spread = Math.min(Math.PI * 0.85, children.length * 0.42 + 0.35);
+    const start = parentAngle - spread / 2;
+
+    children.forEach((child, index) => {
+      const node = positioned.find((n) => n.id === child.id);
+      if (!node) return;
+      const t = children.length === 1 ? 0.5 : index / (children.length - 1);
+      const angle = start + t * spread;
+      node.x = parent.x + Math.cos(angle) * DETAIL_RADIUS;
+      node.y = parent.y + Math.sin(angle) * DETAIL_RADIUS;
+    });
+  }
+
+  resolveMindMapCollisions(
+    positioned.map((n) => ({
+      id: n.id,
+      label: n.label,
+      tier: n.tier,
+      parentId: n.parentId,
+      x: n.x,
+      y: n.y,
+    })),
+    { x: CX, y: CY },
+  );
+
+  const pad = 140;
+  const xs = positioned.map((n) => n.x);
+  const ys = positioned.map((n) => n.y);
+  const radii = positioned.map((n) => nodeRadius(n.label, n.tier));
+
+  const minX = Math.min(...xs.map((x, i) => x - radii[i]!));
+  const maxX = Math.max(...xs.map((x, i) => x + radii[i]!));
+  const minY = Math.min(...ys.map((y, i) => y - radii[i]!));
+  const maxY = Math.max(...ys.map((y, i) => y + radii[i]!));
 
   const width = Math.max(960, maxX - minX + pad * 2);
-  const height = Math.max(680, maxY - minY + pad * 2);
+  const height = Math.max(720, maxY - minY + pad * 2);
   const offsetX = pad - minX;
   const offsetY = pad - minY;
 
@@ -77,7 +157,7 @@ export function organicEdgePath(
   y1: number,
   x2: number,
   y2: number,
-  curvature = 0.26,
+  curvature = 0.22,
 ) {
   const dx = x2 - x1;
   const dy = y2 - y1;
@@ -88,12 +168,7 @@ export function organicEdgePath(
 
 export function getMindMapEdges(nodes: VisualMindMapNode[]) {
   const byId = new Map(nodes.map((n) => [n.id, n]));
-  const edges: Array<{
-    from: VisualMindMapNode;
-    to: VisualMindMapNode;
-    key: string;
-    kind: "hierarchy" | "relation";
-  }> = [];
+  const edges: Array<{ from: VisualMindMapNode; to: VisualMindMapNode; key: string }> = [];
   const seen = new Set<string>();
 
   for (const node of nodes) {
@@ -103,7 +178,7 @@ export function getMindMapEdges(nodes: VisualMindMapNode[]) {
         const key = `${parent.id}-${node.id}`;
         if (!seen.has(key)) {
           seen.add(key);
-          edges.push({ from: parent, to: node, key, kind: "hierarchy" });
+          edges.push({ from: parent, to: node, key });
         }
       }
     }
@@ -115,37 +190,9 @@ export function getMindMapEdges(nodes: VisualMindMapNode[]) {
       if (seen.has(key)) continue;
       if (node.parentId === relId || target.parentId === node.id) continue;
       seen.add(key);
-      edges.push({ from: node, to: target, key, kind: "relation" });
+      edges.push({ from: node, to: target, key });
     }
   }
 
   return edges;
-}
-
-export function edgeAnchors(from: VisualMindMapNode, to: VisualMindMapNode) {
-  const dx = to.x - from.x;
-  const dy = to.y - from.y;
-  const dist = Math.hypot(dx, dy) || 1;
-  const nx = dx / dist;
-  const ny = dy / dist;
-  const fromDim = nodeDimensions(from);
-  const toDim = nodeDimensions(to);
-  const fromOffset = fromDim.width * 0.48;
-  const toOffset = toDim.width * 0.48;
-
-  return {
-    x1: from.x + nx * fromOffset,
-    y1: from.y + ny * fromOffset * 0.35,
-    x2: to.x - nx * toOffset,
-    y2: to.y - ny * toOffset * 0.35,
-  };
-}
-
-export function particleAlongPath(path: string, progress: number) {
-  if (typeof document === "undefined") return { x: 0, y: 0 };
-  const svgPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
-  svgPath.setAttribute("d", path);
-  const length = svgPath.getTotalLength();
-  const point = svgPath.getPointAtLength(length * progress);
-  return { x: point.x, y: point.y };
 }

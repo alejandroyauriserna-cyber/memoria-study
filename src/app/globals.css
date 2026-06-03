@@ -334,11 +334,6 @@ textarea.ms-input {
   animation: tron-edge-flow 1.4s linear infinite;
 }
 
-.visual-mind-edge-particle {
-  filter: drop-shadow(0 0 6px rgba(96, 165, 250, 0.85));
-  opacity: 0.9;
-}
-
 @keyframes tron-edge-flow {
   to {
     stroke-dashoffset: -36;

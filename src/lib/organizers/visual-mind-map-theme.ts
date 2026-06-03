@@ -1,8 +1,4 @@
-import type {
-  VisualMindMapCategory,
-  VisualMindMapImportance,
-  VisualMindMapTier,
-} from "@/lib/organizers/visual-mind-map-types";
+import type { VisualMindMapCategory, VisualMindMapTier } from "@/lib/organizers/visual-mind-map-types";
 
 export type CategoryTheme = {
   id: VisualMindMapCategory;
@@ -11,146 +7,106 @@ export type CategoryTheme = {
   glow: string;
   soft: string;
   gradient: string;
-  chip: string;
-  highlighted: boolean;
 };
 
 export const CATEGORY_THEMES: Record<VisualMindMapCategory, CategoryTheme> = {
   concept: {
     id: "concept",
     label: "Concepto",
-    color: "#3B82F6",
-    glow: "rgba(59,130,246,0.65)",
-    soft: "rgba(59,130,246,0.16)",
-    gradient: "linear-gradient(145deg, rgba(59,130,246,0.35), rgba(15,23,42,0.95))",
-    chip: "rgba(59,130,246,0.24)",
-    highlighted: false,
+    color: "#00FFD5",
+    glow: "rgba(0,255,213,0.55)",
+    soft: "rgba(0,255,213,0.14)",
+    gradient: "linear-gradient(135deg, rgba(0,255,213,0.35), rgba(0,191,255,0.12))",
   },
   norm: {
     id: "norm",
     label: "Norma",
-    color: "#0EA5E9",
-    glow: "rgba(14,165,233,0.55)",
-    soft: "rgba(14,165,233,0.14)",
-    gradient: "linear-gradient(145deg, rgba(14,165,233,0.3), rgba(15,23,42,0.95))",
-    chip: "rgba(14,165,233,0.2)",
-    highlighted: false,
+    color: "#00BFFF",
+    glow: "rgba(0,191,255,0.55)",
+    soft: "rgba(0,191,255,0.14)",
+    gradient: "linear-gradient(135deg, rgba(0,191,255,0.32), rgba(0,120,255,0.1))",
   },
   principle: {
     id: "principle",
     label: "Principio",
-    color: "#22C55E",
-    glow: "rgba(34,197,94,0.55)",
-    soft: "rgba(34,197,94,0.16)",
-    gradient: "linear-gradient(145deg, rgba(34,197,94,0.32), rgba(15,23,42,0.95))",
-    chip: "rgba(34,197,94,0.22)",
-    highlighted: false,
+    color: "#34D399",
+    glow: "rgba(52,211,153,0.55)",
+    soft: "rgba(52,211,153,0.14)",
+    gradient: "linear-gradient(135deg, rgba(52,211,153,0.3), rgba(16,185,129,0.1))",
   },
   case: {
     id: "case",
     label: "Caso",
-    color: "#F97316",
-    glow: "rgba(249,115,22,0.65)",
-    soft: "rgba(249,115,22,0.2)",
-    gradient: "linear-gradient(145deg, rgba(249,115,22,0.38), rgba(15,23,42,0.95))",
-    chip: "rgba(249,115,22,0.28)",
-    highlighted: true,
+    color: "#FF8A00",
+    glow: "rgba(255,138,0,0.55)",
+    soft: "rgba(255,138,0,0.14)",
+    gradient: "linear-gradient(135deg, rgba(255,138,0,0.32), rgba(255,100,0,0.1))",
   },
   example: {
     id: "example",
     label: "Ejemplo",
-    color: "#A855F7",
-    glow: "rgba(168,85,247,0.65)",
-    soft: "rgba(168,85,247,0.2)",
-    gradient: "linear-gradient(145deg, rgba(168,85,247,0.38), rgba(15,23,42,0.95))",
-    chip: "rgba(168,85,247,0.28)",
-    highlighted: true,
+    color: "#A78BFA",
+    glow: "rgba(167,139,250,0.55)",
+    soft: "rgba(167,139,250,0.14)",
+    gradient: "linear-gradient(135deg, rgba(167,139,250,0.32), rgba(139,92,246,0.1))",
   },
   comparison: {
     id: "comparison",
     label: "Comparación",
-    color: "#EAB308",
-    glow: "rgba(234,179,8,0.55)",
-    soft: "rgba(234,179,8,0.16)",
-    gradient: "linear-gradient(145deg, rgba(234,179,8,0.28), rgba(15,23,42,0.95))",
-    chip: "rgba(234,179,8,0.22)",
-    highlighted: false,
-  },
-  article: {
-    id: "article",
-    label: "Artículo",
-    color: "#EF4444",
-    glow: "rgba(239,68,68,0.6)",
-    soft: "rgba(239,68,68,0.18)",
-    gradient: "linear-gradient(145deg, rgba(239,68,68,0.32), rgba(15,23,42,0.95))",
-    chip: "rgba(239,68,68,0.26)",
-    highlighted: true,
+    color: "#FBBF24",
+    glow: "rgba(251,191,36,0.55)",
+    soft: "rgba(251,191,36,0.14)",
+    gradient: "linear-gradient(135deg, rgba(251,191,36,0.28), rgba(245,158,11,0.1))",
   },
 };
 
 export type TierStyle = {
   collisionRadius: number;
-  cardWidth: number;
-  cardHeight: number;
-  thumbHeight: number;
+  thumbSize: number;
+  minWidth: number;
+  maxWidth: number;
   fontSize: number;
-  titleSize: number;
   iconSize: number;
-  summarySize: number;
-  scale: number;
+  padding: string;
 };
 
 export const TIER_STYLES: Record<VisualMindMapTier, TierStyle> = {
   center: {
-    collisionRadius: 180,
-    cardWidth: 320,
-    cardHeight: 248,
-    thumbHeight: 128,
-    fontSize: 11,
-    titleSize: 20,
-    iconSize: 52,
-    summarySize: 13,
-    scale: 1,
+    collisionRadius: 96,
+    thumbSize: 72,
+    minWidth: 168,
+    maxWidth: 220,
+    fontSize: 15,
+    iconSize: 28,
+    padding: "20px 22px",
   },
   topic: {
-    collisionRadius: 110,
-    cardWidth: 248,
-    cardHeight: 148,
-    thumbHeight: 72,
-    fontSize: 9,
-    titleSize: 14,
-    iconSize: 32,
-    summarySize: 11,
-    scale: 0.92,
+    collisionRadius: 68,
+    thumbSize: 52,
+    minWidth: 128,
+    maxWidth: 168,
+    fontSize: 12,
+    iconSize: 18,
+    padding: "14px 16px",
   },
   subtopic: {
-    collisionRadius: 92,
-    cardWidth: 216,
-    cardHeight: 132,
-    thumbHeight: 64,
-    fontSize: 9,
-    titleSize: 13,
-    iconSize: 28,
-    summarySize: 10,
-    scale: 0.88,
+    collisionRadius: 58,
+    thumbSize: 44,
+    minWidth: 112,
+    maxWidth: 148,
+    fontSize: 11,
+    iconSize: 16,
+    padding: "12px 14px",
   },
   detail: {
-    collisionRadius: 72,
-    cardWidth: 188,
-    cardHeight: 112,
-    thumbHeight: 52,
-    fontSize: 8,
-    titleSize: 12,
-    iconSize: 24,
-    summarySize: 10,
-    scale: 0.84,
+    collisionRadius: 44,
+    thumbSize: 34,
+    minWidth: 88,
+    maxWidth: 120,
+    fontSize: 10,
+    iconSize: 13,
+    padding: "10px 12px",
   },
-};
-
-export const IMPORTANCE_LABELS: Record<VisualMindMapImportance, string> = {
-  essential: "Esencial",
-  important: "Importante",
-  supporting: "Complementario",
 };
 
 export function themeForCategory(category: VisualMindMapCategory): CategoryTheme {
@@ -161,29 +117,7 @@ export function styleForTier(tier: VisualMindMapTier): TierStyle {
   return TIER_STYLES[tier] ?? TIER_STYLES.topic;
 }
 
-export function nodeDimensions(node: { tier: VisualMindMapTier; summary?: string; category: VisualMindMapCategory }) {
-  const style = styleForTier(node.tier);
-  const theme = themeForCategory(node.category);
-  const highlightBoost = theme.highlighted ? 16 : 0;
-  const summaryBoost = node.summary ? 12 : 0;
-  return {
-    width: style.cardWidth,
-    height: style.cardHeight + highlightBoost + summaryBoost,
-  };
+export function collisionRadiusForNode(label: string, tier: VisualMindMapTier): number {
+  const base = styleForTier(tier).collisionRadius;
+  return base + Math.min(label.length * 0.6, tier === "detail" ? 8 : 16);
 }
-
-export function collisionRadiusForNode(
-  node: { label: string; tier: VisualMindMapTier; summary?: string; category: VisualMindMapCategory },
-): number {
-  const { width, height } = nodeDimensions(node);
-  return Math.max(width, height) * 0.52;
-}
-
-export const LEGEND_CATEGORIES: VisualMindMapCategory[] = [
-  "concept",
-  "principle",
-  "case",
-  "example",
-  "comparison",
-  "article",
-];

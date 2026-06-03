@@ -66,6 +66,7 @@ export async function POST(request: Request) {
       classNumber?: number;
       classDate?: string;
       materialId?: string | null;
+      notes?: string;
     };
 
     if (!body.courseId || !body.courseName || !body.cycleNumber || !body.cycleLabel || !body.title) {
@@ -99,7 +100,7 @@ export async function POST(request: Request) {
         topic: body.topic?.trim() || null,
         class_number: body.classNumber ?? null,
         class_date: body.classDate || null,
-        notes: "",
+        notes: typeof body.notes === "string" ? body.notes : "",
         extracted_concepts: [],
         material_id: body.materialId ?? null,
       })

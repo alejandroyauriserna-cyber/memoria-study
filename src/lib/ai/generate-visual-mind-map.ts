@@ -1,27 +1,21 @@
 import { env } from "@/lib/env";
 import type { OrganizerContent } from "@/lib/organizers/parse-content";
-import {
-  MIND_MAP_ICON_KEYS,
-  oneLineSummary,
-  resolveThematicIcon,
-} from "@/lib/organizers/visual-mind-map-icons";
 import { layoutVisualMindMap } from "@/lib/organizers/visual-mind-map-layout";
 import {
   MAX_VISUAL_MIND_MAP_IMAGES,
   type VisualMindMap,
   type VisualMindMapCategory,
-  type VisualMindMapImportance,
   type VisualMindMapNode,
 } from "@/lib/organizers/visual-mind-map-types";
 
+const ICONS = ["scale", "book", "gavel", "users", "landmark", "lightbulb", "target", "brain"] as const;
 const CATEGORIES: VisualMindMapCategory[] = [
   "concept",
+  "norm",
   "principle",
   "case",
   "example",
   "comparison",
-  "article",
-  "norm",
 ];
 
 function parseJson(raw: string) {
@@ -37,18 +31,13 @@ function parseJson(raw: string) {
   return JSON.parse(cleaned.slice(start, end + 1)) as {
     nodes?: Array<{
       id: string;
-      summary?: string;
       explanation?: string;
       example?: string;
       reviewQuestion?: string;
       icon?: string;
-      emoji?: string;
       category?: VisualMindMapCategory;
-      importance?: VisualMindMapImportance;
       imagePrompt?: string;
       relatedIds?: string[];
-      legalReferences?: string[];
-      jurisprudence?: string[];
     }>;
   };
 }
@@ -83,6 +72,7 @@ export function buildVisualMindMapStructure(content: OrganizerContent): {
 function findDetailLabels(
   topicLabel: string,
   content: OrganizerContent,
+  topicIndex: number,
 ): string[] {
   const cards = content.visualSummary?.conceptCards ?? [];
   const matched = cards
@@ -107,34 +97,19 @@ function findDetailLabels(
   return [`Aspecto clave de ${topicLabel}`, `Aplicación de ${topicLabel}`].slice(0, 2);
 }
 
-function inferCategory(label: string, index: number): VisualMindMapCategory {
-  const normalized = label.toLowerCase();
-  if (/art\.|artículo|articulo|inciso/.test(normalized)) return "article";
-  if (/caso|jurisprudencia|precedente|fallo/.test(normalized)) return "case";
-  if (/ejemplo|supuesto/.test(normalized)) return "example";
-  if (/comparación|versus| vs /.test(normalized)) return "comparison";
-  if (/principio|buena fe|legalidad|igualdad/.test(normalized)) return "principle";
-  if (/ley|código|decreto|norma/.test(normalized)) return "norm";
-  return CATEGORIES[index % CATEGORIES.length]!;
-}
-
 function buildHierarchy(centralTopic: string, branchLabels: string[], content: OrganizerContent): VisualMindMapNode[] {
   const nodes: VisualMindMapNode[] = [];
   const topicIds: string[] = [];
-  const centerIcon = resolveThematicIcon(centralTopic, "concept");
 
   nodes.push({
     id: "center",
     label: centralTopic,
-    summary: "",
     explanation: "",
     example: "",
     reviewQuestion: "",
-    icon: centerIcon.key,
-    emoji: centerIcon.emoji,
+    icon: "brain",
     category: "concept",
     tier: "center",
-    importance: "essential",
     relatedIds: [],
     x: 0,
     y: 0,
@@ -143,45 +118,34 @@ function buildHierarchy(centralTopic: string, branchLabels: string[], content: O
   branchLabels.slice(0, 6).forEach((label, index) => {
     const id = `topic-${index}`;
     topicIds.push(id);
-    const category = inferCategory(label, index);
-    const thematic = resolveThematicIcon(label, category);
 
     nodes.push({
       id,
       label,
-      summary: "",
       explanation: "",
       example: "",
       reviewQuestion: "",
-      icon: thematic.key,
-      emoji: thematic.emoji,
-      category,
+      icon: ICONS[index % ICONS.length]!,
+      category: CATEGORIES[index % CATEGORIES.length]!,
       tier: "topic",
-      importance: "essential",
       parentId: "center",
       relatedIds: ["center"],
       x: 0,
       y: 0,
     });
 
-    const detailLabels = findDetailLabels(label, content);
+    const detailLabels = findDetailLabels(label, content, index);
     detailLabels.forEach((detailLabel, dIndex) => {
       const detailId = `${id}-detail-${dIndex}`;
-      const detailCategory = inferCategory(detailLabel, index + dIndex + 1);
-      const detailIcon = resolveThematicIcon(detailLabel, detailCategory);
-
       nodes.push({
         id: detailId,
         label: detailLabel,
-        summary: "",
         explanation: "",
         example: "",
         reviewQuestion: "",
-        icon: detailIcon.key,
-        emoji: detailIcon.emoji,
-        category: detailCategory,
+        icon: ICONS[(index + dIndex + 1) % ICONS.length]!,
+        category: CATEGORIES[(index + dIndex + 2) % CATEGORIES.length]!,
         tier: "detail",
-        importance: dIndex === 0 ? "important" : "supporting",
         parentId: id,
         relatedIds: [id, "center"],
         x: 0,
@@ -208,47 +172,41 @@ async function enrichWithGemini(
 ): Promise<VisualMindMapNode[]> {
   if (!env.geminiApiKey) return nodes;
 
-  const iconList = MIND_MAP_ICON_KEYS.join("|");
-
-  const prompt = `Eres un diseñador pedagógico premium de mapas mentales jurídicos para estudiantes de Derecho UNT (Perú).
+  const prompt = `Eres un diseñador de mapas mentales jurídicos premium para estudiantes de Derecho UNT (Perú).
 
 Tema central: ${centralTopic}
 
-Resumen del material:
+Resumen:
 ${content.summary?.slice(0, 1800) ?? ""}
 
-Nodos del mapa:
-${nodes.map((n) => `- id: ${n.id}, tier: ${n.tier}, label: ${n.label}`).join("\n")}
+Nodos del mapa (jerarquía center → topic → detail):
+${nodes.map((n) => `- id: ${n.id}, tier: ${n.tier}, label: ${n.label}, parentId: ${n.parentId ?? "none"}`).join("\n")}
 
-Para CADA nodo devuelve contenido educativo rico. Reglas estrictas:
+Para CADA nodo devuelve enriquecimiento visual y pedagógico.
 
-1. summary: UNA sola línea (máx 90 caracteres) que enseñe algo concreto. Ej: "Actuar con honestidad durante toda la relación jurídica."
-2. explanation: 2 oraciones claras para el panel de estudio.
-3. category: concept|principle|case|example|comparison|article|norm
-4. importance: essential|important|supporting
-5. icon: clave temática (${iconList}) — NO repetir iconos genéricos si hay uno más específico.
-6. emoji: emoji temático (📄⚖️📚🤝🏢👤🔍📜 etc.)
-7. imagePrompt: mini ilustración SIN TEXTO para Gemini. Metáfora visual clara.
-8. legalReferences: artículos del CC, CP, Ley peruana relevantes
-9. jurisprudence: fallos o precedentes si aplica
+Categorías (category):
+- concept: conceptos principales (turquesa)
+- norm: normas legales (azul)
+- principle: principios jurídicos (verde)
+- case: casos (naranja)
+- example: ejemplos (morado)
+- comparison: comparaciones (amarillo)
+
+imagePrompt: ilustración miniatura SIN TEXTO, estilo Napkin/MindMeister, metáfora visual clara.
+Ej: Buena Fe → apretón de manos; Contrato → documento firmado; Código Civil → libro jurídico.
 
 Devuelve SOLO JSON:
 {
   "nodes": [
     {
       "id": "topic-0",
-      "summary": "Actuar con honestidad durante toda la relación jurídica.",
-      "category": "principle",
-      "importance": "essential",
-      "explanation": "...",
-      "example": "ejemplo concreto Perú",
+      "category": "concept",
+      "explanation": "2 oraciones claras",
+      "example": "ejemplo jurídico concreto Peru",
       "reviewQuestion": "pregunta de repaso",
-      "icon": "good_faith",
-      "emoji": "🤝",
-      "imagePrompt": "Handshake illustration, legal trust, no text",
-      "relatedIds": ["center"],
-      "legalReferences": ["Art. 1362 CC"],
-      "jurisprudence": ["STC relevante si aplica"]
+      "icon": "scale|book|gavel|users|landmark|lightbulb|target|brain",
+      "imagePrompt": "Minimal educational illustration...",
+      "relatedIds": ["center", "topic-0-detail-0"]
     }
   ]
 }`;
@@ -275,62 +233,35 @@ Devuelve SOLO JSON:
   return nodes.map((node) => {
     const extra = byId.get(node.id);
     if (!extra) return node;
-
-    const category =
-      extra.category && CATEGORIES.includes(extra.category) ? extra.category : node.category;
-    const thematic = resolveThematicIcon(node.label, category, extra.icon);
-
     return {
       ...node,
-      summary: oneLineSummary(extra.summary?.trim() || node.summary),
       explanation: extra.explanation?.trim() || node.explanation,
       example: extra.example?.trim() || node.example,
       reviewQuestion: extra.reviewQuestion?.trim() || node.reviewQuestion,
-      icon: extra.icon && MIND_MAP_ICON_KEYS.includes(extra.icon as (typeof MIND_MAP_ICON_KEYS)[number])
-        ? extra.icon
-        : thematic.key,
-      emoji: extra.emoji?.trim() || thematic.emoji,
-      category,
-      importance: extra.importance ?? node.importance,
+      icon: extra.icon && ICONS.includes(extra.icon as (typeof ICONS)[number]) ? extra.icon : node.icon,
+      category:
+        extra.category && CATEGORIES.includes(extra.category) ? extra.category : node.category,
       imagePrompt: extra.imagePrompt?.trim() || node.imagePrompt,
       relatedIds: extra.relatedIds?.length ? extra.relatedIds : node.relatedIds,
-      legalReferences: extra.legalReferences?.filter(Boolean).length
-        ? extra.legalReferences.filter(Boolean)
-        : node.legalReferences,
-      jurisprudence: extra.jurisprudence?.filter(Boolean).length
-        ? extra.jurisprudence.filter(Boolean)
-        : node.jurisprudence,
     };
   });
 }
 
 function fillFallbacks(nodes: VisualMindMapNode[], content: OrganizerContent, centralTopic: string) {
   const center = nodes.find((n) => n.id === "center");
-  if (center) {
-    if (!center.explanation) {
-      center.explanation =
-        content.simplifiedExplanation?.slice(0, 260) ||
-        content.summary?.slice(0, 260) ||
-        `Tema central del mapa: ${centralTopic}`;
-    }
-    if (!center.summary) {
-      center.summary = oneLineSummary(center.explanation);
-    }
-    if (!center.example) {
-      center.example =
-        content.visualSummary?.conceptCards?.[0]?.description?.slice(0, 180) ?? "";
-    }
-    if (!center.reviewQuestion) {
-      center.reviewQuestion =
-        content.reviewBundle?.questions?.[0]?.question ??
-        `¿Cuál es la idea central de ${centralTopic}?`;
-    }
-    if (!center.imagePrompt) {
-      center.imagePrompt = `Educational legal mind map hub for "${centralTopic}", Peruvian law, professional infographic style, no text`;
-    }
-    const thematic = resolveThematicIcon(center.label, center.category, center.icon);
-    center.icon = thematic.key;
-    center.emoji = center.emoji || thematic.emoji;
+  if (center && !center.explanation) {
+    center.explanation =
+      content.simplifiedExplanation?.slice(0, 260) ||
+      content.summary?.slice(0, 260) ||
+      `Tema central del mapa: ${centralTopic}`;
+    center.example =
+      content.visualSummary?.conceptCards?.[0]?.description?.slice(0, 180) ?? "";
+    center.reviewQuestion =
+      content.reviewBundle?.questions?.[0]?.question ??
+      `¿Cuál es la idea central de ${centralTopic}?`;
+    center.imagePrompt =
+      center.imagePrompt ??
+      `Central mind map hub illustration for ${centralTopic}, legal education, glowing turquoise, no text`;
   }
 
   for (const node of nodes) {
@@ -342,9 +273,6 @@ function fillFallbacks(nodes: VisualMindMapNode[], content: OrganizerContent, ce
       );
       node.explanation = card?.description ?? `${node.label}: concepto clave en ${centralTopic}.`;
     }
-    if (!node.summary) {
-      node.summary = oneLineSummary(node.explanation);
-    }
     if (!node.example) {
       node.example = `Ejemplo aplicado a ${node.label} en el contexto del derecho peruano.`;
     }
@@ -352,11 +280,8 @@ function fillFallbacks(nodes: VisualMindMapNode[], content: OrganizerContent, ce
       node.reviewQuestion = `¿Cómo se relaciona ${node.label} con ${centralTopic}?`;
     }
     if (!node.imagePrompt) {
-      node.imagePrompt = `Elegant legal education thumbnail for "${node.label}", ${node.category} theme, rounded illustration, no text, Peruvian law context`;
+      node.imagePrompt = `Mini visual memory illustration for legal concept "${node.label}", flat iconographic, soft glow, no text, ${node.category} theme`;
     }
-    const thematic = resolveThematicIcon(node.label, node.category, node.icon);
-    node.icon = thematic.key;
-    node.emoji = node.emoji || thematic.emoji;
   }
 }
 
@@ -376,15 +301,9 @@ export async function generateVisualMindMap(content: OrganizerContent): Promise<
 }
 
 export function imagePriorityForNode(node: VisualMindMapNode): number {
-  let score = 0;
-  if (node.tier === "center") score += 100;
-  else if (node.tier === "topic") score += 80;
-  else if (node.tier === "subtopic") score += 50;
-  else score += 20;
-
-  if (node.category === "case" || node.category === "example") score += 15;
-  if (node.importance === "essential") score += 10;
-  return score;
+  if (node.tier === "center") return 100;
+  if (node.tier === "topic" || node.tier === "subtopic") return 80;
+  return 20;
 }
 
 export { MAX_VISUAL_MIND_MAP_IMAGES };

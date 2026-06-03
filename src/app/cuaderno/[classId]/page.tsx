@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/ui/shell";
-import { CuadernoClassEditor } from "@/components/cuaderno/cuaderno-class-editor";
+import { CuadernoImmersiveEditor } from "@/components/cuaderno/cuaderno-immersive-editor";
+import { CuadernoSyncProvider } from "@/components/cuaderno/cuaderno-sync-context";
 import { getCuadernoClassForUser, requireCuadernoUser } from "@/lib/cuaderno/auth";
 import { hasSupabaseEnv } from "@/lib/env";
 
@@ -29,8 +30,8 @@ export default async function CuadernoClassPage({ params }: PageProps) {
   if (!cuadernoClass) notFound();
 
   return (
-    <AppShell>
-      <CuadernoClassEditor initialClass={cuadernoClass} />
-    </AppShell>
+    <CuadernoSyncProvider>
+      <CuadernoImmersiveEditor initialClass={cuadernoClass} />
+    </CuadernoSyncProvider>
   );
 }

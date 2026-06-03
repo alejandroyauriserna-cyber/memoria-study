@@ -29,6 +29,7 @@ import {
   saveExpandedFolders,
   type LibraryTreeCycle,
 } from "@/lib/library/library-tree";
+import { getAllCycles } from "@/lib/academic/helpers";
 import type { Material } from "@/types/material";
 
 function formatRelativeTime(iso: string) {
@@ -76,13 +77,11 @@ export function LibraryPremiumWorkspace({
 
   const cycles = useMemo(
     () =>
-      [...new Set(materials.map((m) => m.cycleNumber))]
-        .sort((a, b) => a - b)
-        .map((num) => ({
-          number: num,
-          label: materials.find((m) => m.cycleNumber === num)?.cycleLabel ?? `Ciclo ${num}`,
-        })),
-    [materials],
+      getAllCycles().map((cycle) => ({
+        number: cycle.cycleNumber,
+        label: cycle.cycleLabel,
+      })),
+    [],
   );
 
   const favoritesList = useMemo(
