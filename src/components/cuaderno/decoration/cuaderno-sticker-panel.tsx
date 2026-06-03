@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { BookOpen, Globe, Image, Search, Sparkles, Star, Trash2, X } from "lucide-react";
+import { BookOpen, Globe, Heart, Image, Search, Sparkles, Trash2, X } from "lucide-react";
 import {
   createStickerFromAi,
   createStickerFromLibrary,
@@ -50,13 +50,13 @@ function setupDragGhost(e: React.DragEvent, img: HTMLImageElement | null) {
   e.dataTransfer.effectAllowed = "copy";
   if (!img?.complete) return;
   const ghost = document.createElement("div");
-  ghost.className = "cn-sticker-drag-ghost";
+  ghost.className = "cn-sticker-drag-ghost cn-sticker-drag-ghost--premium";
   const clone = img.cloneNode(true) as HTMLImageElement;
-  clone.width = 64;
-  clone.height = 64;
+  clone.width = 72;
+  clone.height = 72;
   ghost.appendChild(clone);
   document.body.appendChild(ghost);
-  e.dataTransfer.setDragImage(ghost, 32, 32);
+  e.dataTransfer.setDragImage(ghost, 36, 36);
   window.setTimeout(() => ghost.remove(), 0);
 }
 
@@ -230,7 +230,7 @@ export function CuadernoStickerPanel({
             />
             <motion.aside
               ref={panelRef}
-              className="cn-sticker-panel cn-sticker-panel--glass"
+              className="cn-sticker-panel cn-sticker-panel--glass cn-sticker-panel--premium"
               initial={{ x: "100%", opacity: 0.9 }}
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: "100%", opacity: 0.9 }}
@@ -238,22 +238,22 @@ export function CuadernoStickerPanel({
               role="dialog"
               aria-label="Stickers"
             >
-              <header className="cn-sticker-panel-head">
+              <header className="cn-sticker-panel-head cn-sticker-panel-head--premium">
                 <div>
                   <span className="cn-sticker-panel-title">Stickers</span>
-                  <p className="cn-sticker-panel-hint">Clic o arrastra a la hoja · Ctrl+V imagen Pinterest</p>
+                  <p className="cn-sticker-panel-hint">Arrastra a la hoja o pega con Ctrl+V</p>
                 </div>
                 <button type="button" className="cn-glass-icon-btn" onClick={onClose} aria-label="Cerrar">
                   <X size={18} />
                 </button>
               </header>
 
-              <div className="cn-sticker-panel-search">
-                <Search size={14} />
+              <div className="cn-sticker-panel-search cn-sticker-panel-search--premium">
+                <Search size={15} strokeWidth={1.75} />
                 <input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Buscar… civil, penal, flores, balanza"
+                  placeholder="Buscar stickers…"
                 />
               </div>
 
@@ -263,7 +263,7 @@ export function CuadernoStickerPanel({
                     t.id === "biblioteca"
                       ? BookOpen
                       : t.id === "favoritos"
-                        ? Star
+                        ? Heart
                         : t.id === "mis-stickers"
                           ? Image
                           : t.id === "importar"
@@ -286,7 +286,7 @@ export function CuadernoStickerPanel({
               <div className="cn-sticker-panel-body">
                 {tab === "biblioteca" ? (
                   <>
-                    <div className="cn-sticker-pack-filters">
+                    <div className="cn-sticker-pack-filters cn-sticker-pack-filters--premium">
                       {JURIDICO_PACK_FILTERS.map((p) => (
                         <button
                           key={p.id}
@@ -337,7 +337,7 @@ export function CuadernoStickerPanel({
                     onPick={addUser}
                     onToggleFav={toggleUserFav}
                     onDelete={deleteUserSticker}
-                    emptyHint="Importa desde Pinterest o guarda stickers con IA."
+                    onGoImport={() => setTab("importar")}
                   />
                 ) : null}
 
@@ -353,7 +353,7 @@ export function CuadernoStickerPanel({
                 {tab === "ia" ? (
                   <div className="cn-sticker-ia-tab">
                     <p className="cn-sticker-section-lead">
-                      Describe el sticker (PNG transparente). Ej: libros vintage, flores beige, código civil.
+                      Describe un sticker jurídico en PNG transparente. Ej: balanza dorada, código civil, pergamino.
                     </p>
                     <button
                       type="button"
@@ -409,15 +409,16 @@ function PngGrid({
   return (
     <section className="cn-sticker-grid-section">
       {title ? <h3>{title}</h3> : null}
-      <div className="cn-sticker-grid cn-sticker-grid--png">
+      <div className="cn-sticker-grid cn-sticker-grid--pinterest">
         {items.map((item) => {
           const favId = `png:${item.id}`;
+          const isFav = catalogFavs.includes(favId);
           return (
-            <div key={item.id} className="cn-sticker-cell">
+            <div key={item.id} className="cn-sticker-cell cn-sticker-cell--premium">
               <div
                 role="button"
                 tabIndex={0}
-                className="cn-sticker-cell-main cn-draggable-source"
+                className="cn-sticker-cell-main cn-sticker-cell-main--premium cn-draggable-source"
                 draggable
                 onDragStart={(e) => {
                   writeDecorationDragData(e.dataTransfer, {
@@ -437,16 +438,18 @@ function PngGrid({
                   }
                 }}
               >
-                <img src={item.src} alt={item.label} loading="lazy" decoding="async" draggable={false} />
-                <span>{item.label}</span>
+                <div className="cn-sticker-cell-preview">
+                  <img src={item.src} alt={item.label} loading="lazy" decoding="async" draggable={false} />
+                </div>
+                <span className="cn-sticker-cell-label">{item.label}</span>
               </div>
               <button
                 type="button"
-                className={`cn-sticker-fav${catalogFavs.includes(favId) ? " is-on" : ""}`}
+                className={`cn-sticker-heart${isFav ? " is-on" : ""}`}
                 onClick={() => onCatalogFav(item.id)}
-                aria-label="Favorito catálogo"
+                aria-label={isFav ? "Quitar de favoritos" : "Añadir a favoritos"}
               >
-                <Star size={12} fill={catalogFavs.includes(favId) ? "currentColor" : "none"} />
+                <Heart size={13} fill={isFav ? "currentColor" : "none"} strokeWidth={1.75} />
               </button>
             </div>
           );
@@ -463,7 +466,7 @@ function UserGrid({
   onPick,
   onToggleFav,
   onDelete,
-  emptyHint,
+  onGoImport,
 }: {
   title: string;
   items: UserStickerRecord[];
@@ -471,20 +474,42 @@ function UserGrid({
   onPick: (s: UserStickerRecord) => void;
   onToggleFav: (s: UserStickerRecord) => void;
   onDelete?: (s: UserStickerRecord) => void;
-  emptyHint?: string;
+  onGoImport?: () => void;
 }) {
   if (loading) return <p className="cn-sticker-empty">Cargando…</p>;
-  if (!items.length) return <p className="cn-sticker-empty">{emptyHint ?? "Vacío."}</p>;
+  if (!items.length) {
+    const isMyStickers = title === "Mis stickers";
+    return (
+      <div className="cn-sticker-empty-state">
+        <div className="cn-sticker-empty-art" aria-hidden>
+          {isMyStickers ? <Image size={32} strokeWidth={1.25} /> : <Heart size={28} strokeWidth={1.25} />}
+        </div>
+        <p className="cn-sticker-empty-title">
+          {isMyStickers ? "Aún no tienes stickers personalizados" : "Sin favoritos todavía"}
+        </p>
+        <p className="cn-sticker-empty-sub">
+          {isMyStickers
+            ? "Importa desde Pinterest o genera uno con IA."
+            : "Toca el corazón en un sticker para guardarlo aquí."}
+        </p>
+        {isMyStickers && onGoImport ? (
+          <button type="button" className="cn-sticker-empty-cta" onClick={onGoImport}>
+            Importar mi primer sticker
+          </button>
+        ) : null}
+      </div>
+    );
+  }
   return (
     <section className="cn-sticker-grid-section">
       <h3>{title}</h3>
-      <div className="cn-sticker-grid cn-sticker-grid--png">
+      <div className="cn-sticker-grid cn-sticker-grid--pinterest">
         {items.map((s) => (
-          <div key={s.id} className="cn-sticker-cell">
+          <div key={s.id} className="cn-sticker-cell cn-sticker-cell--premium">
             <div
               role="button"
               tabIndex={0}
-              className="cn-sticker-cell-main cn-draggable-source"
+              className="cn-sticker-cell-main cn-sticker-cell-main--premium cn-draggable-source"
               draggable
               onDragStart={(e) => {
                 writeDecorationDragData(e.dataTransfer, {
@@ -504,25 +529,29 @@ function UserGrid({
                 }
               }}
             >
-              <img src={s.imageUrl} alt={s.name} loading="lazy" decoding="async" draggable={false} />
-              <span>{s.name}</span>
+              <div className="cn-sticker-cell-preview">
+                <img src={s.imageUrl} alt={s.name} loading="lazy" decoding="async" draggable={false} />
+              </div>
+              <span className="cn-sticker-cell-label" title={s.name}>
+                {s.name}
+              </span>
             </div>
             <button
               type="button"
-              className={`cn-sticker-fav${s.isFavorite ? " is-on" : ""}`}
+              className={`cn-sticker-heart${s.isFavorite ? " is-on" : ""}`}
               onClick={() => void onToggleFav(s)}
               aria-label={s.isFavorite ? "Quitar de favoritos" : "Añadir a favoritos"}
             >
-              <Star size={12} fill={s.isFavorite ? "currentColor" : "none"} />
+              <Heart size={13} fill={s.isFavorite ? "currentColor" : "none"} strokeWidth={1.75} />
             </button>
             {onDelete ? (
               <button
                 type="button"
-                className="cn-sticker-delete"
+                className="cn-sticker-delete cn-sticker-delete--premium"
                 onClick={() => void onDelete(s)}
                 aria-label={`Eliminar ${s.name}`}
               >
-                <Trash2 size={12} />
+                <Trash2 size={12} strokeWidth={1.75} />
               </button>
             ) : null}
           </div>

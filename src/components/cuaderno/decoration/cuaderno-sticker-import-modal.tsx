@@ -1,7 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { ExternalLink, Globe, Loader2, Upload } from "lucide-react";
+import {
+  ArrowDown,
+  ClipboardPaste,
+  ExternalLink,
+  Globe,
+  ImageIcon,
+  Link2,
+  Loader2,
+  Sparkles,
+  Upload,
+} from "lucide-react";
 
 const PINTEREST_URL = "https://www.pinterest.com/";
 import {
@@ -19,7 +29,7 @@ export function CuadernoStickerImportPanel({
   onSaved: (sticker: UserStickerRecord) => void;
   onAddToCanvas?: (sticker: UserStickerRecord) => void;
 }) {
-  const [mode, setMode] = useState<ImportMode>("direct");
+  const [mode, setMode] = useState<ImportMode>("pinterest");
   const [url, setUrl] = useState("");
   const [name, setName] = useState("");
   const [originalSrc, setOriginalSrc] = useState<string | null>(null);
@@ -98,53 +108,59 @@ export function CuadernoStickerImportPanel({
   }
 
   return (
-    <div className="cn-sticker-import-panel">
-      <CuadernoPinterestImportGuide />
+    <div className="cn-sticker-import-panel cn-sticker-import-panel--premium">
+      <section className="cn-sticker-import-hero" aria-labelledby="cn-import-hero-title">
+        <div className="cn-sticker-import-hero-art" aria-hidden>
+          <Sparkles size={28} strokeWidth={1.5} />
+        </div>
+        <h2 id="cn-import-hero-title" className="cn-sticker-import-hero-title">
+          Importa stickers desde Pinterest
+        </h2>
+        <p className="cn-sticker-import-hero-sub">
+          Guarda imágenes, elimina el fondo y crea tu colección personal de estudio.
+        </p>
+      </section>
 
-      <div className="cn-sticker-import-modes">
+      <ImportVisualFlow />
+
+      <button
+        type="button"
+        className="cn-sticker-import-pinterest-btn"
+        onClick={() => window.open(PINTEREST_URL, "_blank", "noopener,noreferrer")}
+      >
+        <ExternalLink size={16} aria-hidden />
+        Abrir Pinterest
+      </button>
+
+      <div className="cn-sticker-import-modes cn-sticker-import-modes--pill">
         <button type="button" className={mode === "pinterest" ? "is-on" : ""} onClick={() => setMode("pinterest")}>
-          URL Pinterest
+          Pinterest
         </button>
         <button type="button" className={mode === "direct" ? "is-on" : ""} onClick={() => setMode("direct")}>
           URL imagen
         </button>
         <button type="button" className={mode === "file" ? "is-on" : ""} onClick={() => setMode("file")}>
-          Archivo local
+          Archivo
         </button>
       </div>
 
-      {mode === "pinterest" ? (
-        <button
-          type="button"
-          className="cn-sticker-import-pinterest-btn"
-          onClick={() => window.open(PINTEREST_URL, "_blank", "noopener,noreferrer")}
-        >
-          <ExternalLink size={16} aria-hidden />
-          Abrir Pinterest en nueva pestaña
-        </button>
-      ) : null}
-
       {mode !== "file" ? (
-        <div className="cn-sticker-import-url">
+        <div className="cn-sticker-import-url cn-sticker-import-url--premium">
           <Globe size={16} />
           <input
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            placeholder={
-              mode === "pinterest"
-                ? "https://i.pinimg.com/… (URL directa de la imagen)"
-                : "https://…/imagen.png"
-            }
+            placeholder="Pega el enlace del pin o de la imagen"
             onKeyDown={(e) => e.key === "Enter" && void fetchUrl()}
           />
-          <button type="button" disabled={loading} onClick={() => void fetchUrl()}>
+          <button type="button" className="cn-sticker-import-go" disabled={loading} onClick={() => void fetchUrl()}>
             {loading && !processedSrc ? <Loader2 size={14} className="cn-spin" /> : "Importar"}
           </button>
         </div>
       ) : (
-        <label className="cn-sticker-upload-zone cn-sticker-upload-zone--compact">
+        <label className="cn-sticker-upload-zone cn-sticker-upload-zone--premium">
           <Upload size={22} />
-          <span>PNG · JPG · WEBP</span>
+          <span>Arrastra o elige PNG · JPG · WEBP</span>
           <input
             type="file"
             hidden
@@ -163,7 +179,7 @@ export function CuadernoStickerImportPanel({
       </label>
 
       {originalSrc && processedSrc ? (
-        <div className="cn-sticker-import-preview">
+        <div className="cn-sticker-import-preview cn-sticker-import-preview--premium">
           <div>
             <span>Original</span>
             <img src={originalSrc} alt="" loading="lazy" decoding="async" />
@@ -186,75 +202,37 @@ export function CuadernoStickerImportPanel({
 
       {processedSrc ? (
         <button type="button" className="cn-sticker-import-save" disabled={loading} onClick={() => void save()}>
-          Guardar en Mis Stickers
+          Guardar en Mis stickers
         </button>
       ) : null}
     </div>
   );
 }
 
-function CuadernoPinterestImportGuide() {
+function ImportVisualFlow() {
+  const steps = [
+    { icon: ExternalLink, label: "Pinterest" },
+    { icon: Link2, label: "Copiar URL" },
+    { icon: ClipboardPaste, label: "Pegar enlace" },
+    { icon: ImageIcon, label: "Importar" },
+    { icon: Sparkles, label: "Tu cuaderno" },
+  ];
+
   return (
-    <section className="cn-sticker-import-guide" aria-label="Cómo importar desde Pinterest">
-      <h2 className="cn-sticker-import-guide-title">Importar imagen desde Pinterest</h2>
-      <p className="cn-sticker-import-guide-lead">
-        Para obtener mejores resultados, copia la dirección directa de la imagen y no el enlace del
-        pin.
-      </p>
-
-      <button
-        type="button"
-        className="cn-sticker-import-pinterest-btn cn-sticker-import-pinterest-btn--in-guide"
-        onClick={() => window.open(PINTEREST_URL, "_blank", "noopener,noreferrer")}
-      >
-        <ExternalLink size={16} aria-hidden />
-        Abrir Pinterest
-      </button>
-      <p className="cn-sticker-import-guide-open-hint">Se abre en una pestaña nueva. Busca tu imagen y copia la URL directa.</p>
-
-      <h3 className="cn-sticker-import-guide-sub">En computadora</h3>
-      <ol className="cn-sticker-import-guide-steps">
-        <li>Abre el pin en Pinterest.</li>
-        <li>Haz clic derecho sobre la imagen.</li>
-        <li>
-          Selecciona <strong>«Copiar dirección de la imagen»</strong> o{" "}
-          <strong>«Copiar URL de imagen»</strong> (según tu navegador).
-        </li>
-        <li>
-          Pega el enlace en el campo <strong>Importar Sticker</strong> (pestaña URL Pinterest o URL
-          imagen).
-        </li>
-      </ol>
-
-      <div className="cn-sticker-import-guide-important">
-        <p className="cn-sticker-import-guide-important-label">Importante</p>
-        <p className="cn-sticker-import-guide-ok">
-          <span aria-hidden>✅</span> Correcto:{" "}
-          <code className="cn-sticker-import-guide-code">https://i.pinimg.com/…</code>
-        </p>
-        <p className="cn-sticker-import-guide-bad">
-          <span aria-hidden>❌</span> Incorrecto:{" "}
-          <code className="cn-sticker-import-guide-code">https://www.pinterest.com/pin/…</code>
-        </p>
-        <p className="cn-sticker-import-guide-note">
-          El sistema funciona mejor cuando recibe la URL directa de la imagen.
-        </p>
-      </div>
-
-      <h3 className="cn-sticker-import-guide-sub">También puedes</h3>
-      <ul className="cn-sticker-import-guide-list">
-        <li>
-          <strong>Ctrl + V</strong> en la hoja: se guarda en <strong>Mis stickers</strong> y se coloca al
-          instante (como Canva).
-        </li>
-        <li>Arrastrar una imagen directamente a la hoja (también se guarda en tu biblioteca).</li>
-        <li>Subir archivos PNG, JPG o WEBP desde tu dispositivo.</li>
-      </ul>
-
-      <p className="cn-sticker-import-guide-tip">
-        <span aria-hidden>💡</span> Consejo: Si Pinterest no muestra la opción «Copiar dirección de
-        la imagen», abre la imagen en tamaño completo y vuelve a hacer clic derecho sobre ella.
-      </p>
-    </section>
+    <div className="cn-sticker-import-flow" aria-label="Pasos de importación">
+      {steps.map((step, i) => (
+        <div key={step.label} className="cn-sticker-import-flow-row">
+          <div className="cn-sticker-import-flow-step">
+            <span className="cn-sticker-import-flow-icon">
+              <step.icon size={15} strokeWidth={1.75} />
+            </span>
+            <span className="cn-sticker-import-flow-label">{step.label}</span>
+          </div>
+          {i < steps.length - 1 ? (
+            <ArrowDown size={14} className="cn-sticker-import-flow-arrow" aria-hidden />
+          ) : null}
+        </div>
+      ))}
+    </div>
   );
 }

@@ -1826,6 +1826,17 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 
+.cn-sticker-drag-ghost--premium {
+  width: 72px;
+  height: 72px;
+  padding: 6px;
+  border-radius: 14px;
+  opacity: 0.85;
+  transform: scale(1.05);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.22);
+}
+
 .cn-sticker-drag-ghost img {
   width: 100%;
   height: 100%;

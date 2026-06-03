@@ -1,4 +1,4 @@
-import { normalizeMaterialAcademicFields } from "@/lib/academic/helpers";
+import { normalizeAcademicForWrite } from "@/lib/academic/normalize-academic";
 import { OFFICIAL_MALLA_2021 } from "@/lib/academic/official-malla-2021";
 
 const STORAGE_KEY = "memoria-library-expanded";
@@ -38,21 +38,22 @@ export function buildLibraryTree(materials: LibraryMaterial[]) {
 
   for (const material of materials) {
     if (!material.id) continue;
-    const normalized = normalizeMaterialAcademicFields({
+    const official = normalizeAcademicForWrite({
       courseId: material.courseId,
       courseName: material.courseName,
       cycleNumber: material.cycleNumber,
       cycleLabel: material.cycleLabel,
     });
+    if (!official) continue;
 
-    const key = `${normalized.cycleNumber}:${normalized.courseId}`;
+    const key = `${official.cycleNumber}:${official.courseId}`;
     const bucket = materialsByCourse.get(key) ?? [];
     bucket.push({
       ...material,
-      courseId: normalized.courseId,
-      courseName: normalized.courseName,
-      cycleNumber: normalized.cycleNumber,
-      cycleLabel: normalized.cycleLabel,
+      courseId: official.courseId,
+      courseName: official.courseName,
+      cycleNumber: official.cycleNumber,
+      cycleLabel: official.cycleLabel,
     });
     materialsByCourse.set(key, bucket);
   }

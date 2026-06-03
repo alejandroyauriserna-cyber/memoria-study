@@ -4,8 +4,20 @@ import { LibraryPremiumWorkspace } from "@/components/library/library-premium-wo
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/env";
+import { normalizeAcademicForWrite } from "@/lib/academic/normalize-academic";
 import { recordToMaterial } from "@/lib/materials/mapper";
 import type { MaterialRecord } from "@/types/material";
+
+function materialOnOfficialMalla(mat: ReturnType<typeof recordToMaterial>): boolean {
+  return (
+    normalizeAcademicForWrite({
+      courseId: mat.courseId,
+      courseName: mat.courseName,
+      cycleNumber: mat.cycleNumber,
+      cycleLabel: mat.cycleLabel,
+    }) !== null
+  );
+}
 
 export const dynamic = "force-dynamic";
 
@@ -37,7 +49,9 @@ export default async function LibraryHomePage() {
     .eq("is_public", true)
     .order("created_at", { ascending: false });
 
-  const materials = (data ?? []).map((record) => recordToMaterial(record as MaterialRecord));
+  const materials = (data ?? [])
+    .map((record) => recordToMaterial(record as MaterialRecord))
+    .filter(materialOnOfficialMalla);
 
   let favoriteIds: string[] = [];
 
@@ -67,8 +81,20 @@ export default async function LibraryHomePage() {
       const materialsRow = item.materials as MaterialRecord | MaterialRecord[];
       const record = Array.isArray(materialsRow) ? materialsRow[0] : materialsRow;
       if (!record) return null;
+      const mat = recordToMaterial(record);
+      const official = normalizeAcademicForWrite({
+        courseId: mat.courseId,
+        courseName: mat.courseName,
+        cycleNumber: mat.cycleNumber,
+        cycleLabel: mat.cycleLabel,
+      });
+      if (!official) return null;
       return {
-        ...recordToMaterial(record),
+        ...mat,
+        courseId: official.courseId,
+        courseName: official.courseName,
+        cycleNumber: official.cycleNumber,
+        cycleLabel: official.cycleLabel,
         lastOpenedAt: item.opened_at as string,
       };
     })
@@ -86,8 +112,8 @@ export default async function LibraryHomePage() {
               Ciclo → Curso → Material
             </h1>
             <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
-              Explorador académico con carpetas expandibles, búsqueda global y acceso rápido a
-              favoritos y materiales recientes.
+              Materiales públicos de la malla curricular de Derecho UNT (2021). Solo se listan apuntes
+              clasificados en un curso oficial del plan.
             </p>
           </div>
         </div>
