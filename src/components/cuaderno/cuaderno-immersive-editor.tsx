@@ -2,17 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Editor } from "@tiptap/react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowLeft, Loader2, Sparkles, Star } from "lucide-react";
 import { CuadernoCanvasEditor } from "@/components/cuaderno/cuaderno-canvas-editor";
-import { CuadernoEditorToolbar } from "@/components/cuaderno/cuaderno-editor-toolbar";
 import { CuadernoAiSidebar } from "@/components/cuaderno/cuaderno-ai-sidebar";
-import {
-  CuadernoEditorChrome,
-  useEditorChromeState,
-} from "@/components/cuaderno/cuaderno-editor-chrome";
+import { CuadernoImmersiveHeader } from "@/components/cuaderno/cuaderno-immersive-header";
+import { CuadernoFormatPanel } from "@/components/cuaderno/cuaderno-format-panel";
+import { useEditorChromeState } from "@/components/cuaderno/cuaderno-editor-chrome";
 import { CuadernoPageSidebar } from "@/components/cuaderno/cuaderno-page-sidebar";
 import { CuadernoBlockInspector } from "@/components/cuaderno/cuaderno-block-inspector";
 import {
@@ -75,6 +71,9 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
   const [canvasWriteMode, setCanvasWriteMode] = useState(true);
   const [inspectorOpen, setInspectorOpen] = useState(false);
   const [pageSettingsOpen, setPageSettingsOpen] = useState(false);
+  const [formatPanelOpen, setFormatPanelOpen] = useState(false);
+  const [focusMode, setFocusMode] = useState(false);
+  const [lineHeight, setLineHeight] = useState("1.78");
   const [templateGalleryOpen, setTemplateGalleryOpen] = useState(false);
   const [templateTargetPageId, setTemplateTargetPageId] = useState<string | null>(null);
 
@@ -291,8 +290,9 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
 
   return (
     <motion.div
-      className={`cn-immersive-root ${aiOpen ? "cn-immersive-root--ai-open" : ""}`}
+      className={`cn-immersive-root ${aiOpen ? "cn-immersive-root--ai-open" : ""}${focusMode ? " cn-immersive-root--focus" : ""}`}
       data-layout={chrome.layoutMode}
+      data-focus={focusMode ? "true" : "false"}
       style={
         {
           "--cn-course-accent": coverArt.accent,
@@ -303,66 +303,40 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
     >
-      <header className="cn-immersive-toolbar">
-        <Link
-          href={`/cuaderno/curso/${cuadernoClass.courseId}`}
-          className="cn-immersive-back"
-          aria-label="Volver al curso"
-        >
-          <ArrowLeft size={18} />
-        </Link>
-        <span className="cn-immersive-course-badge" aria-hidden>
-          {coverArt.icon}
-        </span>
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          onBlur={() => persist({ title: title.trim() })}
-          className="cn-immersive-title"
-          aria-label="Título de la clase"
-        />
-        <span className="cn-immersive-status">
-          {saveState === "saving" ? (
-            <>
-              <Loader2 size={12} className="animate-spin" /> Guardando
-            </>
-          ) : saveState === "saved" ? (
-            "Guardado"
-          ) : (
-            cuadernoClass.courseName
-          )}
-        </span>
-        <motion.button
-          type="button"
-          animate={favoritePulse ? { scale: [1, 1.25, 1] } : {}}
-          onClick={() => {
-            void toggleFavoriteClassAsync(cuadernoClass.id).then((next) => {
-              setFavorite(next);
-              setFavoritePulse(true);
-              window.setTimeout(() => setFavoritePulse(false), 400);
-              void sync?.refresh();
-            });
-          }}
-          className={`cn-immersive-icon-btn ${favorite ? "is-active" : ""}`}
-          title="Favoritos"
-        >
-          <Star size={18} fill={favorite ? "currentColor" : "none"} />
-        </motion.button>
-        <button
-          type="button"
-          onClick={() => setAiOpen((v) => !v)}
-          className={`cn-immersive-ai-toggle ${aiOpen ? "is-open" : ""}`}
-        >
-          <Sparkles size={16} />
-          IA Jurídica
-        </button>
-      </header>
-
-      <CuadernoEditorChrome
+      <CuadernoImmersiveHeader
+        courseId={cuadernoClass.courseId}
+        courseName={cuadernoClass.courseName}
+        saveState={saveState}
+        favorite={favorite}
+        favoritePulse={favoritePulse}
+        aiOpen={aiOpen}
+        compact={chrome.layoutMode === "fullscreen"}
+        onToggleFavorite={() => {
+          void toggleFavoriteClassAsync(cuadernoClass.id).then((next) => {
+            setFavorite(next);
+            setFavoritePulse(true);
+            window.setTimeout(() => setFavoritePulse(false), 400);
+            void sync?.refresh();
+          });
+        }}
+        onToggleAi={() => setAiOpen((v) => !v)}
         layoutMode={chrome.layoutMode}
         onLayoutChange={chrome.setLayoutMode}
         pageSizeMode={activePage.pageSizeMode}
         onPageSizeChange={(mode) => applyDoc(updatePage(doc, activePage.id, { pageSizeMode: mode }))}
+        onOpenFormatPanel={() => setFormatPanelOpen(true)}
+        onOpenPageSettings={() => setPageSettingsOpen(true)}
+      />
+
+      <CuadernoFormatPanel
+        open={formatPanelOpen}
+        onClose={() => setFormatPanelOpen(false)}
+        editor={tiptapEditor}
+        paperTone={activePage.paperTone}
+        onPaperToneChange={(tone) => applyDoc(updatePage(doc, activePage.id, { paperTone: tone }))}
+        lineHeight={lineHeight}
+        onLineHeightChange={setLineHeight}
+        courseAccent={coverArt.accent}
       />
 
       <CuadernoTemplatePicker
@@ -385,7 +359,14 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
         }}
       />
 
-      <div className="cn-immersive-workspace">
+      <div
+        className="cn-immersive-workspace"
+        onPointerDown={(e) => {
+          const t = e.target as HTMLElement;
+          if (t.closest(".cn-immersive-header, .cn-format-panel, .cn-ai-sidebar")) return;
+          if (!t.closest(".cn-paper, .cn-rich-editor, .cn-prosemirror")) setFocusMode(false);
+        }}
+      >
         <CuadernoPageSidebar
           pages={doc.pages}
           activePageId={doc.activePageId}
@@ -404,32 +385,6 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
         />
 
         <div className="cn-immersive-editor-column">
-      <CuadernoEditorToolbar
-        editor={tiptapEditor}
-        courseAccent={coverArt.accent}
-        disabled={!canvasWriteMode}
-        onAiAction={(action, text) => {
-          setAiOpen(true);
-          if (action === "summarize") {
-            void handleAsk("summarize", `Resume: «${text}»`, "summary");
-          } else if (action === "exam_questions") {
-            void handleAsk("exam_questions", `Preguntas sobre: «${text}»`, "exam");
-          } else if (action === "legislation") {
-            void handleAsk("legislation", text);
-          } else if (action === "jurisprudence") {
-            void handleAsk("jurisprudence", text);
-          } else if (action === "mind_map") {
-            void handleAsk("mind_map", text);
-          } else if (action === "flashcards") {
-            void handleAsk("flashcards", text);
-          } else if (action === "relate") {
-            void handleAsk("relate", text);
-          } else {
-            void handleAsk(action, `Sobre: «${text}»`);
-          }
-        }}
-      />
-
       <main className="cn-immersive-main">
         <motion.div
           className="cn-immersive-paper-shell"
@@ -441,6 +396,7 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
           <CuadernoCanvasEditor
             immersive
             externalToolbar
+            immersiveEdit
             notes={notes}
             onChange={(raw) => applyDoc(parseCuadernoDocument(raw))}
             layoutMode={chrome.layoutMode}
@@ -449,6 +405,10 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
             pageSizeMode={activePage.pageSizeMode}
             templateId={activePage.templateId}
             courseAccent={coverArt.accent}
+            lineHeight={lineHeight}
+            focusMode={focusMode}
+            onPaperFocus={() => setFocusMode(true)}
+            onOpenFormatPanel={() => setFormatPanelOpen(true)}
             pageSettingsSlot={
               <CuadernoPageSettingsTrigger
                 page={activePage}
@@ -478,12 +438,14 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
       </main>
         </div>
 
-        <CuadernoBlockInspector
-          editor={tiptapEditor}
-          open={inspectorOpen}
-          onClose={() => setInspectorOpen(false)}
-          courseAccent={coverArt.accent}
-        />
+        {!focusMode && chrome.layoutMode !== "fullscreen" ? (
+          <CuadernoBlockInspector
+            editor={tiptapEditor}
+            open={inspectorOpen}
+            onClose={() => setInspectorOpen(false)}
+            courseAccent={coverArt.accent}
+          />
+        ) : null}
       </div>
 
       <CuadernoAiSidebar

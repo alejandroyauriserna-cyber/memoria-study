@@ -20,7 +20,7 @@
   outline: none;
   font-family: "EB Garamond", Georgia, "Times New Roman", serif;
   font-size: clamp(1.05rem, 1.15vw, 1.18rem);
-  line-height: 1.78;
+  line-height: var(--cn-line-height, 1.78);
   letter-spacing: 0.01em;
   color: var(--paper-ink, #1c1917);
   caret-color: var(--cn-course-accent, #0d9488);
@@ -286,6 +286,73 @@
   width: auto !important;
   padding: 0 8px !important;
   color: var(--cn-accent, #00ffd5) !important;
+}
+
+/* Toolbar flotante agrupada (inmersivo) */
+.cn-float-edit-toolbar {
+  z-index: var(--cn-z-menu, 10000);
+}
+
+.cn-float-edit-toolbar-inner {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 8px 10px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--cn-accent, #00e5c3) 28%, rgba(255, 255, 255, 0.1));
+  background: color-mix(in srgb, #161a22 88%, transparent);
+  backdrop-filter: blur(20px) saturate(1.4);
+  box-shadow:
+    0 16px 48px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.cn-float-tb-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cn-float-tb-gap {
+  width: 48px;
+  flex-shrink: 0;
+  height: 1px;
+}
+
+.cn-float-edit-toolbar-inner button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  border-radius: 9px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.7rem;
+  font-weight: 600;
+  gap: 4px;
+  transition: background 0.12s;
+}
+
+.cn-float-edit-toolbar-inner button:hover,
+.cn-float-edit-toolbar-inner button.is-active {
+  background: color-mix(in srgb, var(--cn-accent, #00e5c3) 20%, transparent);
+}
+
+.cn-float-tb-dropdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 10px !important;
+}
+
+.cn-float-tb-dropdown svg:last-child {
+  opacity: 0.5;
+  transition: transform 0.15s;
+}
+
+.cn-float-tb-dropdown.is-open svg:last-child {
+  transform: rotate(180deg);
 }
 
 .cn-prosemirror img {

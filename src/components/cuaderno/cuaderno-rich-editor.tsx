@@ -6,6 +6,7 @@ import { bodyToEditorHtml } from "@/lib/cuaderno/rich-text";
 import { getFontStack, getGoogleFontsHref, DEFAULT_FONT_ID } from "@/lib/cuaderno/editor-fonts";
 import { createCuadernoEditorExtensions } from "@/lib/cuaderno/cuaderno-editor-extensions";
 import { CuadernoFormatBubble } from "@/components/cuaderno/cuaderno-format-bubble";
+import { CuadernoFloatingEditToolbar } from "@/components/cuaderno/cuaderno-floating-edit-toolbar";
 import { CuadernoBlockHandles, useBlockClickSelect } from "@/components/cuaderno/cuaderno-block-handles";
 import type { CuadernoAskAction } from "@/types/cuaderno";
 import "./cuaderno-rich-editor.css";
@@ -23,6 +24,9 @@ export function CuadernoRichEditor({
   editable = true,
   courseAccent = "#0d9488",
   className = "",
+  immersiveEdit = false,
+  lineHeight = "1.78",
+  onOpenFormatPanel,
   onSelectionAction,
 }: {
   body: string;
@@ -32,6 +36,10 @@ export function CuadernoRichEditor({
   editable?: boolean;
   courseAccent?: string;
   className?: string;
+  /** Toolbar flotante agrupada (modo inmersivo) */
+  immersiveEdit?: boolean;
+  lineHeight?: string;
+  onOpenFormatPanel?: () => void;
   onSelectionAction?: (
     action: CuadernoAskAction | "legislation" | "mind_map" | "jurisprudence",
     selectedText: string,
@@ -120,16 +128,30 @@ export function CuadernoRichEditor({
     <div
       className={`cn-rich-editor ${className}`}
       data-editable={editable ? "true" : "false"}
-      style={{ "--cn-course-accent": courseAccent } as React.CSSProperties}
+      style={
+        {
+          "--cn-course-accent": courseAccent,
+          "--cn-line-height": lineHeight,
+        } as React.CSSProperties
+      }
     >
       <EditorContent editor={editor} className="cn-rich-editor-content" />
       {editable ? (
         <>
-          <CuadernoFormatBubble
-            editor={editor}
-            courseAccent={courseAccent}
-            onAiAction={onSelectionAction}
-          />
+          {immersiveEdit ? (
+            <CuadernoFloatingEditToolbar
+              editor={editor}
+              courseAccent={courseAccent}
+              onAiAction={onSelectionAction}
+              onOpenFormatPanel={onOpenFormatPanel}
+            />
+          ) : (
+            <CuadernoFormatBubble
+              editor={editor}
+              courseAccent={courseAccent}
+              onAiAction={onSelectionAction}
+            />
+          )}
           <CuadernoBlockHandles editor={editor} />
         </>
       ) : null}

@@ -34,6 +34,11 @@ export function CuadernoCanvasEditor({
   courseAccent = "#00E5C3",
   pageSettingsSlot,
   externalToolbar = false,
+  immersiveEdit = false,
+  lineHeight = "1.78",
+  onOpenFormatPanel,
+  focusMode = false,
+  onPaperFocus,
   onEditorReady,
   onModeChange,
 }: {
@@ -51,6 +56,11 @@ export function CuadernoCanvasEditor({
   pageSettingsSlot?: React.ReactNode;
   /** Toolbar renderizada por el padre (vista inmersiva) */
   externalToolbar?: boolean;
+  immersiveEdit?: boolean;
+  lineHeight?: string;
+  onOpenFormatPanel?: () => void;
+  focusMode?: boolean;
+  onPaperFocus?: () => void;
   onEditorReady?: (editor: Editor | null) => void;
   onModeChange?: (mode: "write" | "pan") => void;
 }) {
@@ -101,14 +111,17 @@ export function CuadernoCanvasEditor({
       />
     ) : null;
 
+  const showPageChrome = pageSettingsSlot && !focusMode;
+
   const paperOnly = (
     <div
       ref={shellRef}
       className="cn-paper-stage-wrap"
       data-page-size={pageSizeMode}
       data-layout={layoutMode}
+      onPointerDown={() => onPaperFocus?.()}
     >
-      {pageSettingsSlot ? <div className="cn-paper-stage-chrome">{pageSettingsSlot}</div> : null}
+      {showPageChrome ? <div className="cn-paper-stage-chrome">{pageSettingsSlot}</div> : null}
       <div
         className={paperClass}
         data-template={templateId}
@@ -123,6 +136,9 @@ export function CuadernoCanvasEditor({
           editable={mode === "write"}
           courseAccent={courseAccent}
           className="cn-paper-editor cn-paper-editor--rich"
+          immersiveEdit={immersiveEdit}
+          lineHeight={lineHeight}
+          onOpenFormatPanel={onOpenFormatPanel}
           onSelectionAction={onSelectionAction}
         />
       </div>
@@ -143,6 +159,7 @@ export function CuadernoCanvasEditor({
             {paperOnly}
           </div>
         </div>
+        {!focusMode ? (
         <div className="cn-immersive-zoom">
           <button
             type="button"
@@ -159,6 +176,7 @@ export function CuadernoCanvasEditor({
             <Plus size={14} />
           </button>
         </div>
+        ) : null}
       </div>
     );
   }
