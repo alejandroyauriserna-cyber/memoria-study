@@ -15,8 +15,8 @@
 }
 
 .cn-prosemirror {
-  min-height: calc(100dvh - 280px);
-  padding: clamp(32px, 4vw, 56px) clamp(36px, 4vw, 64px) 100px;
+  min-height: inherit;
+  padding: clamp(28px, 3.5%, 52px) clamp(40px, 6%, 88px) clamp(64px, 8%, 120px);
   outline: none;
   font-family: "EB Garamond", Georgia, "Times New Roman", serif;
   font-size: clamp(1.05rem, 1.15vw, 1.18rem);

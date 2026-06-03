@@ -1,5 +1,6 @@
 import type { CuadernoTemplateId } from "@/lib/cuaderno/templates";
 import type { CuadernoPageMargin } from "@/lib/cuaderno/page-settings";
+import type { CuadernoPageSizeMode } from "@/lib/cuaderno/page-size";
 import type { CuadernoPaperTone } from "@/lib/cuaderno/editor-preferences";
 import { wordCountFromNotes } from "@/lib/cuaderno/rich-text";
 
@@ -21,6 +22,7 @@ export type CuadernoPageMeta = {
   cover?: SheetCoverMeta;
   paperTone?: CuadernoPaperTone;
   marginMode?: CuadernoPageMargin;
+  pageSizeMode?: CuadernoPageSizeMode;
   favorite?: boolean;
 };
 

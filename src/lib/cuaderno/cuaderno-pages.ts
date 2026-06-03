@@ -6,6 +6,7 @@ import {
   type CuadernoPageSettings,
 } from "@/lib/cuaderno/page-settings";
 import type { CuadernoTemplateId } from "@/lib/cuaderno/templates";
+import type { CuadernoPageSizeMode } from "@/lib/cuaderno/page-size";
 
 export type CuadernoPage = {
   id: string;
@@ -15,6 +16,7 @@ export type CuadernoPage = {
   cover?: SheetCoverMeta;
   paperTone: CuadernoPaperTone;
   marginMode: CuadernoPageMargin;
+  pageSizeMode: CuadernoPageSizeMode;
   favorite: boolean;
 };
 
@@ -37,6 +39,7 @@ function hydratePage(
     cover?: SheetCoverMeta;
     paperTone?: CuadernoPaperTone;
     marginMode?: CuadernoPageMargin;
+    pageSizeMode?: CuadernoPageSizeMode;
     favorite?: boolean;
   },
   fallbackTemplate: CuadernoTemplateId,
@@ -49,6 +52,7 @@ function hydratePage(
     cover: partial.cover,
     paperTone: partial.paperTone ?? DEFAULT_PAGE_SETTINGS.paperTone,
     marginMode: partial.marginMode ?? DEFAULT_PAGE_SETTINGS.marginMode,
+    pageSizeMode: partial.pageSizeMode ?? DEFAULT_PAGE_SETTINGS.pageSizeMode,
     favorite: partial.favorite ?? false,
   };
 }
@@ -66,6 +70,7 @@ export function createPage(
     body,
     paperTone: settings?.paperTone ?? DEFAULT_PAGE_SETTINGS.paperTone,
     marginMode: settings?.marginMode ?? DEFAULT_PAGE_SETTINGS.marginMode,
+    pageSizeMode: settings?.pageSizeMode ?? DEFAULT_PAGE_SETTINGS.pageSizeMode,
     favorite: settings?.favorite ?? false,
   };
 }
@@ -115,6 +120,7 @@ export function serializeCuadernoDocument(doc: CuadernoDocument): string {
       cover: p.cover,
       paperTone: p.paperTone,
       marginMode: p.marginMode,
+      pageSizeMode: p.pageSizeMode,
       favorite: p.favorite,
     })),
     activePageId: active.id,
@@ -169,6 +175,7 @@ export function duplicatePage(doc: CuadernoDocument, pageId: string): CuadernoDo
   const copy = createPage(source.templateId, source.body, `${source.title} (copia)`, {
     paperTone: source.paperTone,
     marginMode: source.marginMode,
+    pageSizeMode: source.pageSizeMode,
     favorite: false,
   });
   copy.cover = source.cover;

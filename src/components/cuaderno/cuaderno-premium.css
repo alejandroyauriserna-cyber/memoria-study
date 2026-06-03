@@ -106,9 +106,10 @@
 .cn-paper {
   margin: 0 auto;
   width: 100%;
-  min-height: calc(100dvh - 160px);
+  max-width: none;
+  min-height: min(72dvh, 960px);
   border-radius: 3px 6px 6px 3px;
-  transition: max-width 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease;
+  transition: box-shadow 0.4s ease, min-height 0.35s ease;
 }
 
 .cn-paper-editor {
@@ -122,12 +123,12 @@
 }
 
 .cn-paper-editor--rich {
-  min-height: calc(100dvh - 220px);
+  min-height: inherit;
   white-space: normal;
 }
 
 .cn-paper-editor--rich .cn-prosemirror {
-  min-height: calc(100dvh - 260px);
+  min-height: min(68dvh, 880px);
 }
 
 .cn-paper-editor:focus {
@@ -629,48 +630,59 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
+  container-type: inline-size;
+  container-name: cn-editor;
 }
 
 .cn-canvas-viewport--immersive {
   flex: 1;
   height: auto;
   min-height: 0;
+  width: 100%;
   border: none;
   border-radius: 0;
   background: transparent;
   cursor: default;
+  overflow: auto;
 }
 
 .cn-canvas-stage--immersive {
-  min-height: 100%;
+  min-height: min-content;
   width: 100%;
-  padding: 16px clamp(12px, 2vw, 32px) 100px;
+  max-width: 100%;
+  padding: 12px clamp(8px, 1.5vw, 24px) 96px;
   display: flex;
-  justify-content: center;
-  align-items: flex-start;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
 }
 
-/* Modos de ancho de hoja */
-.cn-immersive-root[data-layout="fullscreen"] .cn-paper,
-.cn-immersive-canvas[data-layout="fullscreen"] .cn-paper {
-  max-width: min(96vw, 1320px);
+/* Pantalla completa: más ancho, menos distracciones */
+.cn-immersive-root[data-layout="fullscreen"] .cn-page-sidebar,
+.cn-immersive-root[data-layout="fullscreen"] .cn-block-inspector {
+  display: none;
+}
+
+.cn-immersive-root[data-layout="fullscreen"] .cn-editor-chrome--minimal {
+  padding: 6px 16px;
+}
+
+.cn-immersive-root[data-layout="fullscreen"] .cn-paper-stage-wrap {
+  width: clamp(88%, 90cqw, 95%);
+}
+
+.cn-immersive-root[data-layout="standard"] .cn-paper-stage-wrap {
+  width: clamp(86%, 88cqw, 93%);
+}
+
+.cn-immersive-root[data-layout="compact"] .cn-paper-stage-wrap {
+  width: clamp(82%, 84cqw, 90%);
+}
+
+.cn-immersive-canvas .cn-paper,
+.cn-immersive-root .cn-immersive-canvas .cn-paper {
+  max-width: none;
   width: 100%;
-}
-
-.cn-immersive-root[data-layout="standard"] .cn-paper,
-.cn-immersive-canvas[data-layout="standard"] .cn-paper {
-  max-width: min(92vw, 960px);
-  width: 100%;
-}
-
-.cn-immersive-root[data-layout="compact"] .cn-paper,
-.cn-immersive-canvas[data-layout="compact"] .cn-paper {
-  max-width: min(88vw, 680px);
-  width: 100%;
-}
-
-.cn-canvas-viewport--immersive .cn-paper {
-  min-height: calc(100dvh - 200px);
 }
 
 .cn-immersive-zoom {
@@ -848,6 +860,14 @@
   z-index: 28;
   padding: 8px 16px 4px;
   pointer-events: none;
+}
+
+.cn-editor-chrome--minimal {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-bottom: 1px solid var(--cn-border);
+  background: color-mix(in srgb, var(--cn-surface) 94%, transparent);
 }
 
 .cn-editor-chrome-row {

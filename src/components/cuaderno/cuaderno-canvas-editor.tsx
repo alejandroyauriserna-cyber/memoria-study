@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import type { Editor } from "@tiptap/react";
 import { Minus, Plus, Type } from "lucide-react";
 import { CuadernoRichEditor } from "@/components/cuaderno/cuaderno-rich-editor";
 import { CuadernoEditorToolbar } from "@/components/cuaderno/cuaderno-editor-toolbar";
+import { useCuadernoPaperFit } from "@/components/cuaderno/use-cuaderno-paper-fit";
 import {
   parseCuadernoDocument,
   serializeCuadernoDocument,
@@ -13,6 +14,7 @@ import {
 } from "@/lib/cuaderno/cuaderno-pages";
 import { getPaperClasses } from "@/lib/cuaderno/paper-styles";
 import type { CuadernoLayoutMode, CuadernoPaperTone } from "@/lib/cuaderno/editor-preferences";
+import { DEFAULT_PAGE_SIZE_MODE, type CuadernoPageSizeMode } from "@/lib/cuaderno/page-size";
 import { getTemplate, type CuadernoTemplateId } from "@/lib/cuaderno/templates";
 import type { CuadernoAskAction } from "@/types/cuaderno";
 
@@ -27,6 +29,7 @@ export function CuadernoCanvasEditor({
   layoutMode = "fullscreen",
   paperTone: paperToneProp,
   marginMode: marginModeProp,
+  pageSizeMode: pageSizeModeProp,
   templateId: templateIdProp,
   courseAccent = "#00E5C3",
   pageSettingsSlot,
@@ -42,6 +45,7 @@ export function CuadernoCanvasEditor({
   layoutMode?: CuadernoLayoutMode;
   paperTone?: CuadernoPaperTone;
   marginMode?: import("@/lib/cuaderno/page-settings").CuadernoPageMargin;
+  pageSizeMode?: CuadernoPageSizeMode;
   templateId?: CuadernoTemplateId;
   courseAccent?: string;
   pageSettingsSlot?: React.ReactNode;
@@ -50,7 +54,8 @@ export function CuadernoCanvasEditor({
   onEditorReady?: (editor: Editor | null) => void;
   onModeChange?: (mode: "write" | "pan") => void;
 }) {
-  const [zoom, setZoom] = useState(1);
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const shellRef = useRef<HTMLDivElement>(null);
   const [mode, setMode] = useState<"write" | "pan">("write");
   const [editor, setEditor] = useState<Editor | null>(null);
 
@@ -59,8 +64,12 @@ export function CuadernoCanvasEditor({
   const templateId = templateIdProp ?? activePage.templateId;
   const paperTone = paperToneProp ?? activePage.paperTone;
   const marginMode = marginModeProp ?? activePage.marginMode;
+  const pageSizeMode = pageSizeModeProp ?? activePage.pageSizeMode ?? DEFAULT_PAGE_SIZE_MODE;
   const template = getTemplate(templateId);
   const paperClass = `${getPaperClasses(templateId)} tone-${paperTone} margin-${marginMode}`;
+
+  const fitKey = `${doc.activePageId}-${pageSizeMode}-${layoutMode}-${templateId}`;
+  const { zoom, setZoom } = useCuadernoPaperFit(viewportRef, shellRef, pageSizeMode, fitKey);
 
   const syncBody = useCallback(
     (html: string) => {
@@ -93,23 +102,29 @@ export function CuadernoCanvasEditor({
     ) : null;
 
   const paperOnly = (
-    <div className="cn-paper-stage-wrap">
+    <div
+      ref={shellRef}
+      className="cn-paper-stage-wrap"
+      data-page-size={pageSizeMode}
+      data-layout={layoutMode}
+    >
       {pageSettingsSlot ? <div className="cn-paper-stage-chrome">{pageSettingsSlot}</div> : null}
       <div
         className={paperClass}
         data-template={templateId}
+        data-page-size={pageSizeMode}
         style={{ "--cn-course-accent": courseAccent } as React.CSSProperties}
       >
-      <CuadernoRichEditor
-        body={activePage.body}
-        onBodyChange={syncBody}
-        onEditorReady={handleEditorReady}
-        placeholder={placeholder || template.description}
-        editable={mode === "write"}
-        courseAccent={courseAccent}
-        className="cn-paper-editor cn-paper-editor--rich"
-        onSelectionAction={onSelectionAction}
-      />
+        <CuadernoRichEditor
+          body={activePage.body}
+          onBodyChange={syncBody}
+          onEditorReady={handleEditorReady}
+          placeholder={placeholder || template.description}
+          editable={mode === "write"}
+          courseAccent={courseAccent}
+          className="cn-paper-editor cn-paper-editor--rich"
+          onSelectionAction={onSelectionAction}
+        />
       </div>
     </div>
   );
@@ -123,7 +138,7 @@ export function CuadernoCanvasEditor({
   if (immersive) {
     return (
       <div className="cn-immersive-canvas" data-layout={layoutMode}>
-        <div className={viewportClass}>
+        <div ref={viewportRef} className={viewportClass}>
           <div className={stageClass} style={{ transform: `scale(${zoom})` }}>
             {paperOnly}
           </div>
@@ -140,7 +155,7 @@ export function CuadernoCanvasEditor({
             <Minus size={14} />
           </button>
           <span>{Math.round(zoom * 100)}%</span>
-          <button type="button" onClick={() => setZoom((z) => Math.min(1.2, z + 0.08))} aria-label="Acercar">
+          <button type="button" onClick={() => setZoom((z) => Math.min(1.35, z + 0.08))} aria-label="Acercar">
             <Plus size={14} />
           </button>
         </div>
@@ -156,7 +171,7 @@ export function CuadernoCanvasEditor({
           <button
             type="button"
             onClick={() => setWriteMode("write")}
-            className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${mode === "write" ? "bg-[#00FFD5]/15 text-[#00FFD5]" : "text-muted-foreground"}`}
+            className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${mode === "write" ? "bg-[#00E5C3]/15 text-[#00E5C3]" : "text-muted-foreground"}`}
           >
             <Type size={14} className="mr-1 inline" />
             Escribir
@@ -164,7 +179,7 @@ export function CuadernoCanvasEditor({
           <button
             type="button"
             onClick={() => setWriteMode("pan")}
-            className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${mode === "pan" ? "bg-[#00FFD5]/15 text-[#00FFD5]" : "text-muted-foreground"}`}
+            className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${mode === "pan" ? "bg-[#00E5C3]/15 text-[#00E5C3]" : "text-muted-foreground"}`}
           >
             Mover lienzo
           </button>
@@ -172,7 +187,7 @@ export function CuadernoCanvasEditor({
         <div className="flex items-center gap-2">
           <button
             type="button"
-            className="rounded-lg border border-white/10 p-1.5 text-muted-foreground hover:text-[#00FFD5]"
+            className="rounded-lg border border-white/10 p-1.5 text-muted-foreground hover:text-[#00E5C3]"
             onClick={() => setZoom((z) => Math.max(0.75, z - 0.08))}
             aria-label="Alejar"
           >
@@ -183,8 +198,8 @@ export function CuadernoCanvasEditor({
           </span>
           <button
             type="button"
-            className="rounded-lg border border-white/10 p-1.5 text-muted-foreground hover:text-[#00FFD5]"
-            onClick={() => setZoom((z) => Math.min(1.2, z + 0.08))}
+            className="rounded-lg border border-white/10 p-1.5 text-muted-foreground hover:text-[#00E5C3]"
+            onClick={() => setZoom((z) => Math.min(1.35, z + 0.08))}
             aria-label="Acercar"
           >
             <Plus size={16} />
@@ -192,7 +207,7 @@ export function CuadernoCanvasEditor({
         </div>
       </div>
 
-      <div className={viewportClass}>
+      <div ref={viewportRef} className={viewportClass}>
         <div className={stageClass} style={{ transform: `scale(${zoom})` }}>
           {paperOnly}
         </div>

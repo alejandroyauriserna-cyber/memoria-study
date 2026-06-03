@@ -49,6 +49,26 @@
 .cn-paper-stage-wrap {
   position: relative;
   margin: 0 auto;
+  width: clamp(85%, 85cqw, 95%);
+  max-width: 100%;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.cn-paper-stage-wrap[data-page-size="a4"] {
+  width: clamp(85%, 88cqw, 94%);
+}
+
+.cn-paper-stage-wrap[data-page-size="letter"] {
+  width: clamp(85%, 90cqw, 94%);
+}
+
+.cn-paper-stage-wrap[data-page-size="free"] {
+  width: clamp(88%, 90cqw, 95%);
+}
+
+.cn-paper-stage-wrap[data-page-size="infinite"] {
+  width: clamp(90%, 92cqw, 95%);
 }
 
 .cn-paper-stage-chrome {
@@ -113,16 +133,16 @@
   background-image:
     linear-gradient(var(--paper-line) 1px, transparent 1px),
     linear-gradient(90deg, var(--paper-line) 1px, transparent 1px);
-  background-size: 22px 22px;
+  background-size: clamp(18px, 1.15vw, 26px) clamp(18px, 1.15vw, 26px);
 }
 
 .tpl-ruled,
 .tpl-summary {
   background-image: repeating-linear-gradient(
     transparent 0,
-    transparent 31px,
-    var(--paper-line) 31px,
-    var(--paper-line) 32px
+    transparent calc(clamp(28px, 2.2vw, 36px) - 1px),
+    var(--paper-line) calc(clamp(28px, 2.2vw, 36px) - 1px),
+    var(--paper-line) clamp(28px, 2.2vw, 36px)
   );
 }
 
@@ -393,8 +413,38 @@
     repeating-linear-gradient(
       0deg,
       transparent,
-      transparent 56px,
-      color-mix(in srgb, var(--cn-accent, #00e5c3) 25%, var(--paper-line)) 56px,
-      color-mix(in srgb, var(--cn-accent, #00e5c3) 25%, var(--paper-line)) 57px
+      transparent clamp(48px, 4vw, 64px),
+      color-mix(in srgb, var(--cn-accent, #00e5c3) 25%, var(--paper-line)) clamp(48px, 4vw, 64px),
+      color-mix(in srgb, var(--cn-accent, #00e5c3) 25%, var(--paper-line)) calc(clamp(48px, 4vw, 64px) + 1px)
     );
+}
+
+/* —— Modos de tamaño de página —— */
+.cn-paper[data-page-size="free"] {
+  width: 100%;
+  min-height: min(78dvh, 1200px);
+}
+
+.cn-paper[data-page-size="a4"] {
+  width: 100%;
+  aspect-ratio: 210 / 297;
+  min-height: auto;
+  height: auto;
+}
+
+.cn-paper[data-page-size="letter"] {
+  width: 100%;
+  aspect-ratio: 8.5 / 11;
+  min-height: auto;
+  height: auto;
+}
+
+.cn-paper[data-page-size="infinite"] {
+  width: 100%;
+  min-height: 280vh;
+}
+
+.cn-paper[data-page-size="infinite"] .cn-paper-editor--rich,
+.cn-paper[data-page-size="infinite"] .cn-prosemirror {
+  min-height: 260vh;
 }

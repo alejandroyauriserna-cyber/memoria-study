@@ -358,7 +358,12 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
         </button>
       </header>
 
-      <CuadernoEditorChrome layoutMode={chrome.layoutMode} onLayoutChange={chrome.setLayoutMode} />
+      <CuadernoEditorChrome
+        layoutMode={chrome.layoutMode}
+        onLayoutChange={chrome.setLayoutMode}
+        pageSizeMode={activePage.pageSizeMode}
+        onPageSizeChange={(mode) => applyDoc(updatePage(doc, activePage.id, { pageSizeMode: mode }))}
+      />
 
       <CuadernoTemplatePicker
         open={templateGalleryOpen}
@@ -428,7 +433,7 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
       <main className="cn-immersive-main">
         <motion.div
           className="cn-immersive-paper-shell"
-          key={`${doc.activePageId}-${activePage.templateId}-${activePage.paperTone}-${chrome.layoutMode}`}
+          key={`${doc.activePageId}-${activePage.templateId}-${activePage.paperTone}-${activePage.pageSizeMode}-${chrome.layoutMode}`}
           initial={{ opacity: 0, y: 16, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
@@ -441,6 +446,7 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
             layoutMode={chrome.layoutMode}
             paperTone={activePage.paperTone}
             marginMode={activePage.marginMode}
+            pageSizeMode={activePage.pageSizeMode}
             templateId={activePage.templateId}
             courseAccent={coverArt.accent}
             pageSettingsSlot={

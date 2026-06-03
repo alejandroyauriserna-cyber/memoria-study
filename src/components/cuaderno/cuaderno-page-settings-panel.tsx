@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import type { CuadernoPage } from "@/lib/cuaderno/cuaderno-pages";
 import type { CuadernoPaperTone } from "@/lib/cuaderno/editor-preferences";
 import type { CuadernoPageMargin } from "@/lib/cuaderno/page-settings";
+import { PAGE_SIZE_OPTIONS } from "@/lib/cuaderno/page-size";
 import type { CuadernoTemplateId } from "@/lib/cuaderno/templates";
 import { getTemplate, templatesByCategory } from "@/lib/cuaderno/templates";
 import { CuadernoPaperPreview } from "@/components/cuaderno/cuaderno-paper-preview";
@@ -96,6 +97,24 @@ export function CuadernoPageSettingsPanel({
                     onClick={() => onChange({ paperTone: t.id })}
                   >
                     {t.label}
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <section className="cn-page-settings-section">
+              <p className="cn-page-settings-label">Tamaño de hoja</p>
+              <div className="cn-page-settings-chips">
+                {PAGE_SIZE_OPTIONS.map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    className="cn-page-settings-chip"
+                    data-active={page.pageSizeMode === s.id}
+                    onClick={() => onChange({ pageSizeMode: s.id })}
+                    title={s.description}
+                  >
+                    {s.label}
                   </button>
                 ))}
               </div>
