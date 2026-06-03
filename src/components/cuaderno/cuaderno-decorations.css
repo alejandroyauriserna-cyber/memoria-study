@@ -257,33 +257,13 @@
   box-sizing: border-box;
 }
 
-.cn-floating-image-frame--fit,
-.cn-sticker-img-frame {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.cn-floating-image {
   width: 100%;
   height: 100%;
-}
-
-.cn-floating-image {
-  width: auto;
-  height: auto;
-  max-width: 100%;
-  max-height: 100%;
   object-fit: contain;
   display: block;
   pointer-events: none;
   user-select: none;
-}
-
-.cn-decoration-sticker .cn-sticker-img {
-  width: auto;
-  height: auto;
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-  display: block;
 }
 
 .cn-decoration-item.cn-decoration-image.is-selected .cn-floating-image,
@@ -293,8 +273,7 @@
   filter: drop-shadow(0 0 0 2px #3b82f6);
 }
 
-.cn-decoration-item.cn-decoration-image.is-selected .cn-floating-image-frame,
-.cn-decoration-item.cn-decoration-sticker.is-selected .cn-sticker-img-frame {
+.cn-decoration-item.cn-decoration-image.is-selected .cn-floating-image-frame {
   outline: none;
   box-shadow: none;
 }

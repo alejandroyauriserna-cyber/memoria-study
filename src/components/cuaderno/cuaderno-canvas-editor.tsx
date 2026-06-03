@@ -43,7 +43,6 @@ import {
   imageUrlToDataUrl,
   ensureDecorationReady,
   prepareDecorationForCanvas,
-  refineDecorationDimensions,
   canPlaceInstantly,
   withPlaceProgress,
   type PlaceProgress,
@@ -185,7 +184,9 @@ export function CuadernoCanvasEditor({
 
   const syncDecorations = useCallback(
     (items: DecorationObject[]) => {
-      onChange(serializeCuadernoDocument(setActivePageDecorations(docRef.current, items)));
+      const next = setActivePageDecorations(docRef.current, items);
+      docRef.current = next;
+      onChange(serializeCuadernoDocument(next));
     },
     [onChange],
   );
@@ -216,7 +217,8 @@ export function CuadernoCanvasEditor({
     const ids = selectedDecoIdsRef.current;
     if (ids.length) {
       const drop = new Set(ids);
-      syncDecorations(liveDecorationsRef.current.filter((d) => !drop.has(d.id)));
+      const page = getActivePage(docRef.current);
+      syncDecorations((page.decorations ?? []).filter((d) => !drop.has(d.id)));
       setSelectedDecoIds([]);
     }
     if (editor && isTableNodeSelected(editor)) {
@@ -240,17 +242,9 @@ export function CuadernoCanvasEditor({
 
   const addDecoration = useCallback(
     (item: DecorationObject) => {
-      syncDecorations([...liveDecorationsRef.current, item]);
+      const page = getActivePage(docRef.current);
+      syncDecorations([...(page.decorations ?? []), item]);
       setSelectedDecoIds([item.id]);
-    },
-    [syncDecorations],
-  );
-
-  const patchDecoration = useCallback(
-    (id: string, patch: Partial<DecorationObject>) => {
-      syncDecorations(
-        liveDecorationsRef.current.map((d) => (d.id === id ? { ...d, ...patch } : d)),
-      );
     },
     [syncDecorations],
   );
@@ -269,17 +263,10 @@ export function CuadernoCanvasEditor({
             y: Math.min(0.88, Math.max(0.02, item.y)),
           };
 
-      const finishRefine = (placed: DecorationObject) => {
-        void refineDecorationDimensions(placed).then((dims) => {
-          if (dims) patchDecoration(placed.id, dims);
-        });
-      };
-
       if (canPlaceInstantly(centered)) {
         try {
           const ready = prepareDecorationForCanvas(centered);
           addDecoration(ready);
-          finishRefine(ready);
           return;
         } catch (err) {
           console.error("[cuaderno] fast place decoration", err);
@@ -294,14 +281,13 @@ export function CuadernoCanvasEditor({
           () => ensureDecorationReady(centered, setPlaceProgress),
         );
         addDecoration(ready);
-        finishRefine(ready);
       } catch (err) {
         console.error("[cuaderno] place decoration", err);
       } finally {
         window.setTimeout(() => setPlaceProgress(null), 280);
       }
     },
-    [addDecoration, patchDecoration],
+    [addDecoration],
   );
 
   const clientToPaperNorm = useCallback((clientX: number, clientY: number) => {
@@ -362,25 +348,13 @@ export function CuadernoCanvasEditor({
         const draft = createFloatingImage(dataUrl, center);
         const ready = prepareDecorationForCanvas(draft);
         addDecoration(ready);
-        void refineDecorationDimensions(ready).then((dims) => {
-          if (dims) patchDecoration(ready.id, dims);
-        });
-
-        void saveImageToUserLibrary(dataUrl, name).then((sticker) => {
-          if (!sticker) return;
-          patchDecoration(ready.id, {
-            kind: "sticker",
-            stickerId: `user:${sticker.id}`,
-            src: sticker.imageUrl,
-            label: sticker.name,
-          });
-        });
+        void saveImageToUserLibrary(dataUrl, name);
       } catch (err) {
         console.error("[cuaderno] paste image", err);
         setPlaceProgress(null);
       }
     },
-    [addDecoration, patchDecoration, visibleCenterNorm],
+    [addDecoration, visibleCenterNorm],
   );
 
   const insertFloatingImageAt = useCallback(

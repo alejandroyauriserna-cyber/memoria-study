@@ -25,6 +25,12 @@ const IMAGE_WRAP_LABELS: Record<ImageTextWrap, string> = {
   behind: "Detrás del texto",
 };
 import { isBehindTextWrap } from "@/lib/cuaderno/floating-image";
+
+function decorationIdsMatch(a: DecorationObject[], b: DecorationObject[]): boolean {
+  if (a.length !== b.length) return false;
+  const bIds = new Set(b.map((d) => d.id));
+  return a.every((d) => bIds.has(d.id));
+}
 import {
   applyDragPreview,
   applyDragPreviewMove,
@@ -150,8 +156,10 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
       const committed = lastCommittedRef.current;
       if (
         committed &&
+        decorationIdsMatch(committed, decorations) &&
+        decorationIdsMatch(prev, decorations) &&
         decorationPositionsMatch(committed, prev) &&
-        !decorationPositionsMatch(committed, decorations)
+        !decorationPositionsMatch(prev, decorations)
       ) {
         return prev;
       }
