@@ -1,6 +1,6 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useEffect, useState } from "react";
 import { RotateCw } from "lucide-react";
 import {
   POSTIT_COLORS,
@@ -78,6 +78,12 @@ export const CuadernoDecorationItem = memo(function CuadernoDecorationItem({
   onPatch: (patch: Partial<DecorationObject>) => void;
 }) {
   const wrap = obj.textWrap ?? "inFront";
+  const isRaster = obj.kind === "image" || obj.kind === "sticker";
+  const [rasterReady, setRasterReady] = useState(!isRaster);
+
+  useEffect(() => {
+    setRasterReady(!isRaster);
+  }, [obj.id, obj.src, isRaster]);
 
   const syncImageAspect = (aspectRatio: number) => {
     if (obj.kind !== "image" && obj.kind !== "sticker") return;
@@ -89,6 +95,7 @@ export const CuadernoDecorationItem = memo(function CuadernoDecorationItem({
     ) {
       onPatch({ aspectRatio, h });
     }
+    setRasterReady(true);
   };
 
   return (
@@ -125,7 +132,7 @@ export const CuadernoDecorationItem = memo(function CuadernoDecorationItem({
         onImageLoad={(aspectRatio) => syncImageAspect(aspectRatio)}
       />
 
-      {selected && active ? (
+      {selected && active && rasterReady ? (
         <>
           {!obj.locked ? (
             <>
@@ -188,6 +195,10 @@ function DecorationBody({
     const nh = el.naturalHeight;
     if (nw > 0 && nh > 0) onImageLoad?.(nw / nh);
   };
+
+  const imgRef = (el: HTMLImageElement | null) => {
+    if (el?.complete && el.naturalWidth > 0) handleImgLoad(el);
+  };
   if (obj.kind === "postit") {
     const c = POSTIT_COLORS[obj.postitColor ?? "yellow"];
     const cat = obj.postitCategory ? ` cn-postit--${obj.postitCategory}` : "";
@@ -214,7 +225,7 @@ function DecorationBody({
       ? `inset(${crop.y * 100}% ${(1 - crop.x - crop.w) * 100}% ${(1 - crop.y - crop.h) * 100}% ${crop.x * 100}%)`
       : undefined;
     return (
-      <div className="cn-floating-image-frame">
+      <div className="cn-floating-image-frame cn-floating-image-frame--fit">
         <img
           src={obj.src}
           alt=""
@@ -223,6 +234,7 @@ function DecorationBody({
           loading="lazy"
           decoding="async"
           style={clip ? { clipPath: clip } : undefined}
+          ref={imgRef}
           onLoad={(e) => handleImgLoad(e.currentTarget)}
         />
       </div>
@@ -234,6 +246,7 @@ function DecorationBody({
     const alt = resolveStickerLabel(obj);
     if (src) {
       return (
+        <div className="cn-sticker-img-frame">
         <img
           src={src}
           alt={alt}
@@ -241,8 +254,10 @@ function DecorationBody({
           draggable={false}
           loading="lazy"
           decoding="async"
+          ref={imgRef}
           onLoad={(e) => handleImgLoad(e.currentTarget)}
         />
+        </div>
       );
     }
     return <span className="cn-sticker-glyph" title={alt}>?</span>;

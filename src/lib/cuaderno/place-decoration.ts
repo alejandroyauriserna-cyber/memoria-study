@@ -88,6 +88,17 @@ export function stickerNeedsNetworkResolve(item: DecorationObject): boolean {
   return Boolean(item.stickerId?.startsWith("user:"));
 }
 
+/** Colocación inmediata sin barra de progreso ni red (salvo user sticker sin URL). */
+export function canPlaceInstantly(item: DecorationObject): boolean {
+  if (item.kind === "postit" || (item.kind !== "sticker" && item.kind !== "image")) {
+    return true;
+  }
+  if (item.kind === "image") {
+    return Boolean(item.src && isDisplayableImageSrc(item.src));
+  }
+  return !stickerNeedsNetworkResolve(item);
+}
+
 /** Colocación inmediata: sin proxy ni esperar dimensiones. */
 export function prepareDecorationForCanvas(item: DecorationObject): DecorationObject {
   if (item.kind === "postit" || (item.kind !== "sticker" && item.kind !== "image")) {

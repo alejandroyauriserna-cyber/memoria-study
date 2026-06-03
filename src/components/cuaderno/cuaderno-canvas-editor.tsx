@@ -44,14 +44,15 @@ import {
   ensureDecorationReady,
   prepareDecorationForCanvas,
   refineDecorationDimensions,
-  stickerNeedsNetworkResolve,
+  canPlaceInstantly,
   withPlaceProgress,
   type PlaceProgress,
 } from "@/lib/cuaderno/place-decoration";
 import {
-  ingestPastedImageForCanvas,
   pastedImageName,
+  saveImageToUserLibrary,
 } from "@/lib/cuaderno/paste-image-ingest";
+import { createFloatingImage } from "@/lib/cuaderno/floating-image";
 import { CuadernoPlacementOverlay } from "@/components/cuaderno/cuaderno-placement-overlay";
 import { NodeSelection } from "@tiptap/pm/state";
 import { migrateInlineImagesFromHtml } from "@/lib/cuaderno/migrate-inline-images";
@@ -274,8 +275,7 @@ export function CuadernoCanvasEditor({
         });
       };
 
-      const fastPlace = !stickerNeedsNetworkResolve(centered) && centered.kind !== "image";
-      if (fastPlace) {
+      if (canPlaceInstantly(centered)) {
         try {
           const ready = prepareDecorationForCanvas(centered);
           addDecoration(ready);
@@ -346,36 +346,41 @@ export function CuadernoCanvasEditor({
       at?: { x: number; y: number },
     ) => {
       const center = at ?? visibleCenterNorm();
-      let savedToLibrary = false;
-      setPlaceProgress({ percent: 6, label: "Preparando imagen…" });
       try {
-        const ingested = await withPlaceProgress(
-          "file" in source
-            ? "Guardando en tu biblioteca…"
-            : "Descargando y guardando…",
-          setPlaceProgress,
-          async () => {
-            const dataUrl =
-              "file" in source
-                ? await fileToDataUrl(source.file)
-                : await imageUrlToDataUrl(source.url);
-            const name =
-              "file" in source ? pastedImageName(source.file) : pastedImageName();
-            return ingestPastedImageForCanvas({ dataUrl, name, at: center });
-          },
-        );
-        savedToLibrary = ingested.savedToLibrary;
-        await placeDecorationItem(ingested.item, center);
-        if (savedToLibrary) {
-          setPlaceProgress({ percent: 100, label: "Guardado en Mis stickers" });
+        let dataUrl: string;
+        let name: string;
+        if ("file" in source) {
+          dataUrl = await fileToDataUrl(source.file);
+          name = pastedImageName(source.file);
+        } else {
+          setPlaceProgress({ percent: 12, label: "Descargando imagen…" });
+          dataUrl = await imageUrlToDataUrl(source.url);
+          name = pastedImageName();
+          setPlaceProgress(null);
         }
+
+        const draft = createFloatingImage(dataUrl, center);
+        const ready = prepareDecorationForCanvas(draft);
+        addDecoration(ready);
+        void refineDecorationDimensions(ready).then((dims) => {
+          if (dims) patchDecoration(ready.id, dims);
+        });
+
+        void saveImageToUserLibrary(dataUrl, name).then((sticker) => {
+          if (!sticker) return;
+          patchDecoration(ready.id, {
+            kind: "sticker",
+            stickerId: `user:${sticker.id}`,
+            src: sticker.imageUrl,
+            label: sticker.name,
+          });
+        });
       } catch (err) {
         console.error("[cuaderno] paste image", err);
-      } finally {
-        window.setTimeout(() => setPlaceProgress(null), savedToLibrary ? 600 : 280);
+        setPlaceProgress(null);
       }
     },
-    [placeDecorationItem, visibleCenterNorm],
+    [addDecoration, patchDecoration, visibleCenterNorm],
   );
 
   const insertFloatingImageAt = useCallback(

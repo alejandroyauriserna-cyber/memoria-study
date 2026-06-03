@@ -58,16 +58,8 @@
 
 .cn-decoration-item.cn-decoration-image.is-selected,
 .cn-decoration-item.cn-decoration-sticker.is-selected {
-  outline: none;
-  box-shadow: none;
-}
-
-.cn-decoration-item.cn-decoration-image.is-selected .cn-floating-image-frame,
-.cn-decoration-item.cn-decoration-sticker.is-selected .cn-sticker-img {
-  outline: 2px solid #3b82f6;
-  outline-offset: 1px;
-  border-radius: 4px;
-  box-shadow: 0 0 0 1px color-mix(in srgb, #3b82f6 22%, transparent);
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 .cn-decoration-item.is-dragging {
@@ -260,14 +252,25 @@
 .cn-floating-image-frame {
   width: 100%;
   height: 100%;
-  overflow: hidden;
+  overflow: visible;
   border-radius: 4px;
   box-sizing: border-box;
 }
 
-.cn-floating-image {
+.cn-floating-image-frame--fit,
+.cn-sticker-img-frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
   height: 100%;
+}
+
+.cn-floating-image {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
   object-fit: contain;
   display: block;
   pointer-events: none;
@@ -275,14 +278,25 @@
 }
 
 .cn-decoration-sticker .cn-sticker-img {
-  width: 100%;
-  height: 100%;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
   object-fit: contain;
   display: block;
 }
 
-.cn-decoration-image.is-selected .cn-floating-image-frame {
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--cn-accent, #0d9488) 40%, transparent);
+.cn-decoration-item.cn-decoration-image.is-selected .cn-floating-image,
+.cn-decoration-item.cn-decoration-sticker.is-selected .cn-sticker-img {
+  outline: none;
+  border-radius: 2px;
+  filter: drop-shadow(0 0 0 2px #3b82f6);
+}
+
+.cn-decoration-item.cn-decoration-image.is-selected .cn-floating-image-frame,
+.cn-decoration-item.cn-decoration-sticker.is-selected .cn-sticker-img-frame {
+  outline: none;
+  box-shadow: none;
 }
 
 .cn-decoration-item.is-wrap-inline .cn-floating-image-frame {
