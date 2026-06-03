@@ -42,6 +42,7 @@ export async function GET(request: Request) {
     if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
 
     const { searchParams } = new URL(request.url);
+    const singleId = searchParams.get("id")?.trim();
     const q = searchParams.get("q")?.trim().toLowerCase() ?? "";
     const favoritesOnly = searchParams.get("favorites") === "1";
 
@@ -50,6 +51,19 @@ export async function GET(request: Request) {
       .select("sticker_id")
       .eq("user_id", user.id);
     const favoriteIds = new Set((favRows ?? []).map((r) => String(r.sticker_id)));
+
+    if (singleId) {
+      const { data: row, error } = await supabase
+        .from("cuaderno_user_stickers")
+        .select("*")
+        .eq("id", singleId)
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (!row) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+      const sticker = await mapRow(row as Record<string, unknown>, favoriteIds);
+      return NextResponse.json({ sticker });
+    }
 
     let query = supabase
       .from("cuaderno_user_stickers")

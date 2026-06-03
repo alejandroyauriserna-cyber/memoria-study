@@ -28,10 +28,20 @@ import {
 } from "@/components/cuaderno/decoration/cuaderno-marquee-overlay";
 import { deleteTableComplete, isTableNodeSelected } from "@/lib/cuaderno/delete-table-complete";
 import type { DecorationObject } from "@/lib/cuaderno/decoration-objects";
-import { parseDecorationDrag } from "@/lib/cuaderno/decoration-drag";
+import { parseDecorationDrag, type DecorationDragPayload } from "@/lib/cuaderno/decoration-drag";
 import { createDecorationFromDrop } from "@/lib/cuaderno/decoration-drop-factory";
-import { fileToDataUrl, readImageFileFromClipboard } from "@/lib/cuaderno/decoration-clipboard";
+import {
+  fileToDataUrl,
+  readImagePayloadFromClipboard,
+} from "@/lib/cuaderno/decoration-clipboard";
 import { createFloatingImage, loadImageNaturalSize } from "@/lib/cuaderno/floating-image";
+import {
+  buildFloatingImageFromUrl,
+  ensureDecorationReady,
+  withPlaceProgress,
+  type PlaceProgress,
+} from "@/lib/cuaderno/place-decoration";
+import { CuadernoPlacementOverlay } from "@/components/cuaderno/cuaderno-placement-overlay";
 import { NodeSelection } from "@tiptap/pm/state";
 import { migrateInlineImagesFromHtml } from "@/lib/cuaderno/migrate-inline-images";
 import { getPaperClasses } from "@/lib/cuaderno/paper-styles";
@@ -71,6 +81,8 @@ export function CuadernoCanvasEditor({
   onOpenPostits,
   onOpenImportSticker,
   onDropStickerFile,
+  registerAddDecoration,
+  registerPlacePayload,
   stickerPanelOpen = false,
   postitPanelOpen = false,
   sideRailTab = null,
@@ -103,6 +115,9 @@ export function CuadernoCanvasEditor({
   onOpenPostits?: () => void;
   onOpenImportSticker?: () => void;
   onDropStickerFile?: (file: File, at: { x: number; y: number }) => void;
+  /** Registra función para añadir decoración desde paneles externos (stickers/post-its). */
+  registerAddDecoration?: (fn: ((item: DecorationObject) => void) | null) => void;
+  registerPlacePayload?: (fn: ((payload: DecorationDragPayload, clientX: number, clientY: number) => void) | null) => void;
   stickerPanelOpen?: boolean;
   postitPanelOpen?: boolean;
   sideRailTab?: SideRailTab | null;
@@ -117,6 +132,7 @@ export function CuadernoCanvasEditor({
   const [inkSettings, setInkSettings] = useState<InkToolSettings>(DEFAULT_INK_SETTINGS);
   const [selectedDecoIds, setSelectedDecoIds] = useState<string[]>([]);
   const [decoDragOver, setDecoDragOver] = useState(false);
+  const [placeProgress, setPlaceProgress] = useState<PlaceProgress | null>(null);
   const paperLayersRef = useRef<HTMLDivElement>(null);
   const viewportBounds = useCuadernoViewport(viewportRef, paperLayersRef, 0.15);
 
@@ -210,17 +226,102 @@ export function CuadernoCanvasEditor({
     };
   }, []);
 
-  const insertFloatingImageAt = useCallback(
-    async (file: File, at?: { x: number; y: number }) => {
-      const src = await fileToDataUrl(file);
-      const center = at ?? visibleCenterNorm();
-      const item = await loadImageNaturalSize(src)
-        .then((size) => createFloatingImage(src, center, size))
-        .catch(() => createFloatingImage(src, center));
+  const addDecoration = useCallback(
+    (item: DecorationObject) => {
       syncDecorations([...liveDecorationsRef.current, item]);
       setSelectedDecoIds([item.id]);
     },
-    [syncDecorations, visibleCenterNorm],
+    [syncDecorations],
+  );
+
+  const placeDecorationItem = useCallback(
+    async (item: DecorationObject, at?: { x: number; y: number }) => {
+      const centered = at
+        ? {
+            ...item,
+            x: Math.min(0.88, Math.max(0.02, at.x - item.w / 2)),
+            y: Math.min(0.88, Math.max(0.02, at.y - item.h / 2)),
+          }
+        : {
+            ...item,
+            x: Math.min(0.88, Math.max(0.02, item.x)),
+            y: Math.min(0.88, Math.max(0.02, item.y)),
+          };
+      setPlaceProgress({ percent: 5, label: "Colocando en la hoja…" });
+      try {
+        const ready = await withPlaceProgress(
+          item.kind === "sticker" ? "Cargando sticker…" : "Cargando imagen…",
+          setPlaceProgress,
+          () => ensureDecorationReady(centered, setPlaceProgress),
+        );
+        addDecoration(ready);
+      } catch (err) {
+        console.error("[cuaderno] place decoration", err);
+      } finally {
+        window.setTimeout(() => setPlaceProgress(null), 450);
+      }
+    },
+    [addDecoration],
+  );
+
+  const clientToPaperNorm = useCallback((clientX: number, clientY: number) => {
+    const el = paperLayersRef.current;
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    if (r.width < 1 || r.height < 1) return null;
+    return {
+      x: Math.min(0.95, Math.max(0.02, (clientX - r.left) / r.width)),
+      y: Math.min(0.95, Math.max(0.02, (clientY - r.top) / r.height)),
+    };
+  }, []);
+
+  const placeFromPayload = useCallback(
+    async (payload: DecorationDragPayload, clientX: number, clientY: number) => {
+      const at = clientToPaperNorm(clientX, clientY);
+      if (!at) return;
+      const draft = createDecorationFromDrop(payload, at);
+      if (!draft) return;
+      await placeDecorationItem(draft, at);
+    },
+    [clientToPaperNorm, placeDecorationItem],
+  );
+
+  useEffect(() => {
+    registerAddDecoration?.((item) => {
+      void placeDecorationItem(item, visibleCenterNorm());
+    });
+    return () => registerAddDecoration?.(null);
+  }, [registerAddDecoration, placeDecorationItem, visibleCenterNorm]);
+
+  useEffect(() => {
+    registerPlacePayload?.((payload, clientX, clientY) => {
+      void placeFromPayload(payload, clientX, clientY);
+    });
+    return () => registerPlacePayload?.(null);
+  }, [registerPlacePayload, placeFromPayload]);
+
+  const insertFloatingImageAt = useCallback(
+    async (file: File, at?: { x: number; y: number }) => {
+      const center = at ?? visibleCenterNorm();
+      setPlaceProgress({ percent: 8, label: "Cargando imagen…" });
+      try {
+        const item = await withPlaceProgress("Procesando imagen…", setPlaceProgress, async () => {
+          const src = await fileToDataUrl(file);
+          try {
+            const size = await loadImageNaturalSize(src);
+            return createFloatingImage(src, center, size);
+          } catch {
+            return createFloatingImage(src, center);
+          }
+        });
+        addDecoration(item);
+      } catch (err) {
+        console.error("[cuaderno] insert image", err);
+      } finally {
+        window.setTimeout(() => setPlaceProgress(null), 450);
+      }
+    },
+    [addDecoration, visibleCenterNorm],
   );
 
   const insertFloatingImageFile = useCallback(
@@ -269,14 +370,9 @@ export function CuadernoCanvasEditor({
 
       const payload = parseDecorationDrag(e.dataTransfer);
       if (!payload) return;
-      const pos = dropPosition(e);
-      if (!pos) return;
-      const item = createDecorationFromDrop(payload, pos);
-      if (!item) return;
-      syncDecorations([...liveDecorationsRef.current, item]);
-      setSelectedDecoIds([item.id]);
+      void placeFromPayload(payload, e.clientX, e.clientY);
     },
-    [writingMode, syncDecorations, dropPosition, insertFloatingImageAt],
+    [writingMode, insertFloatingImageAt, placeFromPayload],
   );
 
   useEffect(() => {
@@ -313,14 +409,31 @@ export function CuadernoCanvasEditor({
     const onPaste = (e: ClipboardEvent) => {
       const t = e.target as HTMLElement | null;
       if (t?.closest("textarea, input, .cn-postit-text")) return;
-      const file = readImageFileFromClipboard(e.clipboardData);
-      if (!file) return;
+      const payload = readImagePayloadFromClipboard(e.clipboardData);
+      if (!payload) return;
       e.preventDefault();
-      void insertFloatingImageAt(file, visibleCenterNorm());
+      const at = visibleCenterNorm();
+      if (payload.kind === "file") {
+        void insertFloatingImageAt(payload.file, at);
+        return;
+      }
+      setPlaceProgress({ percent: 10, label: "Importando imagen…" });
+      void (async () => {
+        try {
+          const item = await withPlaceProgress("Descargando imagen…", setPlaceProgress, () =>
+            buildFloatingImageFromUrl(payload.url, at),
+          );
+          addDecoration(item);
+        } catch (err) {
+          console.error("[cuaderno] paste image url", err);
+        } finally {
+          window.setTimeout(() => setPlaceProgress(null), 450);
+        }
+      })();
     };
     window.addEventListener("paste", onPaste);
     return () => window.removeEventListener("paste", onPaste);
-  }, [writingMode, insertFloatingImageAt, visibleCenterNorm]);
+  }, [writingMode, insertFloatingImageAt, visibleCenterNorm, addDecoration]);
 
   const handleEditorReady = useCallback(
     (ed: Editor | null) => {
@@ -602,6 +715,7 @@ export function CuadernoCanvasEditor({
           </div>
         ) : null}
         {perfEnabled ? <CuadernoPerfBadge stats={perfStats} /> : null}
+        <CuadernoPlacementOverlay progress={placeProgress} />
       </div>
     );
   }
@@ -655,6 +769,7 @@ export function CuadernoCanvasEditor({
           {paperOnly}
         </div>
       </div>
+      <CuadernoPlacementOverlay progress={placeProgress} />
     </div>
   );
 }

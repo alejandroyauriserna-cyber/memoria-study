@@ -2,6 +2,7 @@ import {
   createDecoElement,
   createPostIt,
   createStickerFromCatalog,
+  createStickerFromLibrary,
   createStickerFromSrc,
   type DecorationObject,
   type PostItColor,
@@ -38,6 +39,10 @@ export function createDecorationFromDrop(
     });
   }
 
+  if (payload.type === "user-sticker") {
+    return createStickerFromLibrary(payload.userStickerId, payload.imageUrl ?? "", payload.label, pos);
+  }
+
   if (payload.type === "sticker") {
     if (payload.stickerId.startsWith("png:")) {
       const png = getPngStickerById(payload.stickerId.slice(4));
@@ -49,7 +54,7 @@ export function createDecorationFromDrop(
       });
     }
     if (payload.stickerId.startsWith("user:")) {
-      return null; /* requiere type sticker-src con imageUrl firmada */
+      return createStickerFromLibrary(payload.stickerId.slice(5), "", "Sticker", pos);
     }
     const item = getStickerById(payload.stickerId);
     if (!item) return null;

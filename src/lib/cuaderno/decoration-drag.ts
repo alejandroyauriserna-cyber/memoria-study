@@ -5,6 +5,7 @@ export const DECORATION_DRAG_MIME = "application/x-cuaderno-decoration";
 export type DecorationDragPayload =
   | { type: "sticker"; stickerId: string }
   | { type: "sticker-src"; src: string; label: string; stickerId?: string }
+  | { type: "user-sticker"; userStickerId: string; label: string; imageUrl?: string }
   | { type: "postit"; color: PostItColor; category?: string }
   | { type: "deco"; kind: Exclude<DecorationKind, "postit" | "sticker"> };
 
@@ -21,6 +22,13 @@ export function parseDecorationDrag(dataTransfer: DataTransfer): DecorationDragP
     if (
       parsed?.type === "sticker-src" &&
       typeof parsed.src === "string" &&
+      typeof parsed.label === "string"
+    ) {
+      return parsed;
+    }
+    if (
+      parsed?.type === "user-sticker" &&
+      typeof parsed.userStickerId === "string" &&
       typeof parsed.label === "string"
     ) {
       return parsed;

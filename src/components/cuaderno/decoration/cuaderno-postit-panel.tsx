@@ -21,18 +21,18 @@ import { StickyNote, X } from "lucide-react";
 export function CuadernoPostItPanel({
   open,
   onClose,
-  onAdd,
+  onPlaceItem,
 }: {
   open: boolean;
   onClose: () => void;
-  onAdd: (item: DecorationObject) => void;
+  onPlaceItem: (item: DecorationObject) => void;
 }) {
   const [category, setCategory] = useState<PostItCategory>("pastel");
 
   const styles = POSTIT_PREMIUM_STYLES[category];
 
   const addPostIt = (color: PostItColor) => {
-    onAdd(createPostIt(color, "", category));
+    onPlaceItem(createPostIt(color, "", category));
   };
 
   return (

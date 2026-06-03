@@ -16,6 +16,7 @@ import {
   createStickerFromSrc,
   type DecorationObject,
 } from "@/lib/cuaderno/decoration-objects";
+import type { DecorationDragPayload } from "@/lib/cuaderno/decoration-drag";
 import { fileToDataUrl, removeBackgroundToPngDataUrl } from "@/lib/cuaderno/sticker-bg-removal";
 import {
   buildDemoDecorations,
@@ -100,6 +101,10 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
   >("biblioteca");
   const [postitPanelOpen, setPostitPanelOpen] = useState(false);
   const [sideRailTab, setSideRailTab] = useState<SideRailTab | null>(null);
+  const placeDecorationRef = useRef<((item: DecorationObject) => void) | null>(null);
+  const placePayloadRef = useRef<
+    ((payload: DecorationDragPayload, clientX: number, clientY: number) => void) | null
+  >(null);
 
   const sync = useCuadernoSyncContextOptional();
   const doc = useMemo(() => parseCuadernoDocument(notes), [notes]);
@@ -376,10 +381,7 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
           setStickerPanelOpen(false);
           setSideRailTab(null);
         }}
-        onAdd={(item: DecorationObject) => {
-          const next = [...(activePage.decorations ?? []), item];
-          applyDoc(setActivePageDecorations(doc, next));
-        }}
+        onPlaceItem={(item) => placeDecorationRef.current?.(item)}
       />
 
       <CuadernoPostItPanel
@@ -388,10 +390,7 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
           setPostitPanelOpen(false);
           if (sideRailTab === "postits") setSideRailTab(null);
         }}
-        onAdd={(item: DecorationObject) => {
-          const next = [...(activePage.decorations ?? []), item];
-          applyDoc(setActivePageDecorations(doc, next));
-        }}
+        onPlaceItem={(item) => placeDecorationRef.current?.(item)}
       />
 
       <CuadernoFormatPanel
@@ -464,6 +463,12 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
             externalToolbar
             notes={notes}
             onChange={(raw) => applyDoc(parseCuadernoDocument(raw))}
+            registerAddDecoration={(fn) => {
+              placeDecorationRef.current = fn;
+            }}
+            registerPlacePayload={(fn) => {
+              placePayloadRef.current = fn;
+            }}
             layoutMode={chrome.layoutMode}
             paperTone={activePage.paperTone}
             marginMode={activePage.marginMode}

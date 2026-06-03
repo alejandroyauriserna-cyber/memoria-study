@@ -1767,6 +1767,71 @@
   outline-offset: -4px;
 }
 
+.cn-placement-overlay {
+  position: fixed;
+  left: 50%;
+  bottom: 1.5rem;
+  transform: translateX(-50%);
+  z-index: 120;
+  pointer-events: none;
+}
+
+.cn-placement-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 220px;
+  padding: 0.65rem 0.85rem;
+  border-radius: 12px;
+  background: color-mix(in srgb, #0f1419 88%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cn-course-accent, #00e5c3) 35%, transparent);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(12px);
+}
+
+.cn-placement-bar {
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.cn-placement-bar-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--cn-course-accent, #00e5c3), #7dd3fc);
+  transition: width 0.15s ease;
+}
+
+.cn-placement-label {
+  margin: 0;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.cn-placement-pct {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--cn-course-accent, #00e5c3);
+  align-self: flex-end;
+}
+
+.cn-sticker-drag-ghost {
+  position: fixed;
+  left: -9999px;
+  width: 64px;
+  height: 64px;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.cn-sticker-drag-ghost img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
 .cn-paper-layer-text {
   position: relative;
   z-index: 2;

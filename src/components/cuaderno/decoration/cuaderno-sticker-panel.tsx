@@ -48,15 +48,29 @@ async function toggleUserFavorite(stickerId: string, on: boolean) {
   });
 }
 
+function setupDragGhost(e: React.DragEvent, img: HTMLImageElement | null) {
+  e.dataTransfer.effectAllowed = "copy";
+  if (!img?.complete) return;
+  const ghost = document.createElement("div");
+  ghost.className = "cn-sticker-drag-ghost";
+  const clone = img.cloneNode(true) as HTMLImageElement;
+  clone.width = 64;
+  clone.height = 64;
+  ghost.appendChild(clone);
+  document.body.appendChild(ghost);
+  e.dataTransfer.setDragImage(ghost, 32, 32);
+  window.setTimeout(() => ghost.remove(), 0);
+}
+
 export function CuadernoStickerPanel({
   open,
   onClose,
-  onAdd,
+  onPlaceItem,
   initialTab,
 }: {
   open: boolean;
   onClose: () => void;
-  onAdd: (item: DecorationObject) => void;
+  onPlaceItem: (item: DecorationObject) => void;
   initialTab?: StickerPanelTab | "stickers" | "images" | "importar";
 }) {
   const [query, setQuery] = useState("");
@@ -115,7 +129,7 @@ export function CuadernoStickerPanel({
   }, [catalogFavs, juridicoItems]);
 
   const addPng = (item: PngStickerItem) => {
-    onAdd(
+    onPlaceItem(
       createStickerFromSrc(item.src, item.label, {
         stickerId: `png:${item.id}`,
         aspectRatio: 1,
@@ -124,7 +138,7 @@ export function CuadernoStickerPanel({
   };
 
   const addUser = (s: UserStickerRecord) => {
-    onAdd(createStickerFromLibrary(s.id, s.imageUrl, s.name));
+    onPlaceItem(createStickerFromLibrary(s.id, s.imageUrl, s.name));
   };
 
   const toggleCatalogFav = (id: string) => {
@@ -170,7 +184,7 @@ export function CuadernoStickerPanel({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      onAdd(createStickerFromAi(data.imageDataUrl, data.label ?? p));
+      onPlaceItem(createStickerFromAi(data.imageDataUrl, data.label ?? p));
     } catch {
       setDesignerSeed(p);
       setDesignerOpen(true);
@@ -203,7 +217,7 @@ export function CuadernoStickerPanel({
               <header className="cn-sticker-panel-head">
                 <div>
                   <span className="cn-sticker-panel-title">Stickers</span>
-                  <p className="cn-sticker-panel-hint">GoodNotes · arrastra al cuaderno</p>
+                  <p className="cn-sticker-panel-hint">Clic o arrastra a la hoja · Ctrl+V imagen Pinterest</p>
                 </div>
                 <button type="button" className="cn-glass-icon-btn" onClick={onClose} aria-label="Cerrar">
                   <X size={18} />
@@ -348,7 +362,7 @@ export function CuadernoStickerPanel({
         open={designerOpen}
         initialPrompt={designerSeed}
         onClose={() => setDesignerOpen(false)}
-        onInsert={(src, lbl) => onAdd(createStickerFromAi(src, lbl))}
+        onInsert={(src, lbl) => onPlaceItem(createStickerFromAi(src, lbl))}
       />
     </>
   );
@@ -390,6 +404,7 @@ function PngGrid({
                       stickerId: favId,
                     }),
                   );
+                  setupDragGhost(e, e.currentTarget.querySelector("img"));
                 }}
                 onClick={() => onPick(item)}
               >
@@ -445,12 +460,13 @@ function UserGrid({
                 e.dataTransfer.setData(
                   DECORATION_DRAG_MIME,
                   encodeDecorationDrag({
-                    type: "sticker-src",
-                    src: s.imageUrl,
+                    type: "user-sticker",
+                    userStickerId: s.id,
                     label: s.name,
-                    stickerId: `user:${s.id}`,
+                    imageUrl: s.imageUrl,
                   }),
                 );
+                setupDragGhost(e, e.currentTarget.querySelector("img"));
               }}
               onClick={() => onPick(s)}
             >
