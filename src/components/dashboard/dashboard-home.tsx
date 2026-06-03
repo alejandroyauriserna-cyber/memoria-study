@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import {
+  BookMarked,
   BookOpen,
   Brain,
   FileUp,
@@ -39,6 +40,12 @@ const tools = [
     title: "Organizadores",
     description: "Mapas conceptuales y resúmenes visuales generados con IA.",
     icon: Brain,
+  },
+  {
+    href: "/cuaderno",
+    title: "Cuaderno IA",
+    description: "Apuntes de clase, diccionario jurídico y generación sin PDF.",
+    icon: BookMarked,
   },
   {
     href: "/dashboard#tutor",
