@@ -3,7 +3,7 @@ import { AppShell } from "@/components/ui/shell";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/env";
-import { UNT_DERECHO } from "@/lib/academic/unt-derecho";
+import { findCourseById } from "@/lib/academic/helpers";
 import { recordToMaterial } from "@/lib/materials/mapper";
 import { MaterialCard } from "@/components/library/material-card";
 import type { MaterialRecord } from "@/types/material";
@@ -20,18 +20,17 @@ export default async function CourseLibraryPage({
   }
 
   const { courseId } = await params;
-  const course = UNT_DERECHO.years
-    .flatMap((year) => year.cycles)
-    .flatMap((cycle) => cycle.courses.map((courseItem) => ({
-      ...courseItem,
-      cycleNumber: cycle.number,
-      cycleLabel: cycle.label,
-    })))
-    .find((item) => item.id === courseId);
+  const located = findCourseById(courseId);
 
-  if (!course) {
+  if (!located) {
     notFound();
   }
+
+  const course = {
+    ...located.course,
+    cycleNumber: located.cycle.cycleNumber,
+    cycleLabel: located.cycle.cycleLabel,
+  };
 
   const admin = createAdminClient();
   const supabase = await createClient();

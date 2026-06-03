@@ -46,7 +46,10 @@ export function buildFilteredLibraryTree(
   filters: LibraryFilters,
 ): { tree: LibraryTreeCycle[]; expandedIds: Set<string>; matchCount: number } {
   const scoped = filterMaterialsByOptions(materials, favoriteIds, filters);
-  const fullTree = buildLibraryTree(scoped);
+  let fullTree = buildLibraryTree(scoped);
+  if (filters.cycleNumber !== null) {
+    fullTree = fullTree.filter((cycle) => cycle.cycleNumber === filters.cycleNumber);
+  }
   const { tree, expandedIds } = filterLibraryTree(fullTree, filters.query);
   const matchCount = tree.reduce(
     (sum, cycle) => sum + cycle.materialCount,

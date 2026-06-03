@@ -25,15 +25,19 @@ create index if not exists cuaderno_classes_updated_at_idx on public.cuaderno_cl
 
 alter table public.cuaderno_classes enable row level security;
 
-create policy if not exists "Users read own cuaderno classes"
+drop policy if exists "Users read own cuaderno classes" on public.cuaderno_classes;
+create policy "Users read own cuaderno classes"
   on public.cuaderno_classes for select using (auth.uid() = user_id);
 
-create policy if not exists "Users create cuaderno classes"
+drop policy if exists "Users create cuaderno classes" on public.cuaderno_classes;
+create policy "Users create cuaderno classes"
   on public.cuaderno_classes for insert with check (auth.uid() = user_id);
 
-create policy if not exists "Users update own cuaderno classes"
+drop policy if exists "Users update own cuaderno classes" on public.cuaderno_classes;
+create policy "Users update own cuaderno classes"
   on public.cuaderno_classes for update
   using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
-create policy if not exists "Users delete own cuaderno classes"
+drop policy if exists "Users delete own cuaderno classes" on public.cuaderno_classes;
+create policy "Users delete own cuaderno classes"
   on public.cuaderno_classes for delete using (auth.uid() = user_id);

@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import type { User } from "@supabase/supabase-js";
+import { sanitizeAcademicSelectionForWrite } from "@/lib/academic/helpers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/env";
+import type { AcademicSelection } from "@/types/academic";
 
 const academicSchema = z.object({
   yearNumber: z.number(),
@@ -180,7 +182,25 @@ export async function POST(request: Request) {
       });
     }
 
-    const profilePayload = buildProfilePayload(user, body);
+    let sanitizedAcademic: AcademicSelection | undefined;
+    if (body.academic) {
+      const normalized = sanitizeAcademicSelectionForWrite(body.academic);
+      if (!normalized) {
+        return NextResponse.json(
+          {
+            error:
+              "La selección académica no es válida según la malla UNT 2021 o usa un identificador de curso obsoleto.",
+          },
+          { status: 400 },
+        );
+      }
+      sanitizedAcademic = normalized;
+    }
+
+    const profilePayload = buildProfilePayload(user, {
+      ...body,
+      academic: sanitizedAcademic,
+    });
     const admin = createAdminClient();
 
     const { data: existingProfile } = await admin
@@ -194,8 +214,8 @@ export async function POST(request: Request) {
         ? (existingProfile.academic_context as Record<string, unknown>)
         : {};
 
-    if (body.academic) {
-      profilePayload.academic_context = { ...priorContext, ...body.academic };
+    if (sanitizedAcademic) {
+      profilePayload.academic_context = { ...priorContext, ...sanitizedAcademic };
     } else if (body.studySettings) {
       profilePayload.academic_context = {
         ...priorContext,
@@ -212,7 +232,12 @@ export async function POST(request: Request) {
     });
 
     if (error) {
-      await saveProfileToUserMetadata(admin, user, body, profilePayload);
+      await saveProfileToUserMetadata(
+        admin,
+        user,
+        { ...body, academic: sanitizedAcademic },
+        profilePayload,
+      );
     }
 
     return NextResponse.json({ saved: true, profile: profilePayload });

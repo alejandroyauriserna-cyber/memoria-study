@@ -1,3 +1,4 @@
+import { normalizeMaterialAcademicFields } from "@/lib/academic/helpers";
 import type { CuadernoClass, CuadernoClassRecord } from "@/types/cuaderno";
 
 function parseConcepts(value: unknown): string[] {
@@ -6,13 +7,20 @@ function parseConcepts(value: unknown): string[] {
 }
 
 export function recordToCuadernoClass(record: CuadernoClassRecord): CuadernoClass {
-  return {
-    id: record.id,
-    userId: record.user_id,
+  const academic = normalizeMaterialAcademicFields({
     courseId: record.course_id,
     courseName: record.course_name,
     cycleNumber: record.cycle_number,
     cycleLabel: record.cycle_label,
+  });
+
+  return {
+    id: record.id,
+    userId: record.user_id,
+    courseId: academic.courseId,
+    courseName: academic.courseName,
+    cycleNumber: academic.cycleNumber,
+    cycleLabel: academic.cycleLabel,
     classNumber: record.class_number,
     title: record.title,
     topic: record.topic,

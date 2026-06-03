@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/env";
+import { normalizeAcademicForWrite } from "@/lib/academic/helpers";
 import { materialInsertPayload, recordToMaterial } from "@/lib/materials/mapper";
 import type { MaterialRecord } from "@/types/material";
 
@@ -81,7 +82,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const body = createMaterialSchema.parse({
+    const parsed = createMaterialSchema.parse({
       title: formData.get("title"),
       description: formData.get("description"),
       materialType: formData.get("materialType"),
@@ -90,6 +91,27 @@ export async function POST(request: Request) {
       cycleNumber: formData.get("cycleNumber"),
       cycleLabel: formData.get("cycleLabel"),
     });
+
+    const academic = normalizeAcademicForWrite({
+      courseId: parsed.courseId,
+      courseName: parsed.courseName,
+      cycleNumber: parsed.cycleNumber,
+      cycleLabel: parsed.cycleLabel,
+    });
+
+    if (!academic) {
+      return NextResponse.json(
+        {
+          fieldErrors: {
+            course:
+              "El curso no pertenece a la malla oficial UNT 2021 o usa un identificador obsoleto.",
+          },
+        },
+        { status: 400 },
+      );
+    }
+
+    const body = { ...parsed, ...academic };
 
     const supabase = await createClient();
     const {

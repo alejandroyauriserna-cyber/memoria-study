@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import {
   OrganizerGenerationError,
 } from "@/lib/ai/generate-organizer";
+import { normalizeAcademicFromRecord } from "@/lib/academic/helpers";
 import { generateOrganizerFromMaterial } from "@/lib/organizers/generate-from-material";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -47,6 +48,17 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Material no encontrado." }, { status: 404 });
     }
 
+    const academic = normalizeAcademicFromRecord(materialData);
+    if (!academic) {
+      return NextResponse.json(
+        {
+          error:
+            "El material tiene un curso no válido según la malla UNT 2021. Actualiza el curso del material antes de generar el organizador.",
+        },
+        { status: 422 },
+      );
+    }
+
     let generated;
 
     try {
@@ -70,10 +82,10 @@ export async function GET(request: Request) {
         material_id: materialId,
         title: generated.title,
         description: generated.description,
-        course_id: materialData.course_id,
-        course_name: materialData.course_name,
-        cycle_number: materialData.cycle_number,
-        cycle_label: materialData.cycle_label,
+        course_id: academic.courseId,
+        course_name: academic.courseName,
+        cycle_number: academic.cycleNumber,
+        cycle_label: academic.cycleLabel,
         organizer_type: "resumen",
         content: generated.content,
       })

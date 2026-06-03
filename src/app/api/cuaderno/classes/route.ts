@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { normalizeCuadernoAcademicInput } from "@/lib/cuaderno/academic";
 import { recordToCuadernoClass } from "@/lib/cuaderno/mapper";
 import { requireCuadernoUser } from "@/lib/cuaderno/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -71,15 +72,29 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Faltan datos del curso o título de clase." }, { status: 400 });
     }
 
+    const academic = normalizeCuadernoAcademicInput({
+      courseId: body.courseId,
+      courseName: body.courseName,
+      cycleNumber: body.cycleNumber,
+      cycleLabel: body.cycleLabel,
+    });
+
+    if (!academic) {
+      return NextResponse.json(
+        { error: "El curso no pertenece a la malla oficial UNT 2021 o usa un identificador obsoleto." },
+        { status: 400 },
+      );
+    }
+
     const admin = createAdminClient();
     const { data, error } = await admin
       .from("cuaderno_classes")
       .insert({
         user_id: user.id,
-        course_id: body.courseId,
-        course_name: body.courseName,
-        cycle_number: body.cycleNumber,
-        cycle_label: body.cycleLabel,
+        course_id: academic.courseId,
+        course_name: academic.courseName,
+        cycle_number: academic.cycleNumber,
+        cycle_label: academic.cycleLabel,
         title: body.title.trim(),
         topic: body.topic?.trim() || null,
         class_number: body.classNumber ?? null,

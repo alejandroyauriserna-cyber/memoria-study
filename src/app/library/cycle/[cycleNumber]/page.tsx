@@ -3,6 +3,7 @@ import { AppShell } from "@/components/ui/shell";
 import { MaterialCard } from "@/components/library/material-card";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { getCycleByNumber } from "@/lib/academic/helpers";
 import { recordToMaterial } from "@/lib/materials/mapper";
 import type { MaterialRecord } from "@/types/material";
 
@@ -11,6 +12,7 @@ export const dynamic = "force-dynamic";
 export default async function Page({ params }: { params: any }) {
   const resolvedParams = await params;
   const cycleNumber = Number(resolvedParams?.cycleNumber ?? "");
+  const officialCycle = getCycleByNumber(cycleNumber);
   const admin = createAdminClient();
   const supabase = await createClient();
   const {
@@ -64,7 +66,9 @@ export default async function Page({ params }: { params: any }) {
       <section className="mx-auto max-w-6xl px-4 py-10">
         <div className="mb-8">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#00FFD5]">Ciclo · Red de materiales</p>
-          <h1 className="mt-2 text-4xl font-bold tracking-tight text-[#F5F7FA]">Materiales del ciclo {resolvedParams?.cycleNumber}</h1>
+          <h1 className="mt-2 text-4xl font-bold tracking-tight text-[#F5F7FA]">
+            {officialCycle?.cycleLabel ?? `Ciclo ${cycleNumber}`}
+          </h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
             Recursos públicos compartidos para el ciclo seleccionado. Haz clic en un material para ver el detalle.
           </p>

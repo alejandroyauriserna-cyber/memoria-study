@@ -1,16 +1,24 @@
+import { normalizeMaterialAcademicFields } from "@/lib/academic/helpers";
 import type { Material, MaterialRecord } from "@/types/material";
 
 export function recordToMaterial(record: MaterialRecord): Material {
+  const academic = normalizeMaterialAcademicFields({
+    courseId: record.course_id,
+    courseName: record.course_name,
+    cycleNumber: record.cycle_number,
+    cycleLabel: record.cycle_label,
+  });
+
   return {
     id: record.id,
     userId: record.user_id,
     authorName: record.author_name,
     title: record.title,
     description: record.description,
-    courseId: record.course_id,
-    courseName: record.course_name,
-    cycleNumber: record.cycle_number,
-    cycleLabel: record.cycle_label,
+    courseId: academic.courseId,
+    courseName: academic.courseName,
+    cycleNumber: academic.cycleNumber,
+    cycleLabel: academic.cycleLabel,
     materialType: record.material_type,
     fileName: record.file_name,
     fileUrl: record.file_url,

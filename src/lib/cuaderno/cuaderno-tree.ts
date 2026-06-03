@@ -1,106 +1,82 @@
-import { UNT_DERECHO } from "@/lib/academic/unt-derecho";
+import { normalizeMaterialAcademicFields } from "@/lib/academic/helpers";
+import { OFFICIAL_MALLA_2021 } from "@/lib/academic/official-malla-2021";
 import type { CuadernoClass } from "@/types/cuaderno";
 import type { CuadernoTreeCourse, CuadernoTreeCycle } from "@/types/cuaderno";
 
 export function buildCuadernoTree(classes: CuadernoClass[]): CuadernoTreeCycle[] {
-  const byCycle = new Map<number, Map<string, CuadernoClass[]>>();
+  const classesByCourse = new Map<string, CuadernoClass[]>();
 
   for (const item of classes) {
-    if (!byCycle.has(item.cycleNumber)) {
-      byCycle.set(item.cycleNumber, new Map());
-    }
-    const courseMap = byCycle.get(item.cycleNumber)!;
-    if (!courseMap.has(item.courseId)) {
-      courseMap.set(item.courseId, []);
-    }
-    courseMap.get(item.courseId)!.push(item);
+    const normalized = normalizeMaterialAcademicFields({
+      courseId: item.courseId,
+      courseName: item.courseName,
+      cycleNumber: item.cycleNumber,
+      cycleLabel: item.cycleLabel,
+    });
+
+    const key = `${normalized.cycleNumber}:${normalized.courseId}`;
+    const bucket = classesByCourse.get(key) ?? [];
+    bucket.push({
+      ...item,
+      courseId: normalized.courseId,
+      courseName: normalized.courseName,
+      cycleNumber: normalized.cycleNumber,
+      cycleLabel: normalized.cycleLabel,
+    });
+    classesByCourse.set(key, bucket);
   }
 
-  const cycles: CuadernoTreeCycle[] = [];
-
-  for (const year of UNT_DERECHO.years) {
-    for (const cycle of year.cycles) {
-      const courseMap = byCycle.get(cycle.number);
-      const courses: CuadernoTreeCourse[] = [];
-
-      for (const course of cycle.courses) {
-        const classList = (courseMap?.get(course.id) ?? []).sort((a, b) => {
+  return OFFICIAL_MALLA_2021.map((officialCycle) => {
+    const courses: CuadernoTreeCourse[] = officialCycle.courses
+      .map((officialCourse) => {
+        const key = `${officialCycle.number}:${officialCourse.id}`;
+        const classList = (classesByCourse.get(key) ?? []).sort((a, b) => {
           const na = a.classNumber ?? 999;
           const nb = b.classNumber ?? 999;
           if (na !== nb) return na - nb;
           return a.title.localeCompare(b.title, "es");
         });
 
-        if (classList.length > 0) {
-          courses.push({
-            courseId: course.id,
-            courseName: course.name,
-            classes: classList,
-          });
-        }
-      }
+        if (!classList.length) return null;
 
-      const orphanCourses = courseMap
-        ? [...courseMap.entries()].filter(
-            ([courseId]) => !cycle.courses.some((c) => c.id === courseId),
-          )
-        : [];
+        return {
+          courseId: officialCourse.id,
+          courseName: officialCourse.name,
+          classes: classList,
+        };
+      })
+      .filter((course): course is CuadernoTreeCourse => course !== null);
 
-      for (const [courseId, classList] of orphanCourses) {
-        if (!classList.length) continue;
-        courses.push({
-          courseId,
-          courseName: classList[0]?.courseName ?? courseId,
-          classes: classList.sort((a, b) => (a.classNumber ?? 999) - (b.classNumber ?? 999)),
-        });
-      }
+    if (!courses.length) return null;
 
-      if (courses.length > 0) {
-        cycles.push({
-          cycleNumber: cycle.number,
-          cycleLabel: cycle.label,
-          courses,
-        });
-      }
-    }
-  }
-
-  const knownCycleNumbers = new Set(cycles.map((c) => c.cycleNumber));
-  for (const [cycleNumber, courseMap] of byCycle) {
-    if (knownCycleNumbers.has(cycleNumber)) continue;
-    const courses: CuadernoTreeCourse[] = [];
-    for (const [courseId, classList] of courseMap) {
-      if (!classList.length) continue;
-      courses.push({
-        courseId,
-        courseName: classList[0]?.courseName ?? courseId,
-        classes: classList,
-      });
-    }
-    if (courses.length) {
-      const sample = [...courseMap.values()].flat()[0];
-      cycles.push({
-        cycleNumber,
-        cycleLabel: sample?.cycleLabel ?? `Ciclo ${cycleNumber}`,
-        courses,
-      });
-    }
-  }
-
-  return cycles.sort((a, b) => a.cycleNumber - b.cycleNumber);
+    return {
+      cycleNumber: officialCycle.number,
+      cycleLabel: officialCycle.label,
+      courses,
+    };
+  }).filter((cycle): cycle is CuadernoTreeCycle => cycle !== null);
 }
 
 export function flattenCuadernoCourses() {
-  return UNT_DERECHO.years.flatMap((year) =>
-    year.cycles.flatMap((cycle) =>
-      cycle.courses.map((course) => ({
-        courseId: course.id,
-        courseName: course.name,
-        cycleNumber: cycle.number,
-        cycleLabel: cycle.label,
-        yearNumber: year.number,
-        yearLabel: year.label,
-      })),
-    ),
+  return OFFICIAL_MALLA_2021.flatMap((cycle) =>
+    cycle.courses.map((course) => ({
+      courseId: course.id,
+      courseName: course.name,
+      cycleNumber: cycle.number,
+      cycleLabel: cycle.label,
+      yearNumber: cycle.number <= 2 ? 1 : cycle.number <= 4 ? 2 : cycle.number <= 6 ? 3 : cycle.number <= 8 ? 4 : cycle.number <= 10 ? 5 : 6,
+      yearLabel:
+        cycle.number <= 2
+          ? "Primer año"
+          : cycle.number <= 4
+            ? "Segundo año"
+            : cycle.number <= 6
+              ? "Tercer año"
+              : cycle.number <= 8
+                ? "Cuarto año"
+                : cycle.number <= 10
+                  ? "Quinto año"
+                  : "Sexto año",
+    })),
   );
 }

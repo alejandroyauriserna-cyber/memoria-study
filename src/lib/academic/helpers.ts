@@ -1,5 +1,20 @@
+import { resolveLegacyCourse, getOfficialCourseById } from "@/lib/academic/course-migration";
+import {
+  normalizeAcademicFieldsForRead,
+  normalizeAcademicForWrite,
+  type AcademicCourseFields,
+} from "@/lib/academic/normalize-academic";
+import { OFFICIAL_MALLA_2021 } from "@/lib/academic/official-malla-2021";
 import { UNT_DERECHO } from "@/lib/academic/unt-derecho";
 import type { AcademicCourse, AcademicCycle, AcademicSelection, AcademicYear } from "@/types/academic";
+
+export {
+  normalizeAcademicForWrite,
+  normalizeAcademicFieldsForRead,
+  normalizeAcademicFromRecord,
+  isLegacyCourseId,
+  type AcademicCourseFields,
+} from "@/lib/academic/normalize-academic";
 
 export type FlatCycle = {
   yearNumber: number;
@@ -29,17 +44,24 @@ export function getCycleByNumber(cycleNumber: number): FlatCycle | undefined {
   return getAllCycles().find((cycle) => cycle.cycleNumber === cycleNumber);
 }
 
+export function getCoursesForCycle(cycleNumber: number): AcademicCourse[] {
+  return getCycleByNumber(cycleNumber)?.courses ?? [];
+}
+
 export function findCourseById(courseId: string): {
   course: AcademicCourse;
   cycle: FlatCycle;
 } | null {
-  for (const cycle of getAllCycles()) {
-    const course = cycle.courses.find((item) => item.id === courseId);
-    if (course) {
-      return { course, cycle };
-    }
-  }
-  return null;
+  const resolved = getOfficialCourseById(courseId) ?? resolveLegacyCourse(courseId);
+  if (!resolved) return null;
+
+  const cycle = getCycleByNumber(resolved.cycleNumber);
+  if (!cycle) return null;
+
+  const course = cycle.courses.find((item) => item.id === resolved.courseId);
+  if (!course) return null;
+
+  return { course, cycle };
 }
 
 export function buildSelection(input: {
@@ -47,10 +69,21 @@ export function buildSelection(input: {
   courseId: string;
   weekNumber?: number;
 }): AcademicSelection | null {
-  const cycle = getCycleByNumber(input.cycleNumber);
+  const resolved = getOfficialCourseById(input.courseId) ?? resolveLegacyCourse(input.courseId);
+  if (!resolved) return null;
+
+  if (resolved.cycleNumber !== input.cycleNumber) {
+    return buildSelection({
+      cycleNumber: resolved.cycleNumber,
+      courseId: resolved.courseId,
+      weekNumber: input.weekNumber,
+    });
+  }
+
+  const cycle = getCycleByNumber(resolved.cycleNumber);
   if (!cycle) return null;
 
-  const course = cycle.courses.find((item) => item.id === input.courseId);
+  const course = cycle.courses.find((item) => item.id === resolved.courseId);
   if (!course) return null;
 
   const week =
@@ -69,43 +102,29 @@ export function buildSelection(input: {
   };
 }
 
-/** Corrige selecciones guardadas con IDs de la malla antigua. */
+/** Corrige selecciones guardadas con IDs o ciclos de la malla antigua. */
 export function sanitizeAcademicSelection(
   saved: AcademicSelection | null,
 ): AcademicSelection | null {
   if (!saved) return null;
 
-  const located = findCourseById(saved.courseId);
-  if (located) {
-    return buildSelection({
-      cycleNumber: located.cycle.cycleNumber,
-      courseId: located.course.id,
-      weekNumber: saved.weekNumber,
-    });
-  }
-
-  const cycle = getCycleByNumber(saved.cycleNumber);
-  if (!cycle) {
-    return buildSelection({ cycleNumber: 1, courseId: getAllCycles()[0]?.courses[0]?.id ?? "" });
-  }
-
-  const firstCourse = cycle.courses[0];
-  if (!firstCourse) return null;
+  const resolved = resolveLegacyCourse(saved.courseId, saved.courseName, saved.cycleNumber);
+  if (!resolved) return null;
 
   return buildSelection({
-    cycleNumber: cycle.cycleNumber,
-    courseId: firstCourse.id,
+    cycleNumber: resolved.cycleNumber,
+    courseId: resolved.courseId,
     weekNumber: saved.weekNumber,
   });
 }
 
 export function getOfficialCourseNames(): string[] {
-  return getAllCycles().flatMap((cycle) => cycle.courses.map((course) => course.name));
+  return OFFICIAL_MALLA_2021.flatMap((cycle) => cycle.courses.map((course) => course.name));
 }
 
 export function isValidCourseForCycle(cycleNumber: number, courseId: string): boolean {
-  const cycle = getCycleByNumber(cycleNumber);
-  return Boolean(cycle?.courses.some((course) => course.id === courseId));
+  const resolved = getOfficialCourseById(courseId) ?? resolveLegacyCourse(courseId);
+  return resolved?.cycleNumber === cycleNumber;
 }
 
 export function getCycleForCourse(courseId: string): AcademicCycle | undefined {
@@ -113,4 +132,40 @@ export function getCycleForCourse(courseId: string): AcademicCycle | undefined {
   if (!located) return undefined;
   const year = getYearByNumber(located.cycle.yearNumber);
   return year?.cycles.find((cycle) => cycle.number === located.cycle.cycleNumber);
+}
+
+/** Lectura/UI y mappers: convierte legacy cuando es posible sin rechazar filas huérfanas. */
+export function normalizeMaterialAcademicFields(
+  input: AcademicCourseFields,
+): AcademicCourseFields {
+  return normalizeAcademicFieldsForRead(input);
+}
+
+/** Sanitiza academic_context antes de persistir (perfil, metadata). */
+export function sanitizeAcademicSelectionForWrite(
+  selection: AcademicSelection,
+): AcademicSelection | null {
+  const sanitized = sanitizeAcademicSelection(selection);
+  if (!sanitized) {
+    return null;
+  }
+
+  const fields = normalizeAcademicForWrite({
+    courseId: sanitized.courseId,
+    courseName: sanitized.courseName,
+    cycleNumber: sanitized.cycleNumber,
+    cycleLabel: sanitized.cycleLabel,
+  });
+
+  if (!fields) {
+    return null;
+  }
+
+  return {
+    ...sanitized,
+    courseId: fields.courseId,
+    courseName: fields.courseName,
+    cycleNumber: fields.cycleNumber,
+    cycleLabel: fields.cycleLabel,
+  };
 }

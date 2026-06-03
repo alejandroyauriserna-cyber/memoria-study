@@ -1,3 +1,6 @@
+import { normalizeMaterialAcademicFields } from "@/lib/academic/helpers";
+import { OFFICIAL_MALLA_2021 } from "@/lib/academic/official-malla-2021";
+
 const STORAGE_KEY = "memoria-library-expanded";
 
 export function loadExpandedFolders(): Set<string> {
@@ -15,70 +18,71 @@ export function saveExpandedFolders(ids: Set<string>) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify([...ids]));
 }
 
-export function buildLibraryTree(
-  materials: Array<{
-    id?: string;
-    title: string;
-    courseId: string;
-    courseName: string;
-    cycleNumber: number;
-    cycleLabel: string;
-    materialType?: string;
-    authorName?: string;
-  }>,
-) {
-  const byCycle = new Map<
-    number,
-    {
-      cycleLabel: string;
-      courses: Map<
-        string,
-        {
-          courseName: string;
-          materials: typeof materials;
-        }
-      >;
-    }
-  >();
+type LibraryMaterial = {
+  id?: string;
+  title: string;
+  courseId: string;
+  courseName: string;
+  cycleNumber: number;
+  cycleLabel: string;
+  materialType?: string;
+  authorName?: string;
+};
+
+/**
+ * Árbol oficial: Derecho UNT → Ciclo I–XII → Curso → Materiales.
+ * Incluye todos los cursos de la malla aunque no tengan materiales aún.
+ */
+export function buildLibraryTree(materials: LibraryMaterial[]) {
+  const materialsByCourse = new Map<string, LibraryMaterial[]>();
 
   for (const material of materials) {
     if (!material.id) continue;
-    const cycle =
-      byCycle.get(material.cycleNumber) ??
-      ({
-        cycleLabel: material.cycleLabel,
-        courses: new Map(),
-      } as {
-        cycleLabel: string;
-        courses: Map<string, { courseName: string; materials: typeof materials }>;
-      });
+    const normalized = normalizeMaterialAcademicFields({
+      courseId: material.courseId,
+      courseName: material.courseName,
+      cycleNumber: material.cycleNumber,
+      cycleLabel: material.cycleLabel,
+    });
 
-    const course =
-      cycle.courses.get(material.courseId) ??
-      ({ courseName: material.courseName, materials: [] as typeof materials });
-
-    course.materials.push(material);
-    cycle.courses.set(material.courseId, course);
-    byCycle.set(material.cycleNumber, cycle);
+    const key = `${normalized.cycleNumber}:${normalized.courseId}`;
+    const bucket = materialsByCourse.get(key) ?? [];
+    bucket.push({
+      ...material,
+      courseId: normalized.courseId,
+      courseName: normalized.courseName,
+      cycleNumber: normalized.cycleNumber,
+      cycleLabel: normalized.cycleLabel,
+    });
+    materialsByCourse.set(key, bucket);
   }
 
-  return [...byCycle.entries()]
-    .sort(([a], [b]) => a - b)
-    .map(([cycleNumber, cycle]) => ({
-      id: `cycle-${cycleNumber}`,
-      cycleNumber,
-      cycleLabel: cycle.cycleLabel,
-      materialCount: [...cycle.courses.values()].reduce((sum, c) => sum + c.materials.length, 0),
-      courses: [...cycle.courses.entries()]
-        .sort(([, a], [, b]) => a.courseName.localeCompare(b.courseName, "es"))
-        .map(([courseId, course]) => ({
-          id: `course-${cycleNumber}-${courseId}`,
-          courseId,
-          courseName: course.courseName,
-          materialCount: course.materials.length,
-          materials: course.materials.sort((a, b) => a.title.localeCompare(b.title, "es")),
-        })),
-    }));
+  return OFFICIAL_MALLA_2021.map((officialCycle) => {
+    const courses = officialCycle.courses.map((officialCourse) => {
+      const key = `${officialCycle.number}:${officialCourse.id}`;
+      const courseMaterials = (materialsByCourse.get(key) ?? []).sort((a, b) =>
+        a.title.localeCompare(b.title, "es"),
+      );
+
+      return {
+        id: `course-${officialCycle.number}-${officialCourse.id}`,
+        courseId: officialCourse.id,
+        courseName: officialCourse.name,
+        materialCount: courseMaterials.length,
+        materials: courseMaterials,
+      };
+    });
+
+    const materialCount = courses.reduce((sum, course) => sum + course.materialCount, 0);
+
+    return {
+      id: `cycle-${officialCycle.number}`,
+      cycleNumber: officialCycle.number,
+      cycleLabel: officialCycle.label,
+      materialCount,
+      courses,
+    };
+  });
 }
 
 export type LibraryTreeCycle = ReturnType<typeof buildLibraryTree>[number];
@@ -100,20 +104,20 @@ export function filterLibraryTree(
           course.courseName.toLowerCase().includes(q) ||
           course.courseId.toLowerCase().includes(q);
 
-        const materials = course.materials.filter(
+        const matchedMaterials = course.materials.filter(
           (m) =>
             m.title.toLowerCase().includes(q) ||
             m.courseName.toLowerCase().includes(q) ||
             (m.authorName?.toLowerCase().includes(q) ?? false),
         );
 
-        if (courseMatch || materials.length) {
+        if (courseMatch || matchedMaterials.length) {
           expandedIds.add(cycle.id);
           expandedIds.add(course.id);
           return {
             ...course,
-            materials: courseMatch ? course.materials : materials,
-            materialCount: courseMatch ? course.materials.length : materials.length,
+            materials: courseMatch ? course.materials : matchedMaterials,
+            materialCount: courseMatch ? course.materials.length : matchedMaterials.length,
           };
         }
         return null;
