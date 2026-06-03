@@ -19,6 +19,7 @@ import {
   applyDragPreview,
   applyDragPreviewMove,
   applyGroupDragPreviewMove,
+  bakeDecorationPosition,
   clearDragPreview,
   computeDragPatch,
   DRAG_MOVE_THRESHOLD_PX,
@@ -85,6 +86,7 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
   onChangeRef.current = onChange;
   const selectedIdsRef = useRef(selectedIds);
   selectedIdsRef.current = selectedIds;
+  const skipPropsSyncRef = useRef(false);
 
   const pendingMoveRef = useRef<{
     obj: DecorationObject;
@@ -117,7 +119,12 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
   }, [liveItems, placement]);
 
   useEffect(() => {
-    if (draggingIds.length === 0) setLiveItems(decorations);
+    if (draggingIds.length > 0) return;
+    if (skipPropsSyncRef.current) {
+      skipPropsSyncRef.current = false;
+      return;
+    }
+    setLiveItems(decorations);
   }, [decorations, draggingIds]);
 
   const commitItems = useCallback((next: DecorationObject[]) => {
@@ -207,31 +214,45 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
         ddy = (leadPatch.y ?? lead.y) - lead.y;
       }
 
-      for (const [id, el] of drag.elements) clearDragPreview(el, drag.mode);
-      drag.cleanup();
-      dragRef.current = null;
-      setDraggingIds([]);
-
       const moved =
         drag.mode === "move"
           ? Math.hypot(e.clientX - drag.startX, e.clientY - drag.startY) >= DRAG_MOVE_THRESHOLD_PX
           : true;
-      if (!moved) return;
 
-      const next = liveRef.current.map((d) => {
-        if (!drag.ids.includes(d.id)) return d;
-        const snap = drag.snapshots.get(d.id);
-        if (!snap) return d;
-        if (drag.mode === "move") {
-          return {
-            ...snap,
-            x: Math.min(0.95, Math.max(0, snap.x + ddx)),
-            y: Math.min(0.95, Math.max(0, snap.y + ddy)),
-          };
+      const next = moved
+        ? liveRef.current.map((d) => {
+            if (!drag.ids.includes(d.id)) return d;
+            const snap = drag.snapshots.get(d.id);
+            if (!snap) return d;
+            if (drag.mode === "move") {
+              return {
+                ...snap,
+                x: Math.min(0.95, Math.max(0, snap.x + ddx)),
+                y: Math.min(0.95, Math.max(0, snap.y + ddy)),
+              };
+            }
+            if (d.id === drag.leadId) return { ...snap, ...leadPatch };
+            return d;
+          })
+        : null;
+
+      if (next && drag.mode === "move") {
+        for (const [id, el] of drag.elements) {
+          const item = next.find((d) => d.id === id);
+          if (item) bakeDecorationPosition(el, item);
+          el.classList.remove("is-dragging");
         }
-        if (d.id === drag.leadId) return { ...snap, ...leadPatch };
-        return d;
-      });
+      } else {
+        for (const [, el] of drag.elements) clearDragPreview(el, drag.mode);
+      }
+
+      drag.cleanup();
+      dragRef.current = null;
+      setDraggingIds([]);
+
+      if (!next) return;
+
+      skipPropsSyncRef.current = true;
       commitItems(next);
     },
     [commitItems],
@@ -243,6 +264,11 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
     const e = drag.pending;
     drag.pending = null;
     drag.raf = null;
+
+    if (drag.mode === "move") {
+      const layer = layerRef.current;
+      if (layer) drag.metrics = getLayerMetrics(layer);
+    }
 
     const lead = drag.snapshots.get(drag.leadId);
     const leadEl = drag.elements.get(drag.leadId);
@@ -308,6 +334,7 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
       mode: DragMode,
       el: HTMLElement,
       shiftKey: boolean,
+      pointerId?: number,
     ) => {
       if (!active || obj.locked || croppingId === obj.id) return;
       const layer = layerRef.current;
@@ -337,6 +364,14 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
 
       if (!snapshots.has(obj.id)) return;
 
+      if (pointerId != null) {
+        try {
+          el.setPointerCapture(pointerId);
+        } catch {
+          /* ignore */
+        }
+      }
+
       const onWinUp = (ev: PointerEvent) => {
         const d = dragRef.current;
         if (d?.raf != null) cancelAnimationFrame(d.raf);
@@ -350,6 +385,13 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
         window.removeEventListener("pointermove", onWinPointerMove);
         window.removeEventListener("pointerup", onWinUp);
         window.removeEventListener("pointercancel", onWinUp);
+        if (pointerId != null) {
+          try {
+            el.releasePointerCapture(pointerId);
+          } catch {
+            /* ignore */
+          }
+        }
       };
 
       dragRef.current = {
@@ -382,12 +424,18 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
       const startY = e.clientY;
       const pointerId = e.pointerId;
 
+      try {
+        el.setPointerCapture(pointerId);
+      } catch {
+        /* ignore */
+      }
+
       const onMove = (ev: PointerEvent) => {
         const p = pendingMoveRef.current;
         if (!p || ev.pointerId !== p.pointerId) return;
         if (Math.hypot(ev.clientX - p.startX, ev.clientY - p.startY) < DRAG_MOVE_THRESHOLD_PX) return;
         cancelPendingMove();
-        beginDrag(p.startX, p.startY, p.obj, "move", p.el, ev.shiftKey);
+        beginDrag(ev.clientX, ev.clientY, p.obj, "move", p.el, ev.shiftKey, ev.pointerId);
       };
 
       const onUp = () => cancelPendingMove();
@@ -396,6 +444,11 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
         window.removeEventListener("pointermove", onMove);
         window.removeEventListener("pointerup", onUp);
         window.removeEventListener("pointercancel", onUp);
+        try {
+          el.releasePointerCapture(pointerId);
+        } catch {
+          /* ignore */
+        }
       };
 
       window.addEventListener("pointermove", onMove);
@@ -414,7 +467,7 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
     }
     e.stopPropagation();
     e.preventDefault();
-    beginDrag(e.clientX, e.clientY, obj, mode, el, e.shiftKey);
+    beginDrag(e.clientX, e.clientY, obj, mode, el, e.shiftKey, e.pointerId);
   };
 
   const zBump = useCallback((id: string, dir: "up" | "down") => {

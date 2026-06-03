@@ -6,18 +6,35 @@ export type DragMode = "move" | "rotate" | ResizeHandle;
 export const DRAG_MOVE_THRESHOLD_PX = 5;
 
 export type LayerMetrics = {
+  /** Viewport (getBoundingClientRect) */
   left: number;
   top: number;
+  /** Layout box (offsetWidth/Height) — coincide con % left/top del layer */
   width: number;
   height: number;
+  /** viewport / layout — p. ej. zoom CSS scale() del papel */
+  scaleX: number;
+  scaleY: number;
 };
 
-/** Offset en píxeles desde la esquina superior izquierda del elemento hasta el cursor. */
+/** Offset en píxeles de layout desde la esquina del elemento hasta el cursor. */
 export type GrabOffsetPx = { offsetX: number; offsetY: number };
+
+function layoutScale(el: HTMLElement, rect: DOMRect) {
+  const w = el.offsetWidth || rect.width || 1;
+  const h = el.offsetHeight || rect.height || 1;
+  return {
+    width: w,
+    height: h,
+    scaleX: w > 0 ? rect.width / w : 1,
+    scaleY: h > 0 ? rect.height / h : 1,
+  };
+}
 
 export function getLayerMetrics(el: HTMLElement): LayerMetrics {
   const r = el.getBoundingClientRect();
-  return { left: r.left, top: r.top, width: r.width || 1, height: r.height || 1 };
+  const layout = layoutScale(el, r);
+  return { left: r.left, top: r.top, ...layout };
 }
 
 export function grabOffsetPxFromPointer(
@@ -26,9 +43,10 @@ export function grabOffsetPxFromPointer(
   el: HTMLElement,
 ): GrabOffsetPx {
   const r = el.getBoundingClientRect();
+  const { scaleX, scaleY } = layoutScale(el, r);
   return {
-    offsetX: clientX - r.left,
-    offsetY: clientY - r.top,
+    offsetX: (clientX - r.left) / scaleX,
+    offsetY: (clientY - r.top) / scaleY,
   };
 }
 
@@ -38,12 +56,22 @@ export function normalizedFromPointer(
   metrics: LayerMetrics,
   grab: GrabOffsetPx,
 ): { x: number; y: number } {
-  const leftPx = clientX - grab.offsetX - metrics.left;
-  const topPx = clientY - grab.offsetY - metrics.top;
+  const leftPx = (clientX - metrics.left) / metrics.scaleX - grab.offsetX;
+  const topPx = (clientY - metrics.top) / metrics.scaleY - grab.offsetY;
   return {
     x: Math.min(0.95, Math.max(0, leftPx / metrics.width)),
     y: Math.min(0.95, Math.max(0, topPx / metrics.height)),
   };
+}
+
+/** Fija left/top/transform en DOM antes de quitar el preview (evita salto al soltar). */
+export function bakeDecorationPosition(
+  el: HTMLElement,
+  item: Pick<DecorationObject, "x" | "y" | "rotation">,
+): void {
+  el.style.left = `${item.x * 100}%`;
+  el.style.top = `${item.y * 100}%`;
+  el.style.transform = `rotate(${item.rotation}deg)`;
 }
 
 export function computeDragPatch(
@@ -67,8 +95,8 @@ export function computeDragPatch(
     };
   }
   if (mode === "rotate") {
-    const cx = metrics.left + (snapshot.x + snapshot.w / 2) * metrics.width;
-    const cy = metrics.top + (snapshot.y + snapshot.h / 2) * metrics.height;
+    const cx = metrics.left + (snapshot.x + snapshot.w / 2) * metrics.width * metrics.scaleX;
+    const cy = metrics.top + (snapshot.y + snapshot.h / 2) * metrics.height * metrics.scaleY;
     const angle = Math.atan2(clientY - cy, clientX - cx);
     const start = Math.atan2(startY - cy, startX - cx);
     return { rotation: snapshot.rotation + ((angle - start) * 180) / Math.PI };
