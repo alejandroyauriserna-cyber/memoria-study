@@ -1,5 +1,11 @@
 import type { Editor } from "@tiptap/react";
 import { cnDebug } from "@/lib/cuaderno/cn-debug";
+import {
+  getTableContext,
+  selectTableNode,
+  setTableMinHeight,
+  setTableWidth,
+} from "@/lib/cuaderno/cuaderno-table-utils";
 
 export function insertTableSafe(
   editor: Editor,
@@ -13,6 +19,12 @@ export function insertTableSafe(
     const ok = editor.chain().focus().insertTable({ rows: r, cols: c, withHeaderRow: true }).run();
     if (!ok) {
       return { ok: false, message: "No se pudo insertar la tabla en esta posición." };
+    }
+    const ctx = getTableContext(editor);
+    if (ctx) {
+      setTableWidth(editor, ctx.pos, "72%");
+      setTableMinHeight(editor, ctx.pos, "100px");
+      selectTableNode(editor, ctx.pos);
     }
     return { ok: true };
   } catch (err) {

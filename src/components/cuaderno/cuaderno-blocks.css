@@ -161,10 +161,16 @@
 .cn-table-selection-ring {
   position: absolute;
   inset: -2px;
-  border: 2px solid var(--cn-course-accent, #0d9488);
+  border: 2px solid #3b82f6;
   border-radius: 4px;
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--cn-course-accent, #0d9488) 25%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, #3b82f6 35%, transparent);
   pointer-events: none;
+}
+
+.cn-prosemirror table[data-locked="true"] td,
+.cn-prosemirror table[data-locked="true"] th {
+  pointer-events: none;
+  user-select: none;
 }
 
 .cn-table-select-grip {
@@ -225,6 +231,12 @@
   position: absolute;
   z-index: 10045;
   max-width: min(96vw, 720px);
+}
+
+.cn-table-toolbar-row--primary {
+  margin-bottom: 4px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid color-mix(in srgb, #3b82f6 18%, transparent);
 }
 
 .cn-table-toolbar {

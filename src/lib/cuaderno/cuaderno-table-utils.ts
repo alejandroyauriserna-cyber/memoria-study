@@ -87,3 +87,12 @@ export function setTableMinHeight(editor: Editor, pos: number, minHeight: string
 export function setTableLayout(editor: Editor, pos: number, layout: TableLegalLayout): boolean {
   return updateTableAttrs(editor, pos, { layout });
 }
+
+export function setTableLocked(editor: Editor, pos: number, locked: boolean): boolean {
+  return updateTableAttrs(editor, pos, { locked });
+}
+
+export function deleteTableAt(editor: Editor, pos: number): boolean {
+  selectTableNode(editor, pos);
+  return editor.chain().focus().deleteTable().run();
+}

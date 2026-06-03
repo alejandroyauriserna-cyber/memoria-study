@@ -1,5 +1,6 @@
 import type { Editor } from "@tiptap/react";
 import { NodeSelection } from "@tiptap/pm/state";
+import { getTableContext } from "@/lib/cuaderno/cuaderno-table-utils";
 
 export type CuadernoBlockKind = "studyBlock" | "image" | "table" | "codeBlock" | "horizontalRule" | null;
 
@@ -61,6 +62,14 @@ export function selectBlockAt(editor: Editor, pos: number) {
 }
 
 export function deleteSelectedBlock(editor: Editor): boolean {
+  const { selection } = editor.state;
+  if (selection instanceof NodeSelection && selection.node.type.name === "table") {
+    return editor.chain().focus().deleteTable().run();
+  }
+  const tableCtx = getTableContext(editor);
+  if (tableCtx?.nodeSelected) {
+    return editor.chain().focus().deleteTable().run();
+  }
   const block = getSelectedBlock(editor);
   if (!block) return false;
   if (block.kind === "table") {

@@ -47,9 +47,10 @@
 }
 
 .cn-decoration-item.is-selected {
-  outline: 2px solid color-mix(in srgb, var(--cn-accent, #6366f1) 55%, transparent);
+  outline: 2px solid #3b82f6;
   outline-offset: 2px;
   border-radius: 4px;
+  box-shadow: 0 0 0 1px color-mix(in srgb, #3b82f6 30%, transparent);
 }
 
 .cn-decoration-item.is-dragging {
@@ -141,6 +142,34 @@
   right: -6px;
   bottom: -6px;
   cursor: nwse-resize;
+}
+
+.cn-decoration-handle--n {
+  top: -6px;
+  left: 50%;
+  margin-left: -6px;
+  cursor: ns-resize;
+}
+
+.cn-decoration-handle--s {
+  bottom: -6px;
+  left: 50%;
+  margin-left: -6px;
+  cursor: ns-resize;
+}
+
+.cn-decoration-handle--e {
+  top: 50%;
+  right: -6px;
+  margin-top: -6px;
+  cursor: ew-resize;
+}
+
+.cn-decoration-handle--w {
+  top: 50%;
+  left: -6px;
+  margin-top: -6px;
+  cursor: ew-resize;
 }
 
 .cn-decoration-handle--rotate {

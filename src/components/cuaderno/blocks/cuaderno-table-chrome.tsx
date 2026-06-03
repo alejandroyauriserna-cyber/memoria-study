@@ -8,8 +8,10 @@ import {
   ArrowDown,
   ArrowUp,
   Copy,
+  Lock,
   MoreHorizontal,
   Trash2,
+  Unlock,
   Rows3,
   Columns3,
   Plus,
@@ -21,9 +23,11 @@ import {
   moveSelectedBlock,
 } from "@/lib/cuaderno/cuaderno-block-utils";
 import {
+  deleteTableAt,
   getTableContext,
   getTableDomRect,
   selectTableNode,
+  setTableLocked,
   setTableMinHeight,
   setTableWidth,
   type TableContext,
@@ -66,9 +70,40 @@ function TableToolbar({
   onMenu: (e: React.MouseEvent) => void;
 }) {
   const layout = (ctx.attrs.layout as TableLegalLayout) || "default";
+  const locked = Boolean(ctx.attrs.locked);
+
+  const deleteTable = () => {
+    deleteTableAt(editor, ctx.pos);
+  };
 
   return (
     <div className="cn-table-toolbar" onMouseDown={(e) => e.preventDefault()}>
+      <div className="cn-table-toolbar-row cn-table-toolbar-row--primary">
+        <button type="button" title="Duplicar" onClick={() => duplicateSelectedBlock(editor)}>
+          <Copy size={14} />
+        </button>
+        <button type="button" title="Eliminar tabla" className="cn-table-toolbar-danger" onClick={deleteTable}>
+          <Trash2 size={14} />
+        </button>
+        <span className="cn-table-toolbar-sep" />
+        <button type="button" title="Traer adelante" onClick={() => moveSelectedBlock(editor, "up")}>
+          <ArrowUp size={14} />
+        </button>
+        <button type="button" title="Enviar atrás" onClick={() => moveSelectedBlock(editor, "down")}>
+          <ArrowDown size={14} />
+        </button>
+        <span className="cn-table-toolbar-sep" />
+        <button
+          type="button"
+          title={locked ? "Desbloquear" : "Bloquear"}
+          onClick={() => setTableLocked(editor, ctx.pos, !locked)}
+        >
+          {locked ? <Unlock size={14} /> : <Lock size={14} />}
+        </button>
+        <button type="button" title="Más opciones" onClick={onMenu}>
+          <MoreHorizontal size={14} />
+        </button>
+      </div>
       <div className="cn-table-toolbar-row">
         <button type="button" title="Fila arriba" onClick={() => editor.chain().focus().addRowBefore().run()}>
           <Plus size={12} /> F↑
@@ -90,26 +125,6 @@ function TableToolbar({
           <Minus size={12} /> <Columns3 size={12} />
         </button>
         <span className="cn-table-toolbar-sep" />
-        <button type="button" title="Subir" onClick={() => moveSelectedBlock(editor, "up")}>
-          <ArrowUp size={14} />
-        </button>
-        <button type="button" title="Bajar" onClick={() => moveSelectedBlock(editor, "down")}>
-          <ArrowDown size={14} />
-        </button>
-        <button type="button" title="Duplicar tabla" onClick={() => duplicateSelectedBlock(editor)}>
-          <Copy size={14} />
-        </button>
-        <button
-          type="button"
-          title="Eliminar tabla"
-          className="cn-table-toolbar-danger"
-          onClick={() => deleteSelectedBlock(editor)}
-        >
-          <Trash2 size={14} />
-        </button>
-        <button type="button" title="Más opciones" onClick={onMenu}>
-          <MoreHorizontal size={14} />
-        </button>
       </div>
       <div className="cn-table-legal-chips" role="group" aria-label="Convertir plantilla jurídica">
         {TABLE_LEGAL_LAYOUTS.map((spec) => (
@@ -297,10 +312,13 @@ export function CuadernoTableChrome({ editor }: { editor: Editor | null }) {
       const sel = editor.state.selection;
       if (!(sel instanceof NodeSelection) || sel.node.type.name !== "table") return;
       e.preventDefault();
-      deleteSelectedBlock(editor);
+      e.stopPropagation();
+      const tableCtx = getTableContext(editor);
+      if (tableCtx) deleteTableAt(editor, tableCtx.pos);
+      else deleteSelectedBlock(editor);
     };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
   }, [editor]);
 
   const startResize = useCallback(
@@ -322,6 +340,13 @@ export function CuadernoTableChrome({ editor }: { editor: Editor | null }) {
         const dx = ev.clientX - startX;
         const dy = ev.clientY - startY;
         sync();
+        if (ev.shiftKey && (edge === "nw" || edge === "ne" || edge === "sw" || edge === "se")) {
+          const scale = Math.max(0.35, Math.min(1, (startW + (edge.includes("e") ? dx : -dx)) / contentW));
+          const pct = Math.round(scale * 100);
+          setTableWidth(editor, tablePos, `${Math.min(100, Math.max(25, pct))}%`);
+          setTableMinHeight(editor, tablePos, `${Math.max(60, Math.round(startMinH * scale))}px`);
+          return;
+        }
         if (edge.includes("e")) {
           const newW = Math.max(120, startW + dx);
           const pct = Math.min(100, Math.max(25, (newW / contentW) * 100));

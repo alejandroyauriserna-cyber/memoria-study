@@ -20,7 +20,9 @@ import {
   clearDragPreview,
   computeDragPatch,
   getLayerMetrics,
+  grabOffsetFromPointer,
   type DragMode,
+  type GrabOffset,
   type LayerMetrics,
 } from "@/lib/cuaderno/decoration-drag-dom";
 import { CuadernoDecorationItem } from "@/components/cuaderno/decoration/cuaderno-decoration-item";
@@ -86,7 +88,11 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
     snapshot: DecorationObject;
     el: HTMLElement;
     metrics: LayerMetrics;
+    grab: GrabOffset | null;
+    proportional: boolean;
     cleanup: () => void;
+    raf: number | null;
+    pending: PointerEvent | null;
   } | null>(null);
 
   const stackItems = useMemo(() => {
@@ -167,9 +173,11 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
         drag.startX,
         drag.startY,
         drag.metrics,
+        drag.grab ?? undefined,
+        drag.proportional,
       );
 
-      clearDragPreview(drag.el, drag.mode);
+      clearDragPreview(drag.el);
       drag.cleanup();
       dragRef.current = null;
       setDraggingId(null);
@@ -195,9 +203,12 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
     [commitItems],
   );
 
-  const onWinPointerMove = useCallback((e: PointerEvent) => {
+  const flushDragPreview = useCallback(() => {
     const drag = dragRef.current;
-    if (!drag) return;
+    if (!drag?.pending) return;
+    const e = drag.pending;
+    drag.pending = null;
+    drag.raf = null;
     const dx = (e.clientX - drag.startX) / drag.metrics.width;
     const dy = (e.clientY - drag.startY) / drag.metrics.height;
     applyDragPreview(
@@ -211,8 +222,21 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
       drag.startX,
       drag.startY,
       drag.metrics,
+      drag.grab ?? undefined,
+      drag.proportional,
     );
   }, []);
+
+  const onWinPointerMove = useCallback(
+    (e: PointerEvent) => {
+      const drag = dragRef.current;
+      if (!drag) return;
+      drag.pending = e;
+      if (drag.raf != null) return;
+      drag.raf = requestAnimationFrame(flushDragPreview);
+    },
+    [flushDragPreview],
+  );
 
   const startDrag = (e: React.PointerEvent, obj: DecorationObject, mode: DragMode) => {
     if (!active || obj.locked || croppingId === obj.id) return;
@@ -225,9 +249,15 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
     el.classList.add("is-dragging");
 
     const metrics = getLayerMetrics(layer);
+    const grab = mode === "move" ? grabOffsetFromPointer(e.clientX, e.clientY, obj, metrics) : null;
+    const proportional = e.shiftKey;
     cnDebug("drag-start", { id: obj.id, mode, x: obj.x, y: obj.y, w: obj.w, h: obj.h, metrics });
 
-    const onWinUp = (ev: PointerEvent) => endDrag(ev);
+    const onWinUp = (ev: PointerEvent) => {
+      const d = dragRef.current;
+      if (d?.raf != null) cancelAnimationFrame(d.raf);
+      endDrag(ev);
+    };
     window.addEventListener("pointermove", onWinPointerMove);
     window.addEventListener("pointerup", onWinUp);
     window.addEventListener("pointercancel", onWinUp);
@@ -246,7 +276,11 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
       snapshot: { ...obj },
       el,
       metrics,
+      grab,
+      proportional,
       cleanup,
+      raf: null,
+      pending: null,
     };
     setDraggingId(obj.id);
   };

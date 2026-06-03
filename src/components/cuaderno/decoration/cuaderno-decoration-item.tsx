@@ -19,9 +19,9 @@ import {
   type PostItColor,
 } from "@/lib/cuaderno/decoration-objects";
 import { resolveStickerLabel, resolveStickerSrc } from "@/lib/cuaderno/sticker-resolve-src";
-import type { ResizeCorner } from "@/components/cuaderno/decoration/decoration-resize";
+import type { ResizeHandle } from "@/lib/cuaderno/decoration-resize";
 
-const CORNERS: ResizeCorner[] = ["nw", "ne", "sw", "se"];
+const RESIZE_HANDLES: ResizeHandle[] = ["nw", "n", "ne", "e", "se", "s", "sw", "w"];
 
 const WRAP_LABELS: Record<ImageTextWrap, string> = {
   inline: "En línea con texto",
@@ -92,7 +92,7 @@ export const CuadernoDecorationItem = memo(function CuadernoDecorationItem({
   isDragging: boolean;
   cropping: boolean;
   onSelect: () => void;
-  onStartDrag: (e: React.PointerEvent, mode: "move" | "rotate" | ResizeCorner) => void;
+  onStartDrag: (e: React.PointerEvent, mode: "move" | "rotate" | ResizeHandle) => void;
   onContextMenu: (e: React.MouseEvent) => void;
   onDuplicate: () => void;
   onRemove: () => void;
@@ -180,22 +180,20 @@ export const CuadernoDecorationItem = memo(function CuadernoDecorationItem({
 
           {!obj.locked ? (
             <>
-              {CORNERS.map((corner) => (
+              {RESIZE_HANDLES.map((handle) => (
                 <span
-                  key={corner}
-                  className={`cn-decoration-handle cn-decoration-handle--${corner}`}
-                  onPointerDown={(e) => onStartDrag(e, corner)}
+                  key={handle}
+                  className={`cn-decoration-handle cn-decoration-handle--${handle}`}
+                  onPointerDown={(e) => onStartDrag(e, handle)}
                 />
               ))}
-              {obj.kind !== "image" ? (
-                <span
-                  className="cn-decoration-handle cn-decoration-handle--rotate"
-                  onPointerDown={(e) => onStartDrag(e, "rotate")}
-                  title="Rotar"
-                >
-                  <RotateCw size={10} />
-                </span>
-              ) : null}
+              <span
+                className="cn-decoration-handle cn-decoration-handle--rotate"
+                onPointerDown={(e) => onStartDrag(e, "rotate")}
+                title="Rotar"
+              >
+                <RotateCw size={10} />
+              </span>
             </>
           ) : null}
 

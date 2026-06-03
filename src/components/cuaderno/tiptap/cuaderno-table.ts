@@ -37,6 +37,14 @@ export const CuadernoTable = Table.extend({
           };
         },
       },
+      locked: {
+        default: false,
+        parseHTML: (el) => el.getAttribute("data-locked") === "true",
+        renderHTML: (attrs) => {
+          if (!attrs.locked) return {};
+          return { "data-locked": "true" };
+        },
+      },
     };
   },
 });

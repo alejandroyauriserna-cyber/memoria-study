@@ -1,10 +1,7 @@
 import type { DecorationObject } from "@/lib/cuaderno/decoration-objects";
-import {
-  applyCornerResize,
-  type ResizeCorner,
-} from "@/components/cuaderno/decoration/decoration-resize";
+import { applyResize, type ResizeHandle } from "@/lib/cuaderno/decoration-resize";
 
-export type DragMode = "move" | "rotate" | ResizeCorner;
+export type DragMode = "move" | "rotate" | ResizeHandle;
 
 export type LayerMetrics = {
   left: number;
@@ -12,6 +9,8 @@ export type LayerMetrics = {
   width: number;
   height: number;
 };
+
+export type GrabOffset = { x: number; y: number };
 
 export function getLayerMetrics(el: HTMLElement): LayerMetrics {
   const r = el.getBoundingClientRect();
@@ -29,6 +28,29 @@ export function pointerToNormalized(
   };
 }
 
+export function grabOffsetFromPointer(
+  clientX: number,
+  clientY: number,
+  snapshot: DecorationObject,
+  metrics: LayerMetrics,
+): GrabOffset {
+  const p = pointerToNormalized(clientX, clientY, metrics);
+  return { x: p.nx - snapshot.x, y: p.ny - snapshot.y };
+}
+
+export function movePositionFromPointer(
+  clientX: number,
+  clientY: number,
+  metrics: LayerMetrics,
+  grab: GrabOffset,
+): { x: number; y: number } {
+  const p = pointerToNormalized(clientX, clientY, metrics);
+  return {
+    x: Math.min(0.95, Math.max(0, p.nx - grab.x)),
+    y: Math.min(0.95, Math.max(0, p.ny - grab.y)),
+  };
+}
+
 export function computeDragPatch(
   snapshot: DecorationObject,
   mode: DragMode,
@@ -39,8 +61,11 @@ export function computeDragPatch(
   startX: number,
   startY: number,
   metrics: LayerMetrics,
+  grab?: GrabOffset,
+  proportional = false,
 ): Partial<DecorationObject> {
   if (mode === "move") {
+    if (grab) return movePositionFromPointer(clientX, clientY, metrics, grab);
     return {
       x: Math.min(0.95, Math.max(0, snapshot.x + dx)),
       y: Math.min(0.95, Math.max(0, snapshot.y + dy)),
@@ -53,7 +78,7 @@ export function computeDragPatch(
     const start = Math.atan2(startY - cy, startX - cx);
     return { rotation: snapshot.rotation + ((angle - start) * 180) / Math.PI };
   }
-  return applyCornerResize(snapshot, mode, dx, dy);
+  return applyResize(snapshot, mode, dx, dy, proportional);
 }
 
 /** Vista previa del drag solo en DOM — sin setState de React. */
@@ -68,15 +93,23 @@ export function applyDragPreview(
   startX: number,
   startY: number,
   metrics: LayerMetrics,
+  grab?: GrabOffset,
+  proportional = false,
 ): void {
   if (mode === "move") {
+    const pos = grab
+      ? movePositionFromPointer(clientX, clientY, metrics, grab)
+      : { x: snapshot.x + dx, y: snapshot.y + dy };
+    const dxPx = (pos.x - snapshot.x) * metrics.width;
+    const dyPx = (pos.y - snapshot.y) * metrics.height;
     el.style.width = "";
     el.style.height = "";
     el.style.left = "";
     el.style.top = "";
-    el.style.transform = `translate(${dx * metrics.width}px, ${dy * metrics.height}px) rotate(${snapshot.rotation}deg)`;
+    el.style.transform = `translate3d(${dxPx}px, ${dyPx}px, 0) rotate(${snapshot.rotation}deg)`;
     return;
   }
+
   const patch = computeDragPatch(
     snapshot,
     mode,
@@ -87,25 +120,21 @@ export function applyDragPreview(
     startX,
     startY,
     metrics,
+    grab,
+    proportional,
   );
   if (patch.x != null) el.style.left = `${patch.x * 100}%`;
   if (patch.y != null) el.style.top = `${patch.y * 100}%`;
   if (patch.w != null) el.style.width = `${patch.w * 100}%`;
   if (patch.h != null) el.style.height = `${patch.h * 100}%`;
-  if (patch.rotation != null) {
-    el.style.transform = `rotate(${patch.rotation}deg)`;
-  } else {
-    el.style.transform = `rotate(${snapshot.rotation}deg)`;
-  }
+  el.style.transform = `rotate(${patch.rotation ?? snapshot.rotation}deg)`;
 }
 
-export function clearDragPreview(el: HTMLElement, mode: DragMode): void {
+export function clearDragPreview(el: HTMLElement): void {
   el.style.transform = "";
+  el.style.width = "";
+  el.style.height = "";
+  el.style.left = "";
+  el.style.top = "";
   el.classList.remove("is-dragging");
-  if (mode !== "move") {
-    el.style.width = "";
-    el.style.height = "";
-    el.style.left = "";
-    el.style.top = "";
-  }
 }

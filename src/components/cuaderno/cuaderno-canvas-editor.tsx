@@ -25,7 +25,9 @@ import { CuadernoDecorationLayer } from "@/components/cuaderno/decoration/cuader
 import type { DecorationObject } from "@/lib/cuaderno/decoration-objects";
 import { parseDecorationDrag } from "@/lib/cuaderno/decoration-drag";
 import { createDecorationFromDrop } from "@/lib/cuaderno/decoration-drop-factory";
+import { fileToDataUrl, readImageFileFromClipboard } from "@/lib/cuaderno/decoration-clipboard";
 import { createFloatingImage, loadImageNaturalSize } from "@/lib/cuaderno/floating-image";
+import { NodeSelection } from "@tiptap/pm/state";
 import { migrateInlineImagesFromHtml } from "@/lib/cuaderno/migrate-inline-images";
 import { getPaperClasses } from "@/lib/cuaderno/paper-styles";
 import type { CuadernoLayoutMode, CuadernoPaperTone } from "@/lib/cuaderno/editor-preferences";
@@ -161,22 +163,41 @@ export function CuadernoCanvasEditor({
     }
   }, [editor, writingMode, panMode]);
 
+  const liveDecorationsRef = useRef(decorations);
+  liveDecorationsRef.current = decorations;
+
+  const visibleCenterNorm = useCallback(() => {
+    const vp = viewportRef.current?.getBoundingClientRect();
+    const paper = paperLayersRef.current?.getBoundingClientRect();
+    if (!vp || !paper || paper.width < 1 || paper.height < 1) {
+      return { x: 0.34, y: 0.28 };
+    }
+    const cx = (vp.left + vp.right) / 2;
+    const cy = (vp.top + vp.bottom) / 2;
+    return {
+      x: Math.min(0.88, Math.max(0.06, (cx - paper.left) / paper.width)),
+      y: Math.min(0.88, Math.max(0.06, (cy - paper.top) / paper.height)),
+    };
+  }, []);
+
+  const insertFloatingImageAt = useCallback(
+    async (file: File, at?: { x: number; y: number }) => {
+      const src = await fileToDataUrl(file);
+      const center = at ?? visibleCenterNorm();
+      const item = await loadImageNaturalSize(src)
+        .then((size) => createFloatingImage(src, center, size))
+        .catch(() => createFloatingImage(src, center));
+      syncDecorations([...liveDecorationsRef.current, item]);
+      setSelectedDecoId(item.id);
+    },
+    [syncDecorations, visibleCenterNorm],
+  );
+
   const insertFloatingImageFile = useCallback(
     (file: File) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const src = reader.result as string;
-        void loadImageNaturalSize(src)
-          .then((size) => createFloatingImage(src, { x: 0.2, y: 0.14 }, size))
-          .catch(() => createFloatingImage(src, { x: 0.2, y: 0.14 }))
-          .then((item) => {
-            syncDecorations([...decorations, item]);
-            setSelectedDecoId(item.id);
-          });
-      };
-      reader.readAsDataURL(file);
+      void insertFloatingImageAt(file);
     },
-    [decorations, syncDecorations],
+    [insertFloatingImageAt],
   );
 
   useEffect(() => {
@@ -210,8 +231,8 @@ export function CuadernoCanvasEditor({
       const file = e.dataTransfer.files[0];
       if (file?.type.startsWith("image/")) {
         const pos = dropPosition(e);
-        if (pos && onDropStickerFile) {
-          onDropStickerFile(file, pos);
+        if (pos) {
+          void insertFloatingImageAt(file, pos);
           return;
         }
       }
@@ -222,11 +243,25 @@ export function CuadernoCanvasEditor({
       if (!pos) return;
       const item = createDecorationFromDrop(payload, pos);
       if (!item) return;
-      syncDecorations([...decorations, item]);
+      syncDecorations([...liveDecorationsRef.current, item]);
       setSelectedDecoId(item.id);
     },
-    [writingMode, decorations, syncDecorations, dropPosition, onDropStickerFile],
+    [writingMode, syncDecorations, dropPosition, insertFloatingImageAt],
   );
+
+  useEffect(() => {
+    if (writingMode !== "text") return;
+    const onPaste = (e: ClipboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t?.closest("textarea, input, .cn-postit-text")) return;
+      const file = readImageFileFromClipboard(e.clipboardData);
+      if (!file) return;
+      e.preventDefault();
+      void insertFloatingImageAt(file, visibleCenterNorm());
+    };
+    window.addEventListener("paste", onPaste);
+    return () => window.removeEventListener("paste", onPaste);
+  }, [writingMode, insertFloatingImageAt, visibleCenterNorm]);
 
   const handleEditorReady = useCallback(
     (ed: Editor | null) => {
@@ -292,6 +327,13 @@ export function CuadernoCanvasEditor({
           className={`cn-paper-layers${writingMode === "ink" ? " is-ink-mode" : ""}${decoDragOver ? " is-deco-drag-over" : ""}`}
           onPointerDown={(e) => {
             const t = e.target as HTMLElement;
+            if (editor && !t.closest("table")) {
+              const sel = editor.state.selection;
+              if (sel instanceof NodeSelection && sel.node.type.name === "table") {
+                const after = Math.min(sel.from + sel.node.nodeSize, editor.state.doc.content.size - 1);
+                editor.chain().focus().setTextSelection(after).run();
+              }
+            }
             if (
               t === paperLayersRef.current ||
               t.classList.contains("cn-prosemirror") ||
