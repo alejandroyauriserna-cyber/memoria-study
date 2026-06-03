@@ -22,8 +22,8 @@ import {
   duplicateSelectedBlock,
   moveSelectedBlock,
 } from "@/lib/cuaderno/cuaderno-block-utils";
+import { deleteTableComplete } from "@/lib/cuaderno/delete-table-complete";
 import {
-  deleteTableAt,
   getTableContext,
   getTableDomRect,
   selectTableNode,
@@ -73,7 +73,7 @@ function TableToolbar({
   const locked = Boolean(ctx.attrs.locked);
 
   const deleteTable = () => {
-    deleteTableAt(editor, ctx.pos);
+    deleteTableComplete(editor);
   };
 
   return (
@@ -192,7 +192,7 @@ function TableContextMenu({
         type="button"
         className="is-danger"
         onClick={() => {
-          deleteSelectedBlock(editor);
+          deleteTableComplete(editor);
           onClose();
         }}
       >
@@ -313,9 +313,7 @@ export function CuadernoTableChrome({ editor }: { editor: Editor | null }) {
       if (!(sel instanceof NodeSelection) || sel.node.type.name !== "table") return;
       e.preventDefault();
       e.stopPropagation();
-      const tableCtx = getTableContext(editor);
-      if (tableCtx) deleteTableAt(editor, tableCtx.pos);
-      else deleteSelectedBlock(editor);
+      if (!deleteTableComplete(editor)) deleteSelectedBlock(editor);
     };
     window.addEventListener("keydown", onKeyDown, true);
     return () => window.removeEventListener("keydown", onKeyDown, true);

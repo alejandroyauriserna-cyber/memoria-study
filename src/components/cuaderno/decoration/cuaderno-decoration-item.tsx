@@ -91,8 +91,8 @@ export const CuadernoDecorationItem = memo(function CuadernoDecorationItem({
   active: boolean;
   isDragging: boolean;
   cropping: boolean;
-  onSelect: () => void;
-  onStartDrag: (e: React.PointerEvent, mode: "move" | "rotate" | ResizeHandle) => void;
+  onSelect: (additive: boolean) => void;
+  onStartDrag: (e: React.PointerEvent, mode: "move" | "rotate" | ResizeHandle, el: HTMLElement) => void;
   onContextMenu: (e: React.MouseEvent) => void;
   onDuplicate: () => void;
   onRemove: () => void;
@@ -117,8 +117,9 @@ export const CuadernoDecorationItem = memo(function CuadernoDecorationItem({
       onPointerDown={(e) => {
         if (!active) return;
         e.stopPropagation();
-        onSelect();
-        if (!obj.locked) onStartDrag(e, "move");
+        const additive = e.shiftKey || e.metaKey || e.ctrlKey;
+        onSelect(additive);
+        if (!obj.locked) onStartDrag(e, "move", e.currentTarget);
       }}
       onContextMenu={onContextMenu}
     >
@@ -184,12 +185,18 @@ export const CuadernoDecorationItem = memo(function CuadernoDecorationItem({
                 <span
                   key={handle}
                   className={`cn-decoration-handle cn-decoration-handle--${handle}`}
-                  onPointerDown={(e) => onStartDrag(e, handle)}
+                  onPointerDown={(e) => {
+                    const host = (e.currentTarget as HTMLElement).closest("[data-deco-id]") as HTMLElement;
+                    if (host) onStartDrag(e, handle, host);
+                  }}
                 />
               ))}
               <span
                 className="cn-decoration-handle cn-decoration-handle--rotate"
-                onPointerDown={(e) => onStartDrag(e, "rotate")}
+                onPointerDown={(e) => {
+                  const host = (e.currentTarget as HTMLElement).closest("[data-deco-id]") as HTMLElement;
+                  if (host) onStartDrag(e, "rotate", host);
+                }}
                 title="Rotar"
               >
                 <RotateCw size={10} />

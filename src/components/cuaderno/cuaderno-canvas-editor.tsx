@@ -22,6 +22,11 @@ import {
   getActivePage,
 } from "@/lib/cuaderno/cuaderno-pages";
 import { CuadernoDecorationLayer } from "@/components/cuaderno/decoration/cuaderno-decoration-layer";
+import {
+  CuadernoGroupSelectionBox,
+  CuadernoMarqueeOverlay,
+} from "@/components/cuaderno/decoration/cuaderno-marquee-overlay";
+import { deleteTableComplete, isTableNodeSelected } from "@/lib/cuaderno/delete-table-complete";
 import type { DecorationObject } from "@/lib/cuaderno/decoration-objects";
 import { parseDecorationDrag } from "@/lib/cuaderno/decoration-drag";
 import { createDecorationFromDrop } from "@/lib/cuaderno/decoration-drop-factory";
@@ -110,7 +115,7 @@ export function CuadernoCanvasEditor({
   const [panMode, setPanMode] = useState<"write" | "pan">("write");
   const [editor, setEditor] = useState<Editor | null>(null);
   const [inkSettings, setInkSettings] = useState<InkToolSettings>(DEFAULT_INK_SETTINGS);
-  const [selectedDecoId, setSelectedDecoId] = useState<string | null>(null);
+  const [selectedDecoIds, setSelectedDecoIds] = useState<string[]>([]);
   const [decoDragOver, setDecoDragOver] = useState(false);
   const paperLayersRef = useRef<HTMLDivElement>(null);
   const viewportBounds = useCuadernoViewport(viewportRef, paperLayersRef, 0.15);
@@ -165,6 +170,31 @@ export function CuadernoCanvasEditor({
 
   const liveDecorationsRef = useRef(decorations);
   liveDecorationsRef.current = decorations;
+  const selectedDecoIdsRef = useRef(selectedDecoIds);
+  selectedDecoIdsRef.current = selectedDecoIds;
+
+  const clearCanvasSelection = useCallback(() => {
+    setSelectedDecoIds([]);
+    if (editor) {
+      const sel = editor.state.selection;
+      if (sel instanceof NodeSelection && sel.node.type.name === "table") {
+        const after = Math.min(sel.from + sel.node.nodeSize, editor.state.doc.content.size - 1);
+        editor.chain().focus().setTextSelection(after).run();
+      }
+    }
+  }, [editor]);
+
+  const deleteCanvasSelection = useCallback(() => {
+    const ids = selectedDecoIdsRef.current;
+    if (ids.length) {
+      const drop = new Set(ids);
+      syncDecorations(liveDecorationsRef.current.filter((d) => !drop.has(d.id)));
+      setSelectedDecoIds([]);
+    }
+    if (editor && isTableNodeSelected(editor)) {
+      deleteTableComplete(editor);
+    }
+  }, [editor, syncDecorations]);
 
   const visibleCenterNorm = useCallback(() => {
     const vp = viewportRef.current?.getBoundingClientRect();
@@ -188,7 +218,7 @@ export function CuadernoCanvasEditor({
         .then((size) => createFloatingImage(src, center, size))
         .catch(() => createFloatingImage(src, center));
       syncDecorations([...liveDecorationsRef.current, item]);
-      setSelectedDecoId(item.id);
+      setSelectedDecoIds([item.id]);
     },
     [syncDecorations, visibleCenterNorm],
   );
@@ -244,10 +274,39 @@ export function CuadernoCanvasEditor({
       const item = createDecorationFromDrop(payload, pos);
       if (!item) return;
       syncDecorations([...liveDecorationsRef.current, item]);
-      setSelectedDecoId(item.id);
+      setSelectedDecoIds([item.id]);
     },
     [writingMode, syncDecorations, dropPosition, insertFloatingImageAt],
   );
+
+  useEffect(() => {
+    if (writingMode !== "text") return;
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement;
+      if (t.closest("textarea, input, .cn-postit-text")) return;
+      const inProse = t.closest(".cn-prosemirror");
+      if (inProse && !(e.key === "Delete" || e.key === "Backspace")) return;
+      if (inProse && (e.key === "Delete" || e.key === "Backspace") && !isTableNodeSelected(editor)) {
+        return;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "a") {
+        if (t.closest("textarea, .cn-postit-text")) return;
+        e.preventDefault();
+        setSelectedDecoIds(liveDecorationsRef.current.map((d) => d.id));
+        return;
+      }
+
+      if (e.key === "Delete" || e.key === "Backspace") {
+        if (selectedDecoIdsRef.current.length || isTableNodeSelected(editor)) {
+          e.preventDefault();
+          deleteCanvasSelection();
+        }
+      }
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [writingMode, editor, deleteCanvasSelection]);
 
   useEffect(() => {
     if (writingMode !== "text") return;
@@ -270,6 +329,20 @@ export function CuadernoCanvasEditor({
     },
     [onEditorReady],
   );
+
+  useEffect(() => {
+    if (!editor) return;
+    const onSel = () => {
+      const sel = editor.state.selection;
+      if (sel instanceof NodeSelection && sel.node.type.name === "table") {
+        setSelectedDecoIds([]);
+      }
+    };
+    editor.on("selectionUpdate", onSel);
+    return () => {
+      editor.off("selectionUpdate", onSel);
+    };
+  }, [editor]);
 
   useEffect(() => {
     if (!editor) return;
@@ -327,19 +400,12 @@ export function CuadernoCanvasEditor({
           className={`cn-paper-layers${writingMode === "ink" ? " is-ink-mode" : ""}${decoDragOver ? " is-deco-drag-over" : ""}`}
           onPointerDown={(e) => {
             const t = e.target as HTMLElement;
-            if (editor && !t.closest("table")) {
-              const sel = editor.state.selection;
-              if (sel instanceof NodeSelection && sel.node.type.name === "table") {
-                const after = Math.min(sel.from + sel.node.nodeSize, editor.state.doc.content.size - 1);
-                editor.chain().focus().setTextSelection(after).run();
-              }
-            }
+            if (t.closest(".cn-decoration-item")) return;
             if (
               t === paperLayersRef.current ||
               t.classList.contains("cn-prosemirror") ||
               t.closest(".cn-rich-editor-content")
             ) {
-              setSelectedDecoId(null);
               focusEditor();
             }
           }}
@@ -369,12 +435,32 @@ export function CuadernoCanvasEditor({
           }}
           onDrop={handleDecorationDrop}
         >
+          <CuadernoMarqueeOverlay
+            active={writingMode === "text" && panMode === "write"}
+            paperRef={paperLayersRef}
+            decorations={decorations}
+            editor={editor}
+            onSelectDecorations={setSelectedDecoIds}
+            onSelectTable={() => setSelectedDecoIds([])}
+            onClearTableSelection={() => {}}
+            onEmptyClick={clearCanvasSelection}
+          />
+          <CuadernoGroupSelectionBox decorations={decorations} selectedIds={selectedDecoIds} />
           <CuadernoDecorationLayer
             decorations={decorations}
             onChange={syncDecorations}
             active={writingMode === "text"}
-            selectedId={selectedDecoId}
-            onSelectId={setSelectedDecoId}
+            selectedIds={selectedDecoIds}
+            onSelectIds={(ids) => {
+              setSelectedDecoIds(ids);
+              if (ids.length && editor) {
+                const sel = editor.state.selection;
+                if (sel instanceof NodeSelection && sel.node.type.name === "table") {
+                  const after = Math.min(sel.from + sel.node.nodeSize, editor.state.doc.content.size - 1);
+                  editor.chain().focus().setTextSelection(after).run();
+                }
+              }
+            }}
             scrollRef={viewportRef}
             layerRootRef={paperLayersRef}
             viewportBounds={viewportBounds}
@@ -401,8 +487,17 @@ export function CuadernoCanvasEditor({
             decorations={decorations}
             onChange={syncDecorations}
             active={writingMode === "text"}
-            selectedId={selectedDecoId}
-            onSelectId={setSelectedDecoId}
+            selectedIds={selectedDecoIds}
+            onSelectIds={(ids) => {
+              setSelectedDecoIds(ids);
+              if (ids.length && editor) {
+                const sel = editor.state.selection;
+                if (sel instanceof NodeSelection && sel.node.type.name === "table") {
+                  const after = Math.min(sel.from + sel.node.nodeSize, editor.state.doc.content.size - 1);
+                  editor.chain().focus().setTextSelection(after).run();
+                }
+              }
+            }}
             scrollRef={viewportRef}
             layerRootRef={paperLayersRef}
             viewportBounds={viewportBounds}

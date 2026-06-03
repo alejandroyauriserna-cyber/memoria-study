@@ -12,12 +12,11 @@ export function shouldVirtualizeDecorations(count: number): boolean {
 export function filterVisibleDecorations(
   items: DecorationObject[],
   bounds: ViewportBounds,
-  selectedId: string | null,
-  draggingId: string | null,
+  selectedIds: string[],
+  draggingIds: string[],
   enabled: boolean,
 ): DecorationObject[] {
   if (!enabled) return items;
-  return items.filter(
-    (d) => d.id === selectedId || d.id === draggingId || isInViewportBounds(d, bounds),
-  );
+  const keep = new Set([...selectedIds, ...draggingIds]);
+  return items.filter((d) => keep.has(d.id) || isInViewportBounds(d, bounds));
 }

@@ -10,11 +10,38 @@ export type LayerMetrics = {
   height: number;
 };
 
-export type GrabOffset = { x: number; y: number };
+/** Offset en píxeles desde la esquina superior izquierda del elemento hasta el cursor. */
+export type GrabOffsetPx = { offsetX: number; offsetY: number };
 
 export function getLayerMetrics(el: HTMLElement): LayerMetrics {
   const r = el.getBoundingClientRect();
   return { left: r.left, top: r.top, width: r.width || 1, height: r.height || 1 };
+}
+
+export function grabOffsetPxFromPointer(
+  clientX: number,
+  clientY: number,
+  el: HTMLElement,
+): GrabOffsetPx {
+  const r = el.getBoundingClientRect();
+  return {
+    offsetX: clientX - r.left,
+    offsetY: clientY - r.top,
+  };
+}
+
+export function normalizedFromPointer(
+  clientX: number,
+  clientY: number,
+  metrics: LayerMetrics,
+  grab: GrabOffsetPx,
+): { x: number; y: number } {
+  const leftPx = clientX - grab.offsetX - metrics.left;
+  const topPx = clientY - grab.offsetY - metrics.top;
+  return {
+    x: Math.min(0.95, Math.max(0, leftPx / metrics.width)),
+    y: Math.min(0.95, Math.max(0, topPx / metrics.height)),
+  };
 }
 
 export function pointerToNormalized(
@@ -28,29 +55,6 @@ export function pointerToNormalized(
   };
 }
 
-export function grabOffsetFromPointer(
-  clientX: number,
-  clientY: number,
-  snapshot: DecorationObject,
-  metrics: LayerMetrics,
-): GrabOffset {
-  const p = pointerToNormalized(clientX, clientY, metrics);
-  return { x: p.nx - snapshot.x, y: p.ny - snapshot.y };
-}
-
-export function movePositionFromPointer(
-  clientX: number,
-  clientY: number,
-  metrics: LayerMetrics,
-  grab: GrabOffset,
-): { x: number; y: number } {
-  const p = pointerToNormalized(clientX, clientY, metrics);
-  return {
-    x: Math.min(0.95, Math.max(0, p.nx - grab.x)),
-    y: Math.min(0.95, Math.max(0, p.ny - grab.y)),
-  };
-}
-
 export function computeDragPatch(
   snapshot: DecorationObject,
   mode: DragMode,
@@ -61,11 +65,11 @@ export function computeDragPatch(
   startX: number,
   startY: number,
   metrics: LayerMetrics,
-  grab?: GrabOffset,
+  grab?: GrabOffsetPx,
   proportional = false,
 ): Partial<DecorationObject> {
   if (mode === "move") {
-    if (grab) return movePositionFromPointer(clientX, clientY, metrics, grab);
+    if (grab) return normalizedFromPointer(clientX, clientY, metrics, grab);
     return {
       x: Math.min(0.95, Math.max(0, snapshot.x + dx)),
       y: Math.min(0.95, Math.max(0, snapshot.y + dy)),
@@ -81,7 +85,6 @@ export function computeDragPatch(
   return applyResize(snapshot, mode, dx, dy, proportional);
 }
 
-/** Vista previa del drag solo en DOM — sin setState de React. */
 export function applyDragPreview(
   el: HTMLElement,
   snapshot: DecorationObject,
@@ -93,20 +96,29 @@ export function applyDragPreview(
   startX: number,
   startY: number,
   metrics: LayerMetrics,
-  grab?: GrabOffset,
+  grab?: GrabOffsetPx,
   proportional = false,
 ): void {
+  if (mode === "move" && grab) {
+    const pos = normalizedFromPointer(clientX, clientY, metrics, grab);
+    el.style.left = `${pos.x * 100}%`;
+    el.style.top = `${pos.y * 100}%`;
+    el.style.width = `${snapshot.w * 100}%`;
+    el.style.height = `${snapshot.h * 100}%`;
+    el.style.transform = `rotate(${snapshot.rotation}deg)`;
+    return;
+  }
+
   if (mode === "move") {
-    const pos = grab
-      ? movePositionFromPointer(clientX, clientY, metrics, grab)
-      : { x: snapshot.x + dx, y: snapshot.y + dy };
-    const dxPx = (pos.x - snapshot.x) * metrics.width;
-    const dyPx = (pos.y - snapshot.y) * metrics.height;
-    el.style.width = "";
-    el.style.height = "";
-    el.style.left = "";
-    el.style.top = "";
-    el.style.transform = `translate3d(${dxPx}px, ${dyPx}px, 0) rotate(${snapshot.rotation}deg)`;
+    const pos = {
+      x: Math.min(0.95, Math.max(0, snapshot.x + dx)),
+      y: Math.min(0.95, Math.max(0, snapshot.y + dy)),
+    };
+    el.style.left = `${pos.x * 100}%`;
+    el.style.top = `${pos.y * 100}%`;
+    el.style.width = `${snapshot.w * 100}%`;
+    el.style.height = `${snapshot.h * 100}%`;
+    el.style.transform = `rotate(${snapshot.rotation}deg)`;
     return;
   }
 
@@ -128,6 +140,28 @@ export function applyDragPreview(
   if (patch.w != null) el.style.width = `${patch.w * 100}%`;
   if (patch.h != null) el.style.height = `${patch.h * 100}%`;
   el.style.transform = `rotate(${patch.rotation ?? snapshot.rotation}deg)`;
+}
+
+export function applyGroupDragPreview(
+  elements: { el: HTMLElement; snapshot: DecorationObject }[],
+  clientX: number,
+  clientY: number,
+  metrics: LayerMetrics,
+  grab: GrabOffsetPx,
+  leadSnapshot: DecorationObject,
+): void {
+  const leadPos = normalizedFromPointer(clientX, clientY, metrics, grab);
+  const ddx = leadPos.x - leadSnapshot.x;
+  const ddy = leadPos.y - leadSnapshot.y;
+  for (const { el, snapshot } of elements) {
+    const x = Math.min(0.95, Math.max(0, snapshot.x + ddx));
+    const y = Math.min(0.95, Math.max(0, snapshot.y + ddy));
+    el.style.left = `${x * 100}%`;
+    el.style.top = `${y * 100}%`;
+    el.style.width = `${snapshot.w * 100}%`;
+    el.style.height = `${snapshot.h * 100}%`;
+    el.style.transform = `rotate(${snapshot.rotation}deg)`;
+  }
 }
 
 export function clearDragPreview(el: HTMLElement): void {

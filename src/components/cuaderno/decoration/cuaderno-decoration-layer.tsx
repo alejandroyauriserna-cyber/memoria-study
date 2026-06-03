@@ -17,12 +17,14 @@ import {
 import { isBehindTextWrap } from "@/lib/cuaderno/floating-image";
 import {
   applyDragPreview,
+  applyGroupDragPreview,
   clearDragPreview,
   computeDragPatch,
   getLayerMetrics,
-  grabOffsetFromPointer,
+  grabOffsetPxFromPointer,
+  normalizedFromPointer,
   type DragMode,
-  type GrabOffset,
+  type GrabOffsetPx,
   type LayerMetrics,
 } from "@/lib/cuaderno/decoration-drag-dom";
 import { CuadernoDecorationItem } from "@/components/cuaderno/decoration/cuaderno-decoration-item";
@@ -44,8 +46,8 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
   decorations,
   onChange,
   active,
-  selectedId,
-  onSelectId,
+  selectedIds,
+  onSelectIds,
   scrollRef,
   layerRootRef,
   viewportBounds: viewportBoundsProp,
@@ -54,8 +56,8 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
   decorations: DecorationObject[];
   onChange: (items: DecorationObject[]) => void;
   active: boolean;
-  selectedId: string | null;
-  onSelectId: (id: string | null) => void;
+  selectedIds: string[];
+  onSelectIds: (ids: string[]) => void;
   scrollRef?: React.RefObject<HTMLElement | null>;
   layerRootRef?: React.RefObject<HTMLElement | null>;
   viewportBounds?: ViewportBounds;
@@ -69,9 +71,10 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
     viewportBoundsProp === undefined,
   );
   const viewportBounds = viewportBoundsProp ?? internalBounds;
+  const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
 
   const [liveItems, setLiveItems] = useState(decorations);
-  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [draggingIds, setDraggingIds] = useState<string[]>([]);
   const [croppingId, setCroppingId] = useState<string | null>(null);
   const [ctxMenu, setCtxMenu] = useState<{ id: string; x: number; y: number } | null>(null);
 
@@ -79,16 +82,19 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
   liveRef.current = liveItems;
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
+  const selectedIdsRef = useRef(selectedIds);
+  selectedIdsRef.current = selectedIds;
 
   const dragRef = useRef<{
-    id: string;
+    ids: string[];
     mode: DragMode;
     startX: number;
     startY: number;
-    snapshot: DecorationObject;
-    el: HTMLElement;
+    snapshots: Map<string, DecorationObject>;
+    elements: Map<string, HTMLElement>;
     metrics: LayerMetrics;
-    grab: GrabOffset | null;
+    grab: GrabOffsetPx;
+    leadId: string;
     proportional: boolean;
     cleanup: () => void;
     raf: number | null;
@@ -101,8 +107,8 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
   }, [liveItems, placement]);
 
   useEffect(() => {
-    if (!draggingId) setLiveItems(decorations);
-  }, [decorations, draggingId]);
+    if (draggingIds.length === 0) setLiveItems(decorations);
+  }, [decorations, draggingIds]);
 
   const commitItems = useCallback((next: DecorationObject[]) => {
     setLiveItems(next);
@@ -127,44 +133,51 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
     [commitItems, debouncedTextPatch],
   );
 
-  const removeOne = useCallback(
-    (id: string) => {
-      commitItems(liveRef.current.filter((d) => d.id !== id));
-      if (selectedId === id) onSelectId(null);
-      if (croppingId === id) setCroppingId(null);
+  const removeMany = useCallback(
+    (ids: string[]) => {
+      const drop = new Set(ids);
+      commitItems(liveRef.current.filter((d) => !drop.has(d.id)));
+      onSelectIds(selectedIdsRef.current.filter((id) => !drop.has(id)));
+      if (croppingId && drop.has(croppingId)) setCroppingId(null);
     },
-    [commitItems, selectedId, onSelectId, croppingId],
+    [commitItems, onSelectIds, croppingId],
   );
 
-  useEffect(() => {
-    if (!active || !selectedId) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Delete" && e.key !== "Backspace") return;
-      const t = e.target as HTMLElement;
-      if (t.closest("textarea, input, .cn-prosemirror, .cn-postit-text")) return;
-      e.preventDefault();
-      removeOne(selectedId);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [active, selectedId, removeOne]);
-
-  const findEl = (id: string) =>
-    layerRef.current?.querySelector(`[data-deco-id="${id}"]`) as HTMLElement | null;
+  const toggleSelect = useCallback(
+    (id: string, additive: boolean) => {
+      if (additive) {
+        const set = new Set(selectedIdsRef.current);
+        if (set.has(id)) set.delete(id);
+        else set.add(id);
+        onSelectIds([...set]);
+      } else {
+        onSelectIds([id]);
+      }
+    },
+    [onSelectIds],
+  );
 
   const endDrag = useCallback(
     (e: PointerEvent) => {
       const drag = dragRef.current;
       if (!drag) {
-        setDraggingId(null);
+        setDraggingIds([]);
+        return;
+      }
+
+      const lead = drag.snapshots.get(drag.leadId);
+      if (!lead) {
+        drag.cleanup();
+        dragRef.current = null;
+        setDraggingIds([]);
         return;
       }
 
       const dx = (e.clientX - drag.startX) / drag.metrics.width;
       const dy = (e.clientY - drag.startY) / drag.metrics.height;
 
-      const patch = computeDragPatch(
-        drag.snapshot,
+      const leadPatch = computeDragPatch(
+        lead,
         drag.mode,
         dx,
         dy,
@@ -173,31 +186,36 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
         drag.startX,
         drag.startY,
         drag.metrics,
-        drag.grab ?? undefined,
+        drag.grab,
         drag.proportional,
       );
 
-      clearDragPreview(drag.el);
+      let ddx = 0;
+      let ddy = 0;
+      if (drag.mode === "move") {
+        ddx = (leadPatch.x ?? lead.x) - lead.x;
+        ddy = (leadPatch.y ?? lead.y) - lead.y;
+      }
+
+      for (const [id, el] of drag.elements) clearDragPreview(el);
       drag.cleanup();
       dragRef.current = null;
-      setDraggingId(null);
+      setDraggingIds([]);
 
-      const merged =
-        drag.mode === "move"
-          ? {
-              ...drag.snapshot,
-              x: patch.x ?? drag.snapshot.x,
-              y: patch.y ?? drag.snapshot.y,
-            }
-          : { ...drag.snapshot, ...patch };
-      cnDebug("drag-end", {
-        id: drag.id,
-        mode: drag.mode,
-        from: { x: drag.snapshot.x, y: drag.snapshot.y, w: drag.snapshot.w, h: drag.snapshot.h },
-        to: { x: merged.x, y: merged.y, w: merged.w, h: merged.h },
+      const next = liveRef.current.map((d) => {
+        if (!drag.ids.includes(d.id)) return d;
+        const snap = drag.snapshots.get(d.id);
+        if (!snap) return d;
+        if (drag.mode === "move") {
+          return {
+            ...snap,
+            x: Math.min(0.95, Math.max(0, snap.x + ddx)),
+            y: Math.min(0.95, Math.max(0, snap.y + ddy)),
+          };
+        }
+        if (d.id === drag.leadId) return { ...snap, ...leadPatch };
+        return d;
       });
-
-      const next = liveRef.current.map((d) => (d.id === drag.id ? merged : d));
       commitItems(next);
     },
     [commitItems],
@@ -209,22 +227,39 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
     const e = drag.pending;
     drag.pending = null;
     drag.raf = null;
+
+    const lead = drag.snapshots.get(drag.leadId);
+    const leadEl = drag.elements.get(drag.leadId);
+    if (!lead || !leadEl) return;
+
+    if (drag.mode === "move" && drag.ids.length > 1) {
+      const group = [...drag.elements.entries()].map(([id, el]) => ({
+        el,
+        snapshot: drag.snapshots.get(id)!,
+      }));
+      applyGroupDragPreview(group, e.clientX, e.clientY, drag.metrics, drag.grab, lead);
+      return;
+    }
+
     const dx = (e.clientX - drag.startX) / drag.metrics.width;
     const dy = (e.clientY - drag.startY) / drag.metrics.height;
-    applyDragPreview(
-      drag.el,
-      drag.snapshot,
-      drag.mode,
-      dx,
-      dy,
-      e.clientX,
-      e.clientY,
-      drag.startX,
-      drag.startY,
-      drag.metrics,
-      drag.grab ?? undefined,
-      drag.proportional,
-    );
+    for (const [id, el] of drag.elements) {
+      const snap = drag.snapshots.get(id)!;
+      applyDragPreview(
+        el,
+        snap,
+        drag.mode,
+        dx,
+        dy,
+        e.clientX,
+        e.clientY,
+        drag.startX,
+        drag.startY,
+        drag.metrics,
+        drag.mode === "move" ? drag.grab : undefined,
+        drag.proportional,
+      );
+    }
   }, []);
 
   const onWinPointerMove = useCallback(
@@ -238,20 +273,43 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
     [flushDragPreview],
   );
 
-  const startDrag = (e: React.PointerEvent, obj: DecorationObject, mode: DragMode) => {
+  const startDrag = (
+    e: React.PointerEvent,
+    obj: DecorationObject,
+    mode: DragMode,
+    el: HTMLElement,
+  ) => {
     if (!active || obj.locked || croppingId === obj.id) return;
     const layer = layerRef.current;
-    const el = findEl(obj.id);
-    if (!layer || !el) return;
+    if (!layer) return;
     e.stopPropagation();
     e.preventDefault();
-    onSelectId(obj.id);
-    el.classList.add("is-dragging");
+
+    const ids =
+      mode === "move" && selectedSet.has(obj.id) && selectedIds.length > 1
+        ? selectedIds.filter((id) => {
+            const item = liveRef.current.find((d) => d.id === id);
+            return item && !item.locked;
+          })
+        : [obj.id];
+
+    if (!selectedSet.has(obj.id)) onSelectIds([obj.id]);
 
     const metrics = getLayerMetrics(layer);
-    const grab = mode === "move" ? grabOffsetFromPointer(e.clientX, e.clientY, obj, metrics) : null;
-    const proportional = e.shiftKey;
-    cnDebug("drag-start", { id: obj.id, mode, x: obj.x, y: obj.y, w: obj.w, h: obj.h, metrics });
+    const grab = grabOffsetPxFromPointer(e.clientX, e.clientY, el);
+    const snapshots = new Map<string, DecorationObject>();
+    const elements = new Map<string, HTMLElement>();
+
+    for (const id of ids) {
+      const item = liveRef.current.find((d) => d.id === id);
+      const node = layer.querySelector(`[data-deco-id="${id}"]`) as HTMLElement | null;
+      if (!item || !node) continue;
+      snapshots.set(id, { ...item });
+      elements.set(id, node);
+      node.classList.add("is-dragging");
+    }
+
+    if (!snapshots.has(obj.id)) return;
 
     const onWinUp = (ev: PointerEvent) => {
       const d = dragRef.current;
@@ -269,20 +327,21 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
     };
 
     dragRef.current = {
-      id: obj.id,
+      ids: [...snapshots.keys()],
       mode,
       startX: e.clientX,
       startY: e.clientY,
-      snapshot: { ...obj },
-      el,
+      snapshots,
+      elements,
       metrics,
       grab,
-      proportional,
+      leadId: obj.id,
+      proportional: e.shiftKey,
       cleanup,
       raf: null,
       pending: null,
     };
-    setDraggingId(obj.id);
+    setDraggingIds([...snapshots.keys()]);
   };
 
   const zBump = useCallback((id: string, dir: "up" | "down") => {
@@ -303,11 +362,11 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
       filterVisibleDecorations(
         stackItems,
         viewportBounds,
-        selectedId,
-        draggingId,
+        selectedIds,
+        draggingIds,
         virtualize && !!scrollRef?.current,
       ),
-    [stackItems, viewportBounds, selectedId, draggingId, scrollRef, virtualize],
+    [stackItems, viewportBounds, selectedIds, draggingIds, scrollRef, virtualize],
   );
 
   const ctxTarget = ctxMenu ? liveItems.find((d) => d.id === ctxMenu.id) : null;
@@ -325,27 +384,22 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
           key={obj.id}
           dataDecoId={obj.id}
           obj={obj}
-          selected={selectedId === obj.id}
+          selected={selectedSet.has(obj.id)}
           active={active}
-          isDragging={draggingId === obj.id}
+          isDragging={draggingIds.includes(obj.id)}
           cropping={croppingId === obj.id}
-          onSelect={() => onSelectId(obj.id)}
-          onStartDrag={(ev, mode) => startDrag(ev, obj, mode)}
+          onSelect={(additive) => toggleSelect(obj.id, additive)}
+          onStartDrag={(ev, mode, el) => startDrag(ev, obj, mode, el)}
           onContextMenu={(ev) => {
             if (!active) return;
             ev.preventDefault();
             ev.stopPropagation();
-            onSelectId(obj.id);
+            if (!selectedSet.has(obj.id)) onSelectIds([obj.id]);
             setCtxMenu({ id: obj.id, x: ev.clientX, y: ev.clientY });
           }}
           onDuplicate={() => commitItems([...liveRef.current, duplicateDecoration(obj)])}
-          onRemove={() => removeOne(obj.id)}
-          onPatch={(patch) => {
-            if (patch.w != null || patch.h != null) {
-              cnDebug("resize", { id: obj.id, ...patch });
-            }
-            patchOne(obj.id, patch);
-          }}
+          onRemove={() => removeMany([obj.id])}
+          onPatch={(patch) => patchOne(obj.id, patch)}
           onZBump={(dir) => zBump(obj.id, dir)}
           onStartCrop={() => {
             setCroppingId(obj.id);
@@ -410,7 +464,11 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
             type="button"
             className="is-danger"
             onClick={() => {
-              removeOne(ctxTarget.id);
+              removeMany(
+                selectedIdsRef.current.length > 1 && selectedSet.has(ctxTarget.id)
+                  ? selectedIdsRef.current
+                  : [ctxTarget.id],
+              );
               closeCtx();
             }}
           >

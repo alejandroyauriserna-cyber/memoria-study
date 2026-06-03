@@ -31,7 +31,7 @@
 
 .cn-decoration-item {
   position: absolute;
-  transform-origin: center center;
+  transform-origin: top left;
   touch-action: none;
   cursor: grab;
   content-visibility: auto;
@@ -54,9 +54,28 @@
 }
 
 .cn-decoration-item.is-dragging {
-  will-change: transform, width, height, left, top;
+  will-change: left, top;
   transition: none;
   cursor: grabbing;
+  z-index: 99999 !important;
+}
+
+.cn-marquee-selection {
+  position: absolute;
+  border: 1.5px solid #3b82f6;
+  background: color-mix(in srgb, #3b82f6 12%, transparent);
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 10020;
+}
+
+.cn-group-selection-box {
+  position: absolute;
+  border: 2px dashed #3b82f6;
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 10015;
+  box-shadow: 0 0 0 1px color-mix(in srgb, #3b82f6 25%, transparent);
 }
 
 .cn-decoration-item.is-locked {
