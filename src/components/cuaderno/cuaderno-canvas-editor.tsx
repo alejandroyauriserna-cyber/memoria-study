@@ -39,10 +39,13 @@ import {
   fileToDataUrl,
   readImagePayloadFromClipboard,
 } from "@/lib/cuaderno/decoration-clipboard";
-import { createFloatingImage, loadImageNaturalSize } from "@/lib/cuaderno/floating-image";
+import { createFloatingImage } from "@/lib/cuaderno/floating-image";
 import {
   buildFloatingImageFromUrl,
   ensureDecorationReady,
+  prepareDecorationForCanvas,
+  refineDecorationDimensions,
+  stickerNeedsNetworkResolve,
   withPlaceProgress,
   type PlaceProgress,
 } from "@/lib/cuaderno/place-decoration";
@@ -239,6 +242,15 @@ export function CuadernoCanvasEditor({
     [syncDecorations],
   );
 
+  const patchDecoration = useCallback(
+    (id: string, patch: Partial<DecorationObject>) => {
+      syncDecorations(
+        liveDecorationsRef.current.map((d) => (d.id === id ? { ...d, ...patch } : d)),
+      );
+    },
+    [syncDecorations],
+  );
+
   const placeDecorationItem = useCallback(
     async (item: DecorationObject, at?: { x: number; y: number }) => {
       const centered = at
@@ -252,6 +264,25 @@ export function CuadernoCanvasEditor({
             x: Math.min(0.88, Math.max(0.02, item.x)),
             y: Math.min(0.88, Math.max(0.02, item.y)),
           };
+
+      const finishRefine = (placed: DecorationObject) => {
+        void refineDecorationDimensions(placed).then((dims) => {
+          if (dims) patchDecoration(placed.id, dims);
+        });
+      };
+
+      const fastPlace = !stickerNeedsNetworkResolve(centered) && centered.kind !== "image";
+      if (fastPlace) {
+        try {
+          const ready = prepareDecorationForCanvas(centered);
+          addDecoration(ready);
+          finishRefine(ready);
+          return;
+        } catch (err) {
+          console.error("[cuaderno] fast place decoration", err);
+        }
+      }
+
       setPlaceProgress({ percent: 5, label: "Colocando en la hoja…" });
       try {
         const ready = await withPlaceProgress(
@@ -260,13 +291,14 @@ export function CuadernoCanvasEditor({
           () => ensureDecorationReady(centered, setPlaceProgress),
         );
         addDecoration(ready);
+        finishRefine(ready);
       } catch (err) {
         console.error("[cuaderno] place decoration", err);
       } finally {
-        window.setTimeout(() => setPlaceProgress(null), 450);
+        window.setTimeout(() => setPlaceProgress(null), 280);
       }
     },
-    [addDecoration],
+    [addDecoration, patchDecoration],
   );
 
   const clientToPaperNorm = useCallback((clientX: number, clientY: number) => {
@@ -308,25 +340,18 @@ export function CuadernoCanvasEditor({
   const insertFloatingImageAt = useCallback(
     async (file: File, at?: { x: number; y: number }) => {
       const center = at ?? visibleCenterNorm();
-      setPlaceProgress({ percent: 8, label: "Cargando imagen…" });
       try {
-        const item = await withPlaceProgress("Procesando imagen…", setPlaceProgress, async () => {
-          const src = await fileToDataUrl(file);
-          try {
-            const size = await loadImageNaturalSize(src);
-            return createFloatingImage(src, center, size);
-          } catch {
-            return createFloatingImage(src, center);
-          }
-        });
+        const src = await fileToDataUrl(file);
+        const item = createFloatingImage(src, center);
         addDecoration(item);
+        void refineDecorationDimensions(item).then((dims) => {
+          if (dims) patchDecoration(item.id, dims);
+        });
       } catch (err) {
         console.error("[cuaderno] insert image", err);
-      } finally {
-        window.setTimeout(() => setPlaceProgress(null), 450);
       }
     },
-    [addDecoration, visibleCenterNorm],
+    [addDecoration, patchDecoration, visibleCenterNorm],
   );
 
   const insertFloatingImageFile = useCallback(

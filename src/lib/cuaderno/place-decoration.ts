@@ -9,7 +9,7 @@ export type PlaceProgress = {
   label: string;
 };
 
-/** Simula progreso mientras corre una promesa (útil para subidas/resolución). */
+/** Simula progreso mientras corre una promesa (solo rutas lentas con red). */
 export async function withPlaceProgress<T>(
   label: string,
   onProgress: (p: PlaceProgress) => void,
@@ -18,9 +18,9 @@ export async function withPlaceProgress<T>(
   onProgress({ percent: 8, label });
   let pct = 8;
   const timer = window.setInterval(() => {
-    pct = Math.min(88, pct + 6);
+    pct = Math.min(88, pct + 8);
     onProgress({ percent: pct, label });
-  }, 120);
+  }, 80);
   try {
     const result = await work();
     onProgress({ percent: 100, label: "Listo" });
@@ -30,9 +30,29 @@ export async function withPlaceProgress<T>(
   }
 }
 
+function withImageSizeTimeout(src: string, ms: number): Promise<{ w: number; h: number }> {
+  return new Promise((resolve, reject) => {
+    const timer = window.setTimeout(() => reject(new Error("timeout")), ms);
+    loadImageNaturalSize(src)
+      .then((size) => {
+        window.clearTimeout(timer);
+        resolve(size);
+      })
+      .catch((err) => {
+        window.clearTimeout(timer);
+        reject(err);
+      });
+  });
+}
+
 export function isDisplayableImageSrc(src: string | undefined): boolean {
   if (!src) return false;
-  return src.startsWith("data:") || src.startsWith("http://") || src.startsWith("https://") || src.startsWith("/");
+  return (
+    src.startsWith("data:") ||
+    src.startsWith("http://") ||
+    src.startsWith("https://") ||
+    src.startsWith("/")
+  );
 }
 
 export async function resolveUserStickerDisplayUrl(
@@ -48,19 +68,94 @@ export async function resolveUserStickerDisplayUrl(
   return url;
 }
 
+/** Resuelve src del sticker sin llamadas de red. */
+export function resolveStickerSrcSync(item: DecorationObject): string | undefined {
+  if (item.kind !== "sticker") return undefined;
+  if (item.src && isDisplayableImageSrc(item.src)) return item.src;
+  if (item.stickerId?.startsWith("png:")) {
+    return getPngStickerById(item.stickerId.slice(4))?.src;
+  }
+  if (item.stickerId) {
+    const cat = getStickerById(item.stickerId);
+    if (cat) return getStickerSvgDataUrl(cat);
+  }
+  return undefined;
+}
+
+export function stickerNeedsNetworkResolve(item: DecorationObject): boolean {
+  if (item.kind !== "sticker") return false;
+  if (resolveStickerSrcSync(item)) return false;
+  return Boolean(item.stickerId?.startsWith("user:"));
+}
+
+/** Colocación inmediata: sin proxy ni esperar dimensiones. */
+export function prepareDecorationForCanvas(item: DecorationObject): DecorationObject {
+  if (item.kind === "postit" || (item.kind !== "sticker" && item.kind !== "image")) {
+    return item;
+  }
+
+  if (item.kind === "image" && item.src) {
+    const ar = item.aspectRatio ?? 1.33;
+    const w = item.w || 0.32;
+    return { ...item, aspectRatio: ar, w, h: item.h || w / ar };
+  }
+
+  if (item.kind !== "sticker") return item;
+
+  const src = resolveStickerSrcSync(item);
+  if (!src) {
+    throw new Error("No se pudo resolver la imagen del sticker");
+  }
+
+  const ar = item.aspectRatio ?? 1;
+  const w = item.w || 0.14;
+  return { ...item, src, aspectRatio: ar, w, h: item.h || w / ar };
+}
+
+/** Ajusta proporciones cuando la imagen ya cargó (no bloquea la colocación). */
+export async function refineDecorationDimensions(
+  item: DecorationObject,
+): Promise<Pick<DecorationObject, "w" | "h" | "aspectRatio"> | null> {
+  if (item.kind !== "sticker" && item.kind !== "image") return null;
+  const src = item.kind === "sticker" ? resolveStickerSrcSync(item) ?? item.src : item.src;
+  if (!src) return null;
+
+  try {
+    const size = await withImageSizeTimeout(src, 4000);
+    const ar = size.w / size.h || 1;
+    const w = item.w || (item.kind === "image" ? 0.32 : 0.14);
+    return { aspectRatio: ar, w, h: w / ar };
+  } catch {
+    return null;
+  }
+}
+
 export async function ensureDecorationReady(
   item: DecorationObject,
   onProgress?: (p: PlaceProgress) => void,
 ): Promise<DecorationObject> {
+  if (item.kind !== "sticker" && item.kind !== "image") {
+    return item;
+  }
+
+  if (!stickerNeedsNetworkResolve(item) && item.kind === "sticker") {
+    return prepareDecorationForCanvas(item);
+  }
+
   const report = (label: string, percent: number) => onProgress?.({ label, percent });
 
   if (item.kind === "image" && item.src) {
     report("Cargando imagen…", 40);
     try {
       const size = await loadImageNaturalSize(item.src);
-      return { ...item, w: item.w, h: item.w / (size.w / size.h), aspectRatio: size.w / size.h };
+      return {
+        ...item,
+        w: item.w,
+        h: item.w / (size.w / size.h),
+        aspectRatio: size.w / size.h,
+      };
     } catch {
-      return item;
+      return prepareDecorationForCanvas(item);
     }
   }
 
@@ -69,35 +164,15 @@ export async function ensureDecorationReady(
   let src = item.src;
   if (item.stickerId?.startsWith("user:")) {
     const uid = item.stickerId.slice(5);
-    report("Obteniendo sticker…", 25);
+    report("Obteniendo sticker…", 30);
     src = await resolveUserStickerDisplayUrl(uid, src);
-  } else if (!src && item.stickerId?.startsWith("png:")) {
-    src = getPngStickerById(item.stickerId.slice(4))?.src;
-  } else if (!src && item.stickerId) {
-    const cat = getStickerById(item.stickerId);
-    if (cat) src = getStickerSvgDataUrl(cat);
+  } else {
+    src = resolveStickerSrcSync(item);
   }
 
   if (!src) throw new Error("No se pudo resolver la imagen del sticker");
 
-  if (src.startsWith("http://") || src.startsWith("https://")) {
-    report("Descargando sticker…", 55);
-    try {
-      src = await imageUrlToDataUrl(src);
-    } catch {
-      /* usar URL remota si el proxy falla */
-    }
-  }
-
-  report("Preparando…", 70);
-  try {
-    const size = await loadImageNaturalSize(src);
-    const ar = size.w / size.h || 1;
-    const w = item.w || 0.14;
-    return { ...item, src, aspectRatio: ar, w, h: w / ar };
-  } catch {
-    return { ...item, src, aspectRatio: item.aspectRatio ?? 1 };
-  }
+  return prepareDecorationForCanvas({ ...item, src });
 }
 
 export async function imageUrlToDataUrl(url: string): Promise<string> {
