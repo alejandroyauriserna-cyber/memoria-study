@@ -4,6 +4,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ViewportBounds } from "@/hooks/use-cuaderno-viewport";
 import { isInViewportBounds, useCuadernoViewport } from "@/hooks/use-cuaderno-viewport";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
+import { cnDebug } from "@/lib/cuaderno/cn-debug";
 import {
   duplicateDecoration,
   sortByZIndex,
@@ -14,7 +15,9 @@ import {
   applyDragPreview,
   clearDragPreview,
   computeDragPatch,
+  getLayerMetrics,
   type DragMode,
+  type LayerMetrics,
 } from "@/lib/cuaderno/decoration-drag-dom";
 import { CuadernoDecorationItem } from "@/components/cuaderno/decoration/cuaderno-decoration-item";
 
@@ -78,6 +81,8 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
     startY: number;
     snapshot: DecorationObject;
     el: HTMLElement;
+    metrics: LayerMetrics;
+    cleanup: () => void;
   } | null>(null);
 
   const stackItems = useMemo(() => {
@@ -137,32 +142,60 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
   const findEl = (id: string) =>
     layerRef.current?.querySelector(`[data-deco-id="${id}"]`) as HTMLElement | null;
 
-  const startDrag = (e: React.PointerEvent, obj: DecorationObject, mode: DragMode) => {
-    if (!active || obj.locked || croppingId === obj.id) return;
-    const el = findEl(obj.id);
-    if (!el) return;
-    e.stopPropagation();
-    e.preventDefault();
-    onSelectId(obj.id);
-    el.classList.add("is-dragging");
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-    dragRef.current = {
-      id: obj.id,
-      mode,
-      startX: e.clientX,
-      startY: e.clientY,
-      snapshot: { ...obj },
-      el,
-    };
-    setDraggingId(obj.id);
-  };
+  const endDrag = useCallback(
+    (e: PointerEvent) => {
+      const drag = dragRef.current;
+      if (!drag) {
+        setDraggingId(null);
+        return;
+      }
 
-  const onPointerMove = (e: React.PointerEvent) => {
+      const dx = (e.clientX - drag.startX) / drag.metrics.width;
+      const dy = (e.clientY - drag.startY) / drag.metrics.height;
+
+      const patch = computeDragPatch(
+        drag.snapshot,
+        drag.mode,
+        dx,
+        dy,
+        e.clientX,
+        e.clientY,
+        drag.startX,
+        drag.startY,
+        drag.metrics,
+      );
+
+      clearDragPreview(drag.el, drag.mode);
+      drag.cleanup();
+      dragRef.current = null;
+      setDraggingId(null);
+
+      const merged =
+        drag.mode === "move"
+          ? {
+              ...drag.snapshot,
+              x: patch.x ?? drag.snapshot.x,
+              y: patch.y ?? drag.snapshot.y,
+            }
+          : { ...drag.snapshot, ...patch };
+      cnDebug("drag-end", {
+        id: drag.id,
+        mode: drag.mode,
+        from: { x: drag.snapshot.x, y: drag.snapshot.y, w: drag.snapshot.w, h: drag.snapshot.h },
+        to: { x: merged.x, y: merged.y, w: merged.w, h: merged.h },
+      });
+
+      const next = liveRef.current.map((d) => (d.id === drag.id ? merged : d));
+      commitItems(next);
+    },
+    [commitItems],
+  );
+
+  const onWinPointerMove = useCallback((e: PointerEvent) => {
     const drag = dragRef.current;
-    if (!drag || !layerRef.current) return;
-    const rect = layerRef.current.getBoundingClientRect();
-    const dx = (e.clientX - drag.startX) / rect.width;
-    const dy = (e.clientY - drag.startY) / rect.height;
+    if (!drag) return;
+    const dx = (e.clientX - drag.startX) / drag.metrics.width;
+    const dy = (e.clientY - drag.startY) / drag.metrics.height;
     applyDragPreview(
       drag.el,
       drag.snapshot,
@@ -173,37 +206,45 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
       e.clientY,
       drag.startX,
       drag.startY,
-      rect,
+      drag.metrics,
     );
-  };
+  }, []);
 
-  const endDrag = (e: React.PointerEvent) => {
-    const drag = dragRef.current;
-    if (!drag || !layerRef.current) {
-      setDraggingId(null);
-      return;
-    }
-    const rect = layerRef.current.getBoundingClientRect();
-    const dx = (e.clientX - drag.startX) / rect.width;
-    const dy = (e.clientY - drag.startY) / rect.height;
-    const patch = computeDragPatch(
-      drag.snapshot,
-      drag.mode,
-      dx,
-      dy,
-      e.clientX,
-      e.clientY,
-      drag.startX,
-      drag.startY,
-      rect,
-    );
-    clearDragPreview(drag.el);
-    dragRef.current = null;
-    setDraggingId(null);
-    const next = liveRef.current.map((d) =>
-      d.id === drag.id ? { ...d, ...patch } : d,
-    );
-    commitItems(next);
+  const startDrag = (e: React.PointerEvent, obj: DecorationObject, mode: DragMode) => {
+    if (!active || obj.locked || croppingId === obj.id) return;
+    const layer = layerRef.current;
+    const el = findEl(obj.id);
+    if (!layer || !el) return;
+    e.stopPropagation();
+    e.preventDefault();
+    onSelectId(obj.id);
+    el.classList.add("is-dragging");
+
+    const metrics = getLayerMetrics(layer);
+    cnDebug("drag-start", { id: obj.id, mode, x: obj.x, y: obj.y, w: obj.w, h: obj.h, metrics });
+
+    const onWinUp = (ev: PointerEvent) => endDrag(ev);
+    window.addEventListener("pointermove", onWinPointerMove);
+    window.addEventListener("pointerup", onWinUp);
+    window.addEventListener("pointercancel", onWinUp);
+
+    const cleanup = () => {
+      window.removeEventListener("pointermove", onWinPointerMove);
+      window.removeEventListener("pointerup", onWinUp);
+      window.removeEventListener("pointercancel", onWinUp);
+    };
+
+    dragRef.current = {
+      id: obj.id,
+      mode,
+      startX: e.clientX,
+      startY: e.clientY,
+      snapshot: { ...obj },
+      el,
+      metrics,
+      cleanup,
+    };
+    setDraggingId(obj.id);
   };
 
   const zBump = useCallback((id: string, dir: "up" | "down") => {
@@ -233,13 +274,7 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
       : "cn-decoration-layer cn-decoration-layer--front";
 
   return (
-    <div
-      ref={layerRef}
-      className={`${layerClass}${active ? " is-active" : ""}`}
-      onPointerMove={onPointerMove}
-      onPointerUp={endDrag}
-      onPointerCancel={endDrag}
-    >
+    <div ref={layerRef} className={`${layerClass}${active ? " is-active" : ""}`}>
       {visibleDecorations.map((obj) => (
         <CuadernoDecorationItem
           key={obj.id}
@@ -260,7 +295,12 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
           }}
           onDuplicate={() => commitItems([...liveRef.current, duplicateDecoration(obj)])}
           onRemove={() => removeOne(obj.id)}
-          onPatch={(patch) => patchOne(obj.id, patch)}
+          onPatch={(patch) => {
+            if (patch.w != null || patch.h != null) {
+              cnDebug("resize", { id: obj.id, ...patch });
+            }
+            patchOne(obj.id, patch);
+          }}
           onZBump={(dir) => zBump(obj.id, dir)}
           onStartCrop={() => {
             setCroppingId(obj.id);

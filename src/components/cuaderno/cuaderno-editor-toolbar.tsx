@@ -425,9 +425,7 @@ export function CuadernoEditorToolbar({
       <CuadernoTableInsertDialog
         open={tableDialogOpen}
         onClose={() => setTableDialogOpen(false)}
-        onConfirm={(rows, cols) => {
-          editor.chain().focus().insertTable({ rows, cols, withHeaderRow: true }).run();
-        }}
+        editor={editor}
       />
     </div>
   );

@@ -6,6 +6,29 @@ import {
 
 export type DragMode = "move" | "rotate" | ResizeCorner;
 
+export type LayerMetrics = {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+};
+
+export function getLayerMetrics(el: HTMLElement): LayerMetrics {
+  const r = el.getBoundingClientRect();
+  return { left: r.left, top: r.top, width: r.width || 1, height: r.height || 1 };
+}
+
+export function pointerToNormalized(
+  clientX: number,
+  clientY: number,
+  metrics: LayerMetrics,
+): { nx: number; ny: number } {
+  return {
+    nx: Math.min(0.98, Math.max(0, (clientX - metrics.left) / metrics.width)),
+    ny: Math.min(0.98, Math.max(0, (clientY - metrics.top) / metrics.height)),
+  };
+}
+
 export function computeDragPatch(
   snapshot: DecorationObject,
   mode: DragMode,
@@ -15,7 +38,7 @@ export function computeDragPatch(
   clientY: number,
   startX: number,
   startY: number,
-  layerRect: DOMRect,
+  metrics: LayerMetrics,
 ): Partial<DecorationObject> {
   if (mode === "move") {
     return {
@@ -24,8 +47,8 @@ export function computeDragPatch(
     };
   }
   if (mode === "rotate") {
-    const cx = layerRect.left + (snapshot.x + snapshot.w / 2) * layerRect.width;
-    const cy = layerRect.top + (snapshot.y + snapshot.h / 2) * layerRect.height;
+    const cx = metrics.left + (snapshot.x + snapshot.w / 2) * metrics.width;
+    const cy = metrics.top + (snapshot.y + snapshot.h / 2) * metrics.height;
     const angle = Math.atan2(clientY - cy, clientX - cx);
     const start = Math.atan2(startY - cy, startX - cx);
     return { rotation: snapshot.rotation + ((angle - start) * 180) / Math.PI };
@@ -44,10 +67,14 @@ export function applyDragPreview(
   clientY: number,
   startX: number,
   startY: number,
-  layerRect: DOMRect,
+  metrics: LayerMetrics,
 ): void {
   if (mode === "move") {
-    el.style.transform = `translate(${dx * layerRect.width}px, ${dy * layerRect.height}px) rotate(${snapshot.rotation}deg)`;
+    el.style.width = "";
+    el.style.height = "";
+    el.style.left = "";
+    el.style.top = "";
+    el.style.transform = `translate(${dx * metrics.width}px, ${dy * metrics.height}px) rotate(${snapshot.rotation}deg)`;
     return;
   }
   const patch = computeDragPatch(
@@ -59,7 +86,7 @@ export function applyDragPreview(
     clientY,
     startX,
     startY,
-    layerRect,
+    metrics,
   );
   if (patch.x != null) el.style.left = `${patch.x * 100}%`;
   if (patch.y != null) el.style.top = `${patch.y * 100}%`;
@@ -67,14 +94,18 @@ export function applyDragPreview(
   if (patch.h != null) el.style.height = `${patch.h * 100}%`;
   if (patch.rotation != null) {
     el.style.transform = `rotate(${patch.rotation}deg)`;
+  } else {
+    el.style.transform = `rotate(${snapshot.rotation}deg)`;
   }
 }
 
-export function clearDragPreview(el: HTMLElement): void {
+export function clearDragPreview(el: HTMLElement, mode: DragMode): void {
   el.style.transform = "";
-  el.style.width = "";
-  el.style.height = "";
-  el.style.left = "";
-  el.style.top = "";
   el.classList.remove("is-dragging");
+  if (mode !== "move") {
+    el.style.width = "";
+    el.style.height = "";
+    el.style.left = "";
+    el.style.top = "";
+  }
 }

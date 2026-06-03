@@ -129,25 +129,45 @@
   outline: 2px solid var(--cn-course-accent, #0d9488);
 }
 
-.cn-table-dialog-backdrop {
+.cn-table-dialog-root {
   position: fixed;
   inset: 0;
-  z-index: 1200;
+  z-index: 10050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  pointer-events: auto;
+}
+
+.cn-table-dialog-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: default;
   background: rgba(0, 0, 0, 0.35);
+  pointer-events: auto;
 }
 
 .cn-table-dialog {
-  position: fixed;
-  left: 50%;
-  top: 50%;
-  z-index: 1201;
-  transform: translate(-50%, -50%);
+  position: relative;
+  z-index: 1;
   width: min(320px, 92vw);
   padding: 20px;
   border-radius: 14px;
   background: var(--paper-bg, #fff);
   color: var(--paper-ink, #1c1917);
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+  pointer-events: auto;
+}
+
+.cn-table-dialog-error {
+  margin: 0 0 12px;
+  font-size: 0.85rem;
+  color: #b91c1c;
 }
 
 .cn-table-dialog h2 {
