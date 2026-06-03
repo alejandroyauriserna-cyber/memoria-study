@@ -1,11 +1,7 @@
 import type { Editor } from "@tiptap/react";
+import { NodeSelection } from "@tiptap/pm/state";
 import { cnDebug } from "@/lib/cuaderno/cn-debug";
-import {
-  getTableContext,
-  selectTableNode,
-  setTableMinHeight,
-  setTableWidth,
-} from "@/lib/cuaderno/cuaderno-table-utils";
+import { getTableContext, selectTableNode } from "@/lib/cuaderno/cuaderno-table-utils";
 
 export function insertTableSafe(
   editor: Editor,
@@ -20,16 +16,22 @@ export function insertTableSafe(
     if (!ok) {
       return { ok: false, message: "No se pudo insertar la tabla en esta posición." };
     }
-    let ctx = getTableContext(editor);
+
+    const ctx = getTableContext(editor);
     if (ctx) {
-      setTableWidth(editor, ctx.pos, "72%");
-      setTableMinHeight(editor, ctx.pos, "100px");
-      ctx = getTableContext(editor) ?? ctx;
-      const tablePos = ctx.pos;
-      selectTableNode(editor, tablePos);
+      const node = editor.state.doc.nodeAt(ctx.pos);
+      if (node?.type.name === "table") {
+        let tr = editor.state.tr.setNodeMarkup(ctx.pos, undefined, {
+          ...node.attrs,
+          width: "72%",
+          minHeight: "100px",
+        });
+        tr = tr.setSelection(NodeSelection.create(tr.doc, ctx.pos));
+        editor.view.dispatch(tr);
+      }
+      selectTableNode(editor, ctx.pos);
       requestAnimationFrame(() => {
-        selectTableNode(editor, tablePos);
-        editor.chain().focus().run();
+        selectTableNode(editor, ctx.pos);
       });
     }
     return { ok: true };

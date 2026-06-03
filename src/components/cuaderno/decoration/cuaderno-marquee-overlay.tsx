@@ -87,7 +87,7 @@ export function CuadernoMarqueeOverlay({
       const t = e.target as HTMLElement;
       if (
         t.closest(
-          ".cn-decoration-item, .cn-table-chrome-layer, .cn-table-grip-layer, .cn-table-toolbar, .cn-decoration-toolbar, .cn-decoration-handle, .cn-image-wrap-bar, .cn-postit-colors, .cn-decoration-context-menu",
+          ".cn-decoration-item, .cn-table-chrome-layer, .cn-table-grip-layer, .cn-table-toolbar, .cn-table-select-grip, table, .cn-decoration-toolbar, .cn-decoration-handle, .cn-image-wrap-bar, .cn-postit-colors, .cn-decoration-context-menu",
         )
       ) {
         return;
@@ -125,7 +125,14 @@ export function CuadernoMarqueeOverlay({
 
       if (!drag.moved) {
         setMarquee(null);
-        onEmptyClick?.();
+        const t = e.target as HTMLElement;
+        if (
+          !t.closest(
+            "table, .cn-table-chrome-layer, .cn-table-grip-layer, .cn-table-toolbar, .cn-table-select-grip",
+          )
+        ) {
+          onEmptyClick?.();
+        }
         return;
       }
 

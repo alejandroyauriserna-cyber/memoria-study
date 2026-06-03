@@ -10,16 +10,27 @@ export type TableContext = {
   nodeSelected: boolean;
 };
 
+export function resolveTableElement(dom: HTMLElement | null): HTMLTableElement | null {
+  if (!dom) return null;
+  if (dom.tagName === "TABLE") return dom as HTMLTableElement;
+  return dom.querySelector("table");
+}
+
+export function findTablePos(editor: Editor): number | null {
+  const ctx = getTableContext(editor);
+  return ctx?.pos ?? null;
+}
+
 export function getTableContext(editor: Editor): TableContext | null {
   const { selection } = editor.state;
 
   if (selection instanceof NodeSelection && selection.node.type.name === "table") {
-    const dom = editor.view.nodeDOM(selection.from) as HTMLTableElement | null;
+    const dom = resolveTableElement(editor.view.nodeDOM(selection.from) as HTMLElement | null);
     return {
       pos: selection.from,
       nodeSize: selection.node.nodeSize,
       attrs: { ...selection.node.attrs },
-      dom: dom?.tagName === "TABLE" ? dom : dom?.querySelector("table") ?? null,
+      dom,
       nodeSelected: true,
     };
   }
@@ -29,12 +40,12 @@ export function getTableContext(editor: Editor): TableContext | null {
     const node = $from.node(depth);
     if (node.type.name !== "table") continue;
     const pos = $from.before(depth);
-    const dom = editor.view.nodeDOM(pos) as HTMLTableElement | null;
+    const dom = resolveTableElement(editor.view.nodeDOM(pos) as HTMLElement | null);
     return {
       pos,
       nodeSize: node.nodeSize,
       attrs: { ...node.attrs },
-      dom: dom?.tagName === "TABLE" ? dom : dom?.querySelector("table") ?? null,
+      dom,
       nodeSelected: false,
     };
   }
@@ -43,20 +54,30 @@ export function getTableContext(editor: Editor): TableContext | null {
 }
 
 export function selectTableNode(editor: Editor, pos?: number): boolean {
-  const tablePos = pos ?? getTableContext(editor)?.pos;
+  const tablePos = pos ?? findTablePos(editor);
   if (tablePos == null) return false;
   const node = editor.state.doc.nodeAt(tablePos);
   if (!node || node.type.name !== "table") return false;
+
   const tr = editor.state.tr.setSelection(NodeSelection.create(editor.state.doc, tablePos));
   editor.view.dispatch(tr);
+  editor.view.focus();
+
+  const dom = resolveTableElement(editor.view.nodeDOM(tablePos) as HTMLElement | null);
+  dom?.scrollIntoView({ block: "nearest", inline: "nearest" });
+
   return true;
 }
 
 export function tablePosFromDom(editor: Editor, table: HTMLTableElement): number | null {
-  const pos = editor.view.posAtDOM(table, 0);
-  const $pos = editor.state.doc.resolve(pos);
-  for (let d = $pos.depth; d > 0; d--) {
-    if ($pos.node(d).type.name === "table") return $pos.before(d);
+  try {
+    const pos = editor.view.posAtDOM(table, 0);
+    const $pos = editor.state.doc.resolve(pos);
+    for (let d = $pos.depth; d > 0; d--) {
+      if ($pos.node(d).type.name === "table") return $pos.before(d);
+    }
+  } catch {
+    return null;
   }
   return null;
 }
@@ -66,14 +87,20 @@ export function isTableNodeSelection(editor: Editor): boolean {
   return selection instanceof NodeSelection && selection.node.type.name === "table";
 }
 
-/** Clic en tabla → selección de nodo; segundo clic en celda → edición. */
+/** Clic en tabla → selección de nodo; si ya editas una celda, no interferir. */
 export function setupTablePointerSelect(editor: Editor): () => void {
   const dom = editor.view.dom;
 
   const onPointerDown = (e: PointerEvent) => {
     if (e.button !== 0) return;
     const target = e.target as HTMLElement;
-    if (target.closest(".cn-table-toolbar, .cn-table-select-grip, .cn-table-floating-toolbar")) return;
+    if (
+      target.closest(
+        ".cn-table-toolbar, .cn-table-select-grip, .cn-table-floating-toolbar, .cn-table-chrome-layer, .cn-table-grip-layer",
+      )
+    ) {
+      return;
+    }
 
     const table = target.closest("table");
     if (!table || !dom.contains(table)) return;
@@ -103,28 +130,39 @@ export function setupTablePointerSelect(editor: Editor): () => void {
   return () => dom.removeEventListener("pointerdown", onPointerDown, true);
 }
 
+export function getScrollParents(el: HTMLElement): HTMLElement[] {
+  const out: HTMLElement[] = [];
+  let node: HTMLElement | null = el.parentElement;
+  while (node && node !== document.body) {
+    const { overflow, overflowY, overflowX } = getComputedStyle(node);
+    const scrollable = [overflow, overflowY, overflowX].some((v) => v === "auto" || v === "scroll");
+    if (scrollable) out.push(node);
+    node = node.parentElement;
+  }
+  return out;
+}
+
 export function getTableDomRect(editor: Editor, ctx: TableContext): DOMRect | null {
   if (ctx.dom) return ctx.dom.getBoundingClientRect();
   const dom = editor.view.nodeDOM(ctx.pos) as HTMLElement | null;
-  const table = dom?.tagName === "TABLE" ? dom : dom?.querySelector("table");
-  return table?.getBoundingClientRect() ?? null;
+  return resolveTableElement(dom)?.getBoundingClientRect() ?? null;
 }
 
 export function updateTableAttrs(
   editor: Editor,
   pos: number,
   attrs: Record<string, unknown>,
+  options?: { keepNodeSelected?: boolean },
 ): boolean {
-  return editor
-    .chain()
-    .focus()
-    .command(({ tr }) => {
-      const node = tr.doc.nodeAt(pos);
-      if (!node || node.type.name !== "table") return false;
-      tr.setNodeMarkup(pos, undefined, { ...node.attrs, ...attrs });
-      return true;
-    })
-    .run();
+  const node = editor.state.doc.nodeAt(pos);
+  if (!node || node.type.name !== "table") return false;
+
+  let tr = editor.state.tr.setNodeMarkup(pos, undefined, { ...node.attrs, ...attrs });
+  if (options?.keepNodeSelected) {
+    tr = tr.setSelection(NodeSelection.create(tr.doc, pos));
+  }
+  editor.view.dispatch(tr);
+  return true;
 }
 
 export function setTableWidth(editor: Editor, pos: number, width: string): boolean {

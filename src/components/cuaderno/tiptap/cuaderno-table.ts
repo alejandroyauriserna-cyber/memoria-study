@@ -1,6 +1,8 @@
 import { Table } from "@tiptap/extension-table";
 
 export const CuadernoTable = Table.extend({
+  selectable: true,
+
   addAttributes() {
     return {
       ...this.parent?.(),

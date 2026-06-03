@@ -7,12 +7,25 @@ import { createPortal } from "react-dom";
 import { ClipboardList, Trash2 } from "lucide-react";
 import { deleteTableComplete } from "@/lib/cuaderno/delete-table-complete";
 import {
+  getScrollParents,
   getTableContext,
   getTableDomRect,
   selectTableNode,
   setupTablePointerSelect,
   type TableContext,
 } from "@/lib/cuaderno/cuaderno-table-utils";
+
+function tableOverlayStyle(rect: DOMRect): React.CSSProperties {
+  return {
+    position: "fixed",
+    top: rect.top,
+    left: rect.left,
+    width: rect.width,
+    height: rect.height,
+    pointerEvents: "none",
+    zIndex: 10080,
+  };
+}
 
 function TableSimpleToolbar({ editor, ctx }: { editor: Editor; ctx: TableContext }) {
   return (
@@ -92,12 +105,28 @@ export function CuadernoTableChrome({ editor }: { editor: Editor | null }) {
     };
     sync();
     editor.on("selectionUpdate", schedule);
+    editor.on("transaction", schedule);
     window.addEventListener("scroll", schedule, true);
     window.addEventListener("resize", schedule);
+
+    const scrollParents = getScrollParents(editor.view.dom);
+    scrollParents.forEach((el) => el.addEventListener("scroll", schedule, { passive: true }));
+
+    const ro =
+      typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(schedule)
+        : null;
+    ro?.observe(editor.view.dom);
+    const table = editor.view.dom.querySelector("table");
+    if (table) ro?.observe(table);
+
     return () => {
       editor.off("selectionUpdate", schedule);
+      editor.off("transaction", schedule);
       window.removeEventListener("scroll", schedule, true);
       window.removeEventListener("resize", schedule);
+      scrollParents.forEach((el) => el.removeEventListener("scroll", schedule));
+      ro?.disconnect();
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
     };
   }, [editor, sync]);
@@ -132,18 +161,9 @@ export function CuadernoTableChrome({ editor }: { editor: Editor | null }) {
   if (!showGrip && !showChrome) return null;
 
   const portalTarget = typeof document !== "undefined" ? document.body : null;
-  if (!portalTarget) return null;
+  if (!portalTarget || !rect) return null;
 
-  const boxStyle: React.CSSProperties = rect
-    ? {
-        position: "absolute",
-        top: rect.top + window.scrollY,
-        left: rect.left + window.scrollX,
-        width: rect.width,
-        height: rect.height,
-        pointerEvents: "none",
-      }
-    : {};
+  const boxStyle = tableOverlayStyle(rect);
 
   return createPortal(
     <>
@@ -153,7 +173,7 @@ export function CuadernoTableChrome({ editor }: { editor: Editor | null }) {
             type="button"
             className="cn-table-select-grip"
             style={{ pointerEvents: "auto" }}
-            title="Seleccionar tabla"
+            title="Seleccionar tabla (o clic en borde de tabla)"
             aria-label="Seleccionar tabla"
             onPointerDown={(e) => {
               e.preventDefault();
@@ -173,6 +193,7 @@ export function CuadernoTableChrome({ editor }: { editor: Editor | null }) {
             className="cn-table-floating-toolbar"
             style={{
               pointerEvents: "auto",
+              position: "absolute",
               top: -8,
               left: "50%",
               transform: "translate(-50%, -100%)",
