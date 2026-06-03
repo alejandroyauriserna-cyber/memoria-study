@@ -23,6 +23,7 @@ import {
   Underline,
 } from "lucide-react";
 import { CuadernoFloatingMenu, FloatingMenuItem } from "@/components/cuaderno/cuaderno-floating-menu";
+import { insertTableSafe } from "@/lib/cuaderno/insert-table-safe";
 import { LEGAL_TOOLBAR_BLOCKS, insertStudyBlock } from "@/lib/cuaderno/academic-styles";
 import type { StudyBlockId } from "@/lib/cuaderno/academic-styles";
 import type { CuadernoAskAction } from "@/types/cuaderno";
@@ -183,11 +184,7 @@ export function CuadernoFloatingEditToolbar({
 
         <div className="cn-float-tb-group" role="group" aria-label="Insertar">
           <FloatDropdown label="Insertar" icon={<Plus size={14} />}>
-            <FloatingMenuItem
-              onClick={() =>
-                editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
-              }
-            >
+            <FloatingMenuItem onClick={() => insertTableSafe(editor, 3, 3)}>
               <Table size={14} className="inline mr-2 opacity-70" /> Tabla
             </FloatingMenuItem>
             <FloatingMenuItem onClick={() => imageInputRef.current?.click()}>

@@ -19,6 +19,7 @@ import {
   Underline,
 } from "lucide-react";
 import { CUADERNO_FONTS, type CuadernoFontId } from "@/lib/cuaderno/editor-fonts";
+import { insertTableSafe } from "@/lib/cuaderno/insert-table-safe";
 import { ToolbarSelect } from "@/components/cuaderno/toolbar-select";
 import { CuadernoFloatingMenu } from "@/components/cuaderno/cuaderno-floating-menu";
 import "./cuaderno-editor-toolbar.css";
@@ -189,7 +190,7 @@ export function CuadernoCompactFormatToolbar({
 
             <ToolbarBtn
               title="Tabla"
-              onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
+              onClick={() => insertTableSafe(editor, 3, 3)}
             >
               <Table size={15} />
             </ToolbarBtn>

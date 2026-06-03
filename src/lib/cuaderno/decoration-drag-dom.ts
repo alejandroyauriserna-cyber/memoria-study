@@ -74,6 +74,18 @@ export function bakeDecorationPosition(
   el.style.transform = `rotate(${item.rotation}deg)`;
 }
 
+/** Fija caja completa (move/resize) antes de quitar preview inline. */
+export function bakeDecorationGeometry(
+  el: HTMLElement,
+  item: Pick<DecorationObject, "x" | "y" | "w" | "h" | "rotation">,
+): void {
+  el.style.left = `${item.x * 100}%`;
+  el.style.top = `${item.y * 100}%`;
+  el.style.width = `${item.w * 100}%`;
+  el.style.height = `${item.h * 100}%`;
+  el.style.transform = `rotate(${item.rotation}deg)`;
+}
+
 export function computeDragPatch(
   snapshot: DecorationObject,
   mode: DragMode,

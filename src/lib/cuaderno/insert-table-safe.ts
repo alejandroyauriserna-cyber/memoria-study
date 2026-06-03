@@ -20,11 +20,17 @@ export function insertTableSafe(
     if (!ok) {
       return { ok: false, message: "No se pudo insertar la tabla en esta posición." };
     }
-    const ctx = getTableContext(editor);
+    let ctx = getTableContext(editor);
     if (ctx) {
       setTableWidth(editor, ctx.pos, "72%");
       setTableMinHeight(editor, ctx.pos, "100px");
-      selectTableNode(editor, ctx.pos);
+      ctx = getTableContext(editor) ?? ctx;
+      const tablePos = ctx.pos;
+      selectTableNode(editor, tablePos);
+      requestAnimationFrame(() => {
+        selectTableNode(editor, tablePos);
+        editor.chain().focus().run();
+      });
     }
     return { ok: true };
   } catch (err) {

@@ -10,6 +10,7 @@ import {
   getTableContext,
   getTableDomRect,
   selectTableNode,
+  setupTablePointerSelect,
   type TableContext,
 } from "@/lib/cuaderno/cuaderno-table-utils";
 
@@ -103,6 +104,11 @@ export function CuadernoTableChrome({ editor }: { editor: Editor | null }) {
 
   useEffect(() => {
     if (!editor) return;
+    return setupTablePointerSelect(editor);
+  }, [editor]);
+
+  useEffect(() => {
+    if (!editor) return;
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key !== "Delete" && e.key !== "Backspace") return;
       const sel = editor.state.selection;
@@ -149,8 +155,9 @@ export function CuadernoTableChrome({ editor }: { editor: Editor | null }) {
             style={{ pointerEvents: "auto" }}
             title="Seleccionar tabla"
             aria-label="Seleccionar tabla"
-            onMouseDown={(e) => {
+            onPointerDown={(e) => {
               e.preventDefault();
+              e.stopPropagation();
               selectTableNode(editor);
             }}
           >

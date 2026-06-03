@@ -206,28 +206,7 @@ export function useBlockClickSelect(editor: Editor | null) {
 
     const onClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      const table = target.closest("table");
-      if (table && dom.contains(table) && (e.altKey || e.metaKey)) {
-        const pos = editor.view.posAtDOM(table, 0);
-        const $pos = editor.state.doc.resolve(pos);
-        for (let d = $pos.depth; d > 0; d--) {
-          if ($pos.node(d).type.name === "table") {
-            selectBlockAt(editor, $pos.before(d));
-            return;
-          }
-        }
-      }
-      if (target.closest("td, th, .column-resize-handle")) return;
-      if (table && dom.contains(table)) {
-        const pos = editor.view.posAtDOM(table, 0);
-        const $pos = editor.state.doc.resolve(pos);
-        for (let d = $pos.depth; d > 0; d--) {
-          if ($pos.node(d).type.name === "table") {
-            selectBlockAt(editor, $pos.before(d));
-            return;
-          }
-        }
-      }
+      if (target.closest("table")) return;
       const block = target.closest("[data-study-block]");
       if (!block || !dom.contains(block)) return;
       if (e.detail > 1) return;

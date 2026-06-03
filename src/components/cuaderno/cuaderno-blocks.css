@@ -154,8 +154,9 @@
   z-index: 10040;
 }
 
-.cn-table-grip-layer {
-  z-index: 10035;
+.cn-table-grip-layer,
+.cn-table-chrome-layer {
+  z-index: 10080;
 }
 
 .cn-table-selection-ring {
@@ -175,10 +176,12 @@
 
 .cn-table-select-grip {
   position: absolute;
-  left: -28px;
-  top: 4px;
+  left: 6px;
+  top: 6px;
   width: 22px;
   height: 22px;
+  z-index: 1;
+  pointer-events: auto;
   border: 1px solid color-mix(in srgb, var(--cn-course-accent, #0d9488) 40%, transparent);
   border-radius: 6px;
   background: var(--paper-bg, #fff);

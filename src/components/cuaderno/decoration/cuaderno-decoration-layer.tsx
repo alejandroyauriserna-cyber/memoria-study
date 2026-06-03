@@ -19,6 +19,7 @@ import {
   applyDragPreview,
   applyDragPreviewMove,
   applyGroupDragPreviewMove,
+  bakeDecorationGeometry,
   bakeDecorationPosition,
   clearDragPreview,
   computeDragPatch,
@@ -262,10 +263,15 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
           })
         : null;
 
-      if (next && drag.mode === "move") {
+      if (next) {
         for (const [id, el] of drag.elements) {
           const item = next.find((d) => d.id === id);
-          if (item) bakeDecorationPosition(el, item);
+          if (item) {
+            if (drag.mode === "move") bakeDecorationPosition(el, item);
+            else bakeDecorationGeometry(el, item);
+          } else {
+            clearDragPreview(el, drag.mode);
+          }
           el.classList.remove("is-dragging");
         }
       } else {
@@ -290,10 +296,8 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
     drag.pending = null;
     drag.raf = null;
 
-    if (drag.mode === "move") {
-      const layer = layerRef.current;
-      if (layer) drag.metrics = getLayerMetrics(layer);
-    }
+    const layer = layerRef.current;
+    if (layer) drag.metrics = getLayerMetrics(layer);
 
     const lead = drag.snapshots.get(drag.leadId);
     const leadEl = drag.elements.get(drag.leadId);

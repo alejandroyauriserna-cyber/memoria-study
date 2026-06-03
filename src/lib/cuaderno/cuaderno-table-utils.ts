@@ -52,6 +52,57 @@ export function selectTableNode(editor: Editor, pos?: number): boolean {
   return true;
 }
 
+export function tablePosFromDom(editor: Editor, table: HTMLTableElement): number | null {
+  const pos = editor.view.posAtDOM(table, 0);
+  const $pos = editor.state.doc.resolve(pos);
+  for (let d = $pos.depth; d > 0; d--) {
+    if ($pos.node(d).type.name === "table") return $pos.before(d);
+  }
+  return null;
+}
+
+export function isTableNodeSelection(editor: Editor): boolean {
+  const { selection } = editor.state;
+  return selection instanceof NodeSelection && selection.node.type.name === "table";
+}
+
+/** Clic en tabla → selección de nodo; segundo clic en celda → edición. */
+export function setupTablePointerSelect(editor: Editor): () => void {
+  const dom = editor.view.dom;
+
+  const onPointerDown = (e: PointerEvent) => {
+    if (e.button !== 0) return;
+    const target = e.target as HTMLElement;
+    if (target.closest(".cn-table-toolbar, .cn-table-select-grip, .cn-table-floating-toolbar")) return;
+
+    const table = target.closest("table");
+    if (!table || !dom.contains(table)) return;
+
+    const tablePos = tablePosFromDom(editor, table);
+    if (tablePos == null) return;
+
+    if (isTableNodeSelection(editor)) {
+      if (target.closest("td, th")) return;
+      return;
+    }
+
+    const { $from } = editor.state.selection;
+    for (let d = $from.depth; d > 0; d--) {
+      if ($from.node(d).type.name === "table" && $from.before(d) === tablePos) {
+        if (target.closest("td, th")) return;
+        break;
+      }
+    }
+
+    e.preventDefault();
+    e.stopPropagation();
+    selectTableNode(editor, tablePos);
+  };
+
+  dom.addEventListener("pointerdown", onPointerDown, true);
+  return () => dom.removeEventListener("pointerdown", onPointerDown, true);
+}
+
 export function getTableDomRect(editor: Editor, ctx: TableContext): DOMRect | null {
   if (ctx.dom) return ctx.dom.getBoundingClientRect();
   const dom = editor.view.nodeDOM(ctx.pos) as HTMLElement | null;
