@@ -21,6 +21,7 @@ import type { PngStickerItem } from "@/lib/cuaderno/sticker-png-packs";
 import { CuadernoStickerDesigner } from "@/components/cuaderno/decoration/cuaderno-sticker-designer";
 import { CuadernoStickerImportPanel } from "@/components/cuaderno/decoration/cuaderno-sticker-import-modal";
 import type { UserStickerRecord } from "@/types/cuaderno-stickers";
+import { STICKER_LIBRARY_ADDED_EVENT } from "@/lib/cuaderno/paste-image-ingest";
 
 const CATALOG_FAV_KEY = "cuaderno-catalog-favorites";
 
@@ -126,6 +127,19 @@ export function CuadernoStickerPanel({
     if (!open) return;
     if (tab === "mis-stickers" || tab === "favoritos") void loadLibrary();
   }, [open, tab, loadLibrary]);
+
+  useEffect(() => {
+    const onAdded = (e: Event) => {
+      const sticker = (e as CustomEvent<UserStickerRecord>).detail;
+      if (!sticker?.id) return;
+      setMyStickers((prev) => {
+        if (prev.some((s) => s.id === sticker.id)) return prev;
+        return [sticker, ...prev];
+      });
+    };
+    window.addEventListener(STICKER_LIBRARY_ADDED_EVENT, onAdded);
+    return () => window.removeEventListener(STICKER_LIBRARY_ADDED_EVENT, onAdded);
+  }, []);
 
   const juridicoItems = useMemo(
     () => filterJuridicoStickers(packFilter, query),

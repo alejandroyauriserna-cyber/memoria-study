@@ -243,8 +243,11 @@ function CuadernoPinterestImportGuide() {
 
       <h3 className="cn-sticker-import-guide-sub">También puedes</h3>
       <ul className="cn-sticker-import-guide-list">
-        <li>Arrastrar una imagen directamente a la hoja.</li>
-        <li>Copiar una imagen y pegarla con Ctrl + V.</li>
+        <li>
+          <strong>Ctrl + V</strong> en la hoja: se guarda en <strong>Mis stickers</strong> y se coloca al
+          instante (como Canva).
+        </li>
+        <li>Arrastrar una imagen directamente a la hoja (también se guarda en tu biblioteca).</li>
         <li>Subir archivos PNG, JPG o WEBP desde tu dispositivo.</li>
       </ul>
 

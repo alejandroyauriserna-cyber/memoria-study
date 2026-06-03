@@ -1,38 +1,20 @@
 "use client";
 
 import { memo } from "react";
+import { RotateCw } from "lucide-react";
 import {
-  ArrowDown,
-  ArrowUp,
-  Copy,
-  Crop,
-  Lock,
-  RotateCw,
-  Trash2,
-  Unlock,
-} from "lucide-react";
-import {
-  duplicateDecoration,
   POSTIT_COLORS,
   type DecorationObject,
-  type ImageTextWrap,
   type PostItColor,
 } from "@/lib/cuaderno/decoration-objects";
 import { resolveStickerLabel, resolveStickerSrc } from "@/lib/cuaderno/sticker-resolve-src";
+import { normalizedHeightForWidth } from "@/lib/cuaderno/floating-image";
 import type { ResizeHandle } from "@/lib/cuaderno/decoration-resize";
 
 const RESIZE_HANDLES: ResizeHandle[] = ["nw", "n", "ne", "e", "se", "s", "sw", "w"];
 
 const DECO_CHROME_SELECTOR =
-  ".cn-decoration-handle, .cn-decoration-toolbar, .cn-image-wrap-bar, .cn-postit-colors";
-
-const WRAP_LABELS: Record<ImageTextWrap, string> = {
-  inline: "En línea con texto",
-  square: "Cuadrado",
-  tight: "Estrecho",
-  inFront: "Delante del texto",
-  behind: "Detrás del texto",
-};
+  ".cn-decoration-handle, .cn-postit-colors";
 
 function decoPropsEqual(
   prev: {
@@ -82,11 +64,7 @@ export const CuadernoDecorationItem = memo(function CuadernoDecorationItem({
   onSelect,
   onStartDrag,
   onContextMenu,
-  onDuplicate,
-  onRemove,
   onPatch,
-  onZBump,
-  onStartCrop,
 }: {
   dataDecoId: string;
   obj: DecorationObject;
@@ -97,13 +75,21 @@ export const CuadernoDecorationItem = memo(function CuadernoDecorationItem({
   onSelect: (additive: boolean) => void;
   onStartDrag: (e: React.PointerEvent, mode: "move" | "rotate" | ResizeHandle, el: HTMLElement) => void;
   onContextMenu: (e: React.MouseEvent) => void;
-  onDuplicate: () => void;
-  onRemove: () => void;
   onPatch: (patch: Partial<DecorationObject>) => void;
-  onZBump: (dir: "up" | "down") => void;
-  onStartCrop: () => void;
 }) {
   const wrap = obj.textWrap ?? "inFront";
+
+  const syncImageAspect = (aspectRatio: number) => {
+    if (obj.kind !== "image" && obj.kind !== "sticker") return;
+    const w = obj.w || (obj.kind === "image" ? 0.32 : 0.14);
+    const h = normalizedHeightForWidth(w, aspectRatio);
+    if (
+      Math.abs((obj.aspectRatio ?? 0) - aspectRatio) > 0.02 ||
+      Math.abs(obj.h - h) > 0.008
+    ) {
+      onPatch({ aspectRatio, h });
+    }
+  };
 
   return (
     <div
@@ -132,66 +118,15 @@ export const CuadernoDecorationItem = memo(function CuadernoDecorationItem({
       }}
       onContextMenu={onContextMenu}
     >
-      <DecorationBody obj={obj} active={active} onTextChange={(text) => onPatch({ text })} />
+      <DecorationBody
+        obj={obj}
+        active={active}
+        onTextChange={(text) => onPatch({ text })}
+        onImageLoad={(aspectRatio) => syncImageAspect(aspectRatio)}
+      />
 
       {selected && active ? (
         <>
-          <div
-            className="cn-decoration-toolbar"
-            onPointerDown={(e) => e.stopPropagation()}
-            onPointerDownCapture={(e) => e.stopPropagation()}
-          >
-            <button type="button" title="Duplicar" aria-label="Duplicar" onClick={onDuplicate}>
-              <Copy size={12} />
-            </button>
-            {obj.kind === "image" || obj.kind === "sticker" ? (
-              <button
-                type="button"
-                title="Rotar 90°"
-                onClick={() => onPatch({ rotation: obj.rotation + 90 })}
-              >
-                <RotateCw size={12} />
-              </button>
-            ) : null}
-            {obj.kind === "image" ? (
-              <button type="button" title="Recortar" onClick={onStartCrop}>
-                <Crop size={12} />
-              </button>
-            ) : null}
-            <button type="button" title="Adelante" onClick={() => onZBump("up")}>
-              <ArrowUp size={12} />
-            </button>
-            <button type="button" title="Atrás" onClick={() => onZBump("down")}>
-              <ArrowDown size={12} />
-            </button>
-            <button
-              type="button"
-              title={obj.locked ? "Desbloquear" : "Bloquear"}
-              onClick={() => onPatch({ locked: !obj.locked })}
-            >
-              {obj.locked ? <Unlock size={12} /> : <Lock size={12} />}
-            </button>
-            <button type="button" title="Eliminar" className="is-danger" onClick={onRemove}>
-              <Trash2 size={12} />
-            </button>
-          </div>
-
-          {obj.kind === "image" ? (
-            <div className="cn-image-wrap-bar" onPointerDown={(e) => e.stopPropagation()}>
-              {(Object.keys(WRAP_LABELS) as ImageTextWrap[]).map((mode) => (
-                <button
-                  key={mode}
-                  type="button"
-                  className={wrap === mode ? "is-on" : ""}
-                  title={WRAP_LABELS[mode]}
-                  onClick={() => onPatch({ textWrap: mode })}
-                >
-                  {mode === "inline" ? "≡" : mode === "square" ? "▢" : mode === "tight" ? "▪" : mode === "inFront" ? "▲" : "▼"}
-                </button>
-              ))}
-            </div>
-          ) : null}
-
           {!obj.locked ? (
             <>
               {RESIZE_HANDLES.map((handle) => (
@@ -241,11 +176,18 @@ function DecorationBody({
   obj,
   active,
   onTextChange,
+  onImageLoad,
 }: {
   obj: DecorationObject;
   active: boolean;
   onTextChange: (text: string) => void;
+  onImageLoad?: (aspectRatio: number) => void;
 }) {
+  const handleImgLoad = (el: HTMLImageElement) => {
+    const nw = el.naturalWidth;
+    const nh = el.naturalHeight;
+    if (nw > 0 && nh > 0) onImageLoad?.(nw / nh);
+  };
   if (obj.kind === "postit") {
     const c = POSTIT_COLORS[obj.postitColor ?? "yellow"];
     const cat = obj.postitCategory ? ` cn-postit--${obj.postitCategory}` : "";
@@ -281,6 +223,7 @@ function DecorationBody({
           loading="lazy"
           decoding="async"
           style={clip ? { clipPath: clip } : undefined}
+          onLoad={(e) => handleImgLoad(e.currentTarget)}
         />
       </div>
     );
@@ -298,6 +241,7 @@ function DecorationBody({
           draggable={false}
           loading="lazy"
           decoding="async"
+          onLoad={(e) => handleImgLoad(e.currentTarget)}
         />
       );
     }

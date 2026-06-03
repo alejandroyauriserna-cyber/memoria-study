@@ -39,9 +39,8 @@ import {
   fileToDataUrl,
   readImagePayloadFromClipboard,
 } from "@/lib/cuaderno/decoration-clipboard";
-import { createFloatingImage } from "@/lib/cuaderno/floating-image";
 import {
-  buildFloatingImageFromUrl,
+  imageUrlToDataUrl,
   ensureDecorationReady,
   prepareDecorationForCanvas,
   refineDecorationDimensions,
@@ -49,6 +48,10 @@ import {
   withPlaceProgress,
   type PlaceProgress,
 } from "@/lib/cuaderno/place-decoration";
+import {
+  ingestPastedImageForCanvas,
+  pastedImageName,
+} from "@/lib/cuaderno/paste-image-ingest";
 import { CuadernoPlacementOverlay } from "@/components/cuaderno/cuaderno-placement-overlay";
 import { NodeSelection } from "@tiptap/pm/state";
 import { migrateInlineImagesFromHtml } from "@/lib/cuaderno/migrate-inline-images";
@@ -337,21 +340,49 @@ export function CuadernoCanvasEditor({
     return () => registerPlacePayload?.(null);
   }, [registerPlacePayload, placeFromPayload]);
 
-  const insertFloatingImageAt = useCallback(
-    async (file: File, at?: { x: number; y: number }) => {
+  const placePastedImage = useCallback(
+    async (
+      source: { file: File } | { url: string },
+      at?: { x: number; y: number },
+    ) => {
       const center = at ?? visibleCenterNorm();
+      let savedToLibrary = false;
+      setPlaceProgress({ percent: 6, label: "Preparando imagen…" });
       try {
-        const src = await fileToDataUrl(file);
-        const item = createFloatingImage(src, center);
-        addDecoration(item);
-        void refineDecorationDimensions(item).then((dims) => {
-          if (dims) patchDecoration(item.id, dims);
-        });
+        const ingested = await withPlaceProgress(
+          "file" in source
+            ? "Guardando en tu biblioteca…"
+            : "Descargando y guardando…",
+          setPlaceProgress,
+          async () => {
+            const dataUrl =
+              "file" in source
+                ? await fileToDataUrl(source.file)
+                : await imageUrlToDataUrl(source.url);
+            const name =
+              "file" in source ? pastedImageName(source.file) : pastedImageName();
+            return ingestPastedImageForCanvas({ dataUrl, name, at: center });
+          },
+        );
+        savedToLibrary = ingested.savedToLibrary;
+        await placeDecorationItem(ingested.item, center);
+        if (savedToLibrary) {
+          setPlaceProgress({ percent: 100, label: "Guardado en Mis stickers" });
+        }
       } catch (err) {
-        console.error("[cuaderno] insert image", err);
+        console.error("[cuaderno] paste image", err);
+      } finally {
+        window.setTimeout(() => setPlaceProgress(null), savedToLibrary ? 600 : 280);
       }
     },
-    [addDecoration, patchDecoration, visibleCenterNorm],
+    [placeDecorationItem, visibleCenterNorm],
+  );
+
+  const insertFloatingImageAt = useCallback(
+    (file: File, at?: { x: number; y: number }) => {
+      void placePastedImage({ file }, at);
+    },
+    [placePastedImage],
   );
 
   const insertFloatingImageFile = useCallback(
@@ -508,27 +539,14 @@ export function CuadernoCanvasEditor({
       if (!payload) return;
       e.preventDefault();
       const at = visibleCenterNorm();
-      if (payload.kind === "file") {
-        void insertFloatingImageAt(payload.file, at);
-        return;
-      }
-      setPlaceProgress({ percent: 10, label: "Importando imagen…" });
-      void (async () => {
-        try {
-          const item = await withPlaceProgress("Descargando imagen…", setPlaceProgress, () =>
-            buildFloatingImageFromUrl(payload.url, at),
-          );
-          addDecoration(item);
-        } catch (err) {
-          console.error("[cuaderno] paste image url", err);
-        } finally {
-          window.setTimeout(() => setPlaceProgress(null), 450);
-        }
-      })();
+      void placePastedImage(
+        payload.kind === "file" ? { file: payload.file } : { url: payload.url },
+        at,
+      );
     };
     window.addEventListener("paste", onPaste);
     return () => window.removeEventListener("paste", onPaste);
-  }, [writingMode, insertFloatingImageAt, visibleCenterNorm, addDecoration]);
+  }, [writingMode, placePastedImage, visibleCenterNorm]);
 
   const handleEditorReady = useCallback(
     (ed: Editor | null) => {

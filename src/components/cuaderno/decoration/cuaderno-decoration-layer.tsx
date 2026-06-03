@@ -1,6 +1,7 @@
 "use client";
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { ViewportBounds } from "@/hooks/use-cuaderno-viewport";
 import { useCuadernoViewport } from "@/hooks/use-cuaderno-viewport";
 import {
@@ -13,7 +14,16 @@ import {
   duplicateDecoration,
   sortByZIndex,
   type DecorationObject,
+  type ImageTextWrap,
 } from "@/lib/cuaderno/decoration-objects";
+
+const IMAGE_WRAP_LABELS: Record<ImageTextWrap, string> = {
+  inline: "En línea con texto",
+  square: "Cuadrado",
+  tight: "Estrecho",
+  inFront: "Delante del texto",
+  behind: "Detrás del texto",
+};
 import { isBehindTextWrap } from "@/lib/cuaderno/floating-image";
 import {
   applyDragPreview,
@@ -516,6 +526,17 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
   const ctxTarget = ctxMenu ? liveItems.find((d) => d.id === ctxMenu.id) : null;
   const closeCtx = () => setCtxMenu(null);
 
+  useEffect(() => {
+    if (!ctxMenu) return;
+    const onClick = (e: MouseEvent) => {
+      const t = e.target as HTMLElement;
+      if (t.closest(".cn-decoration-context-menu")) return;
+      closeCtx();
+    };
+    window.addEventListener("click", onClick);
+    return () => window.removeEventListener("click", onClick);
+  }, [ctxMenu]);
+
   const layerClass =
     placement === "behind"
       ? "cn-decoration-layer cn-decoration-layer--behind"
@@ -541,85 +562,133 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
             if (!selectedSet.has(obj.id)) onSelectIds([obj.id]);
             setCtxMenu({ id: obj.id, x: ev.clientX, y: ev.clientY });
           }}
-          onDuplicate={() => commitItems([...liveRef.current, duplicateDecoration(obj)])}
-          onRemove={() => removeMany([obj.id])}
           onPatch={(patch) => patchOne(obj.id, patch)}
-          onZBump={(dir) => zBump(obj.id, dir)}
-          onStartCrop={() => {
-            setCroppingId(obj.id);
-            if (!obj.crop) patchOne(obj.id, { crop: { x: 0, y: 0, w: 1, h: 1 } });
-          }}
         />
       ))}
 
-      {ctxMenu && ctxTarget && active ? (
-        <div
-          className="cn-decoration-context-menu"
-          style={{ left: ctxMenu.x, top: ctxMenu.y }}
-          onPointerDown={(ev) => ev.stopPropagation()}
-        >
-          <button
-            type="button"
-            onClick={() => {
-              commitItems([...liveRef.current, duplicateDecoration(ctxTarget)]);
-              closeCtx();
-            }}
-          >
-            Duplicar
-          </button>
-          {ctxTarget.kind === "image" || ctxTarget.kind === "sticker" ? (
-            <button
-              type="button"
-              onClick={() => {
-                patchOne(ctxTarget.id, { rotation: ctxTarget.rotation + 90 });
-                closeCtx();
-              }}
+      {ctxMenu && ctxTarget && active && typeof document !== "undefined"
+        ? createPortal(
+            <div
+              className="cn-decoration-context-menu"
+              style={{ left: ctxMenu.x, top: ctxMenu.y }}
+              role="menu"
+              onPointerDown={(ev) => ev.stopPropagation()}
             >
-              Rotar 90°
-            </button>
-          ) : null}
-          {ctxTarget.kind === "image" ? (
-            <button
-              type="button"
-              onClick={() => {
-                setCroppingId(ctxTarget.id);
-                closeCtx();
-              }}
-            >
-              Recortar
-            </button>
-          ) : null}
-          <button
-            type="button"
-            onClick={() => {
-              patchOne(ctxTarget.id, { locked: !ctxTarget.locked });
-              closeCtx();
-            }}
-          >
-            {ctxTarget.locked ? "Desbloquear" : "Bloquear"}
-          </button>
-          <button type="button" onClick={() => { zBump(ctxTarget.id, "up"); closeCtx(); }}>
-            Traer adelante
-          </button>
-          <button type="button" onClick={() => { zBump(ctxTarget.id, "down"); closeCtx(); }}>
-            Enviar atrás
-          </button>
-          <button
-            type="button"
-            className="is-danger"
-            onClick={() => {
-              removeMany(
-                selectedIdsRef.current.length > 1 && selectedSet.has(ctxTarget.id)
-                  ? selectedIdsRef.current
-                  : [ctxTarget.id],
-              );
-              closeCtx();
-            }}
-          >
-            Eliminar
-          </button>
-        </div>
-      ) : null}
+              <button
+                type="button"
+                role="menuitem"
+                onPointerDown={(ev) => ev.stopPropagation()}
+                onClick={() => {
+                  commitItems([...liveRef.current, duplicateDecoration(ctxTarget)]);
+                  closeCtx();
+                }}
+              >
+                Duplicar
+              </button>
+              {ctxTarget.kind === "image" || ctxTarget.kind === "sticker" ? (
+                <button
+                  type="button"
+                  role="menuitem"
+                  onPointerDown={(ev) => ev.stopPropagation()}
+                  onClick={() => {
+                    patchOne(ctxTarget.id, { rotation: ctxTarget.rotation + 90 });
+                    closeCtx();
+                  }}
+                >
+                  Rotar 90°
+                </button>
+              ) : null}
+              {ctxTarget.kind === "image" ? (
+                <button
+                  type="button"
+                  role="menuitem"
+                  onPointerDown={(ev) => ev.stopPropagation()}
+                  onClick={() => {
+                    setCroppingId(ctxTarget.id);
+                    if (!ctxTarget.crop) {
+                      patchOne(ctxTarget.id, { crop: { x: 0, y: 0, w: 1, h: 1 } });
+                    }
+                    closeCtx();
+                  }}
+                >
+                  Recortar
+                </button>
+              ) : null}
+              {ctxTarget.kind === "image" ? (
+                <>
+                  <div className="cn-decoration-context-menu-sep" role="separator" />
+                  <span className="cn-decoration-context-menu-label">Texto alrededor</span>
+                  {(Object.keys(IMAGE_WRAP_LABELS) as ImageTextWrap[]).map((mode) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      role="menuitem"
+                      className={(ctxTarget.textWrap ?? "inFront") === mode ? "is-on" : ""}
+                      onPointerDown={(ev) => ev.stopPropagation()}
+                      onClick={() => {
+                        patchOne(ctxTarget.id, { textWrap: mode });
+                        closeCtx();
+                      }}
+                    >
+                      {IMAGE_WRAP_LABELS[mode]}
+                    </button>
+                  ))}
+                </>
+              ) : null}
+              <div className="cn-decoration-context-menu-sep" role="separator" />
+              <button
+                type="button"
+                role="menuitem"
+                onPointerDown={(ev) => ev.stopPropagation()}
+                onClick={() => {
+                  patchOne(ctxTarget.id, { locked: !ctxTarget.locked });
+                  closeCtx();
+                }}
+              >
+                {ctxTarget.locked ? "Desbloquear" : "Bloquear"}
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                onPointerDown={(ev) => ev.stopPropagation()}
+                onClick={() => {
+                  zBump(ctxTarget.id, "up");
+                  closeCtx();
+                }}
+              >
+                Traer adelante
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                onPointerDown={(ev) => ev.stopPropagation()}
+                onClick={() => {
+                  zBump(ctxTarget.id, "down");
+                  closeCtx();
+                }}
+              >
+                Enviar atrás
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                className="is-danger"
+                onPointerDown={(ev) => ev.stopPropagation()}
+                onClick={() => {
+                  removeMany(
+                    selectedIdsRef.current.length > 1 && selectedSet.has(ctxTarget.id)
+                      ? selectedIdsRef.current
+                      : [ctxTarget.id],
+                  );
+                  closeCtx();
+                }}
+              >
+                Eliminar
+              </button>
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 });
