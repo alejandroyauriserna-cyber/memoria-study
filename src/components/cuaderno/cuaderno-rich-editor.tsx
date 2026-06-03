@@ -31,6 +31,7 @@ function CuadernoRichEditorInner({
   lineHeight = "1.78",
   onOpenFormatPanel,
   onSelectionAction,
+  onClipboardImagePaste,
 }: {
   body: string;
   onBodyChange: (html: string) => void;
@@ -47,6 +48,8 @@ function CuadernoRichEditorInner({
     action: CuadernoAskAction | "legislation" | "mind_map" | "jurisprudence",
     selectedText: string,
   ) => void;
+  /** Si devuelve true, el editor no inserta texto (p. ej. URL de Pinterest → imagen flotante). */
+  onClipboardImagePaste?: (event: ClipboardEvent) => boolean;
 }) {
   const lastEmitted = useRef<string>("");
   const skipExternalSync = useRef(false);
@@ -98,6 +101,10 @@ function CuadernoRichEditorInner({
           return true;
         }
         return false;
+      },
+      handlePaste: (_view, event) => {
+        if (!onClipboardImagePaste) return false;
+        return onClipboardImagePaste(event);
       },
     },
     onUpdate: ({ editor: ed }) => {

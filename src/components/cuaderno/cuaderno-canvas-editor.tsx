@@ -338,7 +338,11 @@ export function CuadernoCanvasEditor({
         void saveImageToUserLibrary(dataUrl, name);
       } catch (err) {
         console.error("[cuaderno] paste image", err);
-        setPlaceProgress(null);
+        setPlaceProgress({
+          percent: 0,
+          label: err instanceof Error ? err.message : "No se pudo importar la imagen",
+        });
+        window.setTimeout(() => setPlaceProgress(null), 3200);
       }
     },
     [addDecoration, visibleCenterNorm],
@@ -496,23 +500,29 @@ export function CuadernoCanvasEditor({
     return () => window.removeEventListener("keydown", onKey, true);
   }, [writingMode, editor, deleteCanvasSelection]);
 
-  useEffect(() => {
-    if (writingMode !== "text") return;
-    const onPaste = (e: ClipboardEvent) => {
+  const handleClipboardPaste = useCallback(
+    (e: ClipboardEvent): boolean => {
       const t = e.target as HTMLElement | null;
-      if (t?.closest("textarea, input, .cn-postit-text")) return;
+      if (t?.closest("textarea, input, .cn-postit-text")) return false;
       const payload = readImagePayloadFromClipboard(e.clipboardData);
-      if (!payload) return;
+      if (!payload) return false;
       e.preventDefault();
+      e.stopPropagation();
       const at = visibleCenterNorm();
       void placePastedImage(
         payload.kind === "file" ? { file: payload.file } : { url: payload.url },
         at,
       );
-    };
-    window.addEventListener("paste", onPaste);
-    return () => window.removeEventListener("paste", onPaste);
-  }, [writingMode, placePastedImage, visibleCenterNorm]);
+      return true;
+    },
+    [placePastedImage, visibleCenterNorm],
+  );
+
+  useEffect(() => {
+    if (writingMode !== "text") return;
+    window.addEventListener("paste", handleClipboardPaste, true);
+    return () => window.removeEventListener("paste", handleClipboardPaste, true);
+  }, [writingMode, handleClipboardPaste]);
 
   const handleEditorReady = useCallback(
     (ed: Editor | null) => {
@@ -647,6 +657,7 @@ export function CuadernoCanvasEditor({
             className="cn-paper-editor cn-paper-editor--rich cn-paper-layer-text"
             lineHeight={lineHeight}
             onSelectionAction={onSelectionAction}
+            onClipboardImagePaste={writingMode === "text" ? handleClipboardPaste : undefined}
           />
           <CuadernoInkCanvas
             strokes={inkStrokes}
