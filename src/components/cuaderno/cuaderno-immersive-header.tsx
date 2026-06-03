@@ -41,6 +41,7 @@ export function CuadernoImmersiveHeader({
   onOpenFormatPanel,
   onOpenPageSettings,
   onOpenStickers,
+  stickersOpen = false,
   compact = false,
 }: {
   courseId: string;
@@ -58,6 +59,7 @@ export function CuadernoImmersiveHeader({
   onOpenFormatPanel: () => void;
   onOpenPageSettings: () => void;
   onOpenStickers: () => void;
+  stickersOpen?: boolean;
   compact?: boolean;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -92,9 +94,14 @@ export function CuadernoImmersiveHeader({
       </div>
 
       <div className="cn-immersive-header-actions">
-        <button type="button" className="cn-immersive-header-pill" onClick={onOpenStickers}>
-          <Sparkles size={14} />
-          Stickers
+        <button
+          type="button"
+          className={`cn-immersive-header-stickers${stickersOpen ? " is-open" : ""}`}
+          onClick={onOpenStickers}
+          title="Stickers, post-its y decoración"
+        >
+          <span aria-hidden>✨</span>
+          <span>Stickers</span>
         </button>
         <button
           type="button"
@@ -244,6 +251,10 @@ export function CuadernoImmersiveHeader({
               ))}
             </>
           ) : null}
+          <FloatingMenuItem onClick={() => { onOpenStickers(); setMenuOpen(false); }}>
+            <span className="inline mr-2">✨</span>
+            Stickers y post-its
+          </FloatingMenuItem>
           <FloatingMenuItem onClick={() => { onOpenFormatPanel(); setMenuOpen(false); }}>
             <PanelRight size={14} className="inline mr-2 opacity-70" />
             Panel de formato

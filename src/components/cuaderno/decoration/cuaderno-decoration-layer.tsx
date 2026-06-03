@@ -69,6 +69,7 @@ export function CuadernoDecorationLayer({
   };
 
   const onLayerPointerDown = (e: React.PointerEvent) => {
+    closeCtx();
     if (e.target === layerRef.current) onSelectId(null);
   };
 
@@ -130,6 +131,11 @@ export function CuadernoDecorationLayer({
 
   const sorted = sortByZIndex(decorations);
   const [dragOver, setDragOver] = useState(false);
+  const [ctxMenu, setCtxMenu] = useState<{ id: string; x: number; y: number } | null>(null);
+
+  const closeCtx = () => setCtxMenu(null);
+
+  const ctxTarget = ctxMenu ? decorations.find((d) => d.id === ctxMenu.id) : null;
 
   const handleDragOver = (e: React.DragEvent) => {
     if (!active) return;
@@ -184,8 +190,16 @@ export function CuadernoDecorationLayer({
             style={style}
             onPointerDown={(e) => {
               e.stopPropagation();
+              closeCtx();
               onSelectId(obj.id);
               if (!obj.locked) startDrag(e, obj, "move");
+            }}
+            onContextMenu={(e) => {
+              if (!active) return;
+              e.preventDefault();
+              e.stopPropagation();
+              onSelectId(obj.id);
+              setCtxMenu({ id: obj.id, x: e.clientX, y: e.clientY });
             }}
           >
             <DecorationBody obj={obj} active={active} onTextChange={(text) => updateOne(obj.id, { text })} />
@@ -246,6 +260,52 @@ export function CuadernoDecorationLayer({
           </div>
         );
       })}
+
+      {ctxMenu && ctxTarget && active ? (
+        <div
+          className="cn-decoration-context-menu"
+          style={{ left: ctxMenu.x, top: ctxMenu.y }}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          <button type="button" onClick={() => { closeCtx(); }}>
+            Mover <span className="cn-ctx-hint">arrastra</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              onChange([...decorations, duplicateDecoration(ctxTarget)]);
+              closeCtx();
+            }}
+          >
+            Duplicar
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              updateOne(ctxTarget.id, { locked: !ctxTarget.locked });
+              closeCtx();
+            }}
+          >
+            {ctxTarget.locked ? "Desbloquear" : "Bloquear"}
+          </button>
+          <button type="button" onClick={() => { zBump(ctxTarget.id, "up"); closeCtx(); }}>
+            Traer adelante
+          </button>
+          <button type="button" onClick={() => { zBump(ctxTarget.id, "down"); closeCtx(); }}>
+            Enviar atrás
+          </button>
+          <button
+            type="button"
+            className="is-danger"
+            onClick={() => {
+              removeOne(ctxTarget.id);
+              closeCtx();
+            }}
+          >
+            Eliminar
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }

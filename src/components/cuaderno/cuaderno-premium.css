@@ -2037,6 +2037,85 @@
   background: rgba(255, 255, 255, 0.08);
 }
 
+/* Botón Stickers — siempre visible (no usa .cn-immersive-header-pill) */
+.cn-immersive-header-stickers {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+  border: none;
+  box-shadow: 0 4px 18px rgba(168, 85, 247, 0.35);
+  flex-shrink: 0;
+  transition: transform 0.12s, box-shadow 0.15s;
+}
+
+.cn-immersive-header-stickers:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 22px rgba(236, 72, 153, 0.4);
+}
+
+.cn-immersive-header-stickers.is-open {
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.5);
+}
+
+.cn-immersive-header--compact .cn-immersive-header-stickers span:last-child {
+  display: none;
+}
+
+@media (min-width: 480px) {
+  .cn-immersive-header--compact .cn-immersive-header-stickers span:last-child {
+    display: inline;
+  }
+}
+
+.cn-stickers-fab {
+  position: absolute;
+  right: 18px;
+  bottom: 88px;
+  z-index: 28;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: none;
+  font-size: 1.35rem;
+  cursor: pointer;
+  background: linear-gradient(135deg, #a855f7, #ec4899);
+  color: #fff;
+  box-shadow: 0 8px 28px rgba(168, 85, 247, 0.45);
+  transition: transform 0.15s;
+}
+
+.cn-stickers-fab:hover {
+  transform: scale(1.06);
+}
+
+.cn-tb-stickers-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 32px;
+  padding: 0 12px;
+  margin-left: 6px;
+  border-radius: 8px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #a855f7, #ec4899);
+  border: none;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.cn-tb-stickers-btn.is-open {
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.45);
+}
+
 .cn-menu-item-desc {
   display: block;
   font-size: 0.65rem;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, Sparkles, X } from "lucide-react";
 import { generateGeminiText } from "@/lib/ai/gemini-text";
@@ -17,16 +17,22 @@ export function CuadernoStickerDesigner({
   open,
   onClose,
   onInsert,
+  initialPrompt = "",
 }: {
   open: boolean;
   onClose: () => void;
   onInsert: (src: string, label: string) => void;
+  initialPrompt?: string;
 }) {
   const [prompt, setPrompt] = useState("");
   const [chat, setChat] = useState<Array<{ role: "user" | "assistant"; text: string }>>([]);
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState<{ src: string; label: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (open && initialPrompt) setPrompt(initialPrompt);
+  }, [open, initialPrompt]);
 
   async function generateImage(userPrompt: string) {
     setLoading(true);

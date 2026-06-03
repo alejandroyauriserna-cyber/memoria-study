@@ -55,9 +55,13 @@ function ToolbarBtn({
 export function CuadernoCompactFormatToolbar({
   editor,
   courseAccent = "#00E5C3",
+  onOpenStickers,
+  stickersOpen = false,
 }: {
   editor: Editor | null;
   courseAccent?: string;
+  onOpenStickers?: () => void;
+  stickersOpen?: boolean;
 }) {
   const [fontId, setFontId] = useState<CuadernoFontId | "">("");
   const [fontSize, setFontSize] = useState("");
@@ -204,6 +208,17 @@ export function CuadernoCompactFormatToolbar({
               }}
             />
           </>
+        ) : null}
+        {onOpenStickers ? (
+          <button
+            type="button"
+            className={`cn-tb-stickers-btn${stickersOpen ? " is-open" : ""}`}
+            title="Stickers y post-its"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={onOpenStickers}
+          >
+            ✨ Stickers
+          </button>
         ) : null}
       </div>
     </div>

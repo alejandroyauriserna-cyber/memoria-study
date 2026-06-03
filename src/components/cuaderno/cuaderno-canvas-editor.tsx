@@ -52,6 +52,8 @@ export function CuadernoCanvasEditor({
   onPaperFocus,
   onEditorReady,
   onModeChange,
+  onOpenStickers,
+  stickerPanelOpen = false,
 }: {
   notes: string;
   onChange: (value: string) => void;
@@ -74,6 +76,8 @@ export function CuadernoCanvasEditor({
   onPaperFocus?: () => void;
   onEditorReady?: (editor: Editor | null) => void;
   onModeChange?: (mode: "write" | "pan") => void;
+  onOpenStickers?: () => void;
+  stickerPanelOpen?: boolean;
 }) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const shellRef = useRef<HTMLDivElement>(null);
@@ -214,7 +218,12 @@ export function CuadernoCanvasEditor({
   const modeRail =
     immersive && externalToolbar ? (
       writingMode === "text" ? (
-        <CuadernoCompactFormatToolbar editor={editor} courseAccent={courseAccent} />
+        <CuadernoCompactFormatToolbar
+          editor={editor}
+          courseAccent={courseAccent}
+          onOpenStickers={onOpenStickers}
+          stickersOpen={stickerPanelOpen}
+        />
       ) : (
         <CuadernoInkToolbar
           settings={inkSettings}
@@ -271,6 +280,16 @@ export function CuadernoCanvasEditor({
           </div>
         ) : null}
         {handwritingFab}
+        {onOpenStickers && !stickerPanelOpen ? (
+          <button
+            type="button"
+            className="cn-stickers-fab"
+            onClick={onOpenStickers}
+            title="Abrir stickers y post-its"
+          >
+            ✨
+          </button>
+        ) : null}
       </div>
     );
   }
