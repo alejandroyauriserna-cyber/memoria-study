@@ -239,6 +239,47 @@
   border-bottom: 1px solid color-mix(in srgb, #3b82f6 18%, transparent);
 }
 
+.cn-table-toolbar--simple {
+  display: flex;
+  gap: 6px;
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid color-mix(in srgb, #3b82f6 35%, transparent);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+}
+
+.cn-table-toolbar--simple button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+}
+
+.cn-table-toolbar--simple button:hover {
+  background: color-mix(in srgb, #3b82f6 10%, transparent);
+}
+
+.cn-table-toolbar--simple .cn-table-toolbar-danger {
+  color: #dc2626;
+}
+
+.cn-table-toolbar--simple .cn-table-toolbar-danger:hover {
+  background: #fef2f2;
+}
+
+.cn-prosemirror table.ProseMirror-selectednode {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
 .cn-table-toolbar {
   display: flex;
   flex-direction: column;

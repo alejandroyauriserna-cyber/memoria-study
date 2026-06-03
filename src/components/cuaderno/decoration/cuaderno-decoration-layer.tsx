@@ -17,12 +17,13 @@ import {
 import { isBehindTextWrap } from "@/lib/cuaderno/floating-image";
 import {
   applyDragPreview,
-  applyGroupDragPreview,
+  applyDragPreviewMove,
+  applyGroupDragPreviewMove,
   clearDragPreview,
   computeDragPatch,
+  DRAG_MOVE_THRESHOLD_PX,
   getLayerMetrics,
   grabOffsetPxFromPointer,
-  normalizedFromPointer,
   type DragMode,
   type GrabOffsetPx,
   type LayerMetrics,
@@ -84,6 +85,15 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
   onChangeRef.current = onChange;
   const selectedIdsRef = useRef(selectedIds);
   selectedIdsRef.current = selectedIds;
+
+  const pendingMoveRef = useRef<{
+    obj: DecorationObject;
+    el: HTMLElement;
+    startX: number;
+    startY: number;
+    pointerId: number;
+    cleanup: () => void;
+  } | null>(null);
 
   const dragRef = useRef<{
     ids: string[];
@@ -197,10 +207,16 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
         ddy = (leadPatch.y ?? lead.y) - lead.y;
       }
 
-      for (const [id, el] of drag.elements) clearDragPreview(el);
+      for (const [id, el] of drag.elements) clearDragPreview(el, drag.mode);
       drag.cleanup();
       dragRef.current = null;
       setDraggingIds([]);
+
+      const moved =
+        drag.mode === "move"
+          ? Math.hypot(e.clientX - drag.startX, e.clientY - drag.startY) >= DRAG_MOVE_THRESHOLD_PX
+          : true;
+      if (!moved) return;
 
       const next = liveRef.current.map((d) => {
         if (!drag.ids.includes(d.id)) return d;
@@ -232,12 +248,16 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
     const leadEl = drag.elements.get(drag.leadId);
     if (!lead || !leadEl) return;
 
-    if (drag.mode === "move" && drag.ids.length > 1) {
-      const group = [...drag.elements.entries()].map(([id, el]) => ({
-        el,
-        snapshot: drag.snapshots.get(id)!,
-      }));
-      applyGroupDragPreview(group, e.clientX, e.clientY, drag.metrics, drag.grab, lead);
+    if (drag.mode === "move") {
+      if (drag.ids.length > 1) {
+        const group = [...drag.elements.entries()].map(([id, el]) => ({
+          el,
+          snapshot: drag.snapshots.get(id)!,
+        }));
+        applyGroupDragPreviewMove(group, e.clientX, e.clientY, drag.metrics, drag.grab, lead);
+      } else {
+        applyDragPreviewMove(leadEl, lead, e.clientX, e.clientY, drag.metrics, drag.grab);
+      }
       return;
     }
 
@@ -256,7 +276,7 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
         drag.startX,
         drag.startY,
         drag.metrics,
-        drag.mode === "move" ? drag.grab : undefined,
+        undefined,
         drag.proportional,
       );
     }
@@ -273,75 +293,128 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
     [flushDragPreview],
   );
 
-  const startDrag = (
-    e: React.PointerEvent,
-    obj: DecorationObject,
-    mode: DragMode,
-    el: HTMLElement,
-  ) => {
-    if (!active || obj.locked || croppingId === obj.id) return;
-    const layer = layerRef.current;
-    if (!layer) return;
+  const cancelPendingMove = useCallback(() => {
+    const p = pendingMoveRef.current;
+    if (!p) return;
+    p.cleanup();
+    pendingMoveRef.current = null;
+  }, []);
+
+  const beginDrag = useCallback(
+    (
+      clientX: number,
+      clientY: number,
+      obj: DecorationObject,
+      mode: DragMode,
+      el: HTMLElement,
+      shiftKey: boolean,
+    ) => {
+      if (!active || obj.locked || croppingId === obj.id) return;
+      const layer = layerRef.current;
+      if (!layer) return;
+
+      const ids =
+        mode === "move" && selectedSet.has(obj.id) && selectedIds.length > 1
+          ? selectedIds.filter((id) => {
+              const item = liveRef.current.find((d) => d.id === id);
+              return item && !item.locked;
+            })
+          : [obj.id];
+
+      const metrics = getLayerMetrics(layer);
+      const grab = grabOffsetPxFromPointer(clientX, clientY, el);
+      const snapshots = new Map<string, DecorationObject>();
+      const elements = new Map<string, HTMLElement>();
+
+      for (const id of ids) {
+        const item = liveRef.current.find((d) => d.id === id);
+        const node = layer.querySelector(`[data-deco-id="${id}"]`) as HTMLElement | null;
+        if (!item || !node) continue;
+        snapshots.set(id, { ...item });
+        elements.set(id, node);
+        node.classList.add("is-dragging");
+      }
+
+      if (!snapshots.has(obj.id)) return;
+
+      const onWinUp = (ev: PointerEvent) => {
+        const d = dragRef.current;
+        if (d?.raf != null) cancelAnimationFrame(d.raf);
+        endDrag(ev);
+      };
+      window.addEventListener("pointermove", onWinPointerMove);
+      window.addEventListener("pointerup", onWinUp);
+      window.addEventListener("pointercancel", onWinUp);
+
+      const cleanup = () => {
+        window.removeEventListener("pointermove", onWinPointerMove);
+        window.removeEventListener("pointerup", onWinUp);
+        window.removeEventListener("pointercancel", onWinUp);
+      };
+
+      dragRef.current = {
+        ids: [...snapshots.keys()],
+        mode,
+        startX: clientX,
+        startY: clientY,
+        snapshots,
+        elements,
+        metrics,
+        grab,
+        leadId: obj.id,
+        proportional: shiftKey,
+        cleanup,
+        raf: null,
+        pending: null,
+      };
+      setDraggingIds([...snapshots.keys()]);
+    },
+    [active, croppingId, selectedSet, selectedIds, endDrag, onWinPointerMove],
+  );
+
+  const prepareMove = useCallback(
+    (e: React.PointerEvent, obj: DecorationObject, el: HTMLElement) => {
+      if (!active || obj.locked || croppingId === obj.id) return;
+      e.stopPropagation();
+      cancelPendingMove();
+
+      const startX = e.clientX;
+      const startY = e.clientY;
+      const pointerId = e.pointerId;
+
+      const onMove = (ev: PointerEvent) => {
+        const p = pendingMoveRef.current;
+        if (!p || ev.pointerId !== p.pointerId) return;
+        if (Math.hypot(ev.clientX - p.startX, ev.clientY - p.startY) < DRAG_MOVE_THRESHOLD_PX) return;
+        cancelPendingMove();
+        beginDrag(p.startX, p.startY, p.obj, "move", p.el, ev.shiftKey);
+      };
+
+      const onUp = () => cancelPendingMove();
+
+      const cleanup = () => {
+        window.removeEventListener("pointermove", onMove);
+        window.removeEventListener("pointerup", onUp);
+        window.removeEventListener("pointercancel", onUp);
+      };
+
+      window.addEventListener("pointermove", onMove);
+      window.addEventListener("pointerup", onUp);
+      window.addEventListener("pointercancel", onUp);
+
+      pendingMoveRef.current = { obj, el, startX, startY, pointerId, cleanup };
+    },
+    [active, croppingId, cancelPendingMove, beginDrag],
+  );
+
+  const startDrag = (e: React.PointerEvent, obj: DecorationObject, mode: DragMode, el: HTMLElement) => {
+    if (mode === "move") {
+      prepareMove(e, obj, el);
+      return;
+    }
     e.stopPropagation();
     e.preventDefault();
-
-    const ids =
-      mode === "move" && selectedSet.has(obj.id) && selectedIds.length > 1
-        ? selectedIds.filter((id) => {
-            const item = liveRef.current.find((d) => d.id === id);
-            return item && !item.locked;
-          })
-        : [obj.id];
-
-    if (!selectedSet.has(obj.id)) onSelectIds([obj.id]);
-
-    const metrics = getLayerMetrics(layer);
-    const grab = grabOffsetPxFromPointer(e.clientX, e.clientY, el);
-    const snapshots = new Map<string, DecorationObject>();
-    const elements = new Map<string, HTMLElement>();
-
-    for (const id of ids) {
-      const item = liveRef.current.find((d) => d.id === id);
-      const node = layer.querySelector(`[data-deco-id="${id}"]`) as HTMLElement | null;
-      if (!item || !node) continue;
-      snapshots.set(id, { ...item });
-      elements.set(id, node);
-      node.classList.add("is-dragging");
-    }
-
-    if (!snapshots.has(obj.id)) return;
-
-    const onWinUp = (ev: PointerEvent) => {
-      const d = dragRef.current;
-      if (d?.raf != null) cancelAnimationFrame(d.raf);
-      endDrag(ev);
-    };
-    window.addEventListener("pointermove", onWinPointerMove);
-    window.addEventListener("pointerup", onWinUp);
-    window.addEventListener("pointercancel", onWinUp);
-
-    const cleanup = () => {
-      window.removeEventListener("pointermove", onWinPointerMove);
-      window.removeEventListener("pointerup", onWinUp);
-      window.removeEventListener("pointercancel", onWinUp);
-    };
-
-    dragRef.current = {
-      ids: [...snapshots.keys()],
-      mode,
-      startX: e.clientX,
-      startY: e.clientY,
-      snapshots,
-      elements,
-      metrics,
-      grab,
-      leadId: obj.id,
-      proportional: e.shiftKey,
-      cleanup,
-      raf: null,
-      pending: null,
-    };
-    setDraggingIds([...snapshots.keys()]);
+    beginDrag(e.clientX, e.clientY, obj, mode, el, e.shiftKey);
   };
 
   const zBump = useCallback((id: string, dir: "up" | "down") => {

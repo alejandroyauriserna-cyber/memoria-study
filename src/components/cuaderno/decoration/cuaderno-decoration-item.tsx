@@ -116,6 +116,7 @@ export const CuadernoDecorationItem = memo(function CuadernoDecorationItem({
       }}
       onPointerDown={(e) => {
         if (!active) return;
+        if ((e.target as HTMLElement).closest(".cn-decoration-handle, .cn-decoration-toolbar")) return;
         e.stopPropagation();
         const additive = e.shiftKey || e.metaKey || e.ctrlKey;
         onSelect(additive);

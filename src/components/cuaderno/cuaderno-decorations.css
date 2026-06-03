@@ -42,10 +42,6 @@
   will-change: auto;
 }
 
-.cn-decoration-item.is-dragging {
-  will-change: transform, width, height;
-}
-
 .cn-decoration-item.is-selected {
   outline: 2px solid #3b82f6;
   outline-offset: 2px;
@@ -54,7 +50,9 @@
 }
 
 .cn-decoration-item.is-dragging {
-  will-change: left, top;
+  content-visibility: visible;
+  contain: none;
+  will-change: transform;
   transition: none;
   cursor: grabbing;
   z-index: 99999 !important;

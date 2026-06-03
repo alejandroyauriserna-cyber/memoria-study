@@ -3,6 +3,8 @@ import { applyResize, type ResizeHandle } from "@/lib/cuaderno/decoration-resize
 
 export type DragMode = "move" | "rotate" | ResizeHandle;
 
+export const DRAG_MOVE_THRESHOLD_PX = 5;
+
 export type LayerMetrics = {
   left: number;
   top: number;
@@ -44,17 +46,6 @@ export function normalizedFromPointer(
   };
 }
 
-export function pointerToNormalized(
-  clientX: number,
-  clientY: number,
-  metrics: LayerMetrics,
-): { nx: number; ny: number } {
-  return {
-    nx: Math.min(0.98, Math.max(0, (clientX - metrics.left) / metrics.width)),
-    ny: Math.min(0.98, Math.max(0, (clientY - metrics.top) / metrics.height)),
-  };
-}
-
 export function computeDragPatch(
   snapshot: DecorationObject,
   mode: DragMode,
@@ -85,6 +76,39 @@ export function computeDragPatch(
   return applyResize(snapshot, mode, dx, dy, proportional);
 }
 
+/** Solo translate3d — no toca left/top/width/height (evita encogimiento en drag). */
+export function applyDragPreviewMove(
+  el: HTMLElement,
+  snapshot: DecorationObject,
+  clientX: number,
+  clientY: number,
+  metrics: LayerMetrics,
+  grab: GrabOffsetPx,
+): void {
+  const pos = normalizedFromPointer(clientX, clientY, metrics, grab);
+  const dxPx = (pos.x - snapshot.x) * metrics.width;
+  const dyPx = (pos.y - snapshot.y) * metrics.height;
+  el.style.transform = `translate3d(${dxPx}px, ${dyPx}px, 0) rotate(${snapshot.rotation}deg)`;
+}
+
+export function applyGroupDragPreviewMove(
+  elements: { el: HTMLElement; snapshot: DecorationObject }[],
+  clientX: number,
+  clientY: number,
+  metrics: LayerMetrics,
+  grab: GrabOffsetPx,
+  leadSnapshot: DecorationObject,
+): void {
+  const leadPos = normalizedFromPointer(clientX, clientY, metrics, grab);
+  const ddx = leadPos.x - leadSnapshot.x;
+  const ddy = leadPos.y - leadSnapshot.y;
+  for (const { el, snapshot } of elements) {
+    const dxPx = ddx * metrics.width;
+    const dyPx = ddy * metrics.height;
+    el.style.transform = `translate3d(${dxPx}px, ${dyPx}px, 0) rotate(${snapshot.rotation}deg)`;
+  }
+}
+
 export function applyDragPreview(
   el: HTMLElement,
   snapshot: DecorationObject,
@@ -100,25 +124,7 @@ export function applyDragPreview(
   proportional = false,
 ): void {
   if (mode === "move" && grab) {
-    const pos = normalizedFromPointer(clientX, clientY, metrics, grab);
-    el.style.left = `${pos.x * 100}%`;
-    el.style.top = `${pos.y * 100}%`;
-    el.style.width = `${snapshot.w * 100}%`;
-    el.style.height = `${snapshot.h * 100}%`;
-    el.style.transform = `rotate(${snapshot.rotation}deg)`;
-    return;
-  }
-
-  if (mode === "move") {
-    const pos = {
-      x: Math.min(0.95, Math.max(0, snapshot.x + dx)),
-      y: Math.min(0.95, Math.max(0, snapshot.y + dy)),
-    };
-    el.style.left = `${pos.x * 100}%`;
-    el.style.top = `${pos.y * 100}%`;
-    el.style.width = `${snapshot.w * 100}%`;
-    el.style.height = `${snapshot.h * 100}%`;
-    el.style.transform = `rotate(${snapshot.rotation}deg)`;
+    applyDragPreviewMove(el, snapshot, clientX, clientY, metrics, grab);
     return;
   }
 
@@ -142,33 +148,13 @@ export function applyDragPreview(
   el.style.transform = `rotate(${patch.rotation ?? snapshot.rotation}deg)`;
 }
 
-export function applyGroupDragPreview(
-  elements: { el: HTMLElement; snapshot: DecorationObject }[],
-  clientX: number,
-  clientY: number,
-  metrics: LayerMetrics,
-  grab: GrabOffsetPx,
-  leadSnapshot: DecorationObject,
-): void {
-  const leadPos = normalizedFromPointer(clientX, clientY, metrics, grab);
-  const ddx = leadPos.x - leadSnapshot.x;
-  const ddy = leadPos.y - leadSnapshot.y;
-  for (const { el, snapshot } of elements) {
-    const x = Math.min(0.95, Math.max(0, snapshot.x + ddx));
-    const y = Math.min(0.95, Math.max(0, snapshot.y + ddy));
-    el.style.left = `${x * 100}%`;
-    el.style.top = `${y * 100}%`;
-    el.style.width = `${snapshot.w * 100}%`;
-    el.style.height = `${snapshot.h * 100}%`;
-    el.style.transform = `rotate(${snapshot.rotation}deg)`;
-  }
-}
-
-export function clearDragPreview(el: HTMLElement): void {
+export function clearDragPreview(el: HTMLElement, mode?: DragMode): void {
   el.style.transform = "";
-  el.style.width = "";
-  el.style.height = "";
-  el.style.left = "";
-  el.style.top = "";
+  if (mode !== "move") {
+    el.style.width = "";
+    el.style.height = "";
+    el.style.left = "";
+    el.style.top = "";
+  }
   el.classList.remove("is-dragging");
 }
