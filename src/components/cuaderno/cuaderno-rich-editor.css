@@ -1,0 +1,382 @@
+/* Editor rico — ProseMirror + bloques jurídicos */
+
+.cn-rich-editor {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: inherit;
+}
+
+.cn-rich-editor-skeleton {
+  min-height: 320px;
+}
+
+.cn-block-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 clamp(24px, 3vw, 48px) 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--cn-course-accent, #0d9488) 18%, transparent);
+  background: color-mix(in srgb, var(--paper-bg, #fff) 92%, var(--cn-course-accent, #0d9488) 8%);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(8px);
+}
+
+.cn-block-toolbar-group {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cn-block-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--paper-ink, #1c1917) 12%, transparent);
+  background: color-mix(in srgb, var(--paper-bg, #fff) 88%, transparent);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--paper-ink, #1c1917) 75%, transparent);
+  transition: background 0.15s, border-color 0.15s, transform 0.15s;
+}
+
+.cn-block-btn:hover {
+  border-color: var(--cn-course-accent, #0d9488);
+  color: var(--paper-ink, #1c1917);
+  transform: translateY(-1px);
+}
+
+.cn-block-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 20;
+  min-width: 200px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 6px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--paper-ink, #1c1917) 14%, transparent);
+  background: var(--paper-bg, #fff);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12);
+}
+
+.cn-block-dropdown--wide {
+  min-width: 240px;
+}
+
+.cn-block-dropdown-item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  text-align: left;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--paper-ink, #1c1917);
+  transition: background 0.12s;
+}
+
+.cn-block-dropdown-item:hover {
+  background: color-mix(in srgb, var(--cn-course-accent, #0d9488) 12%, transparent);
+}
+
+.cn-block-dropdown-icon {
+  font-size: 0.7rem;
+  font-weight: 700;
+  opacity: 0.6;
+}
+
+.cn-rich-editor-content {
+  flex: 1;
+}
+
+.cn-prosemirror {
+  min-height: calc(100dvh - 280px);
+  padding: clamp(32px, 4vw, 56px) clamp(36px, 4vw, 64px) 100px;
+  outline: none;
+  font-family: "EB Garamond", Georgia, "Times New Roman", serif;
+  font-size: clamp(1.05rem, 1.15vw, 1.18rem);
+  line-height: 1.78;
+  letter-spacing: 0.01em;
+  color: var(--paper-ink, #1c1917);
+  caret-color: var(--cn-course-accent, #0d9488);
+  -webkit-font-smoothing: antialiased;
+}
+
+.cn-prosemirror:focus {
+  outline: none;
+}
+
+.cn-prosemirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: color-mix(in srgb, var(--paper-ink, #1c1917) 38%, transparent);
+  font-style: italic;
+  pointer-events: none;
+  height: 0;
+}
+
+.cn-prosemirror ::selection {
+  background: color-mix(in srgb, var(--cn-course-accent, #00ffd5) 28%, transparent);
+}
+
+.cn-prosemirror h1 {
+  font-size: 1.85em;
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 1.2em 0 0.5em;
+  letter-spacing: -0.02em;
+}
+
+.cn-prosemirror h2 {
+  font-size: 1.45em;
+  font-weight: 600;
+  margin: 1em 0 0.45em;
+}
+
+.cn-prosemirror h3 {
+  font-size: 1.2em;
+  font-weight: 600;
+  margin: 0.85em 0 0.35em;
+  color: color-mix(in srgb, var(--paper-ink, #1c1917) 88%, var(--cn-course-accent, #0d9488));
+}
+
+.cn-prosemirror p {
+  margin: 0.45em 0;
+}
+
+.cn-prosemirror ul,
+.cn-prosemirror ol {
+  margin: 0.5em 0;
+  padding-left: 1.4em;
+}
+
+.cn-prosemirror blockquote {
+  margin: 0.75em 0;
+  padding: 0.65em 1em 0.65em 1.1em;
+  border-left: 3px solid var(--cn-course-accent, #0d9488);
+  background: color-mix(in srgb, var(--cn-course-accent, #0d9488) 8%, transparent);
+  border-radius: 0 10px 10px 0;
+  font-style: italic;
+}
+
+.cn-prosemirror hr {
+  margin: 1.25em 0;
+  border: none;
+  height: 1px;
+  background: color-mix(in srgb, var(--paper-ink, #1c1917) 18%, transparent);
+}
+
+.cn-prosemirror pre.cn-code-block,
+.cn-prosemirror pre {
+  margin: 0.75em 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--paper-ink, #1c1917) 6%, var(--paper-bg, #fff));
+  font-family: ui-monospace, "Cascadia Code", monospace;
+  font-size: 0.88em;
+  line-height: 1.5;
+  overflow-x: auto;
+}
+
+.cn-prosemirror table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.75em 0;
+  font-size: 0.92em;
+}
+
+.cn-prosemirror th,
+.cn-prosemirror td {
+  border: 1px solid color-mix(in srgb, var(--paper-ink, #1c1917) 16%, transparent);
+  padding: 8px 10px;
+  vertical-align: top;
+}
+
+.cn-prosemirror th {
+  background: color-mix(in srgb, var(--cn-course-accent, #0d9488) 10%, var(--paper-bg, #fff));
+  font-weight: 600;
+}
+
+.cn-prosemirror ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0;
+}
+
+.cn-prosemirror ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.cn-prosemirror ul[data-type="taskList"] li label {
+  margin-top: 0.35em;
+}
+
+.cn-prosemirror mark {
+  border-radius: 3px;
+  padding: 0 2px;
+}
+
+/* Bloques de estudio jurídico */
+.cn-study-block {
+  margin: 1em 0;
+  padding: 0;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--cn-course-accent, #0d9488) 22%, transparent);
+  background: color-mix(in srgb, var(--paper-bg, #fff) 94%, var(--cn-course-accent, #0d9488) 6%);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.cn-study-block-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cn-course-accent, #0d9488);
+  background: color-mix(in srgb, var(--cn-course-accent, #0d9488) 12%, transparent);
+  user-select: none;
+}
+
+.cn-study-block-body {
+  padding: 12px 16px 16px;
+}
+
+.cn-study-block--jurisprudencia {
+  border-color: color-mix(in srgb, #1e40af 35%, transparent);
+}
+.cn-study-block--jurisprudencia .cn-study-block-label {
+  color: #1e40af;
+  background: color-mix(in srgb, #1e40af 10%, transparent);
+}
+
+.cn-study-block--articulo {
+  border-color: color-mix(in srgb, #7f1d1d 30%, transparent);
+}
+.cn-study-block--articulo .cn-study-block-label {
+  color: #7f1d1d;
+  background: color-mix(in srgb, #7f1d1d 10%, transparent);
+}
+
+.cn-study-block--caso {
+  border-color: color-mix(in srgb, #5b21b6 28%, transparent);
+}
+
+.cn-study-block--flashcard {
+  border-style: dashed;
+}
+
+.cn-study-block--mapa .cn-study-block-body {
+  min-height: 80px;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 18px,
+    color-mix(in srgb, var(--paper-ink, #1c1917) 6%, transparent) 18px,
+    color-mix(in srgb, var(--paper-ink, #1c1917) 6%, transparent) 19px
+  );
+}
+
+/* Barra flotante de formato */
+.cn-format-bubble {
+  z-index: 50;
+}
+
+.cn-format-bubble-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--cn-course-accent, #00ffd5) 35%, rgba(255, 255, 255, 0.12));
+  background: rgba(12, 16, 22, 0.94);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+}
+
+.cn-format-bubble-inner button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.88);
+  transition: background 0.12s, color 0.12s;
+}
+
+.cn-format-bubble-inner button:hover,
+.cn-format-bubble-inner button.is-active {
+  background: color-mix(in srgb, var(--cn-accent, #00ffd5) 22%, transparent);
+  color: #fff;
+}
+
+.cn-format-divider {
+  width: 1px;
+  height: 22px;
+  margin: 0 2px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.cn-format-select {
+  height: 28px;
+  max-width: 96px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.68rem;
+  padding: 0 6px;
+}
+
+.cn-format-select--narrow {
+  max-width: 72px;
+}
+
+.cn-format-colors {
+  display: flex;
+  gap: 3px;
+}
+
+.cn-format-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+}
+
+.cn-format-swatch--hi {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.cn-format-ai {
+  width: auto !important;
+  padding: 0 8px !important;
+  color: var(--cn-accent, #00ffd5) !important;
+}
+
+[data-editable="false"] .cn-block-toolbar {
+  display: none;
+}

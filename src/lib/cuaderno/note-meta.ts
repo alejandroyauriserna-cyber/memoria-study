@@ -1,4 +1,5 @@
 import type { CuadernoTemplateId } from "@/lib/cuaderno/templates";
+import { wordCountFromNotes } from "@/lib/cuaderno/rich-text";
 
 const META_RE = /^<!--cuaderno:([\s\S]*?)-->\n?/;
 
@@ -38,7 +39,6 @@ export function serializeNoteContent(meta: CuadernoNoteMeta, body: string): stri
 }
 
 export function estimatePageCount(notes: string): number {
-  const { body } = parseNoteContent(notes);
-  const words = body.trim().split(/\s+/).filter(Boolean).length;
+  const words = wordCountFromNotes(notes);
   return Math.max(1, Math.ceil(words / 280));
 }

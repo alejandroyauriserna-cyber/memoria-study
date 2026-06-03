@@ -22,9 +22,12 @@ const LAYOUTS: { id: CuadernoLayoutMode; label: string; icon: typeof Maximize2 }
 ];
 
 const TONES: { id: CuadernoPaperTone; label: string }[] = [
-  { id: "warm", label: "Cálido" },
   { id: "white", label: "Blanco" },
+  { id: "ivory", label: "Marfil" },
+  { id: "beige", label: "Beige" },
+  { id: "warm", label: "Cálido" },
   { id: "cool", label: "Frío" },
+  { id: "dark", label: "Oscuro" },
 ];
 
 export function CuadernoEditorChrome({

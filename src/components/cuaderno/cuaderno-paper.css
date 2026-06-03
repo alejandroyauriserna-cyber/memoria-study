@@ -20,6 +20,48 @@
   --paper-margin: rgba(30, 58, 95, 0.3);
 }
 
+.cn-paper.tone-ivory {
+  --paper-bg: #faf8f3;
+  --paper-line: rgba(40, 35, 30, 0.09);
+  --paper-ink: #292524;
+  --paper-margin: rgba(120, 53, 15, 0.32);
+}
+
+.cn-paper.tone-beige {
+  --paper-bg: #ede6d6;
+  --paper-line: rgba(68, 64, 60, 0.11);
+  --paper-ink: #292524;
+  --paper-margin: rgba(146, 64, 14, 0.3);
+}
+
+.cn-paper.tone-dark {
+  --paper-bg: #1a1f2e;
+  --paper-line: rgba(148, 163, 184, 0.14);
+  --paper-ink: #e2e8f0;
+  --paper-margin: rgba(94, 234, 212, 0.35);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 24px 80px rgba(0, 0, 0, 0.45),
+    0 8px 24px rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.cn-paper.tone-dark .cn-block-toolbar {
+  background: color-mix(in srgb, var(--paper-bg) 88%, #fff 12%);
+  border-color: color-mix(in srgb, var(--cn-course-accent, #5eead4) 25%, transparent);
+}
+
+.cn-paper.tone-dark .cn-block-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: var(--paper-ink);
+}
+
+.cn-paper.tone-dark .cn-block-dropdown {
+  background: #252b3d;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
 .cn-paper {
   --paper-bg: #f6f1e8;
   --paper-line: rgba(30, 35, 45, 0.1);

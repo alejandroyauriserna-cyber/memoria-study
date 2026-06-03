@@ -1,4 +1,5 @@
 import { serializeNoteContent } from "@/lib/cuaderno/note-meta";
+import { bodyToEditorHtml } from "@/lib/cuaderno/rich-text";
 
 export type CuadernoTemplateId =
   | "blank"
@@ -146,5 +147,5 @@ export function getTemplate(id: CuadernoTemplateId): CuadernoTemplate {
 
 export function buildInitialNotes(templateId: CuadernoTemplateId): string {
   const template = getTemplate(templateId);
-  return serializeNoteContent({ templateId }, template.initialBody);
+  return serializeNoteContent({ templateId }, bodyToEditorHtml(template.initialBody));
 }

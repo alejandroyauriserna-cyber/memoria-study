@@ -1,6 +1,6 @@
 export type CuadernoLayoutMode = "compact" | "standard" | "fullscreen";
 
-export type CuadernoPaperTone = "warm" | "white" | "cool";
+export type CuadernoPaperTone = "warm" | "white" | "ivory" | "beige" | "cool" | "dark";
 
 const LAYOUT_KEY = "memoria-cuaderno-layout";
 const TONE_KEY = "memoria-cuaderno-paper-tone";
@@ -20,7 +20,16 @@ export function saveLayoutMode(mode: CuadernoLayoutMode) {
 export function getPaperTone(): CuadernoPaperTone {
   if (typeof window === "undefined") return "warm";
   const v = localStorage.getItem(TONE_KEY);
-  if (v === "warm" || v === "white" || v === "cool") return v;
+  if (
+    v === "warm" ||
+    v === "white" ||
+    v === "ivory" ||
+    v === "beige" ||
+    v === "cool" ||
+    v === "dark"
+  ) {
+    return v;
+  }
   return "warm";
 }
 

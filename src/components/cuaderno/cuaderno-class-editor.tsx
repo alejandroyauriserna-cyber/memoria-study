@@ -232,6 +232,7 @@ export function CuadernoClassEditor({ initialClass }: { initialClass: CuadernoCl
           <CuadernoCanvasEditor
             notes={notes}
             onChange={setNotes}
+            courseAccent={prefs.accent}
             onSelectionAction={(action, text) => handleAsk(action, text)}
           />
         </section>

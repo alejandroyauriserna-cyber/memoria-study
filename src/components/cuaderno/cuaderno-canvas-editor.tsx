@@ -1,24 +1,24 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import { Minus, Plus, Type } from "lucide-react";
+import { CuadernoRichEditor } from "@/components/cuaderno/cuaderno-rich-editor";
 import { parseNoteContent, serializeNoteContent } from "@/lib/cuaderno/note-meta";
 import { getPaperClasses } from "@/lib/cuaderno/paper-styles";
 import type { CuadernoLayoutMode, CuadernoPaperTone } from "@/lib/cuaderno/editor-preferences";
 import { getTemplate, type CuadernoTemplateId } from "@/lib/cuaderno/templates";
-import { CuadernoSelectionMenu } from "@/components/cuaderno/cuaderno-selection-menu";
 import type { CuadernoAskAction } from "@/types/cuaderno";
 
 export function CuadernoCanvasEditor({
   notes,
   onChange,
   onSelectionAction,
-  placeholder = "Escribe aquí como en tu cuaderno físico…",
+  placeholder = "Escribe aquí como en tu cuaderno…",
   immersive = false,
   layoutMode = "fullscreen",
   paperTone = "warm",
   templateId: templateIdProp,
-  onTemplateChange,
+  courseAccent = "#0d9488",
 }: {
   notes: string;
   onChange: (value: string) => void;
@@ -32,44 +32,22 @@ export function CuadernoCanvasEditor({
   paperTone?: CuadernoPaperTone;
   templateId?: CuadernoTemplateId;
   onTemplateChange?: (id: CuadernoTemplateId) => void;
+  courseAccent?: string;
 }) {
-  const editorRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(1);
   const [mode, setMode] = useState<"write" | "pan">("write");
-  const [selectionMenu, setSelectionMenu] = useState<{ x: number; y: number } | null>(null);
 
   const { meta, body } = parseNoteContent(notes);
   const templateId = templateIdProp ?? meta.templateId;
   const template = getTemplate(templateId);
   const paperClass = `${getPaperClasses(templateId)} tone-${paperTone}`;
 
-  useEffect(() => {
-    const el = editorRef.current;
-    if (!el || document.activeElement === el) return;
-    if (el.innerText !== body) {
-      el.innerText = body;
-    }
-  }, [body]);
-
-  const syncContent = useCallback(() => {
-    const el = editorRef.current;
-    if (!el) return;
-    onChange(serializeNoteContent({ ...meta, templateId }, el.innerText));
-  }, [meta, templateId, onChange]);
-
-  function handleMouseUp() {
-    if (!onSelectionAction) return;
-    const text = window.getSelection()?.toString().trim();
-    if (!text || text.length < 3) {
-      setSelectionMenu(null);
-      return;
-    }
-    const range = window.getSelection()?.getRangeAt(0);
-    const rect = range?.getBoundingClientRect();
-    if (rect) {
-      setSelectionMenu({ x: rect.left + rect.width / 2, y: rect.top - 8 });
-    }
-  }
+  const syncBody = useCallback(
+    (html: string) => {
+      onChange(serializeNoteContent({ ...meta, templateId }, html));
+    },
+    [meta, templateId, onChange],
+  );
 
   const viewportClass = immersive
     ? `cn-canvas-viewport cn-canvas-viewport--immersive ${mode === "pan" ? "is-panning" : ""}`
@@ -78,17 +56,19 @@ export function CuadernoCanvasEditor({
   const stageClass = immersive ? "cn-canvas-stage cn-canvas-stage--immersive" : "cn-canvas-stage";
 
   const paperInner = (
-    <div className={paperClass} data-template={templateId}>
-      <div
-        ref={editorRef}
-        role="textbox"
-        aria-multiline
-        contentEditable={mode === "write"}
-        suppressContentEditableWarning
-        className="cn-paper-editor"
-        data-placeholder={placeholder}
-        onInput={syncContent}
-        onBlur={syncContent}
+    <div
+      className={paperClass}
+      data-template={templateId}
+      style={{ "--cn-course-accent": courseAccent } as React.CSSProperties}
+    >
+      <CuadernoRichEditor
+        body={body}
+        onBodyChange={syncBody}
+        placeholder={placeholder || template.description}
+        editable={mode === "write"}
+        courseAccent={courseAccent}
+        className="cn-paper-editor cn-paper-editor--rich"
+        onSelectionAction={onSelectionAction}
       />
     </div>
   );
@@ -96,21 +76,11 @@ export function CuadernoCanvasEditor({
   if (immersive) {
     return (
       <div className="cn-immersive-canvas" data-layout={layoutMode}>
-        <div className={viewportClass} onMouseUp={mode === "write" ? handleMouseUp : undefined}>
+        <div className={viewportClass}>
           <div className={stageClass} style={{ transform: `scale(${zoom})` }}>
             {paperInner}
           </div>
         </div>
-        {selectionMenu && onSelectionAction ? (
-          <CuadernoSelectionMenu
-            x={selectionMenu.x}
-            y={selectionMenu.y}
-            onAction={(action, text) => {
-              setSelectionMenu(null);
-              onSelectionAction(action, text);
-            }}
-          />
-        ) : null}
         <div className="cn-immersive-zoom">
           <button
             type="button"
@@ -174,22 +144,11 @@ export function CuadernoCanvasEditor({
         </div>
       </div>
 
-      <div className={viewportClass} onMouseUp={mode === "write" ? handleMouseUp : undefined}>
+      <div className={viewportClass}>
         <div className={stageClass} style={{ transform: `scale(${zoom})` }}>
           {paperInner}
         </div>
       </div>
-
-      {selectionMenu && onSelectionAction ? (
-        <CuadernoSelectionMenu
-          x={selectionMenu.x}
-          y={selectionMenu.y}
-          onAction={(action, text) => {
-            setSelectionMenu(null);
-            onSelectionAction(action, text);
-          }}
-        />
-      ) : null}
     </div>
   );
 }

@@ -100,17 +100,19 @@
   position: relative;
   z-index: 1;
   min-height: calc(100dvh - 220px);
-  padding: clamp(40px, 5vw, 72px) clamp(36px, 4vw, 64px) 120px;
-  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
-  font-size: clamp(1.05rem, 1.2vw, 1.2rem);
-  line-height: 1.82;
-  letter-spacing: 0.01em;
   outline: none;
   border: none;
-  white-space: pre-wrap;
-  word-break: break-word;
   caret-color: var(--cn-course-accent, #0d9488);
   -webkit-font-smoothing: antialiased;
+}
+
+.cn-paper-editor--rich {
+  min-height: calc(100dvh - 220px);
+  white-space: normal;
+}
+
+.cn-paper-editor--rich .cn-prosemirror {
+  min-height: calc(100dvh - 260px);
 }
 
 .cn-paper-editor:focus {

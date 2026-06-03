@@ -325,6 +325,7 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
             layoutMode={chrome.layoutMode}
             paperTone={chrome.paperTone}
             templateId={meta.templateId}
+            courseAccent={coverArt.accent}
             onSelectionAction={(action, text) => {
               setAiOpen(true);
               if (action === "summarize") {

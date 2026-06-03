@@ -1,6 +1,14 @@
 import { extractPdfFromBuffer } from "@/lib/pdf/extract";
+import { parseNoteContent } from "@/lib/cuaderno/note-meta";
+import { isHtmlBody, stripHtml } from "@/lib/cuaderno/rich-text";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { CuadernoClass } from "@/types/cuaderno";
+
+function notesPlainForAi(raw: string): string {
+  const { body } = parseNoteContent(raw);
+  const text = isHtmlBody(body) ? stripHtml(body) : body;
+  return text.trim();
+}
 
 export async function loadCuadernoPdfContext(materialId: string | null): Promise<string | null> {
   if (!materialId) return null;
@@ -41,8 +49,9 @@ export function buildCuadernoStudyContext(
     parts.push(`FECHA: ${cuadernoClass.classDate}`);
   }
 
-  if (cuadernoClass.notes.trim()) {
-    parts.push(`APUNTES DEL ESTUDIANTE:\n${cuadernoClass.notes.trim()}`);
+  const notesPlain = notesPlainForAi(cuadernoClass.notes);
+  if (notesPlain) {
+    parts.push(`APUNTES DEL ESTUDIANTE:\n${notesPlain}`);
   }
 
   if (cuadernoClass.extractedConcepts.length) {
