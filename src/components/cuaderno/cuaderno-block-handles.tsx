@@ -197,7 +197,7 @@ export function useBlockClickSelect(editor: Editor | null) {
         const inTable = target.closest("table");
         if (inTable && (target.closest("td") || target.closest("th"))) return;
       }
-      const block = target.closest("[data-study-block], .cn-image-block-view");
+      const block = target.closest("[data-study-block]");
       if (!block || !dom.contains(block)) return;
       if (e.detail > 1) return;
       const pos = editor.view.posAtDOM(block, 0);

@@ -128,11 +128,13 @@ export function CuadernoEditorToolbar({
   courseAccent = "#0d9488",
   disabled = false,
   onAiAction,
+  onInsertImageFile,
 }: {
   editor: Editor | null;
   courseAccent?: string;
   disabled?: boolean;
   onAiAction?: (action: AiToolbarAction, text: string) => void;
+  onInsertImageFile?: (file: File) => void;
 }) {
   const [legalOpen, setLegalOpen] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
@@ -168,12 +170,7 @@ export function CuadernoEditorToolbar({
   };
 
   const insertImage = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const src = reader.result as string;
-      editor.chain().focus().setImage({ src }).run();
-    };
-    reader.readAsDataURL(file);
+    onInsertImageFile?.(file);
   };
 
   return (

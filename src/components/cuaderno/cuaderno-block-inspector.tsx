@@ -47,9 +47,9 @@ export function CuadernoBlockInspector({
       </header>
 
       {!block?.kind ? (
-        <p className="cn-block-inspector-empty">Selecciona una imagen, tabla o bloque jurídico.</p>
-      ) : block.kind === "image" ? (
-        <ImageInspector editor={editor} attrs={block.attrs} />
+        <p className="cn-block-inspector-empty">
+          Selecciona una tabla o bloque jurídico. Las imágenes se editan en la hoja (clic sobre la imagen).
+        </p>
       ) : block.kind === "table" ? (
         <TableInspector editor={editor} />
       ) : block.kind === "studyBlock" ? (
@@ -58,64 +58,6 @@ export function CuadernoBlockInspector({
         <p className="cn-block-inspector-empty">Bloque seleccionado.</p>
       )}
     </aside>
-  );
-}
-
-function ImageInspector({
-  editor,
-  attrs,
-}: {
-  editor: Editor;
-  attrs: Record<string, unknown>;
-}) {
-  const width = (attrs.width as string) ?? "100%";
-  const align = (attrs.align as string) ?? "center";
-
-  return (
-    <div className="cn-inspector-section">
-      <p className="cn-inspector-label">Imagen</p>
-      <label className="cn-inspector-field">
-        Ancho
-        <input
-          type="range"
-          min={30}
-          max={100}
-          value={parseInt(width, 10) || 100}
-          onChange={(e) =>
-            editor.chain().focus().updateAttributes("image", { width: `${e.target.value}%` }).run()
-          }
-        />
-        <span>{width}</span>
-      </label>
-      <label className="cn-inspector-field">
-        Alineación
-        <select
-          value={align}
-          onChange={(e) =>
-            editor.chain().focus().updateAttributes("image", { align: e.target.value }).run()
-          }
-        >
-          <option value="left">Izquierda</option>
-          <option value="center">Centro</option>
-          <option value="right">Derecha</option>
-        </select>
-      </label>
-      <label className="cn-inspector-field">
-        <input
-          type="checkbox"
-          onChange={(e) =>
-            editor
-              .chain()
-              .focus()
-              .updateAttributes("image", {
-                style: e.target.checked ? "box-shadow: 0 12px 32px rgba(0,0,0,0.15)" : null,
-              })
-              .run()
-          }
-        />
-        Sombra suave
-      </label>
-    </div>
   );
 }
 

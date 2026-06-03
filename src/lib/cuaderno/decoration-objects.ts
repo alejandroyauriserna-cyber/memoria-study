@@ -1,8 +1,12 @@
 export type PostItColor = "yellow" | "green" | "blue" | "pink" | "purple";
 
+export type ImageTextWrap = "inline" | "square" | "tight" | "inFront" | "behind";
+
 export type DecorationKind =
   | "postit"
   | "sticker"
+  | "image"
+  | "diagram"
   | "washi"
   | "tape"
   | "divider"
@@ -25,10 +29,15 @@ export type DecorationObject = {
   /** Post-it */
   postitColor?: PostItColor;
   text?: string;
-  /** Sticker catálogo o IA */
+  /** Sticker catálogo o IA / imagen flotante */
   stickerId?: string;
   src?: string;
   label?: string;
+  /** Imagen flotante */
+  aspectRatio?: number;
+  textWrap?: ImageTextWrap;
+  /** Recorte normalizado 0–1 dentro del marco */
+  crop?: { x: number; y: number; w: number; h: number };
   /** Decorativos */
   decoVariant?: string;
   color?: string;

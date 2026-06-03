@@ -63,6 +63,7 @@ export function CuadernoFloatingToolbar({
   onToggleAi,
   aiOpen,
   onOpenSideRail,
+  onInsertImageFile,
 }: {
   editor: Editor | null;
   courseAccent?: string;
@@ -71,6 +72,7 @@ export function CuadernoFloatingToolbar({
   onToggleAi: () => void;
   aiOpen: boolean;
   onOpenSideRail: (tab: "stickers" | "postits" | "images") => void;
+  onInsertImageFile?: (file: File) => void;
 }) {
   const [fontOpen, setFontOpen] = useState(false);
   const [sizeOpen, setSizeOpen] = useState(false);
@@ -89,12 +91,7 @@ export function CuadernoFloatingToolbar({
   );
 
   const insertImage = (file: File) => {
-    if (!editor) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      editor.chain().focus().setImage({ src: reader.result as string }).run();
-    };
-    reader.readAsDataURL(file);
+    onInsertImageFile?.(file);
   };
 
   const closeAll = () => {

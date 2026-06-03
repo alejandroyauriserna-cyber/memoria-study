@@ -18,8 +18,6 @@ import CodeBlock from "@tiptap/extension-code-block";
 import type { Extensions } from "@tiptap/core";
 import { FontSize } from "@/components/cuaderno/tiptap/font-size";
 import { StudyBlock } from "@/components/cuaderno/tiptap/study-block";
-import { CuadernoImage } from "@/components/cuaderno/tiptap/cuaderno-image";
-
 export function createCuadernoEditorExtensions(placeholder: string): Extensions {
   return [
     StarterKit.configure({
@@ -43,7 +41,6 @@ export function createCuadernoEditorExtensions(placeholder: string): Extensions 
     TableCell,
     HorizontalRule,
     CodeBlock.configure({ HTMLAttributes: { class: "cn-code-block" } }),
-    CuadernoImage.configure({ inline: false, allowBase64: true }),
     Placeholder.configure({ placeholder }),
     StudyBlock,
   ];

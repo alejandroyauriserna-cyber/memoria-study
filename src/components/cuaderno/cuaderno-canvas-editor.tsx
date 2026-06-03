@@ -24,6 +24,8 @@ import { CuadernoDecorationLayer } from "@/components/cuaderno/decoration/cuader
 import type { DecorationObject } from "@/lib/cuaderno/decoration-objects";
 import { parseDecorationDrag } from "@/lib/cuaderno/decoration-drag";
 import { createDecorationFromDrop } from "@/lib/cuaderno/decoration-drop-factory";
+import { createFloatingImage, loadImageNaturalSize } from "@/lib/cuaderno/floating-image";
+import { migrateInlineImagesFromHtml } from "@/lib/cuaderno/migrate-inline-images";
 import { getPaperClasses } from "@/lib/cuaderno/paper-styles";
 import type { CuadernoLayoutMode, CuadernoPaperTone } from "@/lib/cuaderno/editor-preferences";
 import { DEFAULT_PAGE_SIZE_MODE, type CuadernoPageSizeMode } from "@/lib/cuaderno/page-size";
@@ -121,6 +123,7 @@ export function CuadernoCanvasEditor({
   const perfEnabled = isCuadernoPerfEnabled();
   const perfStats = useCuadernoPerf(perfEnabled, viewportRef);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const migratedPagesRef = useRef<Set<string>>(new Set());
 
   const syncBody = useCallback(
     (html: string) => {
@@ -142,6 +145,42 @@ export function CuadernoCanvasEditor({
     },
     [doc, onChange],
   );
+
+  const focusEditor = useCallback(() => {
+    if (editor && writingMode === "text" && panMode === "write") {
+      editor.chain().focus().run();
+    }
+  }, [editor, writingMode, panMode]);
+
+  const insertFloatingImageFile = useCallback(
+    (file: File) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const src = reader.result as string;
+        void loadImageNaturalSize(src)
+          .then((size) => createFloatingImage(src, { x: 0.2, y: 0.14 }, size))
+          .catch(() => createFloatingImage(src, { x: 0.2, y: 0.14 }))
+          .then((item) => {
+            syncDecorations([...decorations, item]);
+            setSelectedDecoId(item.id);
+          });
+      };
+      reader.readAsDataURL(file);
+    },
+    [decorations, syncDecorations],
+  );
+
+  useEffect(() => {
+    if (migratedPagesRef.current.has(activePage.id)) return;
+    const { html, images } = migrateInlineImagesFromHtml(activePage.body);
+    migratedPagesRef.current.add(activePage.id);
+    if (images.length === 0) return;
+    const nextDoc = setActivePageDecorations(
+      setActivePageBody(doc, html),
+      [...(activePage.decorations ?? []), ...images],
+    );
+    onChange(serializeCuadernoDocument(nextDoc));
+  }, [activePage.id, activePage.body, activePage.decorations, doc, onChange]);
 
   const handleDecorationDrop = useCallback(
     (e: React.DragEvent) => {
@@ -198,6 +237,7 @@ export function CuadernoCanvasEditor({
         courseAccent={courseAccent}
         disabled={panMode !== "write"}
         onAiAction={onSelectionAction}
+        onInsertImageFile={insertFloatingImageFile}
       />
     ) : null;
 
@@ -224,6 +264,17 @@ export function CuadernoCanvasEditor({
         <div
           ref={paperLayersRef}
           className={`cn-paper-layers${writingMode === "ink" ? " is-ink-mode" : ""}${decoDragOver ? " is-deco-drag-over" : ""}`}
+          onPointerDown={(e) => {
+            const t = e.target as HTMLElement;
+            if (
+              t === paperLayersRef.current ||
+              t.classList.contains("cn-prosemirror") ||
+              t.closest(".cn-rich-editor-content")
+            ) {
+              setSelectedDecoId(null);
+              focusEditor();
+            }
+          }}
           onDragEnter={(e) => {
             if (writingMode !== "text") return;
             if (e.dataTransfer.types.includes("application/x-cuaderno-decoration")) {
@@ -246,6 +297,15 @@ export function CuadernoCanvasEditor({
           }}
           onDrop={handleDecorationDrop}
         >
+          <CuadernoDecorationLayer
+            decorations={decorations}
+            onChange={syncDecorations}
+            active={writingMode === "text"}
+            selectedId={selectedDecoId}
+            onSelectId={setSelectedDecoId}
+            scrollRef={viewportRef}
+            placement="behind"
+          />
           <CuadernoRichEditor
             body={activePage.body}
             onBodyChange={syncBody}
@@ -270,6 +330,8 @@ export function CuadernoCanvasEditor({
             selectedId={selectedDecoId}
             onSelectId={setSelectedDecoId}
             scrollRef={viewportRef}
+            placement="front"
+            onRequestEditorFocus={focusEditor}
           />
         </div>
       </div>
@@ -312,6 +374,7 @@ export function CuadernoCanvasEditor({
             onToggleAi={onToggleAi}
             aiOpen={aiOpen}
             onOpenSideRail={handleSideRail}
+            onInsertImageFile={insertFloatingImageFile}
           />
         ) : null}
         {externalToolbar && writingMode === "ink" ? (
@@ -336,12 +399,8 @@ export function CuadernoCanvasEditor({
           className="sr-only"
           onChange={(e) => {
             const file = e.target.files?.[0];
-            if (!file || !editor) return;
-            const reader = new FileReader();
-            reader.onload = () => {
-              editor.chain().focus().setImage({ src: reader.result as string }).run();
-            };
-            reader.readAsDataURL(file);
+            if (!file) return;
+            insertFloatingImageFile(file);
             e.target.value = "";
           }}
         />
