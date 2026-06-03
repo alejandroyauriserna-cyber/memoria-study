@@ -29,6 +29,7 @@ import {
 import { deleteTableComplete, isTableNodeSelected } from "@/lib/cuaderno/delete-table-complete";
 import type { DecorationObject } from "@/lib/cuaderno/decoration-objects";
 import {
+  endDecorationDrag,
   isDecorationDragTransfer,
   parseDecorationDrag,
   type DecorationDragPayload,
@@ -375,10 +376,45 @@ export function CuadernoCanvasEditor({
 
       const payload = parseDecorationDrag(e.dataTransfer);
       if (!payload) return;
+      endDecorationDrag();
       void placeFromPayload(payload, e.clientX, e.clientY);
     },
     [writingMode, insertFloatingImageAt, placeFromPayload],
   );
+
+  useEffect(() => {
+    const el = paperLayersRef.current;
+    if (!el || writingMode !== "text") return;
+
+    const onDragOverCapture = (e: DragEvent) => {
+      const dt = e.dataTransfer;
+      if (!dt || !isDecorationDragTransfer(dt)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      dt.dropEffect = "copy";
+      setDecoDragOver(true);
+    };
+
+    const onDropCapture = (e: DragEvent) => {
+      const dt = e.dataTransfer;
+      if (!dt) return;
+      const payload = parseDecorationDrag(dt);
+      if (!payload) return;
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      setDecoDragOver(false);
+      endDecorationDrag();
+      void placeFromPayload(payload, e.clientX, e.clientY);
+    };
+
+    el.addEventListener("dragover", onDragOverCapture, true);
+    el.addEventListener("drop", onDropCapture, true);
+    return () => {
+      el.removeEventListener("dragover", onDragOverCapture, true);
+      el.removeEventListener("drop", onDropCapture, true);
+    };
+  }, [writingMode, placeFromPayload, activePage.id]);
 
   const handleDecorationDragOver = useCallback(
     (e: React.DragEvent) => {

@@ -80,6 +80,15 @@ export async function ensureDecorationReady(
 
   if (!src) throw new Error("No se pudo resolver la imagen del sticker");
 
+  if (src.startsWith("http://") || src.startsWith("https://")) {
+    report("Descargando sticker…", 55);
+    try {
+      src = await imageUrlToDataUrl(src);
+    } catch {
+      /* usar URL remota si el proxy falla */
+    }
+  }
+
   report("Preparando…", 70);
   try {
     const size = await loadImageNaturalSize(src);

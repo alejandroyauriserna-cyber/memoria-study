@@ -1441,6 +1441,44 @@
   font-size: 0.68rem;
 }
 
+.cn-sticker-import-pinterest-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin: 0 0 10px;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #e60023 0%, #bd081c 100%);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(230, 0, 35, 0.28);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.cn-sticker-import-pinterest-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(230, 0, 35, 0.35);
+}
+
+.cn-sticker-import-pinterest-btn:active {
+  transform: translateY(0);
+}
+
+.cn-sticker-import-pinterest-btn--in-guide {
+  margin-top: 4px;
+}
+
+.cn-sticker-import-guide-open-hint {
+  margin: -4px 0 12px;
+  font-size: 0.66rem;
+  color: #64748b;
+}
+
 .cn-immersive-root--studio .cn-sticker-import-guide {
   background: rgba(255, 255, 255, 0.05);
   border-color: rgba(255, 255, 255, 0.12);
@@ -1468,6 +1506,10 @@
 .cn-immersive-root--studio .cn-sticker-import-guide-tip {
   background: color-mix(in srgb, var(--cn-course-accent, #00e5c3) 12%, transparent);
   border-color: color-mix(in srgb, var(--cn-course-accent, #00e5c3) 28%, transparent);
+}
+
+.cn-immersive-root--studio .cn-sticker-import-guide-open-hint {
+  color: #94a3b8;
 }
 
 .cn-sticker-import-modes {

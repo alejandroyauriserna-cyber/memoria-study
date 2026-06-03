@@ -6,7 +6,7 @@ import {
   type DecorationObject,
   type PostItColor,
 } from "@/lib/cuaderno/decoration-objects";
-import { writeDecorationDragData } from "@/lib/cuaderno/decoration-drag";
+import { endDecorationDrag, writeDecorationDragData } from "@/lib/cuaderno/decoration-drag";
 import {
   POSTIT_CATEGORIES,
   POSTIT_PREMIUM_STYLES,
@@ -109,6 +109,7 @@ export function CuadernoPostItPanel({
                         category,
                       });
                     }}
+                    onDragEnd={() => endDecorationDrag()}
                     onClick={() => addPostIt(s.color)}
                   >
                     {s.label}

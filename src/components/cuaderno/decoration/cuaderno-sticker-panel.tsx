@@ -9,7 +9,7 @@ import {
   createStickerFromSrc,
   type DecorationObject,
 } from "@/lib/cuaderno/decoration-objects";
-import { writeDecorationDragData } from "@/lib/cuaderno/decoration-drag";
+import { endDecorationDrag, writeDecorationDragData } from "@/lib/cuaderno/decoration-drag";
 import {
   JURIDICO_PACK_FILTERS,
   STICKER_PANEL_TABS,
@@ -414,6 +414,7 @@ function PngGrid({
                   });
                   setupDragGhost(e, e.currentTarget.querySelector("img"));
                 }}
+                onDragEnd={() => endDecorationDrag()}
                 onClick={() => onPick(item)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
@@ -480,6 +481,7 @@ function UserGrid({
                 });
                 setupDragGhost(e, e.currentTarget.querySelector("img"));
               }}
+              onDragEnd={() => endDecorationDrag()}
               onClick={() => onPick(s)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {

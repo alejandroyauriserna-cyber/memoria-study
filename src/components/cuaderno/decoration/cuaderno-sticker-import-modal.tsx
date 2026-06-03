@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Globe, Loader2, Upload } from "lucide-react";
+import { ExternalLink, Globe, Loader2, Upload } from "lucide-react";
+
+const PINTEREST_URL = "https://www.pinterest.com/";
 import {
   fileToDataUrl,
   removeBackgroundToPngDataUrl,
@@ -111,6 +113,17 @@ export function CuadernoStickerImportPanel({
         </button>
       </div>
 
+      {mode === "pinterest" ? (
+        <button
+          type="button"
+          className="cn-sticker-import-pinterest-btn"
+          onClick={() => window.open(PINTEREST_URL, "_blank", "noopener,noreferrer")}
+        >
+          <ExternalLink size={16} aria-hidden />
+          Abrir Pinterest en nueva pestaña
+        </button>
+      ) : null}
+
       {mode !== "file" ? (
         <div className="cn-sticker-import-url">
           <Globe size={16} />
@@ -188,6 +201,16 @@ function CuadernoPinterestImportGuide() {
         Para obtener mejores resultados, copia la dirección directa de la imagen y no el enlace del
         pin.
       </p>
+
+      <button
+        type="button"
+        className="cn-sticker-import-pinterest-btn cn-sticker-import-pinterest-btn--in-guide"
+        onClick={() => window.open(PINTEREST_URL, "_blank", "noopener,noreferrer")}
+      >
+        <ExternalLink size={16} aria-hidden />
+        Abrir Pinterest
+      </button>
+      <p className="cn-sticker-import-guide-open-hint">Se abre en una pestaña nueva. Busca tu imagen y copia la URL directa.</p>
 
       <h3 className="cn-sticker-import-guide-sub">En computadora</h3>
       <ol className="cn-sticker-import-guide-steps">

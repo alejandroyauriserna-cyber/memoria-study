@@ -11,6 +11,7 @@ import { CuadernoFloatingEditToolbar } from "@/components/cuaderno/cuaderno-floa
 import { CuadernoBlockHandles, useBlockClickSelect } from "@/components/cuaderno/cuaderno-block-handles";
 import { CuadernoTableChrome } from "@/components/cuaderno/blocks/cuaderno-table-chrome";
 import type { CuadernoAskAction } from "@/types/cuaderno";
+import { isDecorationDragTransfer, parseDecorationDrag } from "@/lib/cuaderno/decoration-drag";
 import "./cuaderno-rich-editor.css";
 import "./cuaderno-blocks.css";
 
@@ -82,6 +83,21 @@ function CuadernoRichEditorInner({
           if (editable) view.focus();
           return false;
         },
+        dragover: (_view, event) => {
+          const dt = event.dataTransfer;
+          if (!dt || !isDecorationDragTransfer(dt)) return false;
+          event.preventDefault();
+          return true;
+        },
+      },
+      handleDrop: (_view, event) => {
+        const dt = event.dataTransfer;
+        if (!dt) return false;
+        if (isDecorationDragTransfer(dt) || parseDecorationDrag(dt)) {
+          event.preventDefault();
+          return true;
+        }
+        return false;
       },
     },
     onUpdate: ({ editor: ed }) => {
