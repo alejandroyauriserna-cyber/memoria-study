@@ -11,7 +11,7 @@
 }
 
 .cn-decoration-layer--front {
-  z-index: 3;
+  z-index: 48;
 }
 
 /* Solo los elementos capturan eventos; el resto deja pasar clics al editor */

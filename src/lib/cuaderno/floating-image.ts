@@ -1,7 +1,4 @@
-import {
-  clampDecorationToContentArea,
-  MAX_IMAGE_HEIGHT_NORM,
-} from "@/lib/cuaderno/decoration-bounds";
+import { clampDecorationToPaper } from "@/lib/cuaderno/decoration-bounds";
 import {
   decorationId,
   type DecorationObject,
@@ -21,10 +18,7 @@ export function loadImageNaturalSize(src: string): Promise<{ w: number; h: numbe
 }
 
 export function normalizedHeightForWidth(w: number, aspectRatio: number): number {
-  return Math.min(
-    MAX_IMAGE_HEIGHT_NORM,
-    Math.max(0.06, (w * PAPER_ASPECT_WH) / aspectRatio),
-  );
+  return Math.min(0.85, Math.max(0.06, (w * PAPER_ASPECT_WH) / aspectRatio));
 }
 
 export function createFloatingImage(
@@ -37,7 +31,7 @@ export function createFloatingImage(
   const h = normalizedHeightForWidth(w, aspectRatio);
   const x = at?.x ?? 0.38;
   const y = at?.y ?? 0.42;
-  return clampDecorationToContentArea({
+  return clampDecorationToPaper({
     id: decorationId(),
     kind: "image",
     x: x - w / 2,

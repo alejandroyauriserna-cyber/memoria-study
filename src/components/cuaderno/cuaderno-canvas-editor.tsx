@@ -51,10 +51,7 @@ import {
   pastedImageName,
   saveImageToUserLibrary,
 } from "@/lib/cuaderno/paste-image-ingest";
-import {
-  clampDecorationToContentArea,
-  visibleContentCenterNorm,
-} from "@/lib/cuaderno/decoration-bounds";
+import { clampDecorationToPaper, visiblePaperCenterNorm } from "@/lib/cuaderno/decoration-bounds";
 import { createFloatingImage } from "@/lib/cuaderno/floating-image";
 import { CuadernoPlacementOverlay } from "@/components/cuaderno/cuaderno-placement-overlay";
 import { NodeSelection } from "@tiptap/pm/state";
@@ -233,7 +230,7 @@ export function CuadernoCanvasEditor({
   const visibleCenterNorm = useCallback(() => {
     const vp = viewportRef.current?.getBoundingClientRect() ?? null;
     const paper = paperLayersRef.current?.getBoundingClientRect() ?? null;
-    return visibleContentCenterNorm(vp, paper);
+    return visiblePaperCenterNorm(vp, paper);
   }, []);
 
   const addDecoration = useCallback(
@@ -247,7 +244,7 @@ export function CuadernoCanvasEditor({
 
   const placeDecorationItem = useCallback(
     async (item: DecorationObject, at?: { x: number; y: number }) => {
-      const centered = clampDecorationToContentArea(
+      const centered = clampDecorationToPaper(
         at
           ? { ...item, x: at.x - item.w / 2, y: at.y - item.h / 2 }
           : item,

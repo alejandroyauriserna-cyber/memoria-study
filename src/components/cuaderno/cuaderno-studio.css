@@ -36,15 +36,16 @@
   display: none;
 }
 
-/* Floating toolbar */
+/* Floating toolbar — en flujo (no tapa el papel ni bloquea stickers) */
 .cn-float-toolbar-wrap {
-  position: absolute;
-  top: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 42;
+  position: relative;
+  flex-shrink: 0;
+  z-index: 4;
+  display: flex;
+  justify-content: center;
+  padding: 8px 12px 4px;
   pointer-events: none;
-  max-width: calc(100% - 120px);
+  max-width: 100%;
 }
 
 .cn-float-toolbar {
@@ -363,7 +364,7 @@
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   scroll-behavior: auto;
-  padding: 56px 56px 32px 24px;
+  padding: 20px 56px 32px 24px;
 }
 
 .cn-immersive-canvas--studio .cn-canvas-stage--immersive {

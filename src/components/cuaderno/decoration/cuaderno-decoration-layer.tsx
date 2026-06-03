@@ -24,7 +24,6 @@ const IMAGE_WRAP_LABELS: Record<ImageTextWrap, string> = {
   inFront: "Delante del texto",
   behind: "Detrás del texto",
 };
-import { PAPER_CONTENT_BOUNDS } from "@/lib/cuaderno/decoration-bounds";
 import { isBehindTextWrap } from "@/lib/cuaderno/floating-image";
 
 function decorationIdsMatch(a: DecorationObject[], b: DecorationObject[]): boolean {
@@ -271,12 +270,12 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
             const snap = drag.snapshots.get(d.id);
             if (!snap) return d;
             if (drag.mode === "move") {
-              const maxX = PAPER_CONTENT_BOUNDS.right - snap.w;
-              const maxY = PAPER_CONTENT_BOUNDS.bottom - snap.h;
+              const maxX = Math.max(0, 1 - snap.w);
+              const maxY = Math.max(0, 1 - snap.h);
               return {
                 ...snap,
-                x: Math.min(maxX, Math.max(PAPER_CONTENT_BOUNDS.left, snap.x + ddx)),
-                y: Math.min(maxY, Math.max(PAPER_CONTENT_BOUNDS.top, snap.y + ddy)),
+                x: Math.min(maxX, Math.max(0, snap.x + ddx)),
+                y: Math.min(maxY, Math.max(0, snap.y + ddy)),
               };
             }
             if (d.id === drag.leadId) return { ...snap, ...leadPatch };
