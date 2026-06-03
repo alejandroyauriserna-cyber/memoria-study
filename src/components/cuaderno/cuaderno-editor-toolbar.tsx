@@ -28,6 +28,7 @@ import { CUADERNO_FONTS, type CuadernoFontId } from "@/lib/cuaderno/editor-fonts
 import { ToolbarSelect } from "@/components/cuaderno/toolbar-select";
 import { CuadernoFloatingMenu, FloatingMenuItem } from "@/components/cuaderno/cuaderno-floating-menu";
 import { LEGAL_TOOLBAR_BLOCKS, insertStudyBlock } from "@/lib/cuaderno/academic-styles";
+import { CuadernoTableInsertDialog } from "@/components/cuaderno/cuaderno-table-insert-dialog";
 import type { StudyBlockId } from "@/lib/cuaderno/academic-styles";
 import type { CuadernoAskAction } from "@/types/cuaderno";
 import "./cuaderno-editor-toolbar.css";
@@ -136,6 +137,7 @@ export function CuadernoEditorToolbar({
   const [legalOpen, setLegalOpen] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
   const [colorOpen, setColorOpen] = useState(false);
+  const [tableDialogOpen, setTableDialogOpen] = useState(false);
   const [fontId, setFontId] = useState<CuadernoFontId | "">("");
   const [fontSize, setFontSize] = useState("");
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -340,12 +342,7 @@ export function CuadernoEditorToolbar({
 
         {/* Insertar */}
         <div className="cn-tb-group" role="group" aria-label="Insertar">
-          <ToolbarBtn
-            title="Tabla"
-            onClick={() =>
-              editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
-            }
-          >
+          <ToolbarBtn title="Tabla" onClick={() => setTableDialogOpen(true)}>
             <Table size={15} />
           </ToolbarBtn>
           <ToolbarBtn title="Imagen" onClick={() => imageInputRef.current?.click()}>
@@ -427,6 +424,14 @@ export function CuadernoEditorToolbar({
           </>
         ) : null}
       </div>
+
+      <CuadernoTableInsertDialog
+        open={tableDialogOpen}
+        onClose={() => setTableDialogOpen(false)}
+        onConfirm={(rows, cols) => {
+          editor.chain().focus().insertTable({ rows, cols, withHeaderRow: true }).run();
+        }}
+      />
     </div>
   );
 }

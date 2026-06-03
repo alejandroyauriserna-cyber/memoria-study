@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { isInViewportBounds, useCuadernoViewport } from "@/hooks/use-cuaderno-viewport";
 import {
   ArrowDown,
@@ -20,8 +20,6 @@ import {
 } from "@/lib/cuaderno/decoration-objects";
 import { getStickerById } from "@/lib/cuaderno/sticker-catalog";
 import { getStickerSvgDataUrl } from "@/lib/cuaderno/sticker-svg";
-import { parseDecorationDrag } from "@/lib/cuaderno/decoration-drag";
-import { createDecorationFromDrop } from "@/lib/cuaderno/decoration-drop-factory";
 
 type DragMode = "move" | "resize" | "rotate" | null;
 
@@ -66,7 +64,6 @@ export function CuadernoDecorationLayer({
     if (selectedId === id) onSelectId(null);
   };
 
-  const [dragOver, setDragOver] = useState(false);
   const [ctxMenu, setCtxMenu] = useState<{ id: string; x: number; y: number } | null>(null);
   const closeCtx = () => setCtxMenu(null);
 
@@ -80,10 +77,18 @@ export function CuadernoDecorationLayer({
     };
   };
 
-  const onLayerPointerDown = (e: React.PointerEvent) => {
-    closeCtx();
-    if (e.target === layerRef.current) onSelectId(null);
-  };
+  useEffect(() => {
+    if (!active || !selectedId) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Delete" && e.key !== "Backspace") return;
+      const t = e.target as HTMLElement;
+      if (t.closest("textarea, input, .cn-prosemirror, .cn-postit-text")) return;
+      e.preventDefault();
+      removeOne(selectedId);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [active, selectedId]);
 
   const startDrag = (
     e: React.PointerEvent,
@@ -152,40 +157,13 @@ export function CuadernoDecorationLayer({
 
   const ctxTarget = ctxMenu ? decorations.find((d) => d.id === ctxMenu.id) : null;
 
-  const handleDragOver = (e: React.DragEvent) => {
-    if (!active) return;
-    if (!e.dataTransfer.types.includes("application/x-cuaderno-decoration")) return;
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "copy";
-    setDragOver(true);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(false);
-    if (!active) return;
-    const payload = parseDecorationDrag(e.dataTransfer);
-    if (!payload) return;
-    const norm = toNorm(e.clientX, e.clientY);
-    if (!norm) return;
-    const item = createDecorationFromDrop(payload, { x: norm.nx, y: norm.ny });
-    if (!item) return;
-    onChange([...decorations, item]);
-    onSelectId(item.id);
-  };
-
   return (
     <div
       ref={layerRef}
-      className={`cn-decoration-layer${active ? " is-active" : ""}${dragOver ? " is-drag-over" : ""}`}
-      onPointerDown={onLayerPointerDown}
+      className={`cn-decoration-layer${active ? " is-active" : ""}`}
       onPointerMove={onPointerMove}
       onPointerUp={endDrag}
       onPointerCancel={endDrag}
-      onDragEnter={handleDragOver}
-      onDragOver={handleDragOver}
-      onDragLeave={() => setDragOver(false)}
-      onDrop={handleDrop}
     >
       {visibleDecorations.map((obj) => {
         const selected = selectedId === obj.id;

@@ -66,15 +66,16 @@ export function CuadernoRichEditor({
       attributes: {
         class: "cn-prosemirror",
         style: `--cn-course-accent: ${courseAccent}; font-family: ${getFontStack(DEFAULT_FONT_ID)}`,
+        spellcheck: "true",
+      },
+      handleClick: (view, _pos, event) => {
+        if (!editable) return true;
+        view.focus();
+        return false;
       },
       handleDOMEvents: {
-        contextmenu: (view, event) => {
-          const target = event.target as HTMLElement;
-          if (
-            target.closest("[data-study-block], .cn-image-block-view, table, .cn-prosemirror hr")
-          ) {
-            event.preventDefault();
-          }
+        mousedown: (view, event) => {
+          if (editable) view.focus();
           return false;
         },
       },

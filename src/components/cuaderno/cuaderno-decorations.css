@@ -7,7 +7,12 @@
   overflow: hidden;
 }
 
+/* Solo los elementos capturan eventos; el resto deja pasar clics al editor */
 .cn-decoration-layer.is-active {
+  pointer-events: none;
+}
+
+.cn-decoration-item {
   pointer-events: auto;
 }
 

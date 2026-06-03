@@ -1762,6 +1762,11 @@
   min-height: inherit;
 }
 
+.cn-paper-layers.is-deco-drag-over {
+  outline: 2px dashed color-mix(in srgb, var(--cn-course-accent, #0d9488) 55%, transparent);
+  outline-offset: -4px;
+}
+
 .cn-paper-layer-text {
   position: relative;
   z-index: 1;

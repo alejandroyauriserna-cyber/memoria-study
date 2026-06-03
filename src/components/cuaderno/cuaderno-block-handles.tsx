@@ -56,12 +56,11 @@ export function CuadernoBlockHandles({ editor }: { editor: Editor | null }) {
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key !== "Delete" && e.key !== "Backspace") return;
+      if (!(editor.state.selection instanceof NodeSelection)) return;
       const block = getSelectedBlock(editor);
       if (!block?.kind) return;
-      if (editor.state.selection instanceof NodeSelection || block.kind === "table") {
-        e.preventDefault();
-        deleteSelectedBlock(editor);
-      }
+      e.preventDefault();
+      deleteSelectedBlock(editor);
     };
 
     window.addEventListener("keydown", onKeyDown);
@@ -130,12 +129,37 @@ function BlockContextMenu({
       <button type="button" onClick={() => { duplicateSelectedBlock(editor); onClose(); }}>
         Duplicar
       </button>
-      <button type="button" onClick={() => { moveSelectedBlock(editor, "up"); onClose(); }}>
-        Mover arriba
-      </button>
-      <button type="button" onClick={() => { moveSelectedBlock(editor, "down"); onClose(); }}>
-        Mover abajo
-      </button>
+      {kind === "table" ? (
+        <>
+          <button type="button" onClick={() => { editor.chain().focus().addRowBefore().run(); onClose(); }}>
+            Fila arriba
+          </button>
+          <button type="button" onClick={() => { editor.chain().focus().addRowAfter().run(); onClose(); }}>
+            Fila abajo
+          </button>
+          <button type="button" onClick={() => { editor.chain().focus().deleteRow().run(); onClose(); }}>
+            Eliminar fila
+          </button>
+          <button type="button" onClick={() => { editor.chain().focus().addColumnBefore().run(); onClose(); }}>
+            Col. izquierda
+          </button>
+          <button type="button" onClick={() => { editor.chain().focus().addColumnAfter().run(); onClose(); }}>
+            Col. derecha
+          </button>
+          <button type="button" onClick={() => { editor.chain().focus().deleteColumn().run(); onClose(); }}>
+            Eliminar columna
+          </button>
+        </>
+      ) : (
+        <>
+          <button type="button" onClick={() => { moveSelectedBlock(editor, "up"); onClose(); }}>
+            Mover arriba
+          </button>
+          <button type="button" onClick={() => { moveSelectedBlock(editor, "down"); onClose(); }}>
+            Mover abajo
+          </button>
+        </>
+      )}
       {kind === "studyBlock" ? (
         <button
           type="button"
@@ -169,8 +193,13 @@ export function useBlockClickSelect(editor: Editor | null) {
 
     const onClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      const block = target.closest("[data-study-block], .cn-image-block-view, table");
+      if (target.closest("td, th, .cn-prosemirror")) {
+        const inTable = target.closest("table");
+        if (inTable && (target.closest("td") || target.closest("th"))) return;
+      }
+      const block = target.closest("[data-study-block], .cn-image-block-view");
       if (!block || !dom.contains(block)) return;
+      if (e.detail > 1) return;
       const pos = editor.view.posAtDOM(block, 0);
       const $pos = editor.state.doc.resolve(pos);
       const nodePos = $pos.before();

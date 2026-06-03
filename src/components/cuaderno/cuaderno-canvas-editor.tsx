@@ -22,6 +22,8 @@ import {
 } from "@/lib/cuaderno/cuaderno-pages";
 import { CuadernoDecorationLayer } from "@/components/cuaderno/decoration/cuaderno-decoration-layer";
 import type { DecorationObject } from "@/lib/cuaderno/decoration-objects";
+import { parseDecorationDrag } from "@/lib/cuaderno/decoration-drag";
+import { createDecorationFromDrop } from "@/lib/cuaderno/decoration-drop-factory";
 import { getPaperClasses } from "@/lib/cuaderno/paper-styles";
 import type { CuadernoLayoutMode, CuadernoPaperTone } from "@/lib/cuaderno/editor-preferences";
 import { DEFAULT_PAGE_SIZE_MODE, type CuadernoPageSizeMode } from "@/lib/cuaderno/page-size";
@@ -56,7 +58,9 @@ export function CuadernoCanvasEditor({
   onEditorReady,
   onModeChange,
   onOpenStickers,
+  onOpenPostits,
   stickerPanelOpen = false,
+  postitPanelOpen = false,
   sideRailTab = null,
   onSideRailSelect,
   onToggleAi,
@@ -84,7 +88,9 @@ export function CuadernoCanvasEditor({
   onEditorReady?: (editor: Editor | null) => void;
   onModeChange?: (mode: "write" | "pan") => void;
   onOpenStickers?: () => void;
+  onOpenPostits?: () => void;
   stickerPanelOpen?: boolean;
+  postitPanelOpen?: boolean;
   sideRailTab?: SideRailTab | null;
   onSideRailSelect?: (tab: SideRailTab) => void;
   onToggleAi?: () => void;
@@ -96,6 +102,8 @@ export function CuadernoCanvasEditor({
   const [editor, setEditor] = useState<Editor | null>(null);
   const [inkSettings, setInkSettings] = useState<InkToolSettings>(DEFAULT_INK_SETTINGS);
   const [selectedDecoId, setSelectedDecoId] = useState<string | null>(null);
+  const [decoDragOver, setDecoDragOver] = useState(false);
+  const paperLayersRef = useRef<HTMLDivElement>(null);
 
   const doc = parseCuadernoDocument(notes);
   const activePage = getActivePage(doc);
@@ -133,6 +141,26 @@ export function CuadernoCanvasEditor({
       onChange(serializeCuadernoDocument(setActivePageDecorations(doc, items)));
     },
     [doc, onChange],
+  );
+
+  const handleDecorationDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setDecoDragOver(false);
+      if (writingMode !== "text") return;
+      const payload = parseDecorationDrag(e.dataTransfer);
+      if (!payload) return;
+      const el = paperLayersRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const nx = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+      const ny = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height));
+      const item = createDecorationFromDrop(payload, { x: nx, y: ny });
+      if (!item) return;
+      syncDecorations([...decorations, item]);
+      setSelectedDecoId(item.id);
+    },
+    [writingMode, decorations, syncDecorations],
   );
 
   const handleEditorReady = useCallback(
@@ -193,7 +221,31 @@ export function CuadernoCanvasEditor({
         data-page-size={pageSizeMode}
         style={{ "--cn-course-accent": courseAccent } as React.CSSProperties}
       >
-        <div className={`cn-paper-layers${writingMode === "ink" ? " is-ink-mode" : ""}`}>
+        <div
+          ref={paperLayersRef}
+          className={`cn-paper-layers${writingMode === "ink" ? " is-ink-mode" : ""}${decoDragOver ? " is-deco-drag-over" : ""}`}
+          onDragEnter={(e) => {
+            if (writingMode !== "text") return;
+            if (e.dataTransfer.types.includes("application/x-cuaderno-decoration")) {
+              e.preventDefault();
+              setDecoDragOver(true);
+            }
+          }}
+          onDragOver={(e) => {
+            if (writingMode !== "text") return;
+            if (e.dataTransfer.types.includes("application/x-cuaderno-decoration")) {
+              e.preventDefault();
+              e.dataTransfer.dropEffect = "copy";
+              setDecoDragOver(true);
+            }
+          }}
+          onDragLeave={(e) => {
+            if (!paperLayersRef.current?.contains(e.relatedTarget as Node)) {
+              setDecoDragOver(false);
+            }
+          }}
+          onDrop={handleDecorationDrop}
+        >
           <CuadernoRichEditor
             body={activePage.body}
             onBodyChange={syncBody}
@@ -236,7 +288,8 @@ export function CuadernoCanvasEditor({
       return;
     }
     onSideRailSelect?.(tab);
-    onOpenStickers?.();
+    if (tab === "postits") onOpenPostits?.();
+    else onOpenStickers?.();
   };
 
   if (immersive) {
@@ -272,7 +325,7 @@ export function CuadernoCanvasEditor({
         {onSideRailSelect ? (
           <CuadernoSideRail
             active={sideRailTab}
-            panelOpen={stickerPanelOpen}
+            panelOpen={stickerPanelOpen || postitPanelOpen}
             onSelect={handleSideRail}
           />
         ) : null}

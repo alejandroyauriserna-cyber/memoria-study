@@ -457,7 +457,3 @@
   contain: strict;
 }
 
-.cn-paper-editor--rich .cn-prosemirror {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 480px;
-}

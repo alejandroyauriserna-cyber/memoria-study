@@ -16,6 +16,25 @@ import {
   type CuadernoBlockKind,
 } from "@/lib/cuaderno/cuaderno-block-utils";
 
+function TableQuickActions({ editor }: { editor: Editor }) {
+  return (
+    <>
+      <button type="button" title="Fila arriba" onClick={() => editor.chain().focus().addRowBefore().run()}>
+        +F↑
+      </button>
+      <button type="button" title="Fila abajo" onClick={() => editor.chain().focus().addRowAfter().run()}>
+        +F↓
+      </button>
+      <button type="button" title="Col. izq." onClick={() => editor.chain().focus().addColumnBefore().run()}>
+        +C←
+      </button>
+      <button type="button" title="Col. der." onClick={() => editor.chain().focus().addColumnAfter().run()}>
+        +C→
+      </button>
+    </>
+  );
+}
+
 export function BlockHandleBar({
   editor,
   kind,
@@ -32,22 +51,26 @@ export function BlockHandleBar({
       <button type="button" className="cn-block-handle-drag" title="Arrastrar" aria-label="Mover bloque">
         <GripVertical size={14} />
       </button>
-      <button
-        type="button"
-        title="Subir"
-        aria-label="Mover arriba"
-        onClick={() => moveSelectedBlock(editor, "up")}
-      >
-        <ArrowUp size={14} />
-      </button>
-      <button
-        type="button"
-        title="Bajar"
-        aria-label="Mover abajo"
-        onClick={() => moveSelectedBlock(editor, "down")}
-      >
-        <ArrowDown size={14} />
-      </button>
+      {kind === "table" ? <TableQuickActions editor={editor} /> : (
+        <>
+          <button
+            type="button"
+            title="Subir"
+            aria-label="Mover arriba"
+            onClick={() => moveSelectedBlock(editor, "up")}
+          >
+            <ArrowUp size={14} />
+          </button>
+          <button
+            type="button"
+            title="Bajar"
+            aria-label="Mover abajo"
+            onClick={() => moveSelectedBlock(editor, "down")}
+          >
+            <ArrowDown size={14} />
+          </button>
+        </>
+      )}
       <button
         type="button"
         title="Duplicar"

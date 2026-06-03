@@ -20,7 +20,6 @@ export const STICKER_PANEL_TABS: Array<{ id: StickerPanelTab; label: string; ico
   { id: "universidad", label: "Universidad", icon: "🎓" },
   { id: "ia", label: "IA", icon: "🧠" },
   { id: "decorativos", label: "Decorativos", icon: "✨" },
-  { id: "postits", label: "Post-its", icon: "📝" },
   { id: "favoritos", label: "Favoritos", icon: "❤️" },
 ];
 

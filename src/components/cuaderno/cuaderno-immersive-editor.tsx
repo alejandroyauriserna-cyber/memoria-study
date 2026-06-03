@@ -9,6 +9,7 @@ import { CuadernoAiSidebar } from "@/components/cuaderno/cuaderno-ai-sidebar";
 import { CuadernoImmersiveHeader } from "@/components/cuaderno/cuaderno-immersive-header";
 import { CuadernoFormatPanel } from "@/components/cuaderno/cuaderno-format-panel";
 import { CuadernoStickerPanel } from "@/components/cuaderno/decoration/cuaderno-sticker-panel";
+import { CuadernoPostItPanel } from "@/components/cuaderno/decoration/cuaderno-postit-panel";
 import { setActivePageDecorations } from "@/lib/cuaderno/cuaderno-pages";
 import type { DecorationObject } from "@/lib/cuaderno/decoration-objects";
 import {
@@ -89,6 +90,7 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
   const [templateGalleryOpen, setTemplateGalleryOpen] = useState(false);
   const [templateTargetPageId, setTemplateTargetPageId] = useState<string | null>(null);
   const [stickerPanelOpen, setStickerPanelOpen] = useState(false);
+  const [postitPanelOpen, setPostitPanelOpen] = useState(false);
   const [sideRailTab, setSideRailTab] = useState<SideRailTab | null>(null);
 
   const sync = useCuadernoSyncContextOptional();
@@ -353,16 +355,29 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
         stickersOpen={stickerPanelOpen}
         onOpenStickers={() => {
           setSideRailTab("stickers");
+          setPostitPanelOpen(false);
           setStickerPanelOpen(true);
         }}
       />
 
       <CuadernoStickerPanel
         open={stickerPanelOpen}
-        initialTab={sideRailTab ?? "juridicos"}
+        initialTab="juridicos"
         onClose={() => {
           setStickerPanelOpen(false);
           setSideRailTab(null);
+        }}
+        onAdd={(item: DecorationObject) => {
+          const next = [...(activePage.decorations ?? []), item];
+          applyDoc(setActivePageDecorations(doc, next));
+        }}
+      />
+
+      <CuadernoPostItPanel
+        open={postitPanelOpen}
+        onClose={() => {
+          setPostitPanelOpen(false);
+          if (sideRailTab === "postits") setSideRailTab(null);
         }}
         onAdd={(item: DecorationObject) => {
           const next = [...(activePage.decorations ?? []), item];
@@ -457,13 +472,26 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
             onOpenFormatPanel={() => setFormatPanelOpen(true)}
             onOpenStickers={() => {
               setSideRailTab("stickers");
+              setPostitPanelOpen(false);
               setStickerPanelOpen(true);
             }}
+            onOpenPostits={() => {
+              setSideRailTab("postits");
+              setStickerPanelOpen(false);
+              setPostitPanelOpen(true);
+            }}
             stickerPanelOpen={stickerPanelOpen}
+            postitPanelOpen={postitPanelOpen}
             sideRailTab={sideRailTab}
             onSideRailSelect={(tab) => {
               setSideRailTab(tab);
-              setStickerPanelOpen(true);
+              if (tab === "postits") {
+                setStickerPanelOpen(false);
+                setPostitPanelOpen(true);
+              } else if (tab === "stickers") {
+                setPostitPanelOpen(false);
+                setStickerPanelOpen(true);
+              }
             }}
             onToggleAi={() => setAiOpen((v) => !v)}
             aiOpen={aiOpen}

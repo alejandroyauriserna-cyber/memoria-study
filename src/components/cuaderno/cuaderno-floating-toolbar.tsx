@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { CUADERNO_FONTS, type CuadernoFontId } from "@/lib/cuaderno/editor-fonts";
 import { CuadernoToolbarPopover } from "@/components/cuaderno/cuaderno-toolbar-popover";
+import { CuadernoTableInsertDialog } from "@/components/cuaderno/cuaderno-table-insert-dialog";
 import type { CuadernoWritingMode } from "@/components/cuaderno/cuaderno-canvas-editor";
 
 const TEXT_COLORS = ["#1c1917", "#1e3a5f", "#7f1d1d", "#14532d", "#5b21b6", "#0f766e", "#0d9488"];
@@ -74,6 +75,7 @@ export function CuadernoFloatingToolbar({
   const [fontOpen, setFontOpen] = useState(false);
   const [sizeOpen, setSizeOpen] = useState(false);
   const [colorOpen, setColorOpen] = useState(false);
+  const [tableDialogOpen, setTableDialogOpen] = useState(false);
   const [fontQuery, setFontQuery] = useState("");
   const [fontId, setFontId] = useState<CuadernoFontId | "">("");
   const [fontSize, setFontSize] = useState("");
@@ -207,10 +209,7 @@ export function CuadernoFloatingToolbar({
               <TbBtn title="Justificar" onClick={() => editor.chain().focus().setTextAlign("justify").run()}>
                 <AlignJustify size={15} />
               </TbBtn>
-              <TbBtn
-                title="Tabla"
-                onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
-              >
+              <TbBtn title="Tabla" onClick={() => setTableDialogOpen(true)}>
                 <Table size={15} />
               </TbBtn>
               <TbBtn title="Imagen" onClick={() => imageInputRef.current?.click()}>
@@ -335,6 +334,14 @@ export function CuadernoFloatingToolbar({
           ))}
         </div>
       </CuadernoToolbarPopover>
+
+      <CuadernoTableInsertDialog
+        open={tableDialogOpen}
+        onClose={() => setTableDialogOpen(false)}
+        onConfirm={(rows, cols) => {
+          editor?.chain().focus().insertTable({ rows, cols, withHeaderRow: true }).run();
+        }}
+      />
     </div>
   );
 }

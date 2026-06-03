@@ -46,8 +46,9 @@ export function ImageBlockView({ node, selected, editor, updateAttributes, getPo
       as="div"
       className={`cn-image-block-view align-${align}${selected ? " is-selected" : ""}`}
       data-drag-handle
-      onClick={(e: React.MouseEvent) => {
-        e.preventDefault();
+      onMouseDown={(e: React.MouseEvent) => {
+        if (e.button !== 0) return;
+        e.stopPropagation();
         selectNode();
       }}
     >

@@ -5,11 +5,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Search, Sparkles, Star, X } from "lucide-react";
 import {
   createDecoElement,
-  createPostIt,
   createStickerFromAi,
   createStickerFromCatalog,
   type DecorationObject,
-  type PostItColor,
 } from "@/lib/cuaderno/decoration-objects";
 import {
   DECORATION_DRAG_MIME,
@@ -30,16 +28,6 @@ import { CuadernoStickerDesigner } from "@/components/cuaderno/decoration/cuader
 
 const FAV_KEY = "cuaderno-sticker-favorites";
 const RECENT_KEY = "cuaderno-sticker-recents";
-
-const POSTIT_ORDER: PostItColor[] = ["yellow", "pink", "blue", "green", "purple"];
-
-const POSTIT_LABELS: Record<PostItColor, string> = {
-  yellow: "Amarillo",
-  pink: "Rosa",
-  blue: "Azul",
-  green: "Verde",
-  purple: "Morado",
-};
 
 function loadIds(key: string): string[] {
   if (typeof window === "undefined") return [];
@@ -63,13 +51,11 @@ export function CuadernoStickerPanel({
   open: boolean;
   onClose: () => void;
   onAdd: (item: DecorationObject) => void;
-  initialTab?: StickerPanelTab | "stickers" | "postits" | "images";
+  initialTab?: StickerPanelTab | "stickers" | "images";
 }) {
   const [query, setQuery] = useState("");
   const [tab, setTab] = useState<StickerPanelTab>(() => {
-    if (!initialTab) return "juridicos";
-    if (initialTab === "postits") return "postits";
-    if (initialTab === "stickers" || initialTab === "images") return "juridicos";
+    if (!initialTab || initialTab === "stickers" || initialTab === "images") return "juridicos";
     return initialTab;
   });
   const [favorites, setFavorites] = useState<string[]>([]);
@@ -85,8 +71,7 @@ export function CuadernoStickerPanel({
 
   useEffect(() => {
     if (!open || !initialTab) return;
-    if (initialTab === "postits") setTab("postits");
-    else if (initialTab === "stickers" || initialTab === "images") setTab("juridicos");
+    if (initialTab === "stickers" || initialTab === "images") setTab("juridicos");
     else setTab(initialTab);
   }, [open, initialTab]);
 
@@ -192,34 +177,7 @@ export function CuadernoStickerPanel({
               </div>
 
               <div className="cn-sticker-panel-body">
-                {tab === "postits" ? (
-                  <div className="cn-sticker-postits">
-                    <p className="cn-sticker-section-lead">
-                      Elige un color y arrástralo a la hoja
-                    </p>
-                    <div className="cn-sticker-postit-grid">
-                      {POSTIT_ORDER.map((c) => (
-                        <button
-                          key={c}
-                          type="button"
-                          className={`cn-sticker-postit-btn cn-postit-${c} cn-draggable-source`}
-                          draggable
-                          onDragStart={(e) => {
-                            e.dataTransfer.setData(
-                              DECORATION_DRAG_MIME,
-                              encodeDecorationDrag({ type: "postit", color: c }),
-                            );
-                            e.dataTransfer.effectAllowed = "copy";
-                          }}
-                          onClick={() => onAdd(createPostIt(c))}
-                        >
-                          <span className="cn-sticker-postit-swatch" />
-                          {POSTIT_LABELS[c]}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ) : tab === "decorativos" ? (
+                {tab === "decorativos" ? (
                   <>
                     <p className="cn-sticker-section-lead">Cintas, marcos y resaltados</p>
                     <div className="cn-sticker-deco-list">
