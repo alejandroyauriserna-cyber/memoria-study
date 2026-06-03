@@ -1756,6 +1756,158 @@
   color: var(--cn-accent);
 }
 
+/* —— Capas texto + tinta —— */
+.cn-paper-layers {
+  position: relative;
+  min-height: inherit;
+}
+
+.cn-paper-layer-text {
+  position: relative;
+  z-index: 1;
+}
+
+.cn-paper-layers.is-ink-mode .cn-paper-layer-text {
+  pointer-events: none;
+  user-select: none;
+}
+
+.cn-paper-layers.is-ink-mode .cn-paper-layer-text .ProseMirror {
+  caret-color: transparent;
+}
+
+.cn-ink-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.cn-ink-layer.is-active {
+  pointer-events: auto;
+  cursor: crosshair;
+}
+
+.cn-ink-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Barra de tinta GoodNotes */
+.cn-ink-toolbar-rail {
+  border-bottom: 1px solid var(--cn-border);
+  background: color-mix(in srgb, var(--cn-surface) 88%, transparent);
+  backdrop-filter: blur(18px) saturate(1.3);
+}
+
+.cn-ink-toolbar-scroll {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 8px 16px;
+  overflow-x: auto;
+}
+
+.cn-ink-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.cn-ink-toolbar-gap {
+  width: 48px;
+  flex-shrink: 0;
+}
+
+.cn-ink-tb-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  color: var(--cn-text-secondary);
+  transition: background 0.12s, color 0.12s;
+}
+
+.cn-ink-tb-btn:hover,
+.cn-ink-tb-btn.is-active {
+  background: var(--cn-accent-muted);
+  color: var(--cn-accent);
+}
+
+.cn-ink-color-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+}
+
+.cn-ink-color-swatch.is-active {
+  box-shadow: 0 0 0 2px var(--cn-accent);
+}
+
+.cn-ink-width-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+}
+
+.cn-ink-width-btn span {
+  display: block;
+  border-radius: 50%;
+  background: var(--cn-text);
+}
+
+.cn-ink-width-btn.is-active {
+  background: var(--cn-accent-muted);
+}
+
+.cn-ink-width-label {
+  font-size: 0.65rem;
+  color: var(--cn-text-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 4px;
+}
+
+/* FAB escritura a mano */
+.cn-handwriting-fab {
+  position: fixed;
+  right: 24px;
+  bottom: 88px;
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #0f1115;
+  background: var(--cn-accent);
+  border: none;
+  box-shadow: 0 12px 40px rgba(0, 229, 195, 0.35);
+  transition: transform 0.15s, background 0.15s;
+}
+
+.cn-handwriting-fab:hover {
+  transform: translateY(-2px);
+}
+
+.cn-handwriting-fab.is-ink-active {
+  background: var(--cn-surface-raised);
+  color: var(--cn-text);
+  border: 1px solid var(--cn-border);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+}
+
 /* —— Header inmersivo (56px, Apple glass) —— */
 .cn-immersive-header {
   flex-shrink: 0;
@@ -2012,8 +2164,16 @@
   display: none;
 }
 
-.cn-immersive-root .cn-editor-toolbar-rail {
+.cn-immersive-root .cn-editor-toolbar-rail:not(.cn-editor-toolbar-rail--compact):not(.cn-ink-toolbar-rail) {
   display: none;
+}
+
+.cn-editor-toolbar-rail--compact,
+.cn-ink-toolbar-rail {
+  display: block !important;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 32;
 }
 
 .cn-immersive-root .cn-editor-chrome {

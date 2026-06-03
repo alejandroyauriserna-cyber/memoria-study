@@ -7,6 +7,7 @@ import {
 } from "@/lib/cuaderno/page-settings";
 import type { CuadernoTemplateId } from "@/lib/cuaderno/templates";
 import type { CuadernoPageSizeMode } from "@/lib/cuaderno/page-size";
+import type { InkStroke } from "@/lib/cuaderno/ink-layer";
 
 export type CuadernoPage = {
   id: string;
@@ -18,6 +19,7 @@ export type CuadernoPage = {
   marginMode: CuadernoPageMargin;
   pageSizeMode: CuadernoPageSizeMode;
   favorite: boolean;
+  inkStrokes: InkStroke[];
 };
 
 export type CuadernoDocument = {
@@ -41,6 +43,7 @@ function hydratePage(
     marginMode?: CuadernoPageMargin;
     pageSizeMode?: CuadernoPageSizeMode;
     favorite?: boolean;
+    inkStrokes?: InkStroke[];
   },
   fallbackTemplate: CuadernoTemplateId,
 ): CuadernoPage {
@@ -54,6 +57,7 @@ function hydratePage(
     marginMode: partial.marginMode ?? DEFAULT_PAGE_SETTINGS.marginMode,
     pageSizeMode: partial.pageSizeMode ?? DEFAULT_PAGE_SETTINGS.pageSizeMode,
     favorite: partial.favorite ?? false,
+    inkStrokes: partial.inkStrokes ?? [],
   };
 }
 
@@ -72,6 +76,7 @@ export function createPage(
     marginMode: settings?.marginMode ?? DEFAULT_PAGE_SETTINGS.marginMode,
     pageSizeMode: settings?.pageSizeMode ?? DEFAULT_PAGE_SETTINGS.pageSizeMode,
     favorite: settings?.favorite ?? false,
+    inkStrokes: settings?.inkStrokes ?? [],
   };
 }
 
@@ -122,6 +127,7 @@ export function serializeCuadernoDocument(doc: CuadernoDocument): string {
       marginMode: p.marginMode,
       pageSizeMode: p.pageSizeMode,
       favorite: p.favorite,
+      inkStrokes: p.inkStrokes,
     })),
     activePageId: active.id,
   };
@@ -136,6 +142,13 @@ export function setActivePageBody(doc: CuadernoDocument, html: string): Cuaderno
   return {
     ...doc,
     pages: doc.pages.map((p) => (p.id === doc.activePageId ? { ...p, body: html } : p)),
+  };
+}
+
+export function setActivePageInk(doc: CuadernoDocument, inkStrokes: InkStroke[]): CuadernoDocument {
+  return {
+    ...doc,
+    pages: doc.pages.map((p) => (p.id === doc.activePageId ? { ...p, inkStrokes } : p)),
   };
 }
 
@@ -176,6 +189,7 @@ export function duplicatePage(doc: CuadernoDocument, pageId: string): CuadernoDo
     paperTone: source.paperTone,
     marginMode: source.marginMode,
     pageSizeMode: source.pageSizeMode,
+    inkStrokes: [...source.inkStrokes],
     favorite: false,
   });
   copy.cover = source.cover;

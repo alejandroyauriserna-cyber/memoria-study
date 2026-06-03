@@ -74,6 +74,7 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
   const [formatPanelOpen, setFormatPanelOpen] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
   const [lineHeight, setLineHeight] = useState("1.78");
+  const [writingMode, setWritingMode] = useState<"text" | "ink">("text");
   const [templateGalleryOpen, setTemplateGalleryOpen] = useState(false);
   const [templateTargetPageId, setTemplateTargetPageId] = useState<string | null>(null);
 
@@ -388,7 +389,7 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
       <main className="cn-immersive-main">
         <motion.div
           className="cn-immersive-paper-shell"
-          key={`${doc.activePageId}-${activePage.templateId}-${activePage.paperTone}-${activePage.pageSizeMode}-${chrome.layoutMode}`}
+          key={`${doc.activePageId}-${activePage.templateId}-${activePage.paperTone}-${activePage.pageSizeMode}-${chrome.layoutMode}-${writingMode}`}
           initial={{ opacity: 0, y: 16, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
@@ -396,7 +397,6 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
           <CuadernoCanvasEditor
             immersive
             externalToolbar
-            immersiveEdit
             notes={notes}
             onChange={(raw) => applyDoc(parseCuadernoDocument(raw))}
             layoutMode={chrome.layoutMode}
@@ -406,6 +406,11 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
             templateId={activePage.templateId}
             courseAccent={coverArt.accent}
             lineHeight={lineHeight}
+            writingMode={writingMode}
+            onWritingModeChange={(mode) => {
+              setWritingMode(mode);
+              if (mode === "ink") setFocusMode(true);
+            }}
             focusMode={focusMode}
             onPaperFocus={() => setFocusMode(true)}
             onOpenFormatPanel={() => setFormatPanelOpen(true)}
