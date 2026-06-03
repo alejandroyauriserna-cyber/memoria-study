@@ -8,10 +8,12 @@ export type CuadernoTemplateId =
   | "legal"
   | "summary"
   | "research"
+  | "flashcards"
   | "legal-caso"
   | "legal-sentencia"
   | "legal-interpretacion"
   | "legal-dictamen"
+  | "legal-ficha"
   | "legal-comentario";
 
 export type CuadernoTemplate = {
@@ -19,73 +21,81 @@ export type CuadernoTemplate = {
   label: string;
   description: string;
   category: "base" | "juridica";
-  pattern: "blank" | "grid" | "ruled" | "cornell" | "legal";
+  icon: string;
   initialBody: string;
 };
 
 export const CUADERNO_TEMPLATES: CuadernoTemplate[] = [
   {
     id: "blank",
-    label: "Hoja blanca",
-    description: "Lienzo limpio para apuntes libres",
+    label: "Blanco",
+    description: "Hoja limpia, ideal para apuntes libres",
     category: "base",
-    pattern: "blank",
+    icon: "📄",
     initialBody: "",
   },
   {
     id: "grid",
-    label: "Cuadriculada",
-    description: "Ideal para esquemas y diagramas",
+    label: "Cuadriculado",
+    description: "Cuadrícula fina para esquemas y diagramas",
     category: "base",
-    pattern: "grid",
+    icon: "▦",
     initialBody: "",
   },
   {
     id: "ruled",
-    label: "Rayada",
-    description: "Clásica para escritura continua",
+    label: "Rayado",
+    description: "Líneas horizontales clásicas",
     category: "base",
-    pattern: "ruled",
+    icon: "≡",
     initialBody: "",
   },
   {
     id: "cornell",
     label: "Cornell",
-    description: "Preguntas, notas y resumen",
+    description: "Cues, notas y resumen en columnas",
     category: "base",
-    pattern: "cornell",
+    icon: "▤",
     initialBody: `## Preguntas clave\n\n-\n\n## Apuntes\n\n\n## Resumen\n\n`,
-  },
-  {
-    id: "legal",
-    label: "Jurídica",
-    description: "Estructura académica general",
-    category: "base",
-    pattern: "legal",
-    initialBody: `## Tema\n\n\n## Conceptos\n\n\n## Doctrina / norma\n\n\n## Conclusión parcial\n\n`,
-  },
-  {
-    id: "summary",
-    label: "Resumen",
-    description: "Síntesis para repaso",
-    category: "base",
-    pattern: "ruled",
-    initialBody: `## Idea central\n\n\n## Puntos clave\n\n1.\n2.\n3.\n\n## Para el examen\n\n`,
   },
   {
     id: "research",
     label: "Investigación",
-    description: "Hipótesis, fuentes y análisis",
+    description: "Puntos, fuentes y análisis",
     category: "base",
-    pattern: "grid",
+    icon: "🔬",
     initialBody: `## Problema de investigación\n\n\n## Hipótesis\n\n\n## Fuentes\n\n\n## Análisis\n\n`,
   },
   {
+    id: "summary",
+    label: "Resumen",
+    description: "Síntesis estructurada para repaso",
+    category: "base",
+    icon: "📋",
+    initialBody: `## Idea central\n\n\n## Puntos clave\n\n1.\n2.\n3.\n\n## Para el examen\n\n`,
+  },
+  {
+    id: "flashcards",
+    label: "Flashcards",
+    description: "Pregunta y respuesta por bloques",
+    category: "base",
+    icon: "🃏",
+    initialBody: `## Tarjeta 1\nPregunta:\n\nRespuesta:\n\n---\n\n## Tarjeta 2\nPregunta:\n\nRespuesta:\n\n`,
+  },
+  {
+    id: "legal",
+    label: "Papel jurídico",
+    description: "Márgenes y líneas académicas",
+    category: "base",
+    icon: "⚖",
+    initialBody: `## Tema\n\n\n## Conceptos\n\n\n## Doctrina / norma\n\n\n## Conclusión parcial\n\n`,
+  },
+  {
     id: "legal-caso",
-    label: "Caso práctico",
+    label: "Caso práctico jurídico",
     description: "Hechos, problema y conclusión",
     category: "juridica",
-    pattern: "legal",
+    icon: "📁",
     initialBody: `## HECHOS\n\n\n## PROBLEMA JURÍDICO\n\n\n## NORMATIVA\n\n\n## ANÁLISIS\n\n\n## CONCLUSIÓN\n\n`,
   },
   {
@@ -93,7 +103,7 @@ export const CUADERNO_TEMPLATES: CuadernoTemplate[] = [
     label: "Comentario de sentencia",
     description: "Datos del caso y análisis crítico",
     category: "juridica",
-    pattern: "legal",
+    icon: "⚖",
     initialBody: `## Datos del caso\n\n\n## Hechos\n\n\n## Fundamentos\n\n\n## Análisis crítico\n\n\n## Conclusión\n\n`,
   },
   {
@@ -101,23 +111,31 @@ export const CUADERNO_TEMPLATES: CuadernoTemplate[] = [
     label: "Interpretación normativa",
     description: "Artículo y método interpretativo",
     category: "juridica",
-    pattern: "legal",
+    icon: "📜",
     initialBody: `## Artículo\n\n\n## Problema interpretativo\n\n\n## Método utilizado\n\n\n## Conclusión\n\n`,
   },
   {
     id: "legal-dictamen",
-    label: "Dictamen",
+    label: "Dictamen jurídico",
     description: "Consulta, análisis y opinión",
     category: "juridica",
-    pattern: "legal",
+    icon: "✒",
     initialBody: `## Consulta\n\n\n## Antecedentes\n\n\n## Análisis\n\n\n## Opinión / conclusión\n\n`,
   },
   {
-    id: "legal-comentario",
-    label: "Comentario jurisprudencial",
-    description: "Tesis y relevancia del precedente",
+    id: "legal-ficha",
+    label: "Ficha jurisprudencial",
+    description: "Precedente, tesis y aplicación",
     category: "juridica",
-    pattern: "legal",
+    icon: "📑",
+    initialBody: `## Tribunal / expediente\n\n\n## Tesis\n\n\n## Hechos relevantes\n\n\n## Aplicación al caso\n\n`,
+  },
+  {
+    id: "legal-comentario",
+    label: "Jurisprudencia relacionada",
+    description: "Precedente y crítica doctrinal",
+    category: "juridica",
+    icon: "🏛",
     initialBody: `## Precedente\n\n\n## Tesis del tribunal\n\n\n## Relevancia\n\n\n## Crítica / aplicación\n\n`,
   },
 ];

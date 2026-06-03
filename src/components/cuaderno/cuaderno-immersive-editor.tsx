@@ -3,22 +3,34 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import { ArrowLeft, Loader2, Sparkles, Star } from "lucide-react";
 import { CuadernoCanvasEditor } from "@/components/cuaderno/cuaderno-canvas-editor";
 import { CuadernoAiSidebar } from "@/components/cuaderno/cuaderno-ai-sidebar";
+import {
+  CuadernoEditorChrome,
+  useEditorChromeState,
+} from "@/components/cuaderno/cuaderno-editor-chrome";
+import { CuadernoInlineTemplatePicker } from "@/components/cuaderno/cuaderno-inline-template-picker";
 import {
   saveExamItemAsync,
   saveSummaryItemAsync,
   toggleFavoriteClassAsync,
 } from "@/lib/cuaderno/smart-collections";
+import { getCourseCoverArt } from "@/lib/cuaderno/course-covers";
+import { getCourseVisualPrefs } from "@/lib/cuaderno/preferences";
+import { parseNoteContent, serializeNoteContent } from "@/lib/cuaderno/note-meta";
+import type { CuadernoTemplateId } from "@/lib/cuaderno/templates";
 import { useCuadernoSyncContextOptional } from "@/components/cuaderno/cuaderno-sync-context";
 import { isCachedFavorite } from "@/lib/cuaderno/collections-client";
 import type { CuadernoAskAction, CuadernoClass, CuadernoDictionaryResponse } from "@/types/cuaderno";
 import "./cuaderno-premium.css";
+import "./cuaderno-paper.css";
 
 export function CuadernoImmersiveEditor({ initialClass }: { initialClass: CuadernoClass }) {
   const router = useRouter();
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const chrome = useEditorChromeState();
 
   const [cuadernoClass, setCuadernoClass] = useState(initialClass);
   const [notes, setNotes] = useState(initialClass.notes);
@@ -26,6 +38,7 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
   const [favorite, setFavorite] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
+  const [favoritePulse, setFavoritePulse] = useState(false);
 
   const [dictTerm, setDictTerm] = useState("");
   const [dictLoading, setDictLoading] = useState(false);
@@ -38,6 +51,10 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
   const [error, setError] = useState<string | null>(null);
 
   const sync = useCuadernoSyncContextOptional();
+  const { meta } = parseNoteContent(notes);
+
+  const prefs = getCourseVisualPrefs(cuadernoClass.courseId);
+  const coverArt = getCourseCoverArt(cuadernoClass.courseId, prefs);
 
   useEffect(() => {
     setFavorite(sync?.isFavorite(cuadernoClass.id) ?? isCachedFavorite(cuadernoClass.id));
@@ -71,6 +88,11 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
     };
   }, [notes, cuadernoClass.notes, persist]);
 
+  function changeTemplate(templateId: CuadernoTemplateId) {
+    const parsed = parseNoteContent(notes);
+    setNotes(serializeNoteContent({ ...parsed.meta, templateId }, parsed.body));
+  }
+
   async function lookupTerm(term: string) {
     const query = term.trim();
     if (!query) return;
@@ -95,7 +117,7 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
   }
 
   async function handleAsk(
-    action: CuadernoAskAction | "legislation" | "mind_map",
+    action: CuadernoAskAction | "legislation" | "mind_map" | "jurisprudence",
     promptText?: string,
     saveAs?: "summary" | "exam",
   ) {
@@ -108,12 +130,20 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
 
     if (action === "legislation") {
       apiAction = "explain";
-      custom = `Busca legislación peruana relevante: «${promptText ?? ""}»`;
+      custom = `Busca legislación peruana aplicable: «${promptText ?? ""}»`;
+    } else if (action === "jurisprudence") {
+      apiAction = "explain";
+      custom = `Jurisprudencia y precedentes peruanos relevantes: «${promptText ?? ""}»`;
     } else if (action === "mind_map") {
       apiAction = "relate";
       custom = `Estructura de mapa mental: «${promptText ?? ""}»`;
     } else if (promptText) {
-      apiAction = action === "summarize" ? "summarize" : action === "exam_questions" ? "exam_questions" : action;
+      apiAction =
+        action === "summarize"
+          ? "summarize"
+          : action === "exam_questions"
+            ? "exam_questions"
+            : action;
       custom = promptText;
     }
 
@@ -194,7 +224,19 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
   }
 
   return (
-    <div className={`cn-immersive-root ${aiOpen ? "cn-immersive-root--ai-open" : ""}`}>
+    <motion.div
+      className={`cn-immersive-root ${aiOpen ? "cn-immersive-root--ai-open" : ""}`}
+      data-layout={chrome.layoutMode}
+      style={
+        {
+          "--cn-course-accent": coverArt.accent,
+          "--cn-course-glow": `${coverArt.accent}22`,
+        } as React.CSSProperties
+      }
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4 }}
+    >
       <header className="cn-immersive-toolbar">
         <Link
           href={`/cuaderno/curso/${cuadernoClass.courseId}`}
@@ -203,6 +245,9 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
         >
           <ArrowLeft size={18} />
         </Link>
+        <span className="cn-immersive-course-badge" aria-hidden>
+          {coverArt.icon}
+        </span>
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -221,11 +266,14 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
             cuadernoClass.courseName
           )}
         </span>
-        <button
+        <motion.button
           type="button"
+          animate={favoritePulse ? { scale: [1, 1.25, 1] } : {}}
           onClick={() => {
             void toggleFavoriteClassAsync(cuadernoClass.id).then((next) => {
               setFavorite(next);
+              setFavoritePulse(true);
+              window.setTimeout(() => setFavoritePulse(false), 400);
               void sync?.refresh();
             });
           }}
@@ -233,7 +281,7 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
           title="Favoritos"
         >
           <Star size={18} fill={favorite ? "currentColor" : "none"} />
-        </button>
+        </motion.button>
         <button
           type="button"
           onClick={() => setAiOpen((v) => !v)}
@@ -244,22 +292,57 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
         </button>
       </header>
 
+      <CuadernoEditorChrome
+        templateId={meta.templateId}
+        onTemplateChange={changeTemplate}
+        layoutMode={chrome.layoutMode}
+        onLayoutChange={chrome.setLayoutMode}
+        paperTone={chrome.paperTone}
+        onPaperToneChange={chrome.setPaperTone}
+        templatePickerOpen={chrome.templatePickerOpen}
+        onTemplatePickerToggle={chrome.setTemplatePickerOpen}
+      />
+
+      <CuadernoInlineTemplatePicker
+        open={chrome.templatePickerOpen}
+        currentId={meta.templateId}
+        onSelect={changeTemplate}
+        onClose={() => chrome.setTemplatePickerOpen(false)}
+      />
+
       <main className="cn-immersive-main">
-        <CuadernoCanvasEditor
-          immersive
-          notes={notes}
-          onChange={setNotes}
-          onSelectionAction={(action, text) => {
-            setAiOpen(true);
-            if (action === "summarize") {
-              void handleAsk("summarize", `Resume: «${text}»`, "summary");
-            } else if (action === "exam_questions") {
-              void handleAsk("exam_questions", `Preguntas sobre: «${text}»`, "exam");
-            } else {
-              void handleAsk(action, `Sobre: «${text}»`);
-            }
-          }}
-        />
+        <motion.div
+          className="cn-immersive-paper-shell"
+          key={`${meta.templateId}-${chrome.layoutMode}-${chrome.paperTone}`}
+          initial={{ opacity: 0, y: 16, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <CuadernoCanvasEditor
+            immersive
+            notes={notes}
+            onChange={setNotes}
+            layoutMode={chrome.layoutMode}
+            paperTone={chrome.paperTone}
+            templateId={meta.templateId}
+            onSelectionAction={(action, text) => {
+              setAiOpen(true);
+              if (action === "summarize") {
+                void handleAsk("summarize", `Resume: «${text}»`, "summary");
+              } else if (action === "exam_questions") {
+                void handleAsk("exam_questions", `Preguntas sobre: «${text}»`, "exam");
+              } else if (action === "legislation") {
+                void handleAsk("legislation", text);
+              } else if (action === "jurisprudence") {
+                void handleAsk("jurisprudence", text);
+              } else if (action === "mind_map") {
+                void handleAsk("mind_map", text);
+              } else {
+                void handleAsk(action, `Sobre: «${text}»`);
+              }
+            }}
+          />
+        </motion.div>
       </main>
 
       <CuadernoAiSidebar
@@ -278,19 +361,28 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
           const saveAs = /resum/i.test(p) ? "summary" : /pregunta|examen|simulacro/i.test(p) ? "exam" : undefined;
           void handleAsk("explain", p, saveAs);
         }}
-        onQuickPrompt={(p) => {
-          const saveAs = /resum/i.test(p) ? "summary" : /pregunta|examen/i.test(p) ? "exam" : undefined;
-          void handleAsk("explain", p, saveAs);
+        onAction={(action, prompt) => {
+          if (action === "explain") void handleAsk("explain", prompt);
+          else if (action === "summarize") void handleAsk("summarize", prompt, "summary");
+          else if (action === "exam_questions") void handleAsk("exam_questions", prompt, "exam");
+          else if (action === "flashcards") void handleAsk("flashcards", prompt);
+          else if (action === "mind_map") void handleAsk("mind_map", prompt);
+          else if (action === "relate") void handleAsk("relate", prompt);
+          else if (action === "legislation") void handleAsk("legislation", prompt);
+          else if (action === "jurisprudence") void handleAsk("jurisprudence", prompt);
         }}
         askLoading={askLoading}
         askAnswer={askAnswer}
         onGenerateOrganizer={generateOrganizer}
         onGenerateDeck={generateDeck}
-        onGenerateExam={() => handleAsk("exam_questions", "Genera un simulacro de examen con mis apuntes", "exam")}
+        onGenerateExam={() =>
+          handleAsk("exam_questions", "Genera un simulacro de examen con mis apuntes", "exam")
+        }
         genLoading={genLoading}
+        courseAccent={coverArt.accent}
       />
 
       {error ? <p className="cn-immersive-error">{error}</p> : null}
-    </div>
+    </motion.div>
   );
 }

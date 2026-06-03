@@ -7,6 +7,7 @@ import { CuadernoSyncProvider } from "@/components/cuaderno/cuaderno-sync-contex
 import { CuadernoDictionaryTab } from "@/components/cuaderno/cuaderno-dictionary-tab";
 import type { CuadernoClass } from "@/types/cuaderno";
 import "./cuaderno-premium.css";
+import "./cuaderno-paper.css";
 
 type Tab = "notes" | "dictionary";
 

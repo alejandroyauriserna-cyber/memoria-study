@@ -103,7 +103,7 @@ export function CuadernoClassEditor({ initialClass }: { initialClass: CuadernoCl
   }
 
   async function handleAsk(
-    action: CuadernoAskAction | "legislation" | "mind_map",
+    action: CuadernoAskAction | "legislation" | "mind_map" | "jurisprudence",
     selectedText?: string,
   ) {
     setAskLoading(true);
@@ -119,6 +119,9 @@ export function CuadernoClassEditor({ initialClass }: { initialClass: CuadernoCl
     } else if (action === "mind_map") {
       apiAction = "relate";
       customPrompt = `Convierte esto en una estructura de mapa mental (título central, ramas y subramas): «${selectedText ?? ""}»`;
+    } else if (action === "jurisprudence") {
+      apiAction = "explain";
+      customPrompt = `Jurisprudencia y precedentes peruanos relevantes: «${selectedText ?? ""}»`;
     } else {
       apiAction = action;
       if (selectedText) {

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import { ArrowLeft, Loader2, Plus } from "lucide-react";
 import { buildCuadernoFolders } from "@/lib/cuaderno/folders";
 import { CuadernoNotebookCover } from "@/components/cuaderno/cuaderno-notebook-cover";
@@ -16,6 +17,7 @@ import { getCourseCoverArt } from "@/lib/cuaderno/course-covers";
 import { getCourseVisualPrefs } from "@/lib/cuaderno/preferences";
 import type { CuadernoClass } from "@/types/cuaderno";
 import "./cuaderno-premium.css";
+import "./cuaderno-paper.css";
 
 export function CuadernoCourseView(props: {
   courseId: string;
@@ -101,7 +103,18 @@ function CuadernoCourseViewInner({
   }
 
   return (
-    <div className="cuaderno-premium mx-auto max-w-5xl space-y-8 px-4 py-8 sm:px-6">
+    <motion.div
+      className="cuaderno-premium mx-auto max-w-6xl space-y-8 px-4 py-8 sm:px-6"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.35 }}
+      style={
+        {
+          "--cn-course-accent": coverArt.accent,
+          "--cn-course-glow": `${coverArt.accent}18`,
+        } as React.CSSProperties
+      }
+    >
       <Link
         href="/cuaderno"
         className="inline-flex items-center gap-2 text-sm text-muted-foreground transition hover:text-[#00FFD5]"
@@ -110,7 +123,12 @@ function CuadernoCourseViewInner({
         Mis apuntes
       </Link>
 
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+      <motion.div
+        className="cn-course-hero-panel flex flex-col gap-6 lg:flex-row lg:items-start"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.08, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+      >
         <div className="mx-auto w-full max-w-[220px] shrink-0 space-y-3">
           <CuadernoNotebookCover
             href={`/cuaderno/curso/${courseId}`}
@@ -147,7 +165,7 @@ function CuadernoCourseViewInner({
             Nueva clase
           </button>
         </div>
-      </div>
+      </motion.div>
 
       {error ? <p className="text-sm text-red-400">{error}</p> : null}
 
@@ -163,13 +181,14 @@ function CuadernoCourseViewInner({
             </p>
           </div>
         ) : (
-          classes.map((item) => (
+          classes.map((item, index) => (
             <CuadernoSheetCover
               key={item.id}
               item={item}
               courseCover={coverArt}
               isFavorite={isFavorite(item.id)}
               onNotesUpdated={(notes) => updateClassNotes(item.id, notes)}
+              index={index}
             />
           ))
         )}
@@ -180,6 +199,6 @@ function CuadernoCourseViewInner({
         onClose={() => setPickerOpen(false)}
         onSelect={createClass}
       />
-    </div>
+    </motion.div>
   );
 }

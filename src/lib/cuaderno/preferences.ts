@@ -9,13 +9,18 @@ export type CourseVisualPrefs = {
 const DEFAULT_BY_COURSE: Record<string, Partial<CourseVisualPrefs>> = {
   "constitucional-i": { icon: "⚖️", accent: "#6366f1", cover: "indigo" },
   "constitucional-ii": { icon: "⚖️", accent: "#818cf8", cover: "indigo" },
-  "teoria-juridica-delito-i": { icon: "📜", accent: "#f43f5e", cover: "rose" },
+  "teoria-juridica-delito-i": { icon: "🔍", accent: "#f43f5e", cover: "rose" },
   "teoria-juridica-delito-ii": { icon: "📜", accent: "#fb7185", cover: "rose" },
   "civil-ii-acto-juridico": { icon: "📘", accent: "#0ea5e9", cover: "teal" },
   "civil-i-personas": { icon: "📘", accent: "#38bdf8", cover: "teal" },
+  "civil-iii-derechos-reales": { icon: "📗", accent: "#22d3ee", cover: "teal" },
   "administrativo-i": { icon: "🏛", accent: "#f59e0b", cover: "amber" },
-  "etica-profesional": { icon: "✦", accent: "#a78bfa", cover: "violet" },
-  "introduccion-investigacion-cientifica": { icon: "🔬", accent: "#14b8a6", cover: "teal" },
+  "etica-profesional": { icon: "💼", accent: "#a78bfa", cover: "violet" },
+  "introduccion-investigacion-cientifica": { icon: "📚", accent: "#14b8a6", cover: "teal" },
+  "derecho-trabajo-i": { icon: "👷", accent: "#34d399", cover: "teal" },
+  "derecho-trabajo-ii": { icon: "⚒", accent: "#10b981", cover: "teal" },
+  "derecho-procesal-penal-i": { icon: "⚖", accent: "#e879f9", cover: "violet" },
+  "seminario-tesis": { icon: "📑", accent: "#c4b5fd", cover: "violet" },
 };
 
 const FALLBACK: CourseVisualPrefs = {

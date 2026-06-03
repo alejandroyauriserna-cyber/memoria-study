@@ -2,7 +2,7 @@
 
 import type { CuadernoAskAction } from "@/types/cuaderno";
 
-const ACTIONS: Array<{ id: CuadernoAskAction | "legislation" | "mind_map"; label: string }> = [
+const ACTIONS: Array<{ id: CuadernoAskAction | "legislation" | "mind_map" | "jurisprudence"; label: string }> = [
   { id: "explain", label: "Explicar" },
   { id: "summarize", label: "Resumir" },
   { id: "mind_map", label: "Mapa mental" },
@@ -10,6 +10,7 @@ const ACTIONS: Array<{ id: CuadernoAskAction | "legislation" | "mind_map"; label
   { id: "exam_questions", label: "Preguntas" },
   { id: "relate", label: "Relacionar" },
   { id: "legislation", label: "Legislación" },
+  { id: "jurisprudence", label: "Jurisprudencia" },
 ];
 
 export function CuadernoSelectionMenu({
@@ -19,7 +20,10 @@ export function CuadernoSelectionMenu({
 }: {
   x: number;
   y: number;
-  onAction: (action: CuadernoAskAction | "legislation" | "mind_map", selectedText: string) => void;
+  onAction: (
+    action: CuadernoAskAction | "legislation" | "mind_map" | "jurisprudence",
+    selectedText: string,
+  ) => void;
 }) {
   return (
     <div
