@@ -87,6 +87,17 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
   const selectedIdsRef = useRef(selectedIds);
   selectedIdsRef.current = selectedIds;
   const skipPropsSyncRef = useRef(false);
+  const lastCommittedRef = useRef<DecorationObject[] | null>(null);
+
+  const decorationPositionsMatch = useCallback((a: DecorationObject[], b: DecorationObject[]) => {
+    if (a.length !== b.length) return false;
+    const map = new Map(b.map((d) => [d.id, d]));
+    return a.every((d) => {
+      const o = map.get(d.id);
+      if (!o) return false;
+      return o.x === d.x && o.y === d.y && o.w === d.w && o.h === d.h;
+    });
+  }, []);
 
   const pendingMoveRef = useRef<{
     obj: DecorationObject;
@@ -124,10 +135,22 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
       skipPropsSyncRef.current = false;
       return;
     }
-    setLiveItems(decorations);
-  }, [decorations, draggingIds]);
+    setLiveItems((prev) => {
+      const committed = lastCommittedRef.current;
+      if (
+        committed &&
+        decorationPositionsMatch(committed, prev) &&
+        !decorationPositionsMatch(committed, decorations)
+      ) {
+        return prev;
+      }
+      return decorations;
+    });
+  }, [decorations, draggingIds, decorationPositionsMatch]);
 
   const commitItems = useCallback((next: DecorationObject[]) => {
+    lastCommittedRef.current = next;
+    skipPropsSyncRef.current = true;
     setLiveItems(next);
     onChangeRef.current(next);
   }, []);
@@ -189,6 +212,9 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
         setDraggingIds([]);
         return;
       }
+
+      const layer = layerRef.current;
+      if (layer) drag.metrics = getLayerMetrics(layer);
 
       const dx = (e.clientX - drag.startX) / drag.metrics.width;
       const dy = (e.clientY - drag.startY) / drag.metrics.height;
@@ -252,7 +278,6 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
 
       if (!next) return;
 
-      skipPropsSyncRef.current = true;
       commitItems(next);
     },
     [commitItems],
@@ -424,12 +449,6 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
       const startY = e.clientY;
       const pointerId = e.pointerId;
 
-      try {
-        el.setPointerCapture(pointerId);
-      } catch {
-        /* ignore */
-      }
-
       const onMove = (ev: PointerEvent) => {
         const p = pendingMoveRef.current;
         if (!p || ev.pointerId !== p.pointerId) return;
@@ -444,11 +463,6 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
         window.removeEventListener("pointermove", onMove);
         window.removeEventListener("pointerup", onUp);
         window.removeEventListener("pointercancel", onUp);
-        try {
-          el.releasePointerCapture(pointerId);
-        } catch {
-          /* ignore */
-        }
       };
 
       window.addEventListener("pointermove", onMove);

@@ -23,6 +23,9 @@ import type { ResizeHandle } from "@/lib/cuaderno/decoration-resize";
 
 const RESIZE_HANDLES: ResizeHandle[] = ["nw", "n", "ne", "e", "se", "s", "sw", "w"];
 
+const DECO_CHROME_SELECTOR =
+  ".cn-decoration-handle, .cn-decoration-toolbar, .cn-image-wrap-bar, .cn-postit-colors";
+
 const WRAP_LABELS: Record<ImageTextWrap, string> = {
   inline: "En línea con texto",
   square: "Cuadrado",
@@ -116,7 +119,12 @@ export const CuadernoDecorationItem = memo(function CuadernoDecorationItem({
       }}
       onPointerDown={(e) => {
         if (!active) return;
-        if ((e.target as HTMLElement).closest(".cn-decoration-handle, .cn-decoration-toolbar")) return;
+        if (e.button !== 0) return;
+        const chrome = (e.target as HTMLElement).closest(DECO_CHROME_SELECTOR);
+        if (chrome) {
+          e.stopPropagation();
+          return;
+        }
         e.stopPropagation();
         const additive = e.shiftKey || e.metaKey || e.ctrlKey;
         onSelect(additive);
@@ -128,7 +136,11 @@ export const CuadernoDecorationItem = memo(function CuadernoDecorationItem({
 
       {selected && active ? (
         <>
-          <div className="cn-decoration-toolbar" onPointerDown={(e) => e.stopPropagation()}>
+          <div
+            className="cn-decoration-toolbar"
+            onPointerDown={(e) => e.stopPropagation()}
+            onPointerDownCapture={(e) => e.stopPropagation()}
+          >
             <button type="button" title="Duplicar" aria-label="Duplicar" onClick={onDuplicate}>
               <Copy size={12} />
             </button>

@@ -85,7 +85,11 @@ export function CuadernoMarqueeOverlay({
 
     const onPointerDown = (e: PointerEvent) => {
       const t = e.target as HTMLElement;
-      if (t.closest(".cn-decoration-item, .cn-table-chrome-layer, .cn-table-grip-layer, .cn-table-toolbar, .cn-decoration-toolbar, .cn-decoration-context-menu")) {
+      if (
+        t.closest(
+          ".cn-decoration-item, .cn-table-chrome-layer, .cn-table-grip-layer, .cn-table-toolbar, .cn-decoration-toolbar, .cn-decoration-handle, .cn-image-wrap-bar, .cn-postit-colors, .cn-decoration-context-menu",
+        )
+      ) {
         return;
       }
       if (!paper.contains(t)) return;
