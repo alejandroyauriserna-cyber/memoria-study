@@ -1,4 +1,5 @@
 import type { DecorationObject } from "@/lib/cuaderno/decoration-objects";
+import { getJuridicoStickerById } from "@/lib/cuaderno/sticker-juridico-packs";
 import { getPngStickerById } from "@/lib/cuaderno/sticker-png-packs";
 import { getStickerById } from "@/lib/cuaderno/sticker-catalog";
 import { getStickerSvgDataUrl } from "@/lib/cuaderno/sticker-svg";
@@ -73,7 +74,8 @@ export function resolveStickerSrcSync(item: DecorationObject): string | undefine
   if (item.kind !== "sticker") return undefined;
   if (item.src && isDisplayableImageSrc(item.src)) return item.src;
   if (item.stickerId?.startsWith("png:")) {
-    return getPngStickerById(item.stickerId.slice(4))?.src;
+    const id = item.stickerId.slice(4);
+    return getJuridicoStickerById(id)?.src ?? getPngStickerById(id)?.src;
   }
   if (item.stickerId) {
     const cat = getStickerById(item.stickerId);

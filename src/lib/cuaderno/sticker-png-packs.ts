@@ -24,7 +24,10 @@ export type StickerPngPack = {
   stickers: PngStickerItem[];
 };
 
-/** PNG transparentes / recortables (Open Clipart + dominio público). */
+/**
+ * Packs legacy desactivados en UI (URLs Open Clipart devolvían imágenes incorrectas).
+ * El panel usa JURIDICO_STICKER_PACKS con SVG locales.
+ */
 export const STICKER_PNG_PACKS: StickerPngPack[] = [
   {
     id: "libros",

@@ -51,6 +51,10 @@ import {
   pastedImageName,
   saveImageToUserLibrary,
 } from "@/lib/cuaderno/paste-image-ingest";
+import {
+  clampDecorationToContentArea,
+  visibleContentCenterNorm,
+} from "@/lib/cuaderno/decoration-bounds";
 import { createFloatingImage } from "@/lib/cuaderno/floating-image";
 import { CuadernoPlacementOverlay } from "@/components/cuaderno/cuaderno-placement-overlay";
 import { NodeSelection } from "@tiptap/pm/state";
@@ -227,17 +231,9 @@ export function CuadernoCanvasEditor({
   }, [editor, syncDecorations]);
 
   const visibleCenterNorm = useCallback(() => {
-    const vp = viewportRef.current?.getBoundingClientRect();
-    const paper = paperLayersRef.current?.getBoundingClientRect();
-    if (!vp || !paper || paper.width < 1 || paper.height < 1) {
-      return { x: 0.34, y: 0.28 };
-    }
-    const cx = (vp.left + vp.right) / 2;
-    const cy = (vp.top + vp.bottom) / 2;
-    return {
-      x: Math.min(0.88, Math.max(0.06, (cx - paper.left) / paper.width)),
-      y: Math.min(0.88, Math.max(0.06, (cy - paper.top) / paper.height)),
-    };
+    const vp = viewportRef.current?.getBoundingClientRect() ?? null;
+    const paper = paperLayersRef.current?.getBoundingClientRect() ?? null;
+    return visibleContentCenterNorm(vp, paper);
   }, []);
 
   const addDecoration = useCallback(
@@ -251,17 +247,11 @@ export function CuadernoCanvasEditor({
 
   const placeDecorationItem = useCallback(
     async (item: DecorationObject, at?: { x: number; y: number }) => {
-      const centered = at
-        ? {
-            ...item,
-            x: Math.min(0.88, Math.max(0.02, at.x - item.w / 2)),
-            y: Math.min(0.88, Math.max(0.02, at.y - item.h / 2)),
-          }
-        : {
-            ...item,
-            x: Math.min(0.88, Math.max(0.02, item.x)),
-            y: Math.min(0.88, Math.max(0.02, item.y)),
-          };
+      const centered = clampDecorationToContentArea(
+        at
+          ? { ...item, x: at.x - item.w / 2, y: at.y - item.h / 2 }
+          : item,
+      );
 
       if (canPlaceInstantly(centered)) {
         try {

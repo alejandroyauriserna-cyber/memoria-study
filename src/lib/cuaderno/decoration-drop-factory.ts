@@ -9,6 +9,7 @@ import {
 } from "@/lib/cuaderno/decoration-objects";
 import type { DecorationDragPayload } from "@/lib/cuaderno/decoration-drag";
 import { getStickerById } from "@/lib/cuaderno/sticker-catalog";
+import { getJuridicoStickerById } from "@/lib/cuaderno/sticker-juridico-packs";
 import { getPngStickerById } from "@/lib/cuaderno/sticker-png-packs";
 import { getStickerSvgDataUrl } from "@/lib/cuaderno/sticker-svg";
 
@@ -45,7 +46,8 @@ export function createDecorationFromDrop(
 
   if (payload.type === "sticker") {
     if (payload.stickerId.startsWith("png:")) {
-      const png = getPngStickerById(payload.stickerId.slice(4));
+      const id = payload.stickerId.slice(4);
+      const png = getJuridicoStickerById(id) ?? getPngStickerById(id);
       if (!png) return null;
       return createStickerFromSrc(png.src, png.label, {
         stickerId: payload.stickerId,
