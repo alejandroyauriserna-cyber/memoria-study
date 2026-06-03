@@ -9,6 +9,7 @@ import { createCuadernoEditorExtensions } from "@/lib/cuaderno/cuaderno-editor-e
 import { CuadernoFormatBubble } from "@/components/cuaderno/cuaderno-format-bubble";
 import { CuadernoFloatingEditToolbar } from "@/components/cuaderno/cuaderno-floating-edit-toolbar";
 import { CuadernoBlockHandles, useBlockClickSelect } from "@/components/cuaderno/cuaderno-block-handles";
+import { CuadernoTableChrome } from "@/components/cuaderno/blocks/cuaderno-table-chrome";
 import type { CuadernoAskAction } from "@/types/cuaderno";
 import "./cuaderno-rich-editor.css";
 import "./cuaderno-blocks.css";
@@ -164,6 +165,7 @@ function CuadernoRichEditorInner({
             />
           )}
           <CuadernoBlockHandles editor={editor} />
+          <CuadernoTableChrome editor={editor} />
         </>
       ) : null}
     </div>

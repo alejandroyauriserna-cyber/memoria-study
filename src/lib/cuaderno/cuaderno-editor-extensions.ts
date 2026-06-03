@@ -7,8 +7,8 @@ import FontFamily from "@tiptap/extension-font-family";
 import TextAlign from "@tiptap/extension-text-align";
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
-import { Table } from "@tiptap/extension-table";
-import TableRow from "@tiptap/extension-table-row";
+import { CuadernoTable } from "@/components/cuaderno/tiptap/cuaderno-table";
+import { CuadernoTableRow } from "@/components/cuaderno/tiptap/cuaderno-table-row";
 import TableCell from "@tiptap/extension-table-cell";
 import TableHeader from "@tiptap/extension-table-header";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -35,8 +35,13 @@ export function createCuadernoEditorExtensions(placeholder: string): Extensions 
     TextAlign.configure({ types: ["heading", "paragraph"] }),
     TaskList,
     TaskItem.configure({ nested: true }),
-    Table.configure({ resizable: false }),
-    TableRow,
+    CuadernoTable.configure({
+      resizable: true,
+      handleWidth: 8,
+      cellMinWidth: 48,
+      lastColumnResizable: true,
+    }),
+    CuadernoTableRow,
     TableHeader,
     TableCell,
     HorizontalRule,

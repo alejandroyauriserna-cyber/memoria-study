@@ -24,27 +24,12 @@ export function CuadernoBlockHandles({ editor }: { editor: Editor | null }) {
 
     const update = () => {
       const block = getSelectedBlock(editor);
-      if (!block?.kind) {
+      if (!block?.kind || block.kind === "table") {
         setRect((r) => (r === null ? r : null));
         setKind((k) => (k === null ? k : null));
         return;
       }
       setKind((k) => (k === block.kind ? k : block.kind));
-      if (block.kind === "table") {
-        const table = editor.view.dom.querySelector("table.ProseMirror-selectednode, table");
-        const next = table?.getBoundingClientRect() ?? null;
-        setRect((r) =>
-          r &&
-          next &&
-          r.top === next.top &&
-          r.left === next.left &&
-          r.width === next.width &&
-          r.height === next.height
-            ? r
-            : next,
-        );
-        return;
-      }
       if (block.pos >= 0) {
         const dom = editor.view.nodeDOM(block.pos) as HTMLElement | null;
         const next = dom?.getBoundingClientRect() ?? null;
@@ -221,17 +206,27 @@ export function useBlockClickSelect(editor: Editor | null) {
 
     const onClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (target.closest("td, th")) {
-        const inTable = target.closest("table");
-        if (inTable) return;
-      }
       const table = target.closest("table");
-      if (table && dom.contains(table) && !target.closest("td, th")) {
+      if (table && dom.contains(table) && (e.altKey || e.metaKey)) {
         const pos = editor.view.posAtDOM(table, 0);
         const $pos = editor.state.doc.resolve(pos);
-        const nodePos = $pos.before();
-        if (nodePos >= 0) selectBlockAt(editor, nodePos);
-        return;
+        for (let d = $pos.depth; d > 0; d--) {
+          if ($pos.node(d).type.name === "table") {
+            selectBlockAt(editor, $pos.before(d));
+            return;
+          }
+        }
+      }
+      if (target.closest("td, th, .column-resize-handle")) return;
+      if (table && dom.contains(table)) {
+        const pos = editor.view.posAtDOM(table, 0);
+        const $pos = editor.state.doc.resolve(pos);
+        for (let d = $pos.depth; d > 0; d--) {
+          if ($pos.node(d).type.name === "table") {
+            selectBlockAt(editor, $pos.before(d));
+            return;
+          }
+        }
       }
       const block = target.closest("[data-study-block]");
       if (!block || !dom.contains(block)) return;

@@ -122,11 +122,195 @@
 }
 
 .cn-prosemirror table {
-  cursor: pointer;
+  cursor: text;
+  position: relative;
+  border-collapse: collapse;
 }
 
 .cn-prosemirror table.ProseMirror-selectednode {
-  outline: 2px solid var(--cn-course-accent, #0d9488);
+  outline: none;
+}
+
+/* Redimensionar columnas (ProseMirror tables) */
+.cn-prosemirror .column-resize-handle {
+  position: absolute;
+  right: -4px;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: col-resize;
+  z-index: 2;
+  background: color-mix(in srgb, var(--cn-course-accent, #0d9488) 35%, transparent);
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
+.cn-prosemirror .resize-cursor,
+.cn-prosemirror .column-resize-handle:hover {
+  opacity: 1;
+}
+
+.cn-table-chrome-layer {
+  z-index: 10040;
+}
+
+.cn-table-grip-layer {
+  z-index: 10035;
+}
+
+.cn-table-selection-ring {
+  position: absolute;
+  inset: -2px;
+  border: 2px solid var(--cn-course-accent, #0d9488);
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--cn-course-accent, #0d9488) 25%, transparent);
+  pointer-events: none;
+}
+
+.cn-table-select-grip {
+  position: absolute;
+  left: -28px;
+  top: 4px;
+  width: 22px;
+  height: 22px;
+  border: 1px solid color-mix(in srgb, var(--cn-course-accent, #0d9488) 40%, transparent);
+  border-radius: 6px;
+  background: var(--paper-bg, #fff);
+  color: var(--cn-course-accent, #0d9488);
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.cn-table-select-grip:hover {
+  background: color-mix(in srgb, var(--cn-course-accent, #0d9488) 12%, var(--paper-bg, #fff));
+}
+
+.cn-table-resize-handle {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: var(--paper-bg, #fff);
+  border: 2px solid var(--cn-course-accent, #0d9488);
+  border-radius: 2px;
+  z-index: 3;
+}
+
+.cn-table-resize-handle--nw { top: -5px; left: -5px; cursor: nwse-resize; }
+.cn-table-resize-handle--n { top: -5px; left: 50%; margin-left: -5px; cursor: ns-resize; }
+.cn-table-resize-handle--ne { top: -5px; right: -5px; cursor: nesw-resize; }
+.cn-table-resize-handle--e { top: 50%; right: -5px; margin-top: -5px; cursor: ew-resize; }
+.cn-table-resize-handle--se { bottom: -5px; right: -5px; cursor: nwse-resize; }
+.cn-table-resize-handle--s { bottom: -5px; left: 50%; margin-left: -5px; cursor: ns-resize; }
+.cn-table-resize-handle--sw { bottom: -5px; left: -5px; cursor: nesw-resize; }
+.cn-table-resize-handle--w { top: 50%; left: -5px; margin-top: -5px; cursor: ew-resize; }
+
+.cn-table-row-resize-handle {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 6px;
+  cursor: row-resize;
+  z-index: 2;
+}
+
+.cn-table-row-resize-handle:hover {
+  background: color-mix(in srgb, var(--cn-course-accent, #0d9488) 25%, transparent);
+}
+
+.cn-table-floating-toolbar {
+  position: absolute;
+  z-index: 10045;
+  max-width: min(96vw, 720px);
+}
+
+.cn-table-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: var(--paper-bg, #fff);
+  border: 1px solid color-mix(in srgb, var(--paper-ink, #1c1917) 12%, transparent);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
+  font-size: 0.72rem;
+}
+
+.cn-table-toolbar-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.cn-table-toolbar-row button {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 6px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  color: var(--paper-ink, #1c1917);
+}
+
+.cn-table-toolbar-row button:hover {
+  background: color-mix(in srgb, var(--cn-course-accent, #0d9488) 12%, transparent);
+}
+
+.cn-table-toolbar-danger:hover {
+  color: #b91c1c;
+  background: #fef2f2;
+}
+
+.cn-table-toolbar-sep {
+  width: 1px;
+  height: 18px;
+  background: color-mix(in srgb, var(--paper-ink, #1c1917) 15%, transparent);
+  margin: 0 2px;
+}
+
+.cn-table-legal-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding-top: 4px;
+  border-top: 1px solid color-mix(in srgb, var(--paper-ink, #1c1917) 10%, transparent);
+}
+
+.cn-table-legal-chips button {
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--cn-course-accent, #0d9488) 30%, transparent);
+  background: transparent;
+  font-size: 0.68rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.cn-table-legal-chips button.is-on,
+.cn-table-legal-chips button:hover {
+  background: color-mix(in srgb, var(--cn-course-accent, #0d9488) 14%, transparent);
+}
+
+.cn-table-layout-comparativo th {
+  background: color-mix(in srgb, #3b82f6 12%, transparent);
+}
+
+.cn-table-layout-timeline th {
+  background: color-mix(in srgb, #8b5cf6 12%, transparent);
+}
+
+.cn-table-layout-caso th {
+  background: color-mix(in srgb, #f59e0b 12%, transparent);
+}
+
+.cn-table-layout-jurisprudencia th {
+  background: color-mix(in srgb, #0d9488 14%, transparent);
 }
 
 .cn-table-dialog-root {
