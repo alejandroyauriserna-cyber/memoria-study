@@ -441,10 +441,23 @@
 
 .cn-paper[data-page-size="infinite"] {
   width: 100%;
-  min-height: 280vh;
+  min-height: 120vh;
 }
 
 .cn-paper[data-page-size="infinite"] .cn-paper-editor--rich,
 .cn-paper[data-page-size="infinite"] .cn-prosemirror {
-  min-height: 260vh;
+  min-height: 100vh;
+}
+
+.cn-paper-layers {
+  contain: layout style;
+}
+
+.cn-ink-layer {
+  contain: strict;
+}
+
+.cn-paper-editor--rich .cn-prosemirror {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 480px;
 }

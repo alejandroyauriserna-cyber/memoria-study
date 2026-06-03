@@ -17,7 +17,7 @@ function drawStroke(
   h: number,
 ) {
   if (stroke.points.length < 2) return;
-  const style = inkStrokeStyle(stroke.tool, stroke.width, stroke.color);
+  const style = inkStrokeStyle(stroke.tool, stroke.width, stroke.color, stroke.opacity ?? 1);
   ctx.save();
   ctx.globalCompositeOperation = style.composite;
   ctx.globalAlpha = style.globalAlpha;
@@ -84,6 +84,7 @@ export function CuadernoInkCanvas({
           tool: settings.tool,
           color: settings.color,
           width: settings.width,
+          opacity: settings.opacity,
           points: cur,
         },
         rect.width,
@@ -158,6 +159,7 @@ export function CuadernoInkCanvas({
         tool: settings.tool,
         color: settings.color,
         width: settings.width,
+        opacity: settings.opacity,
         points,
       },
     ]);

@@ -12,6 +12,7 @@ export type InkStroke = {
   tool: InkTool;
   color: string;
   width: number;
+  opacity?: number;
   points: InkPoint[];
 };
 
@@ -19,12 +20,15 @@ export type InkToolSettings = {
   tool: InkTool;
   color: string;
   width: number;
+  /** 0–1 multiplicador de opacidad del trazo */
+  opacity: number;
 };
 
 export const DEFAULT_INK_SETTINGS: InkToolSettings = {
   tool: "pen",
   color: "#1c1917",
   width: 2.5,
+  opacity: 1,
 };
 
 export const INK_COLORS = [
@@ -45,24 +49,30 @@ export function strokeId(): string {
 }
 
 /** Opacidad y grosor efectivo según herramienta */
-export function inkStrokeStyle(tool: InkTool, baseWidth: number, color: string): {
+export function inkStrokeStyle(
+  tool: InkTool,
+  baseWidth: number,
+  color: string,
+  opacityMul = 1,
+): {
   color: string;
   width: number;
   globalAlpha: number;
   lineCap: CanvasLineCap;
   composite: GlobalCompositeOperation;
 } {
+  const mul = Math.min(1, Math.max(0.05, opacityMul));
   switch (tool) {
     case "pencil":
-      return { color, width: baseWidth * 0.85, globalAlpha: 0.55, lineCap: "round", composite: "source-over" };
+      return { color, width: baseWidth * 0.85, globalAlpha: 0.55 * mul, lineCap: "round", composite: "source-over" };
     case "marker":
-      return { color, width: baseWidth * 2.2, globalAlpha: 0.92, lineCap: "round", composite: "source-over" };
+      return { color, width: baseWidth * 2.2, globalAlpha: 0.92 * mul, lineCap: "round", composite: "source-over" };
     case "highlighter":
-      return { color, width: baseWidth * 4, globalAlpha: 0.35, lineCap: "butt", composite: "multiply" };
+      return { color, width: baseWidth * 4, globalAlpha: 0.35 * mul, lineCap: "butt", composite: "multiply" };
     case "eraser":
       return { color: "#000000", width: baseWidth * 3, globalAlpha: 1, lineCap: "round", composite: "destination-out" };
     default:
-      return { color, width: baseWidth, globalAlpha: 1, lineCap: "round", composite: "source-over" };
+      return { color, width: baseWidth, globalAlpha: 1 * mul, lineCap: "round", composite: "source-over" };
   }
 }
 

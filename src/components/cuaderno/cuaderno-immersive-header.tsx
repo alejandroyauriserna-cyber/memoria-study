@@ -79,7 +79,9 @@ export function CuadernoImmersiveHeader({
     ) : null;
 
   return (
-    <header className={`cn-immersive-header${compact ? " cn-immersive-header--compact" : ""}`}>
+    <header
+      className={`cn-immersive-header cn-immersive-header--studio${compact ? " cn-immersive-header--compact" : ""}`}
+    >
       <Link
         href={`/cuaderno/curso/${courseId}`}
         className="cn-immersive-header-icon"

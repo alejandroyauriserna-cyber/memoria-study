@@ -50,9 +50,11 @@ import type { CuadernoTemplateId } from "@/lib/cuaderno/templates";
 import { useCuadernoSyncContextOptional } from "@/components/cuaderno/cuaderno-sync-context";
 import { isCachedFavorite } from "@/lib/cuaderno/collections-client";
 import type { CuadernoAskAction, CuadernoClass, CuadernoDictionaryResponse } from "@/types/cuaderno";
+import type { SideRailTab } from "@/components/cuaderno/cuaderno-side-rail";
 import "./cuaderno-premium.css";
 import "./cuaderno-paper.css";
 import "./cuaderno-decorations.css";
+import "./cuaderno-studio.css";
 
 export function CuadernoImmersiveEditor({ initialClass }: { initialClass: CuadernoClass }) {
   const router = useRouter();
@@ -87,6 +89,7 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
   const [templateGalleryOpen, setTemplateGalleryOpen] = useState(false);
   const [templateTargetPageId, setTemplateTargetPageId] = useState<string | null>(null);
   const [stickerPanelOpen, setStickerPanelOpen] = useState(false);
+  const [sideRailTab, setSideRailTab] = useState<SideRailTab | null>(null);
 
   const sync = useCuadernoSyncContextOptional();
   const doc = useMemo(() => parseCuadernoDocument(notes), [notes]);
@@ -311,7 +314,7 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
 
   return (
     <motion.div
-      className={`cn-immersive-root ${aiOpen ? "cn-immersive-root--ai-open" : ""}${stickerPanelOpen ? " cn-immersive-root--stickers-open" : ""}${focusMode ? " cn-immersive-root--focus" : ""}`}
+      className={`cn-immersive-root cn-immersive-root--studio ${aiOpen ? "cn-immersive-root--ai-open" : ""}${stickerPanelOpen ? " cn-immersive-root--side-open" : ""}${focusMode ? " cn-immersive-root--focus" : ""}`}
       data-layout={chrome.layoutMode}
       data-focus={focusMode ? "true" : "false"}
       style={
@@ -348,12 +351,19 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
         onOpenFormatPanel={() => setFormatPanelOpen(true)}
         onOpenPageSettings={() => setPageSettingsOpen(true)}
         stickersOpen={stickerPanelOpen}
-        onOpenStickers={() => setStickerPanelOpen(true)}
+        onOpenStickers={() => {
+          setSideRailTab("stickers");
+          setStickerPanelOpen(true);
+        }}
       />
 
       <CuadernoStickerPanel
         open={stickerPanelOpen}
-        onClose={() => setStickerPanelOpen(false)}
+        initialTab={sideRailTab ?? "juridicos"}
+        onClose={() => {
+          setStickerPanelOpen(false);
+          setSideRailTab(null);
+        }}
         onAdd={(item: DecorationObject) => {
           const next = [...(activePage.decorations ?? []), item];
           applyDoc(setActivePageDecorations(doc, next));
@@ -445,8 +455,18 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
             focusMode={focusMode}
             onPaperFocus={() => setFocusMode(true)}
             onOpenFormatPanel={() => setFormatPanelOpen(true)}
-            onOpenStickers={() => setStickerPanelOpen(true)}
+            onOpenStickers={() => {
+              setSideRailTab("stickers");
+              setStickerPanelOpen(true);
+            }}
             stickerPanelOpen={stickerPanelOpen}
+            sideRailTab={sideRailTab}
+            onSideRailSelect={(tab) => {
+              setSideRailTab(tab);
+              setStickerPanelOpen(true);
+            }}
+            onToggleAi={() => setAiOpen((v) => !v)}
+            aiOpen={aiOpen}
             pageSettingsSlot={
               <CuadernoPageSettingsTrigger
                 page={activePage}

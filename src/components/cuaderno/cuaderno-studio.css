@@ -1,0 +1,437 @@
+/* —— Cuaderno Studio: paleta premium (grafito · petróleo · turquesa · vidrio) —— */
+
+.cn-immersive-root {
+  --cn-studio-bg: #0c0e12;
+  --cn-studio-surface: rgba(22, 26, 34, 0.72);
+  --cn-studio-glass: rgba(28, 34, 44, 0.55);
+  --cn-studio-border: rgba(255, 255, 255, 0.08);
+  --cn-studio-accent: #14b8a6;
+  --cn-studio-accent-2: #2dd4bf;
+  --cn-studio-text: #f1f5f9;
+  --cn-studio-muted: rgba(148, 163, 184, 0.85);
+  background: var(--cn-studio-bg);
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(20, 184, 166, 0.12), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 50%, rgba(30, 58, 95, 0.15), transparent);
+}
+
+/* Header minimal */
+.cn-immersive-header--studio {
+  height: 48px;
+  max-height: 48px;
+  padding: 0 12px;
+  background: rgba(12, 14, 18, 0.65);
+  border-bottom: 1px solid var(--cn-studio-border);
+  backdrop-filter: blur(24px) saturate(1.4);
+}
+
+.cn-immersive-header--studio .cn-immersive-header-course {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--cn-studio-text);
+}
+
+.cn-immersive-header--studio .cn-immersive-header-stickers,
+.cn-immersive-header--studio .cn-immersive-header-ai {
+  display: none;
+}
+
+/* Floating toolbar */
+.cn-float-toolbar-wrap {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 42;
+  pointer-events: none;
+  max-width: calc(100% - 120px);
+}
+
+.cn-float-toolbar {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 10px;
+  border-radius: 16px;
+  background: var(--cn-studio-glass);
+  border: 1px solid var(--cn-studio-border);
+  backdrop-filter: blur(28px) saturate(1.5);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+    0 12px 40px rgba(0, 0, 0, 0.45),
+    0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.cn-float-tb-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.cn-float-tb-sep {
+  width: 1px;
+  height: 22px;
+  margin: 0 4px;
+  background: rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.cn-float-tb-btn,
+.cn-float-tb-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--cn-studio-muted);
+  cursor: pointer;
+  transition: background 0.14s, color 0.14s, transform 0.12s;
+}
+
+.cn-float-tb-btn:hover,
+.cn-float-tb-chip:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--cn-studio-text);
+}
+
+.cn-float-tb-btn.is-active,
+.cn-float-tb-chip.is-open {
+  background: color-mix(in srgb, var(--cn-studio-accent) 22%, transparent);
+  color: var(--cn-studio-accent-2);
+}
+
+.cn-float-tb-chip--color .cn-float-tb-color-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #1c1917;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+}
+
+.cn-float-tb-emoji {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.cn-float-tb-ai {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 32px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #0c0e12;
+  background: linear-gradient(135deg, var(--cn-studio-accent), var(--cn-studio-accent-2));
+  cursor: pointer;
+  transition: transform 0.12s, box-shadow 0.15s;
+}
+
+.cn-float-tb-ai.is-open {
+  color: var(--cn-studio-accent-2);
+  background: rgba(20, 184, 166, 0.15);
+  box-shadow: inset 0 0 0 1px rgba(45, 212, 191, 0.35);
+}
+
+.cn-float-tb-ai:hover {
+  transform: translateY(-1px);
+}
+
+/* Popovers */
+.cn-tb-popover {
+  position: fixed;
+  z-index: 200;
+  padding: 10px;
+  border-radius: 14px;
+  background: rgba(18, 22, 30, 0.94);
+  border: 1px solid var(--cn-studio-border);
+  backdrop-filter: blur(24px);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+}
+
+.cn-tb-popover-title {
+  margin: 0 0 8px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--cn-studio-muted);
+}
+
+.cn-tb-popover-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--cn-studio-muted);
+}
+
+.cn-tb-popover-search input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--cn-studio-text);
+  font-size: 12px;
+  outline: none;
+}
+
+.cn-tb-popover-body {
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.cn-tb-popover-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--cn-studio-text);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cn-tb-popover-item:hover,
+.cn-tb-popover-item.is-active {
+  background: rgba(20, 184, 166, 0.12);
+}
+
+.cn-tb-popover-preview {
+  width: 28px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.cn-tb-popover-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cn-tb-popover-swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+}
+
+/* Ink toolbar — secundaria flotante GoodNotes */
+.cn-ink-toolbar-float {
+  position: absolute;
+  top: 58px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 41;
+  pointer-events: none;
+}
+
+.cn-ink-toolbar-float .cn-ink-toolbar-glass {
+  pointer-events: auto;
+}
+
+.cn-ink-toolbar-glass {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 14px;
+  background: var(--cn-studio-glass);
+  border: 1px solid var(--cn-studio-border);
+  backdrop-filter: blur(28px) saturate(1.5);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
+}
+
+.cn-ink-toolbar-glass .cn-ink-tb-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: var(--cn-studio-muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cn-ink-toolbar-glass .cn-ink-tb-btn.is-active {
+  background: color-mix(in srgb, var(--cn-studio-accent) 25%, transparent);
+  color: var(--cn-studio-accent-2);
+}
+
+.cn-ink-toolbar-glass .cn-ink-toolbar-gap {
+  width: 1px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.cn-ink-opacity {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: var(--cn-studio-muted);
+}
+
+.cn-ink-opacity input {
+  width: 72px;
+  accent-color: var(--cn-studio-accent);
+}
+
+/* Side rail */
+.cn-side-rail {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 38;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 6px;
+  border-radius: 14px;
+  background: var(--cn-studio-glass);
+  border: 1px solid var(--cn-studio-border);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+}
+
+.cn-side-rail-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 52px;
+  padding: 8px 4px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--cn-studio-muted);
+  cursor: pointer;
+  transition: background 0.14s, color 0.14s;
+}
+
+.cn-side-rail-btn:hover,
+.cn-side-rail-btn.is-active {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--cn-studio-text);
+}
+
+.cn-side-rail-btn.is-active {
+  background: color-mix(in srgb, var(--cn-studio-accent) 18%, transparent);
+}
+
+.cn-side-rail-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.cn-side-rail-label {
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* Canvas — protagonista */
+.cn-immersive-canvas--studio {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.cn-immersive-canvas--studio .cn-canvas-viewport--immersive {
+  flex: 1;
+  contain: strict;
+  overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: auto;
+  padding: 56px 56px 32px 24px;
+}
+
+.cn-immersive-canvas--studio .cn-canvas-stage--immersive {
+  will-change: transform;
+  transform-origin: top center;
+}
+
+.cn-immersive-root--studio .cn-immersive-main {
+  background: transparent;
+}
+
+.cn-immersive-root--studio .cn-immersive-paper-shell {
+  filter: drop-shadow(0 24px 60px rgba(0, 0, 0, 0.35));
+}
+
+/* Ocultar barras antiguas */
+.cn-immersive-root--studio .cn-editor-toolbar-rail--compact,
+.cn-immersive-root--studio .cn-ink-toolbar-rail:not(.cn-ink-toolbar-glass),
+.cn-immersive-root--studio .cn-handwriting-fab,
+.cn-immersive-root--studio .cn-stickers-fab {
+  display: none !important;
+}
+
+/* Perf badge */
+.cn-perf-badge {
+  position: fixed;
+  bottom: 12px;
+  left: 12px;
+  z-index: 300;
+  display: flex;
+  gap: 10px;
+  padding: 6px 10px;
+  font-size: 10px;
+  font-family: ui-monospace, monospace;
+  color: #94a3b8;
+  background: rgba(0, 0, 0, 0.75);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+}
+
+.cn-perf-fps.is-good { color: #34d399; }
+.cn-perf-fps.is-ok { color: #fbbf24; }
+.cn-perf-fps.is-bad { color: #f87171; }
+
+/* Panel stickers — encaja con studio */
+.cn-immersive-root--studio .cn-sticker-panel {
+  top: 48px;
+  background: rgba(18, 22, 28, 0.92);
+  border-left-color: var(--cn-studio-border);
+}
+
+.cn-immersive-root--studio.cn-immersive-root--side-open .cn-immersive-main {
+  margin-right: 0;
+}
+
+@media (min-width: 900px) {
+  .cn-immersive-root--studio.cn-immersive-root--side-open .cn-immersive-main {
+    margin-right: min(380px, 32vw);
+  }
+}
+
+/* Zoom minimal */
+.cn-immersive-root--studio .cn-immersive-zoom {
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+
+.cn-immersive-root--studio .cn-immersive-zoom:hover {
+  opacity: 1;
+}

@@ -58,13 +58,20 @@ export function CuadernoStickerPanel({
   open,
   onClose,
   onAdd,
+  initialTab,
 }: {
   open: boolean;
   onClose: () => void;
   onAdd: (item: DecorationObject) => void;
+  initialTab?: StickerPanelTab | "stickers" | "postits" | "images";
 }) {
   const [query, setQuery] = useState("");
-  const [tab, setTab] = useState<StickerPanelTab>("juridicos");
+  const [tab, setTab] = useState<StickerPanelTab>(() => {
+    if (!initialTab) return "juridicos";
+    if (initialTab === "postits") return "postits";
+    if (initialTab === "stickers" || initialTab === "images") return "juridicos";
+    return initialTab;
+  });
   const [favorites, setFavorites] = useState<string[]>([]);
   const [recents, setRecents] = useState<string[]>([]);
   const [designerOpen, setDesignerOpen] = useState(false);
@@ -75,6 +82,13 @@ export function CuadernoStickerPanel({
     setFavorites(loadIds(FAV_KEY));
     setRecents(loadIds(RECENT_KEY));
   }, [open]);
+
+  useEffect(() => {
+    if (!open || !initialTab) return;
+    if (initialTab === "postits") setTab("postits");
+    else if (initialTab === "stickers" || initialTab === "images") setTab("juridicos");
+    else setTab(initialTab);
+  }, [open, initialTab]);
 
   const results = useMemo(
     () => filterStickersForPanel(tab, query, favorites),

@@ -5,8 +5,11 @@ import type { Editor } from "@tiptap/react";
 import { Minus, Plus, Type } from "lucide-react";
 import { CuadernoRichEditor } from "@/components/cuaderno/cuaderno-rich-editor";
 import { CuadernoEditorToolbar } from "@/components/cuaderno/cuaderno-editor-toolbar";
-import { CuadernoCompactFormatToolbar } from "@/components/cuaderno/cuaderno-compact-format-toolbar";
+import { CuadernoFloatingToolbar } from "@/components/cuaderno/cuaderno-floating-toolbar";
 import { CuadernoInkToolbar } from "@/components/cuaderno/cuaderno-ink-toolbar";
+import { CuadernoSideRail, type SideRailTab } from "@/components/cuaderno/cuaderno-side-rail";
+import { CuadernoPerfBadge } from "@/components/cuaderno/cuaderno-perf-badge";
+import { isCuadernoPerfEnabled, useCuadernoPerf } from "@/hooks/use-cuaderno-perf";
 import { CuadernoInkCanvas } from "@/components/cuaderno/cuaderno-ink-canvas";
 import { useCuadernoPaperFit } from "@/components/cuaderno/use-cuaderno-paper-fit";
 import {
@@ -54,6 +57,10 @@ export function CuadernoCanvasEditor({
   onModeChange,
   onOpenStickers,
   stickerPanelOpen = false,
+  sideRailTab = null,
+  onSideRailSelect,
+  onToggleAi,
+  aiOpen = false,
 }: {
   notes: string;
   onChange: (value: string) => void;
@@ -78,6 +85,10 @@ export function CuadernoCanvasEditor({
   onModeChange?: (mode: "write" | "pan") => void;
   onOpenStickers?: () => void;
   stickerPanelOpen?: boolean;
+  sideRailTab?: SideRailTab | null;
+  onSideRailSelect?: (tab: SideRailTab) => void;
+  onToggleAi?: () => void;
+  aiOpen?: boolean;
 }) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const shellRef = useRef<HTMLDivElement>(null);
@@ -99,6 +110,9 @@ export function CuadernoCanvasEditor({
 
   const fitKey = `${doc.activePageId}-${pageSizeMode}-${layoutMode}-${templateId}`;
   const { zoom, setZoom } = useCuadernoPaperFit(viewportRef, shellRef, pageSizeMode, fitKey);
+  const perfEnabled = isCuadernoPerfEnabled();
+  const perfStats = useCuadernoPerf(perfEnabled, viewportRef);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   const syncBody = useCallback(
     (html: string) => {
@@ -203,6 +217,7 @@ export function CuadernoCanvasEditor({
             active={writingMode === "text"}
             selectedId={selectedDecoId}
             onSelectId={setSelectedDecoId}
+            scrollRef={viewportRef}
           />
         </div>
       </div>
@@ -215,47 +230,68 @@ export function CuadernoCanvasEditor({
 
   const stageClass = immersive ? "cn-canvas-stage cn-canvas-stage--immersive" : "cn-canvas-stage";
 
-  const modeRail =
-    immersive && externalToolbar ? (
-      writingMode === "text" ? (
-        <CuadernoCompactFormatToolbar
-          editor={editor}
-          courseAccent={courseAccent}
-          onOpenStickers={onOpenStickers}
-          stickersOpen={stickerPanelOpen}
-        />
-      ) : (
-        <CuadernoInkToolbar
-          settings={inkSettings}
-          onChange={(patch) => setInkSettings((s) => ({ ...s, ...patch }))}
-          courseAccent={courseAccent}
-        />
-      )
-    ) : null;
-
-  const handwritingFab =
-    immersive && externalToolbar ? (
-      <button
-        type="button"
-        className={`cn-handwriting-fab${writingMode === "ink" ? " is-ink-active" : ""}`}
-        onClick={toggleWritingMode}
-      >
-        {writingMode === "text" ? (
-          <>
-            <span aria-hidden>✏️</span> Escribir a mano
-          </>
-        ) : (
-          <>
-            <Type size={16} /> Modo texto
-          </>
-        )}
-      </button>
-    ) : null;
+  const handleSideRail = (tab: SideRailTab) => {
+    if (tab === "images") {
+      imageInputRef.current?.click();
+      return;
+    }
+    onSideRailSelect?.(tab);
+    onOpenStickers?.();
+  };
 
   if (immersive) {
     return (
-      <div className="cn-immersive-canvas" data-layout={layoutMode} data-writing-mode={writingMode}>
-        {modeRail}
+      <div
+        className="cn-immersive-canvas cn-immersive-canvas--studio"
+        data-layout={layoutMode}
+        data-writing-mode={writingMode}
+      >
+        {externalToolbar && onToggleAi ? (
+          <CuadernoFloatingToolbar
+            editor={editor}
+            courseAccent={courseAccent}
+            writingMode={writingMode}
+            onWritingModeChange={(mode) => {
+              onWritingModeChange?.(mode);
+              if (mode === "ink" && editor) editor.setEditable(false);
+              else if (mode === "text" && editor) editor.setEditable(panMode === "write");
+            }}
+            onToggleAi={onToggleAi}
+            aiOpen={aiOpen}
+            onOpenSideRail={handleSideRail}
+          />
+        ) : null}
+        {externalToolbar && writingMode === "ink" ? (
+          <CuadernoInkToolbar
+            variant="float"
+            settings={inkSettings}
+            onChange={(patch) => setInkSettings((s) => ({ ...s, ...patch }))}
+            courseAccent={courseAccent}
+          />
+        ) : null}
+        {onSideRailSelect ? (
+          <CuadernoSideRail
+            active={sideRailTab}
+            panelOpen={stickerPanelOpen}
+            onSelect={handleSideRail}
+          />
+        ) : null}
+        <input
+          ref={imageInputRef}
+          type="file"
+          accept="image/*"
+          className="sr-only"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (!file || !editor) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+              editor.chain().focus().setImage({ src: reader.result as string }).run();
+            };
+            reader.readAsDataURL(file);
+            e.target.value = "";
+          }}
+        />
         <div ref={viewportRef} className={viewportClass}>
           <div className={stageClass} style={{ transform: `scale(${zoom})` }}>
             {paperOnly}
@@ -279,17 +315,7 @@ export function CuadernoCanvasEditor({
             </button>
           </div>
         ) : null}
-        {handwritingFab}
-        {onOpenStickers && !stickerPanelOpen ? (
-          <button
-            type="button"
-            className="cn-stickers-fab"
-            onClick={onOpenStickers}
-            title="Abrir stickers y post-its"
-          >
-            ✨
-          </button>
-        ) : null}
+        {perfEnabled ? <CuadernoPerfBadge stats={perfStats} /> : null}
       </div>
     );
   }

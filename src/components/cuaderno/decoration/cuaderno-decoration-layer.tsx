@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { isInViewportBounds, useCuadernoViewport } from "@/hooks/use-cuaderno-viewport";
 import {
   ArrowDown,
   ArrowUp,
@@ -30,14 +31,21 @@ export function CuadernoDecorationLayer({
   active,
   selectedId,
   onSelectId,
+  scrollRef,
 }: {
   decorations: DecorationObject[];
   onChange: (items: DecorationObject[]) => void;
   active: boolean;
   selectedId: string | null;
   onSelectId: (id: string | null) => void;
+  scrollRef?: React.RefObject<HTMLElement | null>;
 }) {
   const layerRef = useRef<HTMLDivElement>(null);
+  const viewportBounds = useCuadernoViewport(
+    scrollRef ?? { current: null },
+    layerRef,
+    0.15,
+  );
   const dragRef = useRef<{
     id: string;
     mode: DragMode;
@@ -57,6 +65,10 @@ export function CuadernoDecorationLayer({
     onChange(decorations.filter((d) => d.id !== id));
     if (selectedId === id) onSelectId(null);
   };
+
+  const [dragOver, setDragOver] = useState(false);
+  const [ctxMenu, setCtxMenu] = useState<{ id: string; x: number; y: number } | null>(null);
+  const closeCtx = () => setCtxMenu(null);
 
   const toNorm = (clientX: number, clientY: number) => {
     const el = layerRef.current;
@@ -130,10 +142,13 @@ export function CuadernoDecorationLayer({
   };
 
   const sorted = sortByZIndex(decorations);
-  const [dragOver, setDragOver] = useState(false);
-  const [ctxMenu, setCtxMenu] = useState<{ id: string; x: number; y: number } | null>(null);
 
-  const closeCtx = () => setCtxMenu(null);
+  const visibleDecorations = useMemo(() => {
+    if (!scrollRef?.current) return sorted;
+    return sorted.filter(
+      (d) => d.id === selectedId || isInViewportBounds(d, viewportBounds),
+    );
+  }, [sorted, viewportBounds, selectedId, scrollRef]);
 
   const ctxTarget = ctxMenu ? decorations.find((d) => d.id === ctxMenu.id) : null;
 
@@ -172,7 +187,7 @@ export function CuadernoDecorationLayer({
       onDragLeave={() => setDragOver(false)}
       onDrop={handleDrop}
     >
-      {sorted.map((obj) => {
+      {visibleDecorations.map((obj) => {
         const selected = selectedId === obj.id;
         const style: React.CSSProperties = {
           left: `${obj.x * 100}%`,
@@ -340,7 +355,14 @@ function DecorationBody({
     const src = obj.src ?? (catalog ? getStickerSvgDataUrl(catalog) : undefined);
     if (src) {
       return (
-        <img src={src} alt={obj.label ?? catalog?.label ?? ""} className="cn-sticker-img" draggable={false} />
+        <img
+          src={src}
+          alt={obj.label ?? catalog?.label ?? ""}
+          className="cn-sticker-img"
+          draggable={false}
+          loading="lazy"
+          decoding="async"
+        />
       );
     }
     return (
