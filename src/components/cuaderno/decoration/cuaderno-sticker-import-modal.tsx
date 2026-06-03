@@ -97,6 +97,8 @@ export function CuadernoStickerImportPanel({
 
   return (
     <div className="cn-sticker-import-panel">
+      <CuadernoPinterestImportGuide />
+
       <div className="cn-sticker-import-modes">
         <button type="button" className={mode === "pinterest" ? "is-on" : ""} onClick={() => setMode("pinterest")}>
           URL Pinterest
@@ -117,7 +119,7 @@ export function CuadernoStickerImportPanel({
             onChange={(e) => setUrl(e.target.value)}
             placeholder={
               mode === "pinterest"
-                ? "https://pinterest.com/pin/… o i.pinimg.com/…"
+                ? "https://i.pinimg.com/… (URL directa de la imagen)"
                 : "https://…/imagen.png"
             }
             onKeyDown={(e) => e.key === "Enter" && void fetchUrl()}
@@ -175,5 +177,58 @@ export function CuadernoStickerImportPanel({
         </button>
       ) : null}
     </div>
+  );
+}
+
+function CuadernoPinterestImportGuide() {
+  return (
+    <section className="cn-sticker-import-guide" aria-label="Cómo importar desde Pinterest">
+      <h2 className="cn-sticker-import-guide-title">Importar imagen desde Pinterest</h2>
+      <p className="cn-sticker-import-guide-lead">
+        Para obtener mejores resultados, copia la dirección directa de la imagen y no el enlace del
+        pin.
+      </p>
+
+      <h3 className="cn-sticker-import-guide-sub">En computadora</h3>
+      <ol className="cn-sticker-import-guide-steps">
+        <li>Abre el pin en Pinterest.</li>
+        <li>Haz clic derecho sobre la imagen.</li>
+        <li>
+          Selecciona <strong>«Copiar dirección de la imagen»</strong> o{" "}
+          <strong>«Copiar URL de imagen»</strong> (según tu navegador).
+        </li>
+        <li>
+          Pega el enlace en el campo <strong>Importar Sticker</strong> (pestaña URL Pinterest o URL
+          imagen).
+        </li>
+      </ol>
+
+      <div className="cn-sticker-import-guide-important">
+        <p className="cn-sticker-import-guide-important-label">Importante</p>
+        <p className="cn-sticker-import-guide-ok">
+          <span aria-hidden>✅</span> Correcto:{" "}
+          <code className="cn-sticker-import-guide-code">https://i.pinimg.com/…</code>
+        </p>
+        <p className="cn-sticker-import-guide-bad">
+          <span aria-hidden>❌</span> Incorrecto:{" "}
+          <code className="cn-sticker-import-guide-code">https://www.pinterest.com/pin/…</code>
+        </p>
+        <p className="cn-sticker-import-guide-note">
+          El sistema funciona mejor cuando recibe la URL directa de la imagen.
+        </p>
+      </div>
+
+      <h3 className="cn-sticker-import-guide-sub">También puedes</h3>
+      <ul className="cn-sticker-import-guide-list">
+        <li>Arrastrar una imagen directamente a la hoja.</li>
+        <li>Copiar una imagen y pegarla con Ctrl + V.</li>
+        <li>Subir archivos PNG, JPG o WEBP desde tu dispositivo.</li>
+      </ul>
+
+      <p className="cn-sticker-import-guide-tip">
+        <span aria-hidden>💡</span> Consejo: Si Pinterest no muestra la opción «Copiar dirección de
+        la imagen», abre la imagen en tamaño completo y vuelve a hacer clic derecho sobre ella.
+      </p>
+    </section>
   );
 }

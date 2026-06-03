@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { BookOpen, Globe, Image, Search, Sparkles, Star, Trash2, X } from "lucide-react";
 import {
@@ -9,10 +9,7 @@ import {
   createStickerFromSrc,
   type DecorationObject,
 } from "@/lib/cuaderno/decoration-objects";
-import {
-  DECORATION_DRAG_MIME,
-  encodeDecorationDrag,
-} from "@/lib/cuaderno/decoration-drag";
+import { writeDecorationDragData } from "@/lib/cuaderno/decoration-drag";
 import {
   JURIDICO_PACK_FILTERS,
   STICKER_PANEL_TABS,
@@ -82,6 +79,18 @@ export function CuadernoStickerPanel({
   const [designerOpen, setDesignerOpen] = useState(false);
   const [designerSeed, setDesignerSeed] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
+  const panelRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (e: PointerEvent) => {
+      const t = e.target as Node;
+      if (panelRef.current?.contains(t)) return;
+      onClose();
+    };
+    window.addEventListener("pointerdown", onPointerDown, true);
+    return () => window.removeEventListener("pointerdown", onPointerDown, true);
+  }, [open, onClose]);
 
   useEffect(() => {
     setCatalogFavs(loadCatalogFavs());
@@ -203,9 +212,10 @@ export function CuadernoStickerPanel({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={onClose}
+              aria-hidden
             />
             <motion.aside
+              ref={panelRef}
               className="cn-sticker-panel cn-sticker-panel--glass"
               initial={{ x: "100%", opacity: 0.9 }}
               animate={{ x: 0, opacity: 1 }}
@@ -390,27 +400,31 @@ function PngGrid({
           const favId = `png:${item.id}`;
           return (
             <div key={item.id} className="cn-sticker-cell">
-              <button
-                type="button"
+              <div
+                role="button"
+                tabIndex={0}
                 className="cn-sticker-cell-main cn-draggable-source"
                 draggable
                 onDragStart={(e) => {
-                  e.dataTransfer.setData(
-                    DECORATION_DRAG_MIME,
-                    encodeDecorationDrag({
-                      type: "sticker-src",
-                      src: item.src,
-                      label: item.label,
-                      stickerId: favId,
-                    }),
-                  );
+                  writeDecorationDragData(e.dataTransfer, {
+                    type: "sticker-src",
+                    src: item.src,
+                    label: item.label,
+                    stickerId: favId,
+                  });
                   setupDragGhost(e, e.currentTarget.querySelector("img"));
                 }}
                 onClick={() => onPick(item)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onPick(item);
+                  }
+                }}
               >
-                <img src={item.src} alt={item.label} loading="lazy" decoding="async" />
+                <img src={item.src} alt={item.label} loading="lazy" decoding="async" draggable={false} />
                 <span>{item.label}</span>
-              </button>
+              </div>
               <button
                 type="button"
                 className={`cn-sticker-fav${catalogFavs.includes(favId) ? " is-on" : ""}`}
@@ -452,27 +466,31 @@ function UserGrid({
       <div className="cn-sticker-grid cn-sticker-grid--png">
         {items.map((s) => (
           <div key={s.id} className="cn-sticker-cell">
-            <button
-              type="button"
+            <div
+              role="button"
+              tabIndex={0}
               className="cn-sticker-cell-main cn-draggable-source"
               draggable
               onDragStart={(e) => {
-                e.dataTransfer.setData(
-                  DECORATION_DRAG_MIME,
-                  encodeDecorationDrag({
-                    type: "user-sticker",
-                    userStickerId: s.id,
-                    label: s.name,
-                    imageUrl: s.imageUrl,
-                  }),
-                );
+                writeDecorationDragData(e.dataTransfer, {
+                  type: "user-sticker",
+                  userStickerId: s.id,
+                  label: s.name,
+                  imageUrl: s.imageUrl,
+                });
                 setupDragGhost(e, e.currentTarget.querySelector("img"));
               }}
               onClick={() => onPick(s)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  onPick(s);
+                }
+              }}
             >
-              <img src={s.imageUrl} alt={s.name} loading="lazy" decoding="async" />
+              <img src={s.imageUrl} alt={s.name} loading="lazy" decoding="async" draggable={false} />
               <span>{s.name}</span>
-            </button>
+            </div>
             <button
               type="button"
               className={`cn-sticker-fav${s.isFavorite ? " is-on" : ""}`}

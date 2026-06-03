@@ -28,7 +28,11 @@ import {
 } from "@/components/cuaderno/decoration/cuaderno-marquee-overlay";
 import { deleteTableComplete, isTableNodeSelected } from "@/lib/cuaderno/delete-table-complete";
 import type { DecorationObject } from "@/lib/cuaderno/decoration-objects";
-import { parseDecorationDrag, type DecorationDragPayload } from "@/lib/cuaderno/decoration-drag";
+import {
+  isDecorationDragTransfer,
+  parseDecorationDrag,
+  type DecorationDragPayload,
+} from "@/lib/cuaderno/decoration-drag";
 import { createDecorationFromDrop } from "@/lib/cuaderno/decoration-drop-factory";
 import {
   fileToDataUrl,
@@ -356,6 +360,7 @@ export function CuadernoCanvasEditor({
   const handleDecorationDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
+      e.stopPropagation();
       setDecoDragOver(false);
       if (writingMode !== "text") return;
 
@@ -374,6 +379,35 @@ export function CuadernoCanvasEditor({
     },
     [writingMode, insertFloatingImageAt, placeFromPayload],
   );
+
+  const handleDecorationDragOver = useCallback(
+    (e: React.DragEvent) => {
+      if (writingMode !== "text") return;
+      const hasDeco = isDecorationDragTransfer(e.dataTransfer);
+      const hasFile = Array.from(e.dataTransfer.types).includes("Files");
+      if (hasDeco || hasFile) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.dataTransfer.dropEffect = "copy";
+        setDecoDragOver(true);
+      }
+    },
+    [writingMode],
+  );
+
+  const handleDecorationDragEnter = useCallback(
+    (e: React.DragEvent) => {
+      handleDecorationDragOver(e);
+    },
+    [handleDecorationDragOver],
+  );
+
+  const handleDecorationDragLeave = useCallback((e: React.DragEvent) => {
+    const rel = e.relatedTarget as Node | null;
+    const zone = e.currentTarget as HTMLElement;
+    if (rel && zone.contains(rel)) return;
+    setDecoDragOver(false);
+  }, []);
 
   useEffect(() => {
     if (writingMode !== "text") return;
@@ -522,30 +556,9 @@ export function CuadernoCanvasEditor({
               focusEditor();
             }
           }}
-          onDragEnter={(e) => {
-            if (writingMode !== "text") return;
-            const hasDeco = e.dataTransfer.types.includes("application/x-cuaderno-decoration");
-            const hasFile = Array.from(e.dataTransfer.types).includes("Files");
-            if (hasDeco || hasFile) {
-              e.preventDefault();
-              setDecoDragOver(true);
-            }
-          }}
-          onDragOver={(e) => {
-            if (writingMode !== "text") return;
-            const hasDeco = e.dataTransfer.types.includes("application/x-cuaderno-decoration");
-            const hasFile = Array.from(e.dataTransfer.types).includes("Files");
-            if (hasDeco || hasFile) {
-              e.preventDefault();
-              e.dataTransfer.dropEffect = "copy";
-              setDecoDragOver(true);
-            }
-          }}
-          onDragLeave={(e) => {
-            if (!paperLayersRef.current?.contains(e.relatedTarget as Node)) {
-              setDecoDragOver(false);
-            }
-          }}
+          onDragEnter={handleDecorationDragEnter}
+          onDragOver={handleDecorationDragOver}
+          onDragLeave={handleDecorationDragLeave}
           onDrop={handleDecorationDrop}
         >
           <CuadernoMarqueeOverlay
@@ -691,7 +704,14 @@ export function CuadernoCanvasEditor({
             e.target.value = "";
           }}
         />
-        <div ref={viewportRef} className={viewportClass}>
+        <div
+          ref={viewportRef}
+          className={viewportClass}
+          onDragEnter={handleDecorationDragEnter}
+          onDragOver={handleDecorationDragOver}
+          onDragLeave={handleDecorationDragLeave}
+          onDrop={handleDecorationDrop}
+        >
           <div className={stageClass} style={{ transform: `scale(${zoom})` }}>
             {paperOnly}
           </div>
@@ -764,7 +784,14 @@ export function CuadernoCanvasEditor({
         </div>
       </div>
 
-      <div ref={viewportRef} className={viewportClass}>
+      <div
+        ref={viewportRef}
+        className={viewportClass}
+        onDragEnter={handleDecorationDragEnter}
+        onDragOver={handleDecorationDragOver}
+        onDragLeave={handleDecorationDragLeave}
+        onDrop={handleDecorationDrop}
+      >
         <div className={stageClass} style={{ transform: `scale(${zoom})` }}>
           {paperOnly}
         </div>

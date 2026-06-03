@@ -1,15 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   createPostIt,
   type DecorationObject,
   type PostItColor,
 } from "@/lib/cuaderno/decoration-objects";
-import {
-  DECORATION_DRAG_MIME,
-  encodeDecorationDrag,
-} from "@/lib/cuaderno/decoration-drag";
+import { writeDecorationDragData } from "@/lib/cuaderno/decoration-drag";
 import {
   POSTIT_CATEGORIES,
   POSTIT_PREMIUM_STYLES,
@@ -28,6 +25,18 @@ export function CuadernoPostItPanel({
   onPlaceItem: (item: DecorationObject) => void;
 }) {
   const [category, setCategory] = useState<PostItCategory>("pastel");
+  const panelRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (e: PointerEvent) => {
+      const t = e.target as Node;
+      if (panelRef.current?.contains(t)) return;
+      onClose();
+    };
+    window.addEventListener("pointerdown", onPointerDown, true);
+    return () => window.removeEventListener("pointerdown", onPointerDown, true);
+  }, [open, onClose]);
 
   const styles = POSTIT_PREMIUM_STYLES[category];
 
@@ -44,9 +53,10 @@ export function CuadernoPostItPanel({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={onClose}
+            aria-hidden
           />
           <motion.aside
+            ref={panelRef}
             className="cn-sticker-panel cn-postit-panel cn-sticker-panel--glass"
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
@@ -93,14 +103,11 @@ export function CuadernoPostItPanel({
                     }}
                     draggable
                     onDragStart={(e) => {
-                      e.dataTransfer.setData(
-                        DECORATION_DRAG_MIME,
-                        encodeDecorationDrag({
-                          type: "postit",
-                          color: s.color,
-                          category,
-                        }),
-                      );
+                      writeDecorationDragData(e.dataTransfer, {
+                        type: "postit",
+                        color: s.color,
+                        category,
+                      });
                     }}
                     onClick={() => addPostIt(s.color)}
                   >
