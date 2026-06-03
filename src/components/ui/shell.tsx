@@ -7,7 +7,7 @@ import { TronBackground } from "@/components/ui/tron-background";
 import { UserMenu } from "@/components/ui/user-menu";
 
 const NAV = [
-  { href: "/dashboard", label: "Panel" },
+  { href: "/dashboard", label: "Inicio" },
   { href: "/library", label: "Biblioteca" },
   { href: "/favorites", label: "Favoritos" },
   { href: "/organizers", label: "Organizadores" },

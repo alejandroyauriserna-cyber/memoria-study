@@ -1,0 +1,141 @@
+/* MemoriaStudy — Home IA jurídica 2026 */
+
+.ms-home {
+  --ms-home-glow: rgba(0, 255, 213, 0.14);
+  --ms-home-line: rgba(0, 255, 213, 0.12);
+}
+
+.ms-home-hero {
+  position: relative;
+  border-radius: 1.25rem;
+  background: linear-gradient(165deg, rgba(16, 39, 48, 0.88), rgba(7, 19, 26, 0.92));
+  border: 1px solid var(--ms-home-line);
+  box-shadow:
+    0 0 0 1px rgba(0, 255, 213, 0.04),
+    0 24px 64px rgba(0, 0, 0, 0.45),
+    0 0 80px var(--ms-home-glow);
+  backdrop-filter: blur(20px);
+}
+
+.ms-home-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(ellipse 70% 50% at 50% -10%, rgba(0, 255, 213, 0.12), transparent 60%);
+  pointer-events: none;
+}
+
+.ms-home-prompt {
+  min-height: 7.5rem;
+  resize: none;
+  border-radius: 1rem;
+  border: 1px solid rgba(0, 255, 213, 0.22);
+  background: rgba(7, 19, 26, 0.75);
+  padding: 1.25rem 1.35rem;
+  font-size: 1.05rem;
+  line-height: 1.55;
+  color: var(--foreground);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  transition:
+    border-color 220ms ease,
+    box-shadow 220ms ease;
+}
+
+.ms-home-prompt:focus {
+  outline: none;
+  border-color: rgba(0, 255, 213, 0.45);
+  box-shadow:
+    0 0 0 3px rgba(0, 255, 213, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.ms-home-prompt::placeholder {
+  color: rgba(148, 163, 184, 0.75);
+  white-space: pre-line;
+}
+
+.ms-home-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(0, 255, 213, 0.16);
+  background: rgba(7, 19, 26, 0.55);
+  padding: 0.5rem 0.95rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--foreground);
+  transition:
+    transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 200ms ease,
+    background 200ms ease,
+    box-shadow 200ms ease;
+}
+
+.ms-home-chip:hover {
+  transform: translateY(-1px);
+  border-color: rgba(0, 255, 213, 0.35);
+  background: rgba(0, 255, 213, 0.08);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.ms-home-glass {
+  border-radius: 1rem;
+  background: rgba(16, 39, 48, 0.65);
+  border: 1px solid rgba(0, 255, 213, 0.1);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(14px);
+  transition:
+    transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 260ms ease,
+    box-shadow 260ms ease;
+}
+
+.ms-home-glass:hover {
+  transform: translateY(-2px);
+  border-color: rgba(0, 255, 213, 0.28);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
+}
+
+.ms-home-stat-value {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.ms-home-answer {
+  border-radius: 0.875rem;
+  border: 1px solid rgba(0, 255, 213, 0.12);
+  background: rgba(7, 19, 26, 0.6);
+  padding: 1rem 1.15rem;
+  font-size: 0.9rem;
+  line-height: 1.65;
+  color: rgba(245, 247, 250, 0.92);
+}
+
+.ms-home-section-title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(148, 163, 184, 0.9);
+}
+
+.ms-home-legal-watermark {
+  position: absolute;
+  right: 1.5rem;
+  top: 1.25rem;
+  opacity: 0.06;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ms-home-chip,
+  .ms-home-glass {
+    transition: none;
+  }
+  .ms-home-chip:hover,
+  .ms-home-glass:hover {
+    transform: none;
+  }
+}

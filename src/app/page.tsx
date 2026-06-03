@@ -1,85 +1,55 @@
-"use client";
-
 import Link from "next/link";
-import { ArrowRight, BookOpen, Brain, Library } from "lucide-react";
+import { redirect } from "next/navigation";
+import { ArrowRight, Scale } from "lucide-react";
 import { AppShell } from "@/components/ui/shell";
-import { AcademicTutorChat } from "@/components/study/academic-tutor-chat";
-import { UploadGenerator } from "@/components/study/upload-generator";
+import { LegalAiHero } from "@/components/home/legal-ai-hero";
+import { createClient } from "@/lib/supabase/server";
+import { hasSupabaseEnv } from "@/lib/env";
 import { UNT_DERECHO } from "@/lib/academic/unt-derecho";
 
-const highlights = [
-  {
-    label: "Organizadores visuales",
-    description: "Mapas conceptuales y resúmenes generados por IA a partir de tus PDFs.",
-    icon: Brain,
-  },
-  {
-    label: "Biblioteca colaborativa",
-    description: "Apuntes y materiales compartidos por curso, ciclo y carrera.",
-    icon: Library,
-  },
-  {
-    label: "Estudio activo",
-    description: "Flashcards, quiz y tutor jurídico con contexto del documento.",
-    icon: BookOpen,
-  },
-];
+export default async function Home() {
+  if (hasSupabaseEnv()) {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) {
+      redirect("/dashboard");
+    }
+  }
 
-export default function Home() {
   return (
     <AppShell>
-      <div className="ms-page mx-auto max-w-7xl space-y-10 px-4 py-10 sm:px-6 lg:px-8">
-        <section className="ms-panel p-8 md:p-12">
+      <div className="ms-home mx-auto max-w-6xl space-y-10 px-4 py-8 sm:px-6 lg:px-8">
+        <section className="text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#00FFD5]">
-            Plataforma académica de Derecho · {UNT_DERECHO.university}
+            {UNT_DERECHO.university} · {UNT_DERECHO.career}
           </p>
-          <h1 className="mt-4 max-w-3xl text-4xl font-bold tracking-tight text-[#F5F7FA] md:text-5xl">
-            Plataforma inteligente para el estudio jurídico
-          </h1>
-          <p className="mt-5 max-w-2xl text-lg leading-8 text-muted-foreground">
-            MemoriaStudy ayuda a estudiantes de Derecho a organizar apuntes, generar material de estudio con IA y
-            colaborar en una biblioteca académica confiable.
+          <p className="mx-auto mt-4 max-w-lg text-sm text-muted-foreground">
+            Inicia sesión para acceder a tu panel personalizado, biblioteca jurídica y organizadores con IA.
           </p>
-
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Link
-              href="/dashboard"
-              className="tron-btn-primary inline-flex h-12 items-center justify-center gap-2 rounded-lg px-6 text-sm font-semibold"
+              href="/auth"
+              className="tron-btn-primary inline-flex h-11 items-center gap-2 rounded-xl px-6 text-sm font-semibold"
             >
-              Ir al panel <ArrowRight size={16} />
+              Entrar <ArrowRight size={16} />
             </Link>
             <Link
               href="/library"
-              className="tron-btn-secondary inline-flex h-12 items-center justify-center rounded-lg px-6 text-sm font-semibold"
+              className="tron-btn-secondary inline-flex h-11 items-center rounded-xl px-6 text-sm font-semibold"
             >
               Explorar biblioteca
             </Link>
           </div>
         </section>
 
-        <section className="grid gap-4 md:grid-cols-3">
-          {highlights.map((item) => (
-            <div key={item.label} className="ms-panel p-5">
-              <item.icon size={22} className="text-[#00FFD5]" />
-              <h2 className="mt-3 text-lg font-semibold text-[#F5F7FA]">{item.label}</h2>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.description}</p>
-            </div>
-          ))}
-        </section>
+        <LegalAiHero />
 
-        <section className="grid gap-6 lg:grid-cols-2">
-          <AcademicTutorChat />
-          <div className="ms-panel p-6 md:p-8">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#00FFD5]">Generador</p>
-            <h2 className="mt-2 text-2xl font-bold text-[#F5F7FA]">Material de estudio desde PDF</h2>
-            <p className="mt-3 text-sm leading-6 text-muted-foreground">
-              Sube un documento, define el contexto académico y genera flashcards, definiciones y preguntas de repaso.
-            </p>
-            <div className="mt-6">
-              <UploadGenerator />
-            </div>
-          </div>
-        </section>
+        <p className="flex items-center justify-center gap-2 text-center text-xs text-muted-foreground">
+          <Scale size={14} className="text-[#00FFD5]/70" />
+          Vista previa del asistente · requiere cuenta para guardar tu progreso
+        </p>
       </div>
     </AppShell>
   );

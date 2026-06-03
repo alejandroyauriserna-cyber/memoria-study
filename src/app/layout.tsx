@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./home-2026.css";
 
 export const metadata: Metadata = {
   title: "MemoriaStudy · Estudio jurídico con IA",
