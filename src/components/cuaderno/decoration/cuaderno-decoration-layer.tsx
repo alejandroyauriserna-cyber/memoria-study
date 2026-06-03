@@ -2,7 +2,11 @@
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ViewportBounds } from "@/hooks/use-cuaderno-viewport";
-import { isInViewportBounds, useCuadernoViewport } from "@/hooks/use-cuaderno-viewport";
+import { useCuadernoViewport } from "@/hooks/use-cuaderno-viewport";
+import {
+  filterVisibleDecorations,
+  shouldVirtualizeDecorations,
+} from "@/lib/cuaderno/decoration-performance";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
 import { cnDebug } from "@/lib/cuaderno/cn-debug";
 import {
@@ -258,12 +262,19 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
     );
   }, [commitItems]);
 
-  const visibleDecorations = useMemo(() => {
-    if (!scrollRef?.current) return stackItems;
-    return stackItems.filter(
-      (d) => d.id === selectedId || d.id === draggingId || isInViewportBounds(d, viewportBounds),
-    );
-  }, [stackItems, viewportBounds, selectedId, draggingId, scrollRef]);
+  const virtualize = shouldVirtualizeDecorations(stackItems.length);
+
+  const visibleDecorations = useMemo(
+    () =>
+      filterVisibleDecorations(
+        stackItems,
+        viewportBounds,
+        selectedId,
+        draggingId,
+        virtualize && !!scrollRef?.current,
+      ),
+    [stackItems, viewportBounds, selectedId, draggingId, scrollRef, virtualize],
+  );
 
   const ctxTarget = ctxMenu ? liveItems.find((d) => d.id === ctxMenu.id) : null;
   const closeCtx = () => setCtxMenu(null);
@@ -324,7 +335,7 @@ export const CuadernoDecorationLayer = memo(function CuadernoDecorationLayer({
           >
             Duplicar
           </button>
-          {ctxTarget.kind === "image" ? (
+          {ctxTarget.kind === "image" || ctxTarget.kind === "sticker" ? (
             <button
               type="button"
               onClick={() => {

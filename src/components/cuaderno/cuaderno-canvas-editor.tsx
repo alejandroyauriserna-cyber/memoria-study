@@ -62,6 +62,8 @@ export function CuadernoCanvasEditor({
   onModeChange,
   onOpenStickers,
   onOpenPostits,
+  onOpenImportSticker,
+  onDropStickerFile,
   stickerPanelOpen = false,
   postitPanelOpen = false,
   sideRailTab = null,
@@ -92,6 +94,8 @@ export function CuadernoCanvasEditor({
   onModeChange?: (mode: "write" | "pan") => void;
   onOpenStickers?: () => void;
   onOpenPostits?: () => void;
+  onOpenImportSticker?: () => void;
+  onDropStickerFile?: (file: File, at: { x: number; y: number }) => void;
   stickerPanelOpen?: boolean;
   postitPanelOpen?: boolean;
   sideRailTab?: SideRailTab | null;
@@ -187,24 +191,41 @@ export function CuadernoCanvasEditor({
     onChange(serializeCuadernoDocument(nextDoc));
   }, [activePage.id, activePage.body, activePage.decorations, doc, onChange]);
 
+  const dropPosition = useCallback((e: React.DragEvent) => {
+    const el = paperLayersRef.current;
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    return {
+      x: Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)),
+      y: Math.min(1, Math.max(0, (e.clientY - r.top) / r.height)),
+    };
+  }, []);
+
   const handleDecorationDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
       setDecoDragOver(false);
       if (writingMode !== "text") return;
+
+      const file = e.dataTransfer.files[0];
+      if (file?.type.startsWith("image/")) {
+        const pos = dropPosition(e);
+        if (pos && onDropStickerFile) {
+          onDropStickerFile(file, pos);
+          return;
+        }
+      }
+
       const payload = parseDecorationDrag(e.dataTransfer);
       if (!payload) return;
-      const el = paperLayersRef.current;
-      if (!el) return;
-      const r = el.getBoundingClientRect();
-      const nx = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
-      const ny = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height));
-      const item = createDecorationFromDrop(payload, { x: nx, y: ny });
+      const pos = dropPosition(e);
+      if (!pos) return;
+      const item = createDecorationFromDrop(payload, pos);
       if (!item) return;
       syncDecorations([...decorations, item]);
       setSelectedDecoId(item.id);
     },
-    [writingMode, decorations, syncDecorations],
+    [writingMode, decorations, syncDecorations, dropPosition, onDropStickerFile],
   );
 
   const handleEditorReady = useCallback(
@@ -282,14 +303,18 @@ export function CuadernoCanvasEditor({
           }}
           onDragEnter={(e) => {
             if (writingMode !== "text") return;
-            if (e.dataTransfer.types.includes("application/x-cuaderno-decoration")) {
+            const hasDeco = e.dataTransfer.types.includes("application/x-cuaderno-decoration");
+            const hasFile = Array.from(e.dataTransfer.types).includes("Files");
+            if (hasDeco || hasFile) {
               e.preventDefault();
               setDecoDragOver(true);
             }
           }}
           onDragOver={(e) => {
             if (writingMode !== "text") return;
-            if (e.dataTransfer.types.includes("application/x-cuaderno-decoration")) {
+            const hasDeco = e.dataTransfer.types.includes("application/x-cuaderno-decoration");
+            const hasFile = Array.from(e.dataTransfer.types).includes("Files");
+            if (hasDeco || hasFile) {
               e.preventDefault();
               e.dataTransfer.dropEffect = "copy";
               setDecoDragOver(true);
@@ -357,9 +382,13 @@ export function CuadernoCanvasEditor({
       imageInputRef.current?.click();
       return;
     }
+    if (tab === "import-sticker") {
+      onOpenImportSticker?.();
+      return;
+    }
     onSideRailSelect?.(tab);
     if (tab === "postits") onOpenPostits?.();
-    else onOpenStickers?.();
+    else if (tab === "stickers") onOpenStickers?.();
   };
 
   if (immersive) {

@@ -1,0 +1,13 @@
+-- =============================================================================
+-- OBSOLETO — NO EJECUTAR EN SUPABASE
+-- =============================================================================
+-- Esta migración definía un esquema antiguo (label, storage_path, public_url,
+-- is_favorite, etc.) que NO coincide con la aplicación actual.
+--
+-- Esquema vigente (tabla ya creada manualmente o en otro entorno):
+--   public.cuaderno_user_stickers (id, user_id, name, image_url, created_at)
+--
+-- Ejecutar en su lugar:
+--   20260605_cuaderno_stickers_rls_favorites.sql
+--   20260605_cuaderno_stickers_storage.sql
+-- =============================================================================

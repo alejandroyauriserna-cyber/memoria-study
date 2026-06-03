@@ -1,4 +1,11 @@
-export type PostItColor = "yellow" | "green" | "blue" | "pink" | "purple";
+export type PostItColor =
+  | "yellow"
+  | "green"
+  | "blue"
+  | "pink"
+  | "purple"
+  | "lavender"
+  | "cream";
 
 export type ImageTextWrap = "inline" | "square" | "tight" | "inFront" | "behind";
 
@@ -28,6 +35,7 @@ export type DecorationObject = {
   locked: boolean;
   /** Post-it */
   postitColor?: PostItColor;
+  postitCategory?: string;
   text?: string;
   /** Sticker catálogo o IA / imagen flotante */
   stickerId?: string;
@@ -46,27 +54,34 @@ export type DecorationObject = {
 export const POSTIT_COLORS: Record<PostItColor, { label: string; bg: string; border: string }> = {
   yellow: { label: "Amarillo", bg: "#fef08a", border: "#eab308" },
   green: { label: "Verde", bg: "#bbf7d0", border: "#22c55e" },
-  blue: { label: "Azul", bg: "#bfdbfe", border: "#3b82f6" },
+  blue: { label: "Celeste", bg: "#bfdbfe", border: "#3b82f6" },
   pink: { label: "Rosa", bg: "#fbcfe8", border: "#ec4899" },
   purple: { label: "Morado", bg: "#e9d5ff", border: "#a855f7" },
+  lavender: { label: "Lavanda", bg: "#ede9fe", border: "#a78bfa" },
+  cream: { label: "Crema", bg: "#faf6eb", border: "#d6c4a8" },
 };
 
 export function decorationId(): string {
   return `dec_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
 }
 
-export function createPostIt(color: PostItColor = "yellow", text = ""): DecorationObject {
+export function createPostIt(
+  color: PostItColor = "yellow",
+  text = "",
+  category?: string,
+): DecorationObject {
   return {
     id: decorationId(),
     kind: "postit",
     x: 0.12,
     y: 0.14,
-    w: 0.22,
-    h: 0.18,
+    w: 0.2,
+    h: 0.16,
     rotation: -2 + Math.random() * 4,
     zIndex: Date.now(),
     locked: false,
     postitColor: color,
+    postitCategory: category,
     text: text || "Recordatorio…",
   };
 }
@@ -77,36 +92,48 @@ export function createStickerFromCatalog(
   label: string,
   at?: { x: number; y: number },
 ): DecorationObject {
-  return {
-    id: decorationId(),
-    kind: "sticker",
-    x: at?.x ?? 0.35,
-    y: at?.y ?? 0.2,
-    w: 0.12,
-    h: 0.12,
-    rotation: 0,
-    zIndex: Date.now(),
-    locked: false,
-    stickerId,
-    src,
-    label,
-  };
+  return createStickerFromSrc(src ?? "", label, { stickerId, at, aspectRatio: 1 });
 }
 
 export function createStickerFromAi(src: string, label: string): DecorationObject {
+  return createStickerFromSrc(src, label);
+}
+
+export function createStickerFromSrc(
+  src: string,
+  label: string,
+  opts?: { stickerId?: string; userStickerId?: string; at?: { x: number; y: number }; aspectRatio?: number },
+): DecorationObject {
+  const ar = opts?.aspectRatio ?? 1;
+  const w = 0.14;
   return {
     id: decorationId(),
     kind: "sticker",
-    x: 0.4,
-    y: 0.35,
-    w: 0.18,
-    h: 0.18,
+    x: opts?.at?.x ?? 0.4,
+    y: opts?.at?.y ?? 0.35,
+    w,
+    h: w / ar,
     rotation: 0,
     zIndex: Date.now(),
     locked: false,
+    stickerId: opts?.stickerId,
     src,
     label,
+    aspectRatio: ar,
   };
+}
+
+export function createStickerFromLibrary(
+  userStickerId: string,
+  imageUrl: string,
+  name: string,
+  at?: { x: number; y: number },
+): DecorationObject {
+  return createStickerFromSrc(imageUrl, name, {
+    stickerId: `user:${userStickerId}`,
+    at,
+    aspectRatio: 1,
+  });
 }
 
 export function createDecoElement(

@@ -1,64 +1,44 @@
-import {
-  STICKER_CATALOG,
-  searchStickers,
-  type StickerCatalogItem,
-  type StickerCategoryId,
-} from "@/lib/cuaderno/sticker-catalog";
+import { ALL_JURIDICO_STICKERS, JURIDICO_STICKER_PACKS, type JuridicoPackId } from "@/lib/cuaderno/sticker-juridico-packs";
+import type { PngStickerItem } from "@/lib/cuaderno/sticker-png-packs";
 
 export type StickerPanelTab =
-  | "juridicos"
-  | "estudio"
-  | "universidad"
-  | "ia"
-  | "decorativos"
-  | "postits"
-  | "favoritos";
+  | "biblioteca"
+  | "favoritos"
+  | "mis-stickers"
+  | "importar"
+  | "ia";
 
-export const STICKER_PANEL_TABS: Array<{ id: StickerPanelTab; label: string; icon: string }> = [
-  { id: "juridicos", label: "Jurídicos", icon: "⚖️" },
-  { id: "estudio", label: "Estudio", icon: "📚" },
-  { id: "universidad", label: "Universidad", icon: "🎓" },
-  { id: "ia", label: "IA", icon: "🧠" },
-  { id: "decorativos", label: "Decorativos", icon: "✨" },
-  { id: "favoritos", label: "Favoritos", icon: "❤️" },
+export const STICKER_PANEL_TABS: Array<{ id: StickerPanelTab; label: string }> = [
+  { id: "biblioteca", label: "Biblioteca" },
+  { id: "favoritos", label: "Favoritos" },
+  { id: "mis-stickers", label: "Mis stickers" },
+  { id: "importar", label: "Importar" },
+  { id: "ia", label: "IA" },
 ];
 
-const TAB_CATEGORIES: Record<Exclude<StickerPanelTab, "postits" | "favoritos">, StickerCategoryId[]> = {
-  juridicos: ["derecho", "legislacion", "constitucional", "procesal", "corporativo"],
-  estudio: ["estudio", "apuntes"],
-  universidad: ["universidad"],
-  ia: ["ia"],
-  decorativos: ["productividad", "motivacion", "kawaii"],
-};
+export const JURIDICO_PACK_FILTERS: Array<{ id: JuridicoPackId | "all"; label: string }> = [
+  { id: "all", label: "Todos" },
+  ...JURIDICO_STICKER_PACKS.map((p) => ({ id: p.id, label: p.label })),
+];
 
-export function filterStickersForPanel(
-  tab: StickerPanelTab,
+export function filterJuridicoStickers(
+  packId: JuridicoPackId | "all",
   query: string,
-  favoriteIds: string[],
-): StickerCatalogItem[] {
+): PngStickerItem[] {
   const q = query.trim().toLowerCase();
+  let items =
+    packId === "all"
+      ? ALL_JURIDICO_STICKERS
+      : JURIDICO_STICKER_PACKS.find((p) => p.id === packId)?.stickers ?? [];
 
-  if (tab === "favoritos") {
-    const favs = favoriteIds
-      .map((id) => STICKER_CATALOG.find((s) => s.id === id))
-      .filter((s): s is StickerCatalogItem => !!s);
-    if (!q) return favs;
-    return favs.filter(
+  if (q) {
+    items = ALL_JURIDICO_STICKERS.filter(
       (s) =>
         s.label.toLowerCase().includes(q) ||
         s.tags.some((t) => t.includes(q)) ||
-        s.id.includes(q),
+        s.packId.includes(q),
     );
+    if (packId !== "all") items = items.filter((s) => s.packId === packId);
   }
-
-  if (tab === "postits") return [];
-
-  const categories = TAB_CATEGORIES[tab];
-  let items = STICKER_CATALOG.filter((s) => categories.includes(s.category));
-
-  if (q) {
-    items = searchStickers(q).filter((s) => categories.includes(s.category));
-  }
-
   return items;
 }

@@ -1,11 +1,18 @@
 "use client";
 
-export type SideRailTab = "stickers" | "postits" | "images";
+import { Globe, ImageIcon, StickyNote, Sparkles } from "lucide-react";
 
-const RAIL_ITEMS: Array<{ id: SideRailTab; icon: string; label: string }> = [
-  { id: "stickers", icon: "🎀", label: "Stickers" },
-  { id: "postits", icon: "📝", label: "Post-its" },
-  { id: "images", icon: "📷", label: "Imágenes" },
+export type SideRailTab = "stickers" | "postits" | "images" | "import-sticker";
+
+const RAIL_ITEMS: Array<{
+  id: SideRailTab;
+  label: string;
+  Icon: typeof Sparkles;
+}> = [
+  { id: "stickers", label: "Stickers", Icon: Sparkles },
+  { id: "import-sticker", label: "Importar Sticker", Icon: Globe },
+  { id: "postits", label: "Post-its", Icon: StickyNote },
+  { id: "images", label: "Imágenes", Icon: ImageIcon },
 ];
 
 export function CuadernoSideRail({
@@ -27,9 +34,7 @@ export function CuadernoSideRail({
           title={item.label}
           onClick={() => onSelect(item.id)}
         >
-          <span className="cn-side-rail-icon" aria-hidden>
-            {item.icon}
-          </span>
+          <item.Icon className="cn-side-rail-icon-svg" size={18} aria-hidden />
           <span className="cn-side-rail-label">{item.label}</span>
         </button>
       ))}

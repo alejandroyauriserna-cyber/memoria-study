@@ -2,11 +2,13 @@ import {
   createDecoElement,
   createPostIt,
   createStickerFromCatalog,
+  createStickerFromSrc,
   type DecorationObject,
   type PostItColor,
 } from "@/lib/cuaderno/decoration-objects";
 import type { DecorationDragPayload } from "@/lib/cuaderno/decoration-drag";
 import { getStickerById } from "@/lib/cuaderno/sticker-catalog";
+import { getPngStickerById } from "@/lib/cuaderno/sticker-png-packs";
 import { getStickerSvgDataUrl } from "@/lib/cuaderno/sticker-svg";
 
 export function createDecorationFromDrop(
@@ -19,7 +21,7 @@ export function createDecorationFromDrop(
   };
 
   if (payload.type === "postit") {
-    const p = createPostIt(payload.color);
+    const p = createPostIt(payload.color, "", payload.category);
     return { ...p, x: pos.x, y: pos.y };
   }
 
@@ -28,7 +30,27 @@ export function createDecorationFromDrop(
     return { ...d, x: pos.x, y: pos.y };
   }
 
+  if (payload.type === "sticker-src") {
+    return createStickerFromSrc(payload.src, payload.label, {
+      stickerId: payload.stickerId,
+      at: pos,
+      aspectRatio: 1,
+    });
+  }
+
   if (payload.type === "sticker") {
+    if (payload.stickerId.startsWith("png:")) {
+      const png = getPngStickerById(payload.stickerId.slice(4));
+      if (!png) return null;
+      return createStickerFromSrc(png.src, png.label, {
+        stickerId: payload.stickerId,
+        at: pos,
+        aspectRatio: 1,
+      });
+    }
+    if (payload.stickerId.startsWith("user:")) {
+      return null; /* requiere type sticker-src con imageUrl firmada */
+    }
     const item = getStickerById(payload.stickerId);
     if (!item) return null;
     const src = getStickerSvgDataUrl(item);

@@ -34,6 +34,16 @@
   transform-origin: center center;
   touch-action: none;
   cursor: grab;
+  content-visibility: auto;
+  contain: layout style paint;
+}
+
+.cn-decoration-item:not(.is-selected) {
+  will-change: auto;
+}
+
+.cn-decoration-item.is-dragging {
+  will-change: transform, width, height;
 }
 
 .cn-decoration-item.is-selected {
@@ -55,28 +65,38 @@
 
 .cn-decoration-toolbar {
   position: absolute;
-  top: -36px;
+  top: -32px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   gap: 2px;
-  padding: 4px 6px;
-  background: rgba(15, 23, 42, 0.92);
+  padding: 3px 5px;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(148, 163, 184, 0.35);
   border-radius: 10px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.12);
   z-index: 10;
+}
+
+.cn-decoration-toolbar button {
+  color: #334155;
+}
+
+.cn-decoration-toolbar button.is-danger,
+.cn-decoration-toolbar button:hover.is-danger {
+  color: #dc2626;
 }
 
 .cn-decoration-toolbar button {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   border: none;
   border-radius: 6px;
   background: transparent;
-  color: #f8fafc;
   cursor: pointer;
 }
 
@@ -688,6 +708,27 @@
   color: #f59e0b;
 }
 
+.cn-sticker-delete {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  border: none;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #94a3b8;
+}
+
+.cn-sticker-delete:hover {
+  color: #ef4444;
+  background: #fef2f2;
+}
+
 .cn-sticker-postits,
 .cn-sticker-deco-list,
 .cn-sticker-market {
@@ -955,4 +996,345 @@
   color: #fff;
   cursor: pointer;
   font-weight: 600;
+}
+
+/* —— Stickers premium (PNG, import, packs) —— */
+.cn-sticker-panel-title {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.cn-sticker-panel-tabs--text button {
+  font-size: 0.72rem;
+  padding: 8px 10px;
+}
+
+.cn-sticker-pack-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.cn-sticker-pack-filters button {
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: #fff;
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+
+.cn-sticker-pack-filters button.is-on {
+  background: color-mix(in srgb, var(--cn-accent, #6366f1) 14%, #fff);
+  border-color: color-mix(in srgb, var(--cn-accent, #6366f1) 45%, transparent);
+}
+
+.cn-sticker-grid--png .cn-sticker-cell-img {
+  object-fit: contain;
+  background: repeating-conic-gradient(#e2e8f0 0% 25%, #f8fafc 0% 50%) 50% / 12px 12px;
+  border-radius: 8px;
+  max-height: 72px;
+  width: 100%;
+}
+
+.cn-sticker-upload-tab {
+  padding: 8px 0;
+}
+
+.cn-sticker-upload-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 28px 16px;
+  border: 2px dashed color-mix(in srgb, var(--cn-accent, #6366f1) 35%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--cn-accent, #6366f1) 5%, #fff);
+  text-align: center;
+}
+
+.cn-sticker-upload-zone label {
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: var(--cn-accent, #6366f1);
+  color: #fff;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.cn-sticker-import-link {
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.cn-sticker-ia-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cn-side-rail-icon-svg {
+  flex-shrink: 0;
+}
+
+.cn-sticker-import-root {
+  position: fixed;
+  inset: 0;
+  z-index: 10060;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.cn-sticker-import-backdrop {
+  position: absolute;
+  inset: 0;
+  border: none;
+  background: rgba(15, 23, 42, 0.45);
+  cursor: default;
+}
+
+.cn-sticker-import-dialog {
+  position: relative;
+  z-index: 1;
+  width: min(560px, 96vw);
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 20px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.2);
+}
+
+.cn-sticker-import-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.cn-sticker-import-head h2 {
+  margin: 4px 0 0;
+  font-size: 1.1rem;
+}
+
+.cn-sticker-import-head p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.cn-sticker-import-url {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.cn-sticker-import-url label {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.8rem;
+}
+
+.cn-sticker-import-url input {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+}
+
+.cn-sticker-import-btn,
+.cn-sticker-import-save {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 10px;
+  background: var(--cn-accent, #6366f1);
+  color: #fff;
+  cursor: pointer;
+  align-self: flex-end;
+}
+
+.cn-sticker-import-drop {
+  padding: 20px;
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.cn-sticker-import-preview {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 12px 0;
+}
+
+.cn-sticker-import-preview img {
+  width: 100%;
+  max-height: 140px;
+  object-fit: contain;
+  background: repeating-conic-gradient(#e2e8f0 0% 25%, #f8fafc 0% 50%) 50% / 10px 10px;
+  border-radius: 8px;
+}
+
+.cn-sticker-import-meta {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.cn-sticker-import-meta input,
+.cn-sticker-import-meta select {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+}
+
+.cn-sticker-import-error {
+  color: #b91c1c;
+  font-size: 0.85rem;
+}
+
+.cn-sticker-import-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.cn-spin {
+  animation: cn-spin 0.8s linear infinite;
+}
+
+@keyframes cn-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.cn-sticker-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Glassmorphism — paneles flotantes */
+.cn-glass-backdrop {
+  backdrop-filter: blur(4px);
+}
+
+.cn-sticker-panel--glass {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(20px) saturate(1.2);
+  border-left: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: -12px 0 40px rgba(15, 23, 42, 0.08);
+}
+
+.cn-sticker-panel-tabs--glass {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.cn-sticker-panel-tabs--glass button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 0.7rem;
+  cursor: pointer;
+  color: #475569;
+}
+
+.cn-sticker-panel-tabs--glass button[data-active="true"] {
+  background: color-mix(in srgb, var(--cn-accent, #6366f1) 14%, #fff);
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.cn-glass-icon-btn {
+  border: none;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 8px;
+  padding: 6px;
+  cursor: pointer;
+}
+
+.cn-sticker-import-panel {
+  padding: 4px 0;
+}
+
+.cn-sticker-import-modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.cn-sticker-import-modes button {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  background: rgba(255, 255, 255, 0.7);
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.cn-sticker-import-modes button.is-on {
+  background: color-mix(in srgb, var(--cn-accent, #6366f1) 16%, #fff);
+  border-color: color-mix(in srgb, var(--cn-accent, #6366f1) 40%, transparent);
+}
+
+.cn-sticker-import-url {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.cn-sticker-import-url input {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+}
+
+.cn-sticker-import-name {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.8rem;
+  margin-bottom: 10px;
+}
+
+.cn-sticker-postit-grid--premium {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.cn-postit--juridico { font-family: Georgia, "Times New Roman", serif; }
+.cn-postit--minimalista { border-radius: 4px; }
+.cn-postit--vintage { filter: sepia(0.12); }
+
+.cn-decoration-handle {
+  width: 8px;
+  height: 8px;
+  border-width: 1.5px;
 }

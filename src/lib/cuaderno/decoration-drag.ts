@@ -4,7 +4,8 @@ export const DECORATION_DRAG_MIME = "application/x-cuaderno-decoration";
 
 export type DecorationDragPayload =
   | { type: "sticker"; stickerId: string }
-  | { type: "postit"; color: PostItColor }
+  | { type: "sticker-src"; src: string; label: string; stickerId?: string }
+  | { type: "postit"; color: PostItColor; category?: string }
   | { type: "deco"; kind: Exclude<DecorationKind, "postit" | "sticker"> };
 
 export function encodeDecorationDrag(payload: DecorationDragPayload): string {
@@ -17,6 +18,13 @@ export function parseDecorationDrag(dataTransfer: DataTransfer): DecorationDragP
   try {
     const parsed = JSON.parse(raw) as DecorationDragPayload;
     if (parsed?.type === "sticker" && typeof parsed.stickerId === "string") return parsed;
+    if (
+      parsed?.type === "sticker-src" &&
+      typeof parsed.src === "string" &&
+      typeof parsed.label === "string"
+    ) {
+      return parsed;
+    }
     if (parsed?.type === "postit" && typeof parsed.color === "string") return parsed;
     if (parsed?.type === "deco" && typeof parsed.kind === "string") return parsed;
   } catch {

@@ -18,8 +18,7 @@ import {
   type ImageTextWrap,
   type PostItColor,
 } from "@/lib/cuaderno/decoration-objects";
-import { getStickerById } from "@/lib/cuaderno/sticker-catalog";
-import { getStickerSvgDataUrl } from "@/lib/cuaderno/sticker-svg";
+import { resolveStickerLabel, resolveStickerSrc } from "@/lib/cuaderno/sticker-resolve-src";
 import type { ResizeCorner } from "@/components/cuaderno/decoration/decoration-resize";
 
 const CORNERS: ResizeCorner[] = ["nw", "ne", "sw", "se"];
@@ -128,10 +127,10 @@ export const CuadernoDecorationItem = memo(function CuadernoDecorationItem({
       {selected && active ? (
         <>
           <div className="cn-decoration-toolbar" onPointerDown={(e) => e.stopPropagation()}>
-            <button type="button" title="Duplicar" onClick={onDuplicate}>
+            <button type="button" title="Duplicar" aria-label="Duplicar" onClick={onDuplicate}>
               <Copy size={12} />
             </button>
-            {obj.kind === "image" ? (
+            {obj.kind === "image" || obj.kind === "sticker" ? (
               <button
                 type="button"
                 title="Rotar 90°"
@@ -192,6 +191,7 @@ export const CuadernoDecorationItem = memo(function CuadernoDecorationItem({
                 <span
                   className="cn-decoration-handle cn-decoration-handle--rotate"
                   onPointerDown={(e) => onStartDrag(e, "rotate")}
+                  title="Rotar"
                 >
                   <RotateCw size={10} />
                 </span>
@@ -230,8 +230,12 @@ function DecorationBody({
 }) {
   if (obj.kind === "postit") {
     const c = POSTIT_COLORS[obj.postitColor ?? "yellow"];
+    const cat = obj.postitCategory ? ` cn-postit--${obj.postitCategory}` : "";
     return (
-      <div className="cn-postit" style={{ background: c.bg, borderColor: c.border }}>
+      <div
+        className={`cn-postit${cat}`}
+        style={{ background: c.bg, borderColor: c.border }}
+      >
         <textarea
           className="cn-postit-text"
           value={obj.text ?? ""}
@@ -265,13 +269,13 @@ function DecorationBody({
   }
 
   if (obj.kind === "sticker") {
-    const catalog = obj.stickerId ? getStickerById(obj.stickerId) : undefined;
-    const src = obj.src ?? (catalog ? getStickerSvgDataUrl(catalog) : undefined);
+    const src = resolveStickerSrc(obj);
+    const alt = resolveStickerLabel(obj);
     if (src) {
       return (
         <img
           src={src}
-          alt={obj.label ?? catalog?.label ?? ""}
+          alt={alt}
           className="cn-sticker-img"
           draggable={false}
           loading="lazy"
@@ -279,11 +283,7 @@ function DecorationBody({
         />
       );
     }
-    return (
-      <span className="cn-sticker-glyph" title={obj.label ?? catalog?.label}>
-        {catalog?.glyph ?? "✨"}
-      </span>
-    );
+    return <span className="cn-sticker-glyph" title={alt}>?</span>;
   }
 
   if (obj.kind === "washi") {

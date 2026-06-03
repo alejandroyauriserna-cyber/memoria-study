@@ -1,45 +1,51 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Sparkles, Star, X } from "lucide-react";
+import { BookOpen, Globe, Image, Search, Sparkles, Star, Trash2, X } from "lucide-react";
 import {
-  createDecoElement,
   createStickerFromAi,
-  createStickerFromCatalog,
+  createStickerFromLibrary,
+  createStickerFromSrc,
   type DecorationObject,
 } from "@/lib/cuaderno/decoration-objects";
 import {
   DECORATION_DRAG_MIME,
   encodeDecorationDrag,
 } from "@/lib/cuaderno/decoration-drag";
-import { getStickerSvgDataUrl } from "@/lib/cuaderno/sticker-svg";
 import {
-  STICKER_MARKETPLACE,
-  getStickerById,
-  type StickerCatalogItem,
-} from "@/lib/cuaderno/sticker-catalog";
-import {
+  JURIDICO_PACK_FILTERS,
   STICKER_PANEL_TABS,
-  filterStickersForPanel,
+  filterJuridicoStickers,
   type StickerPanelTab,
 } from "@/lib/cuaderno/sticker-panel";
+import type { JuridicoPackId } from "@/lib/cuaderno/sticker-juridico-packs";
+import type { PngStickerItem } from "@/lib/cuaderno/sticker-png-packs";
 import { CuadernoStickerDesigner } from "@/components/cuaderno/decoration/cuaderno-sticker-designer";
+import { CuadernoStickerImportPanel } from "@/components/cuaderno/decoration/cuaderno-sticker-import-modal";
+import type { UserStickerRecord } from "@/types/cuaderno-stickers";
 
-const FAV_KEY = "cuaderno-sticker-favorites";
-const RECENT_KEY = "cuaderno-sticker-recents";
+const CATALOG_FAV_KEY = "cuaderno-catalog-favorites";
 
-function loadIds(key: string): string[] {
+function loadCatalogFavs(): string[] {
   if (typeof window === "undefined") return [];
   try {
-    return JSON.parse(localStorage.getItem(key) ?? "[]") as string[];
+    return JSON.parse(localStorage.getItem(CATALOG_FAV_KEY) ?? "[]") as string[];
   } catch {
     return [];
   }
 }
 
-function saveIds(key: string, ids: string[]) {
-  localStorage.setItem(key, JSON.stringify(ids.slice(0, 24)));
+async function toggleUserFavorite(stickerId: string, on: boolean) {
+  const method = on ? "POST" : "DELETE";
+  const url = on
+    ? "/api/cuaderno/stickers/favorites"
+    : `/api/cuaderno/stickers/favorites?stickerId=${encodeURIComponent(stickerId)}`;
+  await fetch(url, {
+    method,
+    headers: on ? { "Content-Type": "application/json" } : undefined,
+    body: on ? JSON.stringify({ stickerId }) : undefined,
+  });
 }
 
 export function CuadernoStickerPanel({
@@ -51,58 +57,111 @@ export function CuadernoStickerPanel({
   open: boolean;
   onClose: () => void;
   onAdd: (item: DecorationObject) => void;
-  initialTab?: StickerPanelTab | "stickers" | "images";
+  initialTab?: StickerPanelTab | "stickers" | "images" | "importar";
 }) {
   const [query, setQuery] = useState("");
-  const [tab, setTab] = useState<StickerPanelTab>(() => {
-    if (!initialTab || initialTab === "stickers" || initialTab === "images") return "juridicos";
-    return initialTab;
-  });
-  const [favorites, setFavorites] = useState<string[]>([]);
-  const [recents, setRecents] = useState<string[]>([]);
+  const [tab, setTab] = useState<StickerPanelTab>("biblioteca");
+  const [packFilter, setPackFilter] = useState<JuridicoPackId | "all">("all");
+  const [catalogFavs, setCatalogFavs] = useState<string[]>([]);
+  const [myStickers, setMyStickers] = useState<UserStickerRecord[]>([]);
+  const [loading, setLoading] = useState(false);
   const [designerOpen, setDesignerOpen] = useState(false);
   const [designerSeed, setDesignerSeed] = useState("");
-  const [quickLoading, setQuickLoading] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
 
   useEffect(() => {
-    setFavorites(loadIds(FAV_KEY));
-    setRecents(loadIds(RECENT_KEY));
+    setCatalogFavs(loadCatalogFavs());
   }, [open]);
 
   useEffect(() => {
     if (!open || !initialTab) return;
-    if (initialTab === "stickers" || initialTab === "images") setTab("juridicos");
+    if (initialTab === "stickers" || initialTab === "images") setTab("biblioteca");
+    else if (initialTab === "importar") setTab("importar");
     else setTab(initialTab);
   }, [open, initialTab]);
 
-  const results = useMemo(
-    () => filterStickersForPanel(tab, query, favorites),
-    [tab, query, favorites],
+  const loadLibrary = useCallback(async () => {
+    setLoading(true);
+    try {
+      const q =
+        tab === "favoritos"
+          ? "?favorites=1"
+          : query
+            ? `?q=${encodeURIComponent(query)}`
+            : "";
+      const res = await fetch(`/api/cuaderno/stickers/library${q}`);
+      const data = await res.json();
+      if (res.ok) setMyStickers(data.stickers ?? []);
+    } catch {
+      setMyStickers([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [tab, query]);
+
+  useEffect(() => {
+    if (!open) return;
+    if (tab === "mis-stickers" || tab === "favoritos") void loadLibrary();
+  }, [open, tab, loadLibrary]);
+
+  const juridicoItems = useMemo(
+    () => filterJuridicoStickers(packFilter, query),
+    [packFilter, query],
   );
 
-  const addSticker = (item: StickerCatalogItem) => {
-    onAdd(createStickerFromCatalog(item.id, getStickerSvgDataUrl(item), item.label));
-    const next = [item.id, ...recents.filter((id) => id !== item.id)];
-    setRecents(next);
-    saveIds(RECENT_KEY, next);
+  const catalogFavItems = useMemo(() => {
+    const set = new Set(catalogFavs);
+    return juridicoItems.filter((s) => set.has(`png:${s.id}`));
+  }, [catalogFavs, juridicoItems]);
+
+  const addPng = (item: PngStickerItem) => {
+    onAdd(
+      createStickerFromSrc(item.src, item.label, {
+        stickerId: `png:${item.id}`,
+        aspectRatio: 1,
+      }),
+    );
   };
 
-  const toggleFav = (id: string) => {
-    const next = favorites.includes(id) ? favorites.filter((f) => f !== id) : [...favorites, id];
-    setFavorites(next);
-    saveIds(FAV_KEY, next);
+  const addUser = (s: UserStickerRecord) => {
+    onAdd(createStickerFromLibrary(s.id, s.imageUrl, s.name));
   };
 
-  function openDesigner(prompt = "") {
-    setDesignerSeed(prompt);
-    setDesignerOpen(true);
-  }
+  const toggleCatalogFav = (id: string) => {
+    const key = `png:${id}`;
+    const next = catalogFavs.includes(key)
+      ? catalogFavs.filter((f) => f !== key)
+      : [...catalogFavs, key];
+    setCatalogFavs(next);
+    localStorage.setItem(CATALOG_FAV_KEY, JSON.stringify(next.slice(0, 80)));
+  };
 
-  async function quickGenerate() {
-    const p =
-      query.trim() ||
-      "Crea un sticker kawaii de Derecho Constitucional con balanza dorada";
-    setQuickLoading(true);
+  const toggleUserFav = async (s: UserStickerRecord) => {
+    const next = !s.isFavorite;
+    await toggleUserFavorite(s.id, next);
+    setMyStickers((prev) =>
+      prev.map((x) => (x.id === s.id ? { ...x, isFavorite: next } : x)),
+    );
+  };
+
+  const deleteUserSticker = async (s: UserStickerRecord) => {
+    if (!confirm(`¿Eliminar «${s.name}» de Mis stickers?`)) return;
+    try {
+      const res = await fetch(
+        `/api/cuaderno/stickers/library?id=${encodeURIComponent(s.id)}`,
+        { method: "DELETE" },
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "No se pudo eliminar");
+      setMyStickers((prev) => prev.filter((x) => x.id !== s.id));
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Error al eliminar");
+    }
+  };
+
+  async function quickAi() {
+    const p = query.trim() || "Sticker jurídico PNG transparente estilo GoodNotes, balanza dorada";
+    setAiLoading(true);
     try {
       const res = await fetch("/api/cuaderno/stickers/generate", {
         method: "POST",
@@ -112,11 +171,11 @@ export function CuadernoStickerPanel({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       onAdd(createStickerFromAi(data.imageDataUrl, data.label ?? p));
-      setQuery("");
     } catch {
-      openDesigner(p);
+      setDesignerSeed(p);
+      setDesignerOpen(true);
     } finally {
-      setQuickLoading(false);
+      setAiLoading(false);
     }
   }
 
@@ -126,178 +185,160 @@ export function CuadernoStickerPanel({
         {open ? (
           <>
             <motion.div
-              className="cn-sticker-panel-backdrop"
+              className="cn-sticker-panel-backdrop cn-glass-backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={onClose}
             />
             <motion.aside
-              className="cn-sticker-panel"
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", stiffness: 380, damping: 36 }}
+              className="cn-sticker-panel cn-sticker-panel--glass"
+              initial={{ x: "100%", opacity: 0.9 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: "100%", opacity: 0.9 }}
+              transition={{ type: "spring", stiffness: 400, damping: 38 }}
               role="dialog"
-              aria-label="Panel de stickers"
+              aria-label="Stickers"
             >
               <header className="cn-sticker-panel-head">
                 <div>
-                  <span>✨ Stickers</span>
-                  <p className="cn-sticker-panel-hint">Arrastra a la hoja · clic para insertar</p>
+                  <span className="cn-sticker-panel-title">Stickers</span>
+                  <p className="cn-sticker-panel-hint">GoodNotes · arrastra al cuaderno</p>
                 </div>
-                <button type="button" onClick={onClose} aria-label="Cerrar">
+                <button type="button" className="cn-glass-icon-btn" onClick={onClose} aria-label="Cerrar">
                   <X size={18} />
                 </button>
               </header>
 
-              <div className="cn-sticker-panel-search cn-sticker-panel-search--global">
+              <div className="cn-sticker-panel-search">
                 <Search size={14} />
                 <input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="balanza, juez, constitución, penal…"
-                  autoFocus
+                  placeholder="Buscar… civil, penal, flores, balanza"
                 />
               </div>
 
-              <div className="cn-sticker-panel-tabs">
-                {STICKER_PANEL_TABS.map((t) => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    data-active={tab === t.id}
-                    onClick={() => setTab(t.id)}
-                    title={t.label}
-                  >
-                    <span className="cn-sticker-tab-icon">{t.icon}</span>
-                    <span className="cn-sticker-tab-label">{t.label}</span>
-                  </button>
-                ))}
-              </div>
+              <nav className="cn-sticker-panel-tabs cn-sticker-panel-tabs--glass">
+                {STICKER_PANEL_TABS.map((t) => {
+                  const Icon =
+                    t.id === "biblioteca"
+                      ? BookOpen
+                      : t.id === "favoritos"
+                        ? Star
+                        : t.id === "mis-stickers"
+                          ? Image
+                          : t.id === "importar"
+                            ? Globe
+                            : Sparkles;
+                  return (
+                    <button
+                      key={t.id}
+                      type="button"
+                      data-active={tab === t.id}
+                      onClick={() => setTab(t.id)}
+                    >
+                      <Icon size={14} />
+                      {t.label}
+                    </button>
+                  );
+                })}
+              </nav>
 
               <div className="cn-sticker-panel-body">
-                {tab === "decorativos" ? (
+                {tab === "biblioteca" ? (
                   <>
-                    <p className="cn-sticker-section-lead">Cintas, marcos y resaltados</p>
-                    <div className="cn-sticker-deco-list">
-                      {(
-                        [
-                          ["washi", "Cinta washi"],
-                          ["tape", "Cinta adhesiva"],
-                          ["divider", "Separador"],
-                          ["frame", "Marco"],
-                          ["arrow", "Flecha"],
-                          ["highlight-deco", "Resaltado"],
-                        ] as const
-                      ).map(([kind, label]) => (
+                    <div className="cn-sticker-pack-filters">
+                      {JURIDICO_PACK_FILTERS.map((p) => (
                         <button
-                          key={kind}
+                          key={p.id}
                           type="button"
-                          className="cn-draggable-source"
-                          draggable
-                          onDragStart={(e) => {
-                            e.dataTransfer.setData(
-                              DECORATION_DRAG_MIME,
-                              encodeDecorationDrag({ type: "deco", kind }),
-                            );
-                            e.dataTransfer.effectAllowed = "copy";
-                          }}
-                          onClick={() => onAdd(createDecoElement(kind))}
+                          className={packFilter === p.id ? "is-on" : ""}
+                          onClick={() => setPackFilter(p.id)}
                         >
-                          {label}
+                          {p.label}
                         </button>
                       ))}
                     </div>
-                    {results.length > 0 ? (
-                      <StickerGrid
-                        title="Stickers decorativos"
-                        items={results}
-                        favorites={favorites}
-                        onPick={addSticker}
-                        onFav={toggleFav}
-                      />
-                    ) : null}
-                  </>
-                ) : (
-                  <>
-                    {tab === "juridicos" ? (
-                      <div className="cn-sticker-market cn-sticker-market--inline">
-                        <p className="cn-sticker-section-lead">Marketplace jurídico</p>
-                        {STICKER_MARKETPLACE.map((pack) => (
-                          <article key={pack.id} className="cn-sticker-pack-card">
-                            <span className="cn-sticker-pack-emoji">{pack.emoji}</span>
-                            <div>
-                              <strong>{pack.label}</strong>
-                              <p>{pack.description}</p>
-                              <span>{pack.stickerIds.length} stickers</span>
-                            </div>
-                            <div className="cn-sticker-pack-actions">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  pack.stickerIds.forEach((id) => {
-                                    const s = getStickerById(id);
-                                    if (s) addSticker(s);
-                                  });
-                                }}
-                              >
-                                Añadir
-                              </button>
-                              <a
-                                href={`/api/cuaderno/stickers/packs/${pack.id}`}
-                                download={`${pack.id}.json`}
-                                className="cn-sticker-pack-download"
-                              >
-                                JSON
-                              </a>
-                            </div>
-                          </article>
-                        ))}
-                      </div>
-                    ) : null}
-
-                    {query && results.length === 0 ? (
-                      <p className="cn-sticker-empty">Sin resultados para «{query}»</p>
-                    ) : null}
-
-                    <StickerGrid
-                      title={
-                        tab === "favoritos"
-                          ? "Tus favoritos"
-                          : query
-                            ? `Resultados (${results.length})`
-                            : STICKER_PANEL_TABS.find((t) => t.id === tab)?.label ?? "Stickers"
-                      }
-                      items={results}
-                      favorites={favorites}
-                      onPick={addSticker}
-                      onFav={toggleFav}
+                    <PngGrid
+                      items={juridicoItems}
+                      catalogFavs={catalogFavs}
+                      onPick={addPng}
+                      onCatalogFav={toggleCatalogFav}
                     />
                   </>
-                )}
-              </div>
+                ) : null}
 
-              <footer className="cn-sticker-panel-foot">
-                <button
-                  type="button"
-                  className="cn-sticker-create-ai"
-                  disabled={quickLoading}
-                  onClick={() => void quickGenerate()}
-                >
-                  <Sparkles size={16} />
-                  {quickLoading ? "Generando…" : "✨ Crear con IA"}
-                </button>
-                <button
-                  type="button"
-                  className="cn-sticker-designer-link"
-                  onClick={() =>
-                    openDesigner("Crea un sticker kawaii de Derecho Constitucional")
-                  }
-                >
-                  🎨 Diseñador IA (conversación)
-                </button>
-              </footer>
+                {tab === "favoritos" ? (
+                  <>
+                    {catalogFavItems.length > 0 ? (
+                      <PngGrid
+                        title="Biblioteca jurídica"
+                        items={catalogFavItems}
+                        catalogFavs={catalogFavs}
+                        onPick={addPng}
+                        onCatalogFav={toggleCatalogFav}
+                      />
+                    ) : null}
+                    <UserGrid
+                      title="Mis stickers favoritos"
+                      items={myStickers.filter((s) => s.isFavorite)}
+                      loading={loading}
+                      onPick={addUser}
+                      onToggleFav={toggleUserFav}
+                      onDelete={deleteUserSticker}
+                    />
+                  </>
+                ) : null}
+
+                {tab === "mis-stickers" ? (
+                  <UserGrid
+                    title="Mis stickers"
+                    items={myStickers}
+                    loading={loading}
+                    onPick={addUser}
+                    onToggleFav={toggleUserFav}
+                    onDelete={deleteUserSticker}
+                    emptyHint="Importa desde Pinterest o guarda stickers con IA."
+                  />
+                ) : null}
+
+                {tab === "importar" ? (
+                  <CuadernoStickerImportPanel
+                    onSaved={(s) => {
+                      setMyStickers((prev) => [s, ...prev]);
+                      addUser(s);
+                    }}
+                  />
+                ) : null}
+
+                {tab === "ia" ? (
+                  <div className="cn-sticker-ia-tab">
+                    <p className="cn-sticker-section-lead">
+                      Describe el sticker (PNG transparente). Ej: libros vintage, flores beige, código civil.
+                    </p>
+                    <button
+                      type="button"
+                      className="cn-sticker-create-ai"
+                      disabled={aiLoading}
+                      onClick={() => void quickAi()}
+                    >
+                      <Sparkles size={16} />
+                      {aiLoading ? "Generando…" : "Generar con IA"}
+                    </button>
+                    <button
+                      type="button"
+                      className="cn-sticker-designer-link"
+                      onClick={() => {
+                        setDesignerSeed(query || "Sticker académico");
+                        setDesignerOpen(true);
+                      }}
+                    >
+                      Diseñador conversacional
+                    </button>
+                  </div>
+                ) : null}
+              </div>
             </motion.aside>
           </>
         ) : null}
@@ -306,38 +347,96 @@ export function CuadernoStickerPanel({
       <CuadernoStickerDesigner
         open={designerOpen}
         initialPrompt={designerSeed}
-        onClose={() => {
-          setDesignerOpen(false);
-          setDesignerSeed("");
-        }}
-        onInsert={(src, label) => {
-          onAdd(createStickerFromAi(src, label));
-        }}
+        onClose={() => setDesignerOpen(false)}
+        onInsert={(src, lbl) => onAdd(createStickerFromAi(src, lbl))}
       />
     </>
   );
 }
 
-function StickerGrid({
+function PngGrid({
   title,
   items,
-  favorites,
+  catalogFavs,
   onPick,
-  onFav,
+  onCatalogFav,
+}: {
+  title?: string;
+  items: PngStickerItem[];
+  catalogFavs: string[];
+  onPick: (item: PngStickerItem) => void;
+  onCatalogFav: (id: string) => void;
+}) {
+  if (!items.length) return <p className="cn-sticker-empty">Sin resultados.</p>;
+  return (
+    <section className="cn-sticker-grid-section">
+      {title ? <h3>{title}</h3> : null}
+      <div className="cn-sticker-grid cn-sticker-grid--png">
+        {items.map((item) => {
+          const favId = `png:${item.id}`;
+          return (
+            <div key={item.id} className="cn-sticker-cell">
+              <button
+                type="button"
+                className="cn-sticker-cell-main cn-draggable-source"
+                draggable
+                onDragStart={(e) => {
+                  e.dataTransfer.setData(
+                    DECORATION_DRAG_MIME,
+                    encodeDecorationDrag({
+                      type: "sticker-src",
+                      src: item.src,
+                      label: item.label,
+                      stickerId: favId,
+                    }),
+                  );
+                }}
+                onClick={() => onPick(item)}
+              >
+                <img src={item.src} alt={item.label} loading="lazy" decoding="async" />
+                <span>{item.label}</span>
+              </button>
+              <button
+                type="button"
+                className={`cn-sticker-fav${catalogFavs.includes(favId) ? " is-on" : ""}`}
+                onClick={() => onCatalogFav(item.id)}
+                aria-label="Favorito catálogo"
+              >
+                <Star size={12} fill={catalogFavs.includes(favId) ? "currentColor" : "none"} />
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function UserGrid({
+  title,
+  items,
+  loading,
+  onPick,
+  onToggleFav,
+  onDelete,
+  emptyHint,
 }: {
   title: string;
-  items: StickerCatalogItem[];
-  favorites: string[];
-  onPick: (item: StickerCatalogItem) => void;
-  onFav: (id: string) => void;
+  items: UserStickerRecord[];
+  loading: boolean;
+  onPick: (s: UserStickerRecord) => void;
+  onToggleFav: (s: UserStickerRecord) => void;
+  onDelete?: (s: UserStickerRecord) => void;
+  emptyHint?: string;
 }) {
-  if (!items.length) return null;
+  if (loading) return <p className="cn-sticker-empty">Cargando…</p>;
+  if (!items.length) return <p className="cn-sticker-empty">{emptyHint ?? "Vacío."}</p>;
   return (
     <section className="cn-sticker-grid-section">
       <h3>{title}</h3>
-      <div className="cn-sticker-grid">
-        {items.map((item) => (
-          <div key={item.id} className="cn-sticker-cell">
+      <div className="cn-sticker-grid cn-sticker-grid--png">
+        {items.map((s) => (
+          <div key={s.id} className="cn-sticker-cell">
             <button
               type="button"
               className="cn-sticker-cell-main cn-draggable-source"
@@ -345,28 +444,37 @@ function StickerGrid({
               onDragStart={(e) => {
                 e.dataTransfer.setData(
                   DECORATION_DRAG_MIME,
-                  encodeDecorationDrag({ type: "sticker", stickerId: item.id }),
+                  encodeDecorationDrag({
+                    type: "sticker-src",
+                    src: s.imageUrl,
+                    label: s.name,
+                    stickerId: `user:${s.id}`,
+                  }),
                 );
-                e.dataTransfer.effectAllowed = "copy";
               }}
-              onClick={() => onPick(item)}
+              onClick={() => onPick(s)}
             >
-              <img
-                src={getStickerSvgDataUrl(item)}
-                alt=""
-                className="cn-sticker-cell-img"
-                draggable={false}
-              />
-              <span>{item.label}</span>
+              <img src={s.imageUrl} alt={s.name} loading="lazy" decoding="async" />
+              <span>{s.name}</span>
             </button>
             <button
               type="button"
-              className={`cn-sticker-fav${favorites.includes(item.id) ? " is-on" : ""}`}
-              onClick={() => onFav(item.id)}
-              aria-label="Favorito"
+              className={`cn-sticker-fav${s.isFavorite ? " is-on" : ""}`}
+              onClick={() => void onToggleFav(s)}
+              aria-label={s.isFavorite ? "Quitar de favoritos" : "Añadir a favoritos"}
             >
-              <Star size={12} fill={favorites.includes(item.id) ? "currentColor" : "none"} />
+              <Star size={12} fill={s.isFavorite ? "currentColor" : "none"} />
             </button>
+            {onDelete ? (
+              <button
+                type="button"
+                className="cn-sticker-delete"
+                onClick={() => void onDelete(s)}
+                aria-label={`Eliminar ${s.name}`}
+              >
+                <Trash2 size={12} />
+              </button>
+            ) : null}
           </div>
         ))}
       </div>
