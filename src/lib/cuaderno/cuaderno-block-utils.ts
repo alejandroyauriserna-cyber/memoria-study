@@ -37,7 +37,8 @@ export function getSelectedBlock(editor: Editor): SelectedBlockInfo | null {
   for (let depth = $from.depth; depth > 0; depth--) {
     const node = $from.node(depth);
     const name = node.type.name;
-    if (name === "studyBlock" || name === "image" || name === "table") {
+    if (name === "table") continue;
+    if (name === "studyBlock" || name === "image") {
       const pos = $from.before(depth);
       return {
         kind: name as CuadernoBlockKind,
@@ -46,10 +47,6 @@ export function getSelectedBlock(editor: Editor): SelectedBlockInfo | null {
         attrs: { ...node.attrs },
       };
     }
-  }
-
-  if (editor.isActive("table")) {
-    return { kind: "table", pos: selection.from, nodeSize: 0, attrs: {} };
   }
 
   return null;

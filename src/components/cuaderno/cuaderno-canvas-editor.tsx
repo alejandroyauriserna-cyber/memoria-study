@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCuadernoViewport } from "@/hooks/use-cuaderno-viewport";
 import type { Editor } from "@tiptap/react";
 import { Minus, Plus, Type } from "lucide-react";
 import { CuadernoRichEditor } from "@/components/cuaderno/cuaderno-rich-editor";
@@ -106,9 +107,13 @@ export function CuadernoCanvasEditor({
   const [selectedDecoId, setSelectedDecoId] = useState<string | null>(null);
   const [decoDragOver, setDecoDragOver] = useState(false);
   const paperLayersRef = useRef<HTMLDivElement>(null);
+  const viewportBounds = useCuadernoViewport(viewportRef, paperLayersRef, 0.15);
 
-  const doc = parseCuadernoDocument(notes);
-  const activePage = getActivePage(doc);
+  const doc = useMemo(() => parseCuadernoDocument(notes), [notes]);
+  const activePage = useMemo(() => getActivePage(doc), [doc]);
+  const docRef = useRef(doc);
+  docRef.current = doc;
+
   const templateId = templateIdProp ?? activePage.templateId;
   const paperTone = paperToneProp ?? activePage.paperTone;
   const marginMode = marginModeProp ?? activePage.marginMode;
@@ -127,23 +132,23 @@ export function CuadernoCanvasEditor({
 
   const syncBody = useCallback(
     (html: string) => {
-      onChange(serializeCuadernoDocument(setActivePageBody(doc, html)));
+      onChange(serializeCuadernoDocument(setActivePageBody(docRef.current, html)));
     },
-    [doc, onChange],
+    [onChange],
   );
 
   const syncInk = useCallback(
     (strokes: typeof inkStrokes) => {
-      onChange(serializeCuadernoDocument(setActivePageInk(doc, strokes)));
+      onChange(serializeCuadernoDocument(setActivePageInk(docRef.current, strokes)));
     },
-    [doc, onChange],
+    [onChange],
   );
 
   const syncDecorations = useCallback(
     (items: DecorationObject[]) => {
-      onChange(serializeCuadernoDocument(setActivePageDecorations(doc, items)));
+      onChange(serializeCuadernoDocument(setActivePageDecorations(docRef.current, items)));
     },
-    [doc, onChange],
+    [onChange],
   );
 
   const focusEditor = useCallback(() => {
@@ -176,7 +181,7 @@ export function CuadernoCanvasEditor({
     migratedPagesRef.current.add(activePage.id);
     if (images.length === 0) return;
     const nextDoc = setActivePageDecorations(
-      setActivePageBody(doc, html),
+      setActivePageBody(docRef.current, html),
       [...(activePage.decorations ?? []), ...images],
     );
     onChange(serializeCuadernoDocument(nextDoc));
@@ -304,6 +309,8 @@ export function CuadernoCanvasEditor({
             selectedId={selectedDecoId}
             onSelectId={setSelectedDecoId}
             scrollRef={viewportRef}
+            layerRootRef={paperLayersRef}
+            viewportBounds={viewportBounds}
             placement="behind"
           />
           <CuadernoRichEditor
@@ -330,8 +337,9 @@ export function CuadernoCanvasEditor({
             selectedId={selectedDecoId}
             onSelectId={setSelectedDecoId}
             scrollRef={viewportRef}
+            layerRootRef={paperLayersRef}
+            viewportBounds={viewportBounds}
             placement="front"
-            onRequestEditorFocus={focusEditor}
           />
         </div>
       </div>

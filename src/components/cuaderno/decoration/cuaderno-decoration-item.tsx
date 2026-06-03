@@ -32,10 +32,50 @@ const WRAP_LABELS: Record<ImageTextWrap, string> = {
   behind: "Detrás del texto",
 };
 
+function decoPropsEqual(
+  prev: {
+    obj: DecorationObject;
+    selected: boolean;
+    active: boolean;
+    isDragging: boolean;
+    cropping: boolean;
+  },
+  next: typeof prev,
+) {
+  if (
+    prev.selected !== next.selected ||
+    prev.active !== next.active ||
+    prev.isDragging !== next.isDragging ||
+    prev.cropping !== next.cropping ||
+    prev.obj.id !== next.obj.id
+  ) {
+    return false;
+  }
+  if (prev.isDragging || next.isDragging) return true;
+  const a = prev.obj;
+  const b = next.obj;
+  return (
+    a.x === b.x &&
+    a.y === b.y &&
+    a.w === b.w &&
+    a.h === b.h &&
+    a.rotation === b.rotation &&
+    a.zIndex === b.zIndex &&
+    a.locked === b.locked &&
+    a.text === b.text &&
+    a.textWrap === b.textWrap &&
+    a.postitColor === b.postitColor &&
+    a.src === b.src &&
+    a.kind === b.kind
+  );
+}
+
 export const CuadernoDecorationItem = memo(function CuadernoDecorationItem({
+  dataDecoId,
   obj,
   selected,
   active,
+  isDragging,
   cropping,
   onSelect,
   onStartDrag,
@@ -46,9 +86,11 @@ export const CuadernoDecorationItem = memo(function CuadernoDecorationItem({
   onZBump,
   onStartCrop,
 }: {
+  dataDecoId: string;
   obj: DecorationObject;
   selected: boolean;
   active: boolean;
+  isDragging: boolean;
   cropping: boolean;
   onSelect: () => void;
   onStartDrag: (e: React.PointerEvent, mode: "move" | "rotate" | ResizeCorner) => void;
@@ -63,7 +105,8 @@ export const CuadernoDecorationItem = memo(function CuadernoDecorationItem({
 
   return (
     <div
-      className={`cn-decoration-item cn-decoration-${obj.kind}${selected ? " is-selected" : ""}${obj.locked ? " is-locked" : ""}${cropping ? " is-cropping" : ""}${wrap !== "inFront" ? ` is-wrap-${wrap}` : ""}`}
+      data-deco-id={dataDecoId}
+      className={`cn-decoration-item cn-decoration-${obj.kind}${selected ? " is-selected" : ""}${obj.locked ? " is-locked" : ""}${cropping ? " is-cropping" : ""}${isDragging ? " is-dragging" : ""}${wrap !== "inFront" ? ` is-wrap-${wrap}` : ""}`}
       style={{
         left: `${obj.x * 100}%`,
         top: `${obj.y * 100}%`,
@@ -174,7 +217,7 @@ export const CuadernoDecorationItem = memo(function CuadernoDecorationItem({
       ) : null}
     </div>
   );
-});
+}, decoPropsEqual);
 
 function DecorationBody({
   obj,

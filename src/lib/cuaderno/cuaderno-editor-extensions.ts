@@ -35,7 +35,7 @@ export function createCuadernoEditorExtensions(placeholder: string): Extensions 
     TextAlign.configure({ types: ["heading", "paragraph"] }),
     TaskList,
     TaskItem.configure({ nested: true }),
-    Table.configure({ resizable: true }),
+    Table.configure({ resizable: false }),
     TableRow,
     TableHeader,
     TableCell,

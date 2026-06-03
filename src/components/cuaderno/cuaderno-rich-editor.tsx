@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { memo, useCallback, useEffect, useRef } from "react";
+import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
 import { bodyToEditorHtml } from "@/lib/cuaderno/rich-text";
 import { getFontStack, getGoogleFontsHref, DEFAULT_FONT_ID } from "@/lib/cuaderno/editor-fonts";
@@ -16,7 +17,7 @@ function normalizeHtml(html: string): string {
   return html.replace(/\s+/g, " ").trim();
 }
 
-export function CuadernoRichEditor({
+function CuadernoRichEditorInner({
   body,
   onBodyChange,
   onEditorReady,
@@ -57,6 +58,8 @@ export function CuadernoRichEditor({
     [onBodyChange],
   );
 
+  const debouncedEmit = useDebouncedCallback(emitChange, 400);
+
   const editor = useEditor({
     immediatelyRender: false,
     editable,
@@ -81,9 +84,16 @@ export function CuadernoRichEditor({
       },
     },
     onUpdate: ({ editor: ed }) => {
-      emitChange(ed.getHTML());
+      debouncedEmit(ed.getHTML());
     },
   });
+
+  useEffect(() => {
+    if (!editor) return;
+    const flush = () => debouncedEmit.flush();
+    editor.view.dom.addEventListener("blur", flush, true);
+    return () => editor.view.dom.removeEventListener("blur", flush, true);
+  }, [editor, debouncedEmit]);
 
   useEffect(() => {
     onEditorReady?.(editor);
@@ -159,3 +169,5 @@ export function CuadernoRichEditor({
     </div>
   );
 }
+
+export const CuadernoRichEditor = memo(CuadernoRichEditorInner);
