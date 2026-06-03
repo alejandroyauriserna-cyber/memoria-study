@@ -576,6 +576,12 @@
   filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
 }
 
+.cn-canvas-workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
 .cn-immersive-main {
   flex: 1;
   min-height: 0;

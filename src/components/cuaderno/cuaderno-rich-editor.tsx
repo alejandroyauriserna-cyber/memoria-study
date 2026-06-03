@@ -1,30 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
-import { EditorContent, useEditor } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import Underline from "@tiptap/extension-underline";
-import { TextStyle } from "@tiptap/extension-text-style";
-import { Color } from "@tiptap/extension-color";
-import Highlight from "@tiptap/extension-highlight";
-import FontFamily from "@tiptap/extension-font-family";
-import TextAlign from "@tiptap/extension-text-align";
-import TaskList from "@tiptap/extension-task-list";
-import TaskItem from "@tiptap/extension-task-item";
-import { Table } from "@tiptap/extension-table";
-import TableRow from "@tiptap/extension-table-row";
-import TableCell from "@tiptap/extension-table-cell";
-import TableHeader from "@tiptap/extension-table-header";
-import Placeholder from "@tiptap/extension-placeholder";
-import HorizontalRule from "@tiptap/extension-horizontal-rule";
-import Strike from "@tiptap/extension-strike";
-import CodeBlock from "@tiptap/extension-code-block";
+import { EditorContent, useEditor, type Editor } from "@tiptap/react";
 import { bodyToEditorHtml } from "@/lib/cuaderno/rich-text";
 import { getFontStack, getGoogleFontsHref, DEFAULT_FONT_ID } from "@/lib/cuaderno/editor-fonts";
-import { FontSize } from "@/components/cuaderno/tiptap/font-size";
-import { StudyBlock } from "@/components/cuaderno/tiptap/study-block";
+import { createCuadernoEditorExtensions } from "@/lib/cuaderno/cuaderno-editor-extensions";
 import { CuadernoFormatBubble } from "@/components/cuaderno/cuaderno-format-bubble";
-import { CuadernoBlockToolbar } from "@/components/cuaderno/cuaderno-block-toolbar";
 import type { CuadernoAskAction } from "@/types/cuaderno";
 import "./cuaderno-rich-editor.css";
 
@@ -35,6 +16,7 @@ function normalizeHtml(html: string): string {
 export function CuadernoRichEditor({
   body,
   onBodyChange,
+  onEditorReady,
   placeholder = "Escribe tus apuntes…",
   editable = true,
   courseAccent = "#0d9488",
@@ -43,6 +25,7 @@ export function CuadernoRichEditor({
 }: {
   body: string;
   onBodyChange: (html: string) => void;
+  onEditorReady?: (editor: Editor | null) => void;
   placeholder?: string;
   editable?: boolean;
   courseAccent?: string;
@@ -67,31 +50,7 @@ export function CuadernoRichEditor({
   const editor = useEditor({
     immediatelyRender: false,
     editable,
-    extensions: [
-      StarterKit.configure({
-        heading: { levels: [1, 2, 3] },
-        codeBlock: false,
-        strike: false,
-      }),
-      Underline,
-      Strike,
-      TextStyle,
-      Color,
-      FontSize,
-      FontFamily,
-      Highlight.configure({ multicolor: true }),
-      TextAlign.configure({ types: ["heading", "paragraph"] }),
-      TaskList,
-      TaskItem.configure({ nested: true }),
-      Table.configure({ resizable: true }),
-      TableRow,
-      TableHeader,
-      TableCell,
-      HorizontalRule,
-      CodeBlock.configure({ HTMLAttributes: { class: "cn-code-block" } }),
-      Placeholder.configure({ placeholder }),
-      StudyBlock,
-    ],
+    extensions: createCuadernoEditorExtensions(placeholder),
     content: bodyToEditorHtml(body),
     editorProps: {
       attributes: {
@@ -103,6 +62,11 @@ export function CuadernoRichEditor({
       emitChange(ed.getHTML());
     },
   });
+
+  useEffect(() => {
+    onEditorReady?.(editor);
+    return () => onEditorReady?.(null);
+  }, [editor, onEditorReady]);
 
   useEffect(() => {
     const href = getGoogleFontsHref();
@@ -143,7 +107,6 @@ export function CuadernoRichEditor({
       data-editable={editable ? "true" : "false"}
       style={{ "--cn-course-accent": courseAccent } as React.CSSProperties}
     >
-      {editable ? <CuadernoBlockToolbar editor={editor} /> : null}
       <EditorContent editor={editor} className="cn-rich-editor-content" />
       {editable ? (
         <CuadernoFormatBubble

@@ -46,22 +46,6 @@
     0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
-.cn-paper.tone-dark .cn-block-toolbar {
-  background: color-mix(in srgb, var(--paper-bg) 88%, #fff 12%);
-  border-color: color-mix(in srgb, var(--cn-course-accent, #5eead4) 25%, transparent);
-}
-
-.cn-paper.tone-dark .cn-block-btn {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: var(--paper-ink);
-}
-
-.cn-paper.tone-dark .cn-block-dropdown {
-  background: #252b3d;
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
 .cn-paper {
   --paper-bg: #f6f1e8;
   --paper-line: rgba(30, 35, 45, 0.1);

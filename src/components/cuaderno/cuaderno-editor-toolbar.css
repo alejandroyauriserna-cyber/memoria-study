@@ -1,0 +1,235 @@
+/* Toolbar fija — fuera del papel (estilo Notion / Apple Notes) */
+
+.cn-immersive-root > .cn-editor-toolbar-rail {
+  flex-shrink: 0;
+}
+
+.cn-editor-toolbar-rail {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(10, 14, 20, 0.92);
+  backdrop-filter: blur(20px) saturate(1.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28);
+}
+
+.cn-editor-toolbar-rail.is-disabled {
+  min-height: 0;
+  height: 0;
+  border: none;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.cn-editor-toolbar-scroll {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 16px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.cn-editor-toolbar-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+
+.cn-tb-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.cn-tb-divider {
+  width: 1px;
+  height: 24px;
+  margin: 0 6px;
+  background: rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.cn-tb-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.82);
+  transition: background 0.12s, color 0.12s;
+}
+
+.cn-tb-btn:hover,
+.cn-tb-btn.is-active {
+  background: color-mix(in srgb, var(--cn-tb-accent, #00ffd5) 20%, transparent);
+  color: #fff;
+}
+
+.cn-tb-select {
+  height: 32px;
+  min-width: 88px;
+  max-width: 120px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.cn-tb-select--sm {
+  min-width: 64px;
+  max-width: 72px;
+}
+
+.cn-tb-select:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--cn-tb-accent, #00ffd5) 50%, transparent);
+}
+
+.cn-tb-dropdown {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.cn-tb-dropdown-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.88);
+  transition: background 0.12s;
+}
+
+.cn-tb-dropdown-trigger:hover,
+.cn-tb-dropdown.is-open .cn-tb-dropdown-trigger {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.cn-tb-dropdown-trigger--compact {
+  padding: 0 10px;
+}
+
+.cn-tb-chevron {
+  opacity: 0.5;
+  transition: transform 0.15s;
+}
+
+.cn-tb-dropdown.is-open .cn-tb-chevron {
+  transform: rotate(180deg);
+}
+
+.cn-tb-dropdown-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 50;
+  min-width: 220px;
+  padding: 6px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(14, 18, 26, 0.98);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+}
+
+.cn-tb-menu-item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  text-align: left;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+  transition: background 0.1s;
+}
+
+.cn-tb-menu-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.cn-tb-menu-item--ai {
+  color: color-mix(in srgb, var(--cn-tb-accent, #00ffd5) 90%, white);
+}
+
+.cn-tb-menu-icon {
+  width: 1.25rem;
+  text-align: center;
+}
+
+.cn-tb-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 50;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(14, 18, 26, 0.98);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+}
+
+.cn-tb-popover-label {
+  margin: 0 0 6px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.cn-tb-popover-label + .cn-tb-swatch-row {
+  margin-bottom: 10px;
+}
+
+.cn-tb-swatch-row {
+  display: flex;
+  gap: 6px;
+}
+
+.cn-tb-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  transition: transform 0.12s;
+}
+
+.cn-tb-swatch:hover {
+  transform: scale(1.1);
+}
+
+.cn-tb-color-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.cn-tb-dropdown--inline {
+  position: relative;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

@@ -1,11 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { Editor } from "@tiptap/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowLeft, Loader2, Sparkles, Star } from "lucide-react";
 import { CuadernoCanvasEditor } from "@/components/cuaderno/cuaderno-canvas-editor";
+import { CuadernoEditorToolbar } from "@/components/cuaderno/cuaderno-editor-toolbar";
 import { CuadernoAiSidebar } from "@/components/cuaderno/cuaderno-ai-sidebar";
 import {
   CuadernoEditorChrome,
@@ -49,6 +51,8 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
   const [askAnswer, setAskAnswer] = useState<string | null>(null);
   const [genLoading, setGenLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [tiptapEditor, setTiptapEditor] = useState<Editor | null>(null);
+  const [canvasWriteMode, setCanvasWriteMode] = useState(true);
 
   const sync = useCuadernoSyncContextOptional();
   const { meta } = parseNoteContent(notes);
@@ -310,6 +314,32 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
         onClose={() => chrome.setTemplatePickerOpen(false)}
       />
 
+      <CuadernoEditorToolbar
+        editor={tiptapEditor}
+        courseAccent={coverArt.accent}
+        disabled={!canvasWriteMode}
+        onAiAction={(action, text) => {
+          setAiOpen(true);
+          if (action === "summarize") {
+            void handleAsk("summarize", `Resume: «${text}»`, "summary");
+          } else if (action === "exam_questions") {
+            void handleAsk("exam_questions", `Preguntas sobre: «${text}»`, "exam");
+          } else if (action === "legislation") {
+            void handleAsk("legislation", text);
+          } else if (action === "jurisprudence") {
+            void handleAsk("jurisprudence", text);
+          } else if (action === "mind_map") {
+            void handleAsk("mind_map", text);
+          } else if (action === "flashcards") {
+            void handleAsk("flashcards", text);
+          } else if (action === "relate") {
+            void handleAsk("relate", text);
+          } else {
+            void handleAsk(action, `Sobre: «${text}»`);
+          }
+        }}
+      />
+
       <main className="cn-immersive-main">
         <motion.div
           className="cn-immersive-paper-shell"
@@ -320,12 +350,15 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
         >
           <CuadernoCanvasEditor
             immersive
+            externalToolbar
             notes={notes}
             onChange={setNotes}
             layoutMode={chrome.layoutMode}
             paperTone={chrome.paperTone}
             templateId={meta.templateId}
             courseAccent={coverArt.accent}
+            onEditorReady={setTiptapEditor}
+            onModeChange={(m) => setCanvasWriteMode(m === "write")}
             onSelectionAction={(action, text) => {
               setAiOpen(true);
               if (action === "summarize") {

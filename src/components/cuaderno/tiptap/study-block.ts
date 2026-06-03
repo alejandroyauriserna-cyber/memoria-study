@@ -5,11 +5,14 @@ export type StudyBlockVariant =
   | "jurisprudencia"
   | "articulo"
   | "doctrina"
+  | "interpretacion"
+  | "dictamen"
   | "pregunta"
   | "flashcard"
   | "resumen-ia"
   | "mapa"
-  | "comparativo";
+  | "comparativo"
+  | "audio";
 
 export const StudyBlock = Node.create({
   name: "studyBlock",

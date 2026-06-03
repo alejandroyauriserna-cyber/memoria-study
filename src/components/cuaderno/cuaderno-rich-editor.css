@@ -1,10 +1,8 @@
-/* Editor rico — ProseMirror + bloques jurídicos */
+/* Editor rico — solo contenido en el papel */
 
 .cn-rich-editor {
   position: relative;
   z-index: 1;
-  display: flex;
-  flex-direction: column;
   min-height: inherit;
 }
 
@@ -12,95 +10,8 @@
   min-height: 320px;
 }
 
-.cn-block-toolbar {
-  position: sticky;
-  top: 0;
-  z-index: 4;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  margin: 0 clamp(24px, 3vw, 48px) 12px;
-  padding: 10px 12px;
-  border-radius: 14px;
-  border: 1px solid color-mix(in srgb, var(--cn-course-accent, #0d9488) 18%, transparent);
-  background: color-mix(in srgb, var(--paper-bg, #fff) 92%, var(--cn-course-accent, #0d9488) 8%);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
-  backdrop-filter: blur(8px);
-}
-
-.cn-block-toolbar-group {
-  position: relative;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.cn-block-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 6px 10px;
-  border-radius: 10px;
-  border: 1px solid color-mix(in srgb, var(--paper-ink, #1c1917) 12%, transparent);
-  background: color-mix(in srgb, var(--paper-bg, #fff) 88%, transparent);
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: color-mix(in srgb, var(--paper-ink, #1c1917) 75%, transparent);
-  transition: background 0.15s, border-color 0.15s, transform 0.15s;
-}
-
-.cn-block-btn:hover {
-  border-color: var(--cn-course-accent, #0d9488);
-  color: var(--paper-ink, #1c1917);
-  transform: translateY(-1px);
-}
-
-.cn-block-dropdown {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
-  z-index: 20;
-  min-width: 200px;
-  max-height: 280px;
-  overflow-y: auto;
-  padding: 6px;
-  border-radius: 12px;
-  border: 1px solid color-mix(in srgb, var(--paper-ink, #1c1917) 14%, transparent);
-  background: var(--paper-bg, #fff);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12);
-}
-
-.cn-block-dropdown--wide {
-  min-width: 240px;
-}
-
-.cn-block-dropdown-item {
-  display: flex;
-  width: 100%;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  text-align: left;
-  font-size: 0.78rem;
-  font-weight: 500;
-  color: var(--paper-ink, #1c1917);
-  transition: background 0.12s;
-}
-
-.cn-block-dropdown-item:hover {
-  background: color-mix(in srgb, var(--cn-course-accent, #0d9488) 12%, transparent);
-}
-
-.cn-block-dropdown-icon {
-  font-size: 0.7rem;
-  font-weight: 700;
-  opacity: 0.6;
-}
-
 .cn-rich-editor-content {
-  flex: 1;
+  min-height: inherit;
 }
 
 .cn-prosemirror {
@@ -377,6 +288,23 @@
   color: var(--cn-accent, #00ffd5) !important;
 }
 
-[data-editable="false"] .cn-block-toolbar {
-  display: none;
+.cn-prosemirror img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 10px;
+  margin: 0.75em 0;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.1);
+}
+
+.cn-study-block--interpretacion {
+  border-color: color-mix(in srgb, #0f766e 32%, transparent);
+}
+
+.cn-study-block--dictamen {
+  border-color: color-mix(in srgb, #a16207 32%, transparent);
+}
+
+.cn-study-block--audio {
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--cn-course-accent, #0d9488) 35%, transparent);
 }

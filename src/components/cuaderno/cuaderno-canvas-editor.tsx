@@ -1,13 +1,17 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import type { Editor } from "@tiptap/react";
 import { Minus, Plus, Type } from "lucide-react";
 import { CuadernoRichEditor } from "@/components/cuaderno/cuaderno-rich-editor";
+import { CuadernoEditorToolbar } from "@/components/cuaderno/cuaderno-editor-toolbar";
 import { parseNoteContent, serializeNoteContent } from "@/lib/cuaderno/note-meta";
 import { getPaperClasses } from "@/lib/cuaderno/paper-styles";
 import type { CuadernoLayoutMode, CuadernoPaperTone } from "@/lib/cuaderno/editor-preferences";
 import { getTemplate, type CuadernoTemplateId } from "@/lib/cuaderno/templates";
 import type { CuadernoAskAction } from "@/types/cuaderno";
+
+type SelectionAction = CuadernoAskAction | "legislation" | "mind_map" | "jurisprudence";
 
 export function CuadernoCanvasEditor({
   notes,
@@ -19,23 +23,27 @@ export function CuadernoCanvasEditor({
   paperTone = "warm",
   templateId: templateIdProp,
   courseAccent = "#0d9488",
+  externalToolbar = false,
+  onEditorReady,
+  onModeChange,
 }: {
   notes: string;
   onChange: (value: string) => void;
-  onSelectionAction?: (
-    action: CuadernoAskAction | "legislation" | "mind_map" | "jurisprudence",
-    selectedText: string,
-  ) => void;
+  onSelectionAction?: (action: SelectionAction, selectedText: string) => void;
   placeholder?: string;
   immersive?: boolean;
   layoutMode?: CuadernoLayoutMode;
   paperTone?: CuadernoPaperTone;
   templateId?: CuadernoTemplateId;
-  onTemplateChange?: (id: CuadernoTemplateId) => void;
   courseAccent?: string;
+  /** Toolbar renderizada por el padre (vista inmersiva) */
+  externalToolbar?: boolean;
+  onEditorReady?: (editor: Editor | null) => void;
+  onModeChange?: (mode: "write" | "pan") => void;
 }) {
   const [zoom, setZoom] = useState(1);
   const [mode, setMode] = useState<"write" | "pan">("write");
+  const [editor, setEditor] = useState<Editor | null>(null);
 
   const { meta, body } = parseNoteContent(notes);
   const templateId = templateIdProp ?? meta.templateId;
@@ -49,13 +57,30 @@ export function CuadernoCanvasEditor({
     [meta, templateId, onChange],
   );
 
-  const viewportClass = immersive
-    ? `cn-canvas-viewport cn-canvas-viewport--immersive ${mode === "pan" ? "is-panning" : ""}`
-    : `cn-canvas-viewport ${mode === "pan" ? "is-panning" : ""}`;
+  const handleEditorReady = useCallback(
+    (ed: Editor | null) => {
+      setEditor(ed);
+      onEditorReady?.(ed);
+    },
+    [onEditorReady],
+  );
 
-  const stageClass = immersive ? "cn-canvas-stage cn-canvas-stage--immersive" : "cn-canvas-stage";
+  const setWriteMode = (next: "write" | "pan") => {
+    setMode(next);
+    onModeChange?.(next);
+  };
 
-  const paperInner = (
+  const toolbar =
+    !externalToolbar ? (
+      <CuadernoEditorToolbar
+        editor={editor}
+        courseAccent={courseAccent}
+        disabled={mode !== "write"}
+        onAiAction={onSelectionAction}
+      />
+    ) : null;
+
+  const paperOnly = (
     <div
       className={paperClass}
       data-template={templateId}
@@ -64,6 +89,7 @@ export function CuadernoCanvasEditor({
       <CuadernoRichEditor
         body={body}
         onBodyChange={syncBody}
+        onEditorReady={handleEditorReady}
         placeholder={placeholder || template.description}
         editable={mode === "write"}
         courseAccent={courseAccent}
@@ -73,18 +99,24 @@ export function CuadernoCanvasEditor({
     </div>
   );
 
+  const viewportClass = immersive
+    ? `cn-canvas-viewport cn-canvas-viewport--immersive ${mode === "pan" ? "is-panning" : ""}`
+    : `cn-canvas-viewport ${mode === "pan" ? "is-panning" : ""}`;
+
+  const stageClass = immersive ? "cn-canvas-stage cn-canvas-stage--immersive" : "cn-canvas-stage";
+
   if (immersive) {
     return (
       <div className="cn-immersive-canvas" data-layout={layoutMode}>
         <div className={viewportClass}>
           <div className={stageClass} style={{ transform: `scale(${zoom})` }}>
-            {paperInner}
+            {paperOnly}
           </div>
         </div>
         <div className="cn-immersive-zoom">
           <button
             type="button"
-            onClick={() => setMode(mode === "write" ? "pan" : "write")}
+            onClick={() => setWriteMode(mode === "write" ? "pan" : "write")}
             className="cn-immersive-zoom-btn"
           >
             {mode === "write" ? "Mover" : "Escribir"}
@@ -102,12 +134,13 @@ export function CuadernoCanvasEditor({
   }
 
   return (
-    <div className="space-y-3" data-layout={layoutMode}>
+    <div className="cn-canvas-workspace" data-layout={layoutMode}>
+      {toolbar}
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/8 bg-black/25 px-3 py-2">
         <div className="flex items-center gap-1">
           <button
             type="button"
-            onClick={() => setMode("write")}
+            onClick={() => setWriteMode("write")}
             className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${mode === "write" ? "bg-[#00FFD5]/15 text-[#00FFD5]" : "text-muted-foreground"}`}
           >
             <Type size={14} className="mr-1 inline" />
@@ -115,7 +148,7 @@ export function CuadernoCanvasEditor({
           </button>
           <button
             type="button"
-            onClick={() => setMode("pan")}
+            onClick={() => setWriteMode("pan")}
             className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${mode === "pan" ? "bg-[#00FFD5]/15 text-[#00FFD5]" : "text-muted-foreground"}`}
           >
             Mover lienzo
@@ -146,7 +179,7 @@ export function CuadernoCanvasEditor({
 
       <div className={viewportClass}>
         <div className={stageClass} style={{ transform: `scale(${zoom})` }}>
-          {paperInner}
+          {paperOnly}
         </div>
       </div>
     </div>

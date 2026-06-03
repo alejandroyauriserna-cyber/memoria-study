@@ -34,11 +34,25 @@ export type StudyBlockId =
   | "jurisprudencia"
   | "articulo"
   | "doctrina"
+  | "interpretacion"
+  | "dictamen"
   | "pregunta"
   | "flashcard"
   | "resumen-ia"
   | "mapa"
-  | "comparativo";
+  | "comparativo"
+  | "audio";
+
+/** Bloques del menú jurídico en la toolbar superior */
+export const LEGAL_TOOLBAR_BLOCKS: Array<{ id: StudyBlockId; label: string; icon: string }> = [
+  { id: "caso", label: "Caso práctico", icon: "📁" },
+  { id: "jurisprudencia", label: "Jurisprudencia", icon: "⚖" },
+  { id: "articulo", label: "Artículo legal", icon: "§" },
+  { id: "doctrina", label: "Comentario doctrinal", icon: "📖" },
+  { id: "interpretacion", label: "Interpretación normativa", icon: "⚖" },
+  { id: "dictamen", label: "Dictamen", icon: "📋" },
+  { id: "comparativo", label: "Cuadro comparativo", icon: "▦" },
+];
 
 export const STUDY_BLOCKS: Array<{ id: StudyBlockId; label: string; icon: string }> = [
   { id: "caso", label: "Caso práctico", icon: "📁" },
@@ -57,11 +71,14 @@ const BLOCK_LABELS: Record<StudyBlockId, string> = {
   jurisprudencia: "Jurisprudencia",
   articulo: "Artículo legal",
   doctrina: "Comentario doctrinal",
+  interpretacion: "Interpretación normativa",
+  dictamen: "Dictamen",
   pregunta: "Pregunta de examen",
   flashcard: "Flashcard",
   "resumen-ia": "Resumen IA",
   mapa: "Mapa mental",
   comparativo: "Cuadro comparativo",
+  audio: "Nota de audio",
 };
 
 export function applyAcademicStyle(editor: Editor, styleId: AcademicStyleId) {
