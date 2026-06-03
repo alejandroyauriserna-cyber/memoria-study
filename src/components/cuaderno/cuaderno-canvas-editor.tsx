@@ -25,9 +25,11 @@ export function CuadernoCanvasEditor({
   placeholder = "Escribe aquí como en tu cuaderno…",
   immersive = false,
   layoutMode = "fullscreen",
-  paperTone = "warm",
+  paperTone: paperToneProp,
+  marginMode: marginModeProp,
   templateId: templateIdProp,
-  courseAccent = "#0d9488",
+  courseAccent = "#00E5C3",
+  pageSettingsSlot,
   externalToolbar = false,
   onEditorReady,
   onModeChange,
@@ -39,8 +41,10 @@ export function CuadernoCanvasEditor({
   immersive?: boolean;
   layoutMode?: CuadernoLayoutMode;
   paperTone?: CuadernoPaperTone;
+  marginMode?: import("@/lib/cuaderno/page-settings").CuadernoPageMargin;
   templateId?: CuadernoTemplateId;
   courseAccent?: string;
+  pageSettingsSlot?: React.ReactNode;
   /** Toolbar renderizada por el padre (vista inmersiva) */
   externalToolbar?: boolean;
   onEditorReady?: (editor: Editor | null) => void;
@@ -53,8 +57,10 @@ export function CuadernoCanvasEditor({
   const doc = parseCuadernoDocument(notes);
   const activePage = getActivePage(doc);
   const templateId = templateIdProp ?? activePage.templateId;
+  const paperTone = paperToneProp ?? activePage.paperTone;
+  const marginMode = marginModeProp ?? activePage.marginMode;
   const template = getTemplate(templateId);
-  const paperClass = `${getPaperClasses(templateId)} tone-${paperTone}`;
+  const paperClass = `${getPaperClasses(templateId)} tone-${paperTone} margin-${marginMode}`;
 
   const syncBody = useCallback(
     (html: string) => {
@@ -87,11 +93,13 @@ export function CuadernoCanvasEditor({
     ) : null;
 
   const paperOnly = (
-    <div
-      className={paperClass}
-      data-template={templateId}
-      style={{ "--cn-course-accent": courseAccent } as React.CSSProperties}
-    >
+    <div className="cn-paper-stage-wrap">
+      {pageSettingsSlot ? <div className="cn-paper-stage-chrome">{pageSettingsSlot}</div> : null}
+      <div
+        className={paperClass}
+        data-template={templateId}
+        style={{ "--cn-course-accent": courseAccent } as React.CSSProperties}
+      >
       <CuadernoRichEditor
         body={activePage.body}
         onBodyChange={syncBody}
@@ -102,6 +110,7 @@ export function CuadernoCanvasEditor({
         className="cn-paper-editor cn-paper-editor--rich"
         onSelectionAction={onSelectionAction}
       />
+      </div>
     </div>
   );
 

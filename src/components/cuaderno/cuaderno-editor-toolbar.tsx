@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { CUADERNO_FONTS, type CuadernoFontId } from "@/lib/cuaderno/editor-fonts";
 import { ToolbarSelect } from "@/components/cuaderno/toolbar-select";
+import { CuadernoFloatingMenu, FloatingMenuItem } from "@/components/cuaderno/cuaderno-floating-menu";
 import { LEGAL_TOOLBAR_BLOCKS, insertStudyBlock } from "@/lib/cuaderno/academic-styles";
 import type { StudyBlockId } from "@/lib/cuaderno/academic-styles";
 import type { CuadernoAskAction } from "@/types/cuaderno";
@@ -82,34 +83,42 @@ function ToolbarDivider() {
   return <span className="cn-tb-divider" aria-hidden />;
 }
 
-function ToolbarDropdown({
+function ToolbarFloatingDropdown({
   label,
   icon,
   open,
   onToggle,
+  onClose,
   children,
+  width = 240,
 }: {
   label: string;
   icon?: React.ReactNode;
   open: boolean;
   onToggle: () => void;
+  onClose: () => void;
   children: React.ReactNode;
+  width?: number;
 }) {
+  const triggerRef = useRef<HTMLButtonElement>(null);
   return (
-    <div className={`cn-tb-dropdown${open ? " is-open" : ""}`}>
+    <>
       <button
+        ref={triggerRef}
         type="button"
-        className="cn-tb-dropdown-trigger"
+        className={`cn-tb-dropdown-trigger-v2${open ? " is-open" : ""}`}
         onMouseDown={(e) => e.preventDefault()}
         onClick={onToggle}
         aria-expanded={open}
       >
         {icon}
         <span>{label}</span>
-        <ChevronDown size={12} className="cn-tb-chevron" />
+        <ChevronDown size={12} className={open ? "is-open" : ""} />
       </button>
-      {open ? <div className="cn-tb-dropdown-panel">{children}</div> : null}
-    </div>
+      <CuadernoFloatingMenu open={open} onClose={onClose} anchorRef={triggerRef} width={width}>
+        {children}
+      </CuadernoFloatingMenu>
+    </>
   );
 }
 
@@ -130,19 +139,13 @@ export function CuadernoEditorToolbar({
   const [fontId, setFontId] = useState<CuadernoFontId | "">("");
   const [fontSize, setFontSize] = useState("");
   const imageInputRef = useRef<HTMLInputElement>(null);
-  const railRef = useRef<HTMLDivElement>(null);
+  const colorTriggerRef = useRef<HTMLButtonElement>(null);
 
-  useEffect(() => {
-    function closeMenus(e: MouseEvent) {
-      if (!railRef.current?.contains(e.target as Node)) {
-        setLegalOpen(false);
-        setAiOpen(false);
-        setColorOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", closeMenus);
-    return () => document.removeEventListener("mousedown", closeMenus);
-  }, []);
+  const closeAll = () => {
+    setLegalOpen(false);
+    setAiOpen(false);
+    setColorOpen(false);
+  };
 
   if (!editor || disabled) {
     return (
@@ -173,7 +176,6 @@ export function CuadernoEditorToolbar({
 
   return (
     <div
-      ref={railRef}
       className="cn-editor-toolbar-rail"
       style={{ "--cn-tb-accent": courseAccent } as React.CSSProperties}
       role="toolbar"
@@ -237,54 +239,56 @@ export function CuadernoEditorToolbar({
 
         {/* Color */}
         <div className="cn-tb-group cn-tb-group--color" role="group" aria-label="Color">
-          <div className={`cn-tb-dropdown cn-tb-dropdown--inline${colorOpen ? " is-open" : ""}`}>
-            <button
-              type="button"
-              className="cn-tb-dropdown-trigger cn-tb-dropdown-trigger--compact"
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => {
-                setColorOpen((v) => !v);
-                setLegalOpen(false);
-                setAiOpen(false);
-              }}
-            >
-              <span className="cn-tb-color-dot" style={{ background: TEXT_COLORS[0] }} />
-              Color
-              <ChevronDown size={12} className="cn-tb-chevron" />
-            </button>
-            {colorOpen ? (
-              <div className="cn-tb-popover cn-tb-popover--colors">
-                <p className="cn-tb-popover-label">Texto</p>
-                <div className="cn-tb-swatch-row">
-                  {TEXT_COLORS.map((c) => (
-                    <button
-                      key={c}
-                      type="button"
-                      className="cn-tb-swatch"
-                      style={{ background: c }}
-                      title="Color de texto"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => editor.chain().focus().setColor(c).run()}
-                    />
-                  ))}
-                </div>
-                <p className="cn-tb-popover-label">Resaltado</p>
-                <div className="cn-tb-swatch-row">
-                  {HIGHLIGHTS.map((c) => (
-                    <button
-                      key={c}
-                      type="button"
-                      className="cn-tb-swatch cn-tb-swatch--hi"
-                      style={{ background: c }}
-                      title="Resaltar"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => editor.chain().focus().toggleHighlight({ color: c }).run()}
-                    />
-                  ))}
-                </div>
-              </div>
-            ) : null}
-          </div>
+          <button
+            ref={colorTriggerRef}
+            type="button"
+            className={`cn-tb-dropdown-trigger-v2 cn-tb-dropdown-trigger-v2--compact${colorOpen ? " is-open" : ""}`}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => {
+              setColorOpen((v) => !v);
+              setLegalOpen(false);
+              setAiOpen(false);
+            }}
+          >
+            <span className="cn-tb-color-dot" style={{ background: TEXT_COLORS[0] }} />
+            Color
+            <ChevronDown size={12} className={colorOpen ? "is-open" : ""} />
+          </button>
+          <CuadernoFloatingMenu
+            open={colorOpen}
+            onClose={() => setColorOpen(false)}
+            anchorRef={colorTriggerRef}
+            width={220}
+          >
+            <p className="cn-floating-menu-heading">Texto</p>
+            <div className="cn-tb-swatch-row cn-floating-menu-swatches">
+              {TEXT_COLORS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  className="cn-tb-swatch"
+                  style={{ background: c }}
+                  title="Color de texto"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => editor.chain().focus().setColor(c).run()}
+                />
+              ))}
+            </div>
+            <p className="cn-floating-menu-heading">Resaltado</p>
+            <div className="cn-tb-swatch-row cn-floating-menu-swatches">
+              {HIGHLIGHTS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  className="cn-tb-swatch cn-tb-swatch--hi"
+                  style={{ background: c }}
+                  title="Resaltar"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => editor.chain().focus().toggleHighlight({ color: c }).run()}
+                />
+              ))}
+            </div>
+          </CuadernoFloatingMenu>
         </div>
 
         <ToolbarDivider />
@@ -376,7 +380,7 @@ export function CuadernoEditorToolbar({
         <ToolbarDivider />
 
         {/* Jurídico */}
-        <ToolbarDropdown
+        <ToolbarFloatingDropdown
           label="Jurídico"
           icon={<Scale size={14} />}
           open={legalOpen}
@@ -385,28 +389,25 @@ export function CuadernoEditorToolbar({
             setAiOpen(false);
             setColorOpen(false);
           }}
+          onClose={() => setLegalOpen(false)}
         >
           {LEGAL_TOOLBAR_BLOCKS.map((b) => (
-            <button
+            <FloatingMenuItem
               key={b.id}
-              type="button"
-              className="cn-tb-menu-item"
-              onMouseDown={(e) => e.preventDefault()}
               onClick={() => {
                 insertStudyBlock(editor, b.id as StudyBlockId);
                 setLegalOpen(false);
               }}
             >
-              <span className="cn-tb-menu-icon">{b.icon}</span>
-              {b.label}
-            </button>
+              <span className="cn-tb-menu-icon">{b.icon}</span> {b.label}
+            </FloatingMenuItem>
           ))}
-        </ToolbarDropdown>
+        </ToolbarFloatingDropdown>
 
         {onAiAction ? (
           <>
             <ToolbarDivider />
-            <ToolbarDropdown
+            <ToolbarFloatingDropdown
               label="IA"
               icon={<Sparkles size={14} />}
               open={aiOpen}
@@ -415,20 +416,14 @@ export function CuadernoEditorToolbar({
                 setLegalOpen(false);
                 setColorOpen(false);
               }}
+              onClose={() => setAiOpen(false)}
             >
               {AI_ACTIONS.map((a) => (
-                <button
-                  key={a.id}
-                  type="button"
-                  className="cn-tb-menu-item cn-tb-menu-item--ai"
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => runAi(a.id)}
-                >
-                  <Brain size={14} />
-                  {a.label}
-                </button>
+                <FloatingMenuItem key={a.id} onClick={() => runAi(a.id)}>
+                  <Brain size={14} className="inline mr-2" /> {a.label}
+                </FloatingMenuItem>
               ))}
-            </ToolbarDropdown>
+            </ToolbarFloatingDropdown>
           </>
         ) : null}
       </div>

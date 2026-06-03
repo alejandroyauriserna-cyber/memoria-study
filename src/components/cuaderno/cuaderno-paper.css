@@ -46,6 +46,28 @@
     0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
+.cn-paper-stage-wrap {
+  position: relative;
+  margin: 0 auto;
+}
+
+.cn-paper-stage-chrome {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 12px 10px;
+  max-width: 100%;
+}
+
+.cn-paper.margin-narrow .cn-prosemirror {
+  padding-left: clamp(28px, 4vw, 48px);
+  padding-right: clamp(28px, 4vw, 48px);
+}
+
+.cn-paper.margin-wide .cn-prosemirror {
+  padding-left: clamp(56px, 6vw, 96px);
+  padding-right: clamp(56px, 6vw, 96px);
+}
+
 .cn-paper {
   --paper-bg: #f6f1e8;
   --paper-line: rgba(30, 35, 45, 0.1);
@@ -54,11 +76,13 @@
   position: relative;
   background-color: var(--paper-bg);
   color: var(--paper-ink);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.8) inset,
-    0 24px 80px rgba(0, 0, 0, 0.28),
-    0 8px 24px rgba(0, 0, 0, 0.12),
-    0 0 0 1px rgba(0, 0, 0, 0.06);
+  border-radius: 4px 8px 8px 4px;
+  box-shadow: var(--cn-shadow-paper, 0 32px 80px rgba(0, 0, 0, 0.5));
+  transition: box-shadow 0.4s ease, transform 0.35s ease;
+}
+
+.cn-immersive-paper-shell:hover .cn-paper {
+  transform: translateY(-2px);
 }
 
 .cn-paper::before {
@@ -180,8 +204,8 @@
 }
 
 .cn-paper-preview-wrap[data-selected="true"] {
-  border-color: var(--cn-course-accent, #00ffd5);
-  box-shadow: 0 0 0 3px rgba(0, 255, 213, 0.2);
+  border-color: var(--cn-course-accent, #00e5c3);
+  box-shadow: 0 0 0 3px rgba(0, 229, 195, 0.2);
   transform: scale(1.02);
 }
 
@@ -323,7 +347,6 @@
 }
 
 .tpl-legal-casacion,
-.tpl-legal-doctrina,
 .tpl-legal-contrato {
   border-left: 4px solid var(--paper-margin);
   background-image: repeating-linear-gradient(
@@ -332,6 +355,13 @@
     var(--paper-line) 27px,
     var(--paper-line) 28px
   );
+}
+
+.tpl-legal-doctrina {
+  border-left: 4px solid var(--paper-margin);
+  background-image:
+    linear-gradient(90deg, color-mix(in srgb, var(--paper-margin) 8%, transparent) 0 28%, transparent 28%),
+    repeating-linear-gradient(transparent 0, transparent 27px, var(--paper-line) 27px, var(--paper-line) 28px);
 }
 
 .tpl-study-exam,
@@ -349,4 +379,22 @@
 
 .tpl-study-qa {
   background-size: 100% 96px;
+}
+
+.tpl-legal-resumen-clase {
+  border-top: 3px solid var(--paper-margin);
+  background-image:
+    linear-gradient(180deg, color-mix(in srgb, var(--paper-margin) 12%, transparent) 0%, transparent 80px),
+    repeating-linear-gradient(transparent 0, transparent 31px, var(--paper-line) 31px, var(--paper-line) 32px);
+}
+
+.tpl-legal-prep-examen {
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 56px,
+      color-mix(in srgb, var(--cn-accent, #00e5c3) 25%, var(--paper-line)) 56px,
+      color-mix(in srgb, var(--cn-accent, #00e5c3) 25%, var(--paper-line)) 57px
+    );
 }

@@ -1,4 +1,10 @@
 import { parseNoteContent, serializeNoteContent, type CuadernoNoteMeta, type SheetCoverMeta } from "@/lib/cuaderno/note-meta";
+import type { CuadernoPaperTone } from "@/lib/cuaderno/editor-preferences";
+import {
+  DEFAULT_PAGE_SETTINGS,
+  type CuadernoPageMargin,
+  type CuadernoPageSettings,
+} from "@/lib/cuaderno/page-settings";
 import type { CuadernoTemplateId } from "@/lib/cuaderno/templates";
 
 export type CuadernoPage = {
@@ -7,6 +13,9 @@ export type CuadernoPage = {
   templateId: CuadernoTemplateId;
   body: string;
   cover?: SheetCoverMeta;
+  paperTone: CuadernoPaperTone;
+  marginMode: CuadernoPageMargin;
+  favorite: boolean;
 };
 
 export type CuadernoDocument = {
@@ -19,16 +28,45 @@ function newPageId(): string {
   return `p_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
 }
 
+function hydratePage(
+  partial: {
+    id: string;
+    title?: string;
+    templateId?: CuadernoTemplateId;
+    body?: string;
+    cover?: SheetCoverMeta;
+    paperTone?: CuadernoPaperTone;
+    marginMode?: CuadernoPageMargin;
+    favorite?: boolean;
+  },
+  fallbackTemplate: CuadernoTemplateId,
+): CuadernoPage {
+  return {
+    id: partial.id,
+    title: partial.title ?? "Página",
+    templateId: partial.templateId ?? fallbackTemplate,
+    body: partial.body ?? "<p></p>",
+    cover: partial.cover,
+    paperTone: partial.paperTone ?? DEFAULT_PAGE_SETTINGS.paperTone,
+    marginMode: partial.marginMode ?? DEFAULT_PAGE_SETTINGS.marginMode,
+    favorite: partial.favorite ?? false,
+  };
+}
+
 export function createPage(
   templateId: CuadernoTemplateId,
   body = "<p></p>",
   title?: string,
+  settings?: Partial<CuadernoPageSettings>,
 ): CuadernoPage {
   return {
     id: newPageId(),
     title: title ?? "Página",
     templateId,
     body,
+    paperTone: settings?.paperTone ?? DEFAULT_PAGE_SETTINGS.paperTone,
+    marginMode: settings?.marginMode ?? DEFAULT_PAGE_SETTINGS.marginMode,
+    favorite: settings?.favorite ?? false,
   };
 }
 
@@ -36,15 +74,17 @@ export function parseCuadernoDocument(raw: string): CuadernoDocument {
   const { meta, body } = parseNoteContent(raw);
   if (meta.pages?.length) {
     const activeId = meta.activePageId ?? meta.pages[0].id;
-    const pages = meta.pages.map((p) => ({
-      id: p.id,
-      title: p.title ?? "Página",
-      templateId: (p.templateId ?? meta.templateId) as CuadernoTemplateId,
-      body: p.id === activeId ? body : (p.body ?? "<p></p>"),
-      cover: p.cover,
-    }));
+    const pages = meta.pages.map((p) =>
+      hydratePage(
+        {
+          ...p,
+          body: p.id === activeId ? body : p.body,
+        },
+        meta.templateId,
+      ),
+    );
     const active = pages.find((p) => p.id === activeId) ?? pages[0];
-    if (active && !active.body) active.body = body;
+    if (active && (!active.body || active.body === "<p></p>")) active.body = body || "<p></p>";
     return {
       meta: { ...meta, templateId: active.templateId },
       pages,
@@ -73,6 +113,9 @@ export function serializeCuadernoDocument(doc: CuadernoDocument): string {
       templateId: p.templateId,
       body: p.id === active.id ? active.body : p.body,
       cover: p.cover,
+      paperTone: p.paperTone,
+      marginMode: p.marginMode,
+      favorite: p.favorite,
     })),
     activePageId: active.id,
   };
@@ -90,12 +133,23 @@ export function setActivePageBody(doc: CuadernoDocument, html: string): Cuaderno
   };
 }
 
-export function setActivePageTemplate(doc: CuadernoDocument, templateId: CuadernoTemplateId): CuadernoDocument {
+export function updatePage(
+  doc: CuadernoDocument,
+  pageId: string,
+  patch: Partial<Omit<CuadernoPage, "id">>,
+): CuadernoDocument {
   return {
     ...doc,
-    meta: { ...doc.meta, templateId },
-    pages: doc.pages.map((p) => (p.id === doc.activePageId ? { ...p, templateId } : p)),
+    pages: doc.pages.map((p) => (p.id === pageId ? { ...p, ...patch } : p)),
+    meta:
+      pageId === doc.activePageId && patch.templateId
+        ? { ...doc.meta, templateId: patch.templateId }
+        : doc.meta,
   };
+}
+
+export function setActivePageTemplate(doc: CuadernoDocument, templateId: CuadernoTemplateId): CuadernoDocument {
+  return updatePage(doc, doc.activePageId, { templateId });
 }
 
 export function switchActivePage(doc: CuadernoDocument, pageId: string): CuadernoDocument {
@@ -112,7 +166,11 @@ export function addPage(doc: CuadernoDocument, templateId: CuadernoTemplateId, b
 export function duplicatePage(doc: CuadernoDocument, pageId: string): CuadernoDocument {
   const source = doc.pages.find((p) => p.id === pageId);
   if (!source) return doc;
-  const copy = createPage(source.templateId, source.body, `${source.title} (copia)`);
+  const copy = createPage(source.templateId, source.body, `${source.title} (copia)`, {
+    paperTone: source.paperTone,
+    marginMode: source.marginMode,
+    favorite: false,
+  });
   copy.cover = source.cover;
   const idx = doc.pages.findIndex((p) => p.id === pageId);
   const pages = [...doc.pages];
@@ -142,8 +200,11 @@ export function updatePageCover(
   pageId: string,
   cover: SheetCoverMeta,
 ): CuadernoDocument {
-  return {
-    ...doc,
-    pages: doc.pages.map((p) => (p.id === pageId ? { ...p, cover } : p)),
-  };
+  return updatePage(doc, pageId, { cover });
+}
+
+export function togglePageFavorite(doc: CuadernoDocument, pageId: string): CuadernoDocument {
+  const page = doc.pages.find((p) => p.id === pageId);
+  if (!page) return doc;
+  return updatePage(doc, pageId, { favorite: !page.favorite });
 }

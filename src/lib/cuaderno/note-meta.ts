@@ -1,4 +1,6 @@
 import type { CuadernoTemplateId } from "@/lib/cuaderno/templates";
+import type { CuadernoPageMargin } from "@/lib/cuaderno/page-settings";
+import type { CuadernoPaperTone } from "@/lib/cuaderno/editor-preferences";
 import { wordCountFromNotes } from "@/lib/cuaderno/rich-text";
 
 const META_RE = /^<!--cuaderno:([\s\S]*?)-->\n?/;
@@ -17,6 +19,9 @@ export type CuadernoPageMeta = {
   templateId?: CuadernoTemplateId;
   body?: string;
   cover?: SheetCoverMeta;
+  paperTone?: CuadernoPaperTone;
+  marginMode?: CuadernoPageMargin;
+  favorite?: boolean;
 };
 
 export type CuadernoNoteMeta = {

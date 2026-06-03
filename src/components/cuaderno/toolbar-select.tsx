@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
+import { CuadernoFloatingMenu, FloatingMenuItem } from "@/components/cuaderno/cuaderno-floating-menu";
 
 export function ToolbarSelect<T extends string>({
   label,
@@ -17,50 +18,41 @@ export function ToolbarSelect<T extends string>({
   compact?: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const close = (e: MouseEvent) => {
-      if (!ref.current?.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
-  }, []);
-
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const selected = options.find((o) => o.value === value);
 
   return (
-    <div ref={ref} className={`cn-tb-menu${open ? " is-open" : ""}${compact ? " cn-tb-menu--compact" : ""}`}>
+    <>
       <button
+        ref={triggerRef}
         type="button"
-        className="cn-tb-menu-trigger"
+        className={`cn-tb-menu-trigger-v2${compact ? " cn-tb-menu-trigger-v2--compact" : ""}`}
         onMouseDown={(e) => e.preventDefault()}
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
       >
         <span>{selected?.label ?? label}</span>
-        <ChevronDown size={12} />
+        <ChevronDown size={12} className={open ? "is-open" : ""} />
       </button>
-      {open ? (
-        <div className="cn-tb-menu-panel" role="listbox">
-          {options.map((o) => (
-            <button
-              key={o.value}
-              type="button"
-              role="option"
-              aria-selected={value === o.value}
-              className={value === o.value ? "is-selected" : ""}
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => {
-                onChange(o.value);
-                setOpen(false);
-              }}
-            >
-              {o.label}
-            </button>
-          ))}
-        </div>
-      ) : null}
-    </div>
+      <CuadernoFloatingMenu
+        open={open}
+        onClose={() => setOpen(false)}
+        anchorRef={triggerRef}
+        width={compact ? 160 : 200}
+      >
+        {options.map((o) => (
+          <FloatingMenuItem
+            key={o.value}
+            active={value === o.value}
+            onClick={() => {
+              onChange(o.value);
+              setOpen(false);
+            }}
+          >
+            {o.label}
+          </FloatingMenuItem>
+        ))}
+      </CuadernoFloatingMenu>
+    </>
   );
 }

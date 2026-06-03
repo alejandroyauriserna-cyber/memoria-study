@@ -31,6 +31,8 @@ export type CuadernoTemplateId =
   | "legal-casacion"
   | "legal-contrato"
   | "legal-doctrina"
+  | "legal-resumen-clase"
+  | "legal-prep-examen"
   | "study-exam"
   | "study-qa"
   | "study-quick"
@@ -185,6 +187,8 @@ export const CUADERNO_TEMPLATES: CuadernoTemplate[] = [
   { id: "compare-grid", label: "Cuadro comparativo", description: "Columnas para contrastar tesis", category: "academica", icon: "▦", initialBody: `## Criterio\n\n| Elemento A | Elemento B |\n|---|---|\n| | |\n` },
   { id: "legal-casacion", label: "Casación", description: "Requisitos y decisión del tribunal", category: "juridica", icon: "⚖", initialBody: `## Vía casacional\n\n\n## Requisitos\n\n\n## Decisión\n\n` },
   { id: "legal-doctrina", label: "Comentario doctrinal", description: "Autor, tesis y crítica", category: "juridica", icon: "📖", initialBody: `## Autor / obra\n\n\n## Tesis\n\n\n## Crítica\n\n` },
+  { id: "legal-resumen-clase", label: "Resumen de clase", description: "Síntesis de cátedra con puntos clave", category: "juridica", icon: "⚖", initialBody: `## Tema de la clase\n\n\n## Ideas centrales\n\n\n## Para el examen\n\n` },
+  { id: "legal-prep-examen", label: "Preparación de examen", description: "Checklist y repaso estructurado", category: "juridica", icon: "⚖", initialBody: `## Temas del examen\n\n\n## Preguntas probables\n\n\n## Artículos clave\n\n` },
   { id: "legal-contrato", label: "Contrato", description: "Cláusulas, riesgos y conclusiones", category: "juridica", icon: "📝", initialBody: `## Partes\n\n\n## Objeto\n\n\n## Cláusulas clave\n\n\n## Riesgos\n\n` },
   { id: "study-exam", label: "Examen", description: "Simulacro y respuestas modelo", category: "estudio", icon: "📝", initialBody: `## Pregunta 1\n\n\n## Pregunta 2\n\n` },
   { id: "study-qa", label: "Preguntas y respuestas", description: "Formato QA para repaso", category: "estudio", icon: "?", initialBody: `**P:** \n\n**R:** \n\n` },
