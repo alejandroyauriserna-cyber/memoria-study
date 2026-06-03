@@ -2,6 +2,7 @@ import type { CuadernoTemplateId } from "@/lib/cuaderno/templates";
 import type { CuadernoPageMargin } from "@/lib/cuaderno/page-settings";
 import type { CuadernoPageSizeMode } from "@/lib/cuaderno/page-size";
 import type { InkStroke } from "@/lib/cuaderno/ink-layer";
+import type { DecorationObject } from "@/lib/cuaderno/decoration-objects";
 import type { CuadernoPaperTone } from "@/lib/cuaderno/editor-preferences";
 import { wordCountFromNotes } from "@/lib/cuaderno/rich-text";
 
@@ -26,6 +27,7 @@ export type CuadernoPageMeta = {
   pageSizeMode?: CuadernoPageSizeMode;
   favorite?: boolean;
   inkStrokes?: InkStroke[];
+  decorations?: DecorationObject[];
 };
 
 export type CuadernoNoteMeta = {

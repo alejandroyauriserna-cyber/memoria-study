@@ -8,6 +8,9 @@ import { CuadernoCanvasEditor } from "@/components/cuaderno/cuaderno-canvas-edit
 import { CuadernoAiSidebar } from "@/components/cuaderno/cuaderno-ai-sidebar";
 import { CuadernoImmersiveHeader } from "@/components/cuaderno/cuaderno-immersive-header";
 import { CuadernoFormatPanel } from "@/components/cuaderno/cuaderno-format-panel";
+import { CuadernoStickerPanel } from "@/components/cuaderno/decoration/cuaderno-sticker-panel";
+import { setActivePageDecorations } from "@/lib/cuaderno/cuaderno-pages";
+import type { DecorationObject } from "@/lib/cuaderno/decoration-objects";
 import { useEditorChromeState } from "@/components/cuaderno/cuaderno-editor-chrome";
 import { CuadernoPageSidebar } from "@/components/cuaderno/cuaderno-page-sidebar";
 import { CuadernoBlockInspector } from "@/components/cuaderno/cuaderno-block-inspector";
@@ -44,6 +47,7 @@ import { isCachedFavorite } from "@/lib/cuaderno/collections-client";
 import type { CuadernoAskAction, CuadernoClass, CuadernoDictionaryResponse } from "@/types/cuaderno";
 import "./cuaderno-premium.css";
 import "./cuaderno-paper.css";
+import "./cuaderno-decorations.css";
 
 export function CuadernoImmersiveEditor({ initialClass }: { initialClass: CuadernoClass }) {
   const router = useRouter();
@@ -77,6 +81,7 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
   const [writingMode, setWritingMode] = useState<"text" | "ink">("text");
   const [templateGalleryOpen, setTemplateGalleryOpen] = useState(false);
   const [templateTargetPageId, setTemplateTargetPageId] = useState<string | null>(null);
+  const [stickerPanelOpen, setStickerPanelOpen] = useState(false);
 
   const sync = useCuadernoSyncContextOptional();
   const doc = useMemo(() => parseCuadernoDocument(notes), [notes]);
@@ -327,6 +332,16 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
         onPageSizeChange={(mode) => applyDoc(updatePage(doc, activePage.id, { pageSizeMode: mode }))}
         onOpenFormatPanel={() => setFormatPanelOpen(true)}
         onOpenPageSettings={() => setPageSettingsOpen(true)}
+        onOpenStickers={() => setStickerPanelOpen(true)}
+      />
+
+      <CuadernoStickerPanel
+        open={stickerPanelOpen}
+        onClose={() => setStickerPanelOpen(false)}
+        onAdd={(item: DecorationObject) => {
+          const next = [...(activePage.decorations ?? []), item];
+          applyDoc(setActivePageDecorations(doc, next));
+        }}
       />
 
       <CuadernoFormatPanel

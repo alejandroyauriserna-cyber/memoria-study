@@ -14,8 +14,11 @@ import {
   serializeCuadernoDocument,
   setActivePageBody,
   setActivePageInk,
+  setActivePageDecorations,
   getActivePage,
 } from "@/lib/cuaderno/cuaderno-pages";
+import { CuadernoDecorationLayer } from "@/components/cuaderno/decoration/cuaderno-decoration-layer";
+import type { DecorationObject } from "@/lib/cuaderno/decoration-objects";
 import { getPaperClasses } from "@/lib/cuaderno/paper-styles";
 import type { CuadernoLayoutMode, CuadernoPaperTone } from "@/lib/cuaderno/editor-preferences";
 import { DEFAULT_PAGE_SIZE_MODE, type CuadernoPageSizeMode } from "@/lib/cuaderno/page-size";
@@ -77,6 +80,7 @@ export function CuadernoCanvasEditor({
   const [panMode, setPanMode] = useState<"write" | "pan">("write");
   const [editor, setEditor] = useState<Editor | null>(null);
   const [inkSettings, setInkSettings] = useState<InkToolSettings>(DEFAULT_INK_SETTINGS);
+  const [selectedDecoId, setSelectedDecoId] = useState<string | null>(null);
 
   const doc = parseCuadernoDocument(notes);
   const activePage = getActivePage(doc);
@@ -87,6 +91,7 @@ export function CuadernoCanvasEditor({
   const template = getTemplate(templateId);
   const paperClass = `${getPaperClasses(templateId)} tone-${paperTone} margin-${marginMode}`;
   const inkStrokes = activePage.inkStrokes ?? [];
+  const decorations = activePage.decorations ?? [];
 
   const fitKey = `${doc.activePageId}-${pageSizeMode}-${layoutMode}-${templateId}`;
   const { zoom, setZoom } = useCuadernoPaperFit(viewportRef, shellRef, pageSizeMode, fitKey);
@@ -101,6 +106,13 @@ export function CuadernoCanvasEditor({
   const syncInk = useCallback(
     (strokes: typeof inkStrokes) => {
       onChange(serializeCuadernoDocument(setActivePageInk(doc, strokes)));
+    },
+    [doc, onChange],
+  );
+
+  const syncDecorations = useCallback(
+    (items: DecorationObject[]) => {
+      onChange(serializeCuadernoDocument(setActivePageDecorations(doc, items)));
     },
     [doc, onChange],
   );
@@ -180,6 +192,13 @@ export function CuadernoCanvasEditor({
             onChange={syncInk}
             active={writingMode === "ink"}
             settings={inkSettings}
+          />
+          <CuadernoDecorationLayer
+            decorations={decorations}
+            onChange={syncDecorations}
+            active={writingMode === "text"}
+            selectedId={selectedDecoId}
+            onSelectId={setSelectedDecoId}
           />
         </div>
       </div>

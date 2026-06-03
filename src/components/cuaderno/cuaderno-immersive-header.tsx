@@ -40,6 +40,7 @@ export function CuadernoImmersiveHeader({
   onPageSizeChange,
   onOpenFormatPanel,
   onOpenPageSettings,
+  onOpenStickers,
   compact = false,
 }: {
   courseId: string;
@@ -56,6 +57,7 @@ export function CuadernoImmersiveHeader({
   onPageSizeChange: (mode: CuadernoPageSizeMode) => void;
   onOpenFormatPanel: () => void;
   onOpenPageSettings: () => void;
+  onOpenStickers: () => void;
   compact?: boolean;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -90,6 +92,10 @@ export function CuadernoImmersiveHeader({
       </div>
 
       <div className="cn-immersive-header-actions">
+        <button type="button" className="cn-immersive-header-pill" onClick={onOpenStickers}>
+          <Sparkles size={14} />
+          Stickers
+        </button>
         <button
           type="button"
           className={`cn-immersive-header-ai${aiOpen ? " is-open" : ""}`}

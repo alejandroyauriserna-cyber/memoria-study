@@ -1,0 +1,681 @@
+/* —— Capa de decoraciones (post-its, stickers, washi) —— */
+.cn-decoration-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.cn-decoration-layer.is-active {
+  pointer-events: auto;
+}
+
+.cn-decoration-item {
+  position: absolute;
+  transform-origin: center center;
+  touch-action: none;
+  cursor: grab;
+}
+
+.cn-decoration-item.is-selected {
+  outline: 2px solid color-mix(in srgb, var(--cn-accent, #6366f1) 55%, transparent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.cn-decoration-item.is-locked {
+  cursor: default;
+  opacity: 0.92;
+}
+
+.cn-decoration-toolbar {
+  position: absolute;
+  top: -36px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 2px;
+  padding: 4px 6px;
+  background: rgba(15, 23, 42, 0.92);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  z-index: 10;
+}
+
+.cn-decoration-toolbar button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #f8fafc;
+  cursor: pointer;
+}
+
+.cn-decoration-toolbar button:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.cn-decoration-toolbar button.is-danger:hover {
+  background: rgba(239, 68, 68, 0.35);
+}
+
+.cn-decoration-handle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--cn-accent, #6366f1);
+  border: 2px solid #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  z-index: 5;
+}
+
+.cn-decoration-handle--resize {
+  right: -6px;
+  bottom: -6px;
+  cursor: nwse-resize;
+}
+
+.cn-decoration-handle--rotate {
+  top: -28px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  color: #fff;
+}
+
+.cn-postit-colors {
+  position: absolute;
+  bottom: -32px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 999px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+
+.cn-postit-colors button {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+}
+
+.cn-postit-colors button.is-on {
+  border-color: #0f172a;
+  box-shadow: 0 0 0 1px #fff;
+}
+
+/* Post-it */
+.cn-postit {
+  width: 100%;
+  height: 100%;
+  border-radius: 2px 14px 14px 2px;
+  border: 1px solid;
+  box-shadow:
+    2px 3px 0 rgba(0, 0, 0, 0.06),
+    4px 8px 20px rgba(0, 0, 0, 0.08);
+  padding: 10px 12px;
+  box-sizing: border-box;
+}
+
+.cn-postit-text {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: transparent;
+  resize: none;
+  font-family: "Segoe Print", "Comic Sans MS", cursive, var(--font-sans);
+  font-size: 13px;
+  line-height: 1.45;
+  color: #1e293b;
+  outline: none;
+}
+
+/* Stickers */
+.cn-sticker-glyph {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: clamp(28px, 8vw, 64px);
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.08));
+  user-select: none;
+}
+
+.cn-sticker-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.12));
+}
+
+/* Elementos decorativos */
+.cn-deco-washi {
+  width: 100%;
+  height: 100%;
+  opacity: 0.75;
+  border-radius: 2px;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 6px,
+    rgba(255, 255, 255, 0.35) 6px,
+    rgba(255, 255, 255, 0.35) 12px
+  ) !important;
+}
+
+.cn-deco-tape {
+  width: 100%;
+  height: 100%;
+  opacity: 0.55;
+  transform: skewX(-4deg);
+  border-radius: 1px;
+}
+
+.cn-deco-divider {
+  width: 100%;
+  height: 4px;
+  margin-top: 50%;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  opacity: 0.7;
+}
+
+.cn-deco-frame {
+  width: 100%;
+  height: 100%;
+  border: 3px solid;
+  border-radius: 8px;
+  opacity: 0.65;
+  box-sizing: border-box;
+}
+
+.cn-deco-arrow {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(24px, 6vw, 48px);
+  font-weight: 700;
+}
+
+.cn-deco-highlight {
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+  opacity: 0.45;
+}
+
+/* —— Panel lateral de stickers —— */
+.cn-sticker-panel-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.35);
+  z-index: 120;
+}
+
+.cn-sticker-panel {
+  position: fixed;
+  top: 56px;
+  right: 0;
+  bottom: 0;
+  width: min(360px, 92vw);
+  z-index: 121;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, #fafbff 0%, #f1f5f9 100%);
+  border-left: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: -12px 0 40px rgba(15, 23, 42, 0.12);
+  overflow: hidden;
+}
+
+.cn-sticker-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  font-weight: 700;
+  font-size: 15px;
+  color: #0f172a;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.cn-sticker-panel-head button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #64748b;
+  padding: 4px;
+  border-radius: 8px;
+}
+
+.cn-sticker-panel-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 10px;
+  overflow-x: auto;
+}
+
+.cn-sticker-panel-tabs button {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 6px;
+  font-size: 11px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.cn-sticker-panel-tabs button[data-active="true"] {
+  background: #fff;
+  color: #0f172a;
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.cn-sticker-panel-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 12px 8px;
+  padding: 8px 12px;
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  color: #94a3b8;
+}
+
+.cn-sticker-panel-search input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 13px;
+  background: transparent;
+  color: #0f172a;
+}
+
+.cn-sticker-panel-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 0 12px 10px;
+}
+
+.cn-sticker-panel-filters button {
+  padding: 4px 8px;
+  font-size: 11px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 999px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.cn-sticker-panel-filters button[data-active="true"] {
+  border-color: var(--cn-accent, #6366f1);
+  background: color-mix(in srgb, var(--cn-accent, #6366f1) 12%, #fff);
+}
+
+.cn-sticker-panel > div:not(.cn-sticker-panel-head):not(.cn-sticker-panel-tabs):not(.cn-sticker-panel-foot) {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 8px;
+}
+
+.cn-sticker-grid-section {
+  padding: 0 12px 12px;
+}
+
+.cn-sticker-grid-section h3 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #64748b;
+  margin: 8px 0 6px;
+}
+
+.cn-sticker-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.cn-sticker-cell {
+  position: relative;
+}
+
+.cn-sticker-cell-main {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 6px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 10px;
+  color: #475569;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.cn-sticker-cell-main:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+.cn-sticker-cell-glyph {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.cn-sticker-fav {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  border: none;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #cbd5e1;
+}
+
+.cn-sticker-fav.is-on {
+  color: #f59e0b;
+}
+
+.cn-sticker-postits,
+.cn-sticker-deco-list,
+.cn-sticker-market {
+  padding: 12px 16px;
+  overflow-y: auto;
+}
+
+.cn-sticker-postit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.cn-sticker-postit-btn {
+  padding: 16px;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.cn-sticker-postit-btn.cn-postit-yellow { background: #fef08a; }
+.cn-sticker-postit-btn.cn-postit-green { background: #bbf7d0; }
+.cn-sticker-postit-btn.cn-postit-blue { background: #bfdbfe; }
+.cn-sticker-postit-btn.cn-postit-pink { background: #fbcfe8; }
+.cn-sticker-postit-btn.cn-postit-purple { background: #e9d5ff; }
+
+.cn-sticker-deco-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cn-sticker-deco-list button {
+  padding: 12px 14px;
+  text-align: left;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.cn-sticker-pack-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 12px;
+  margin-bottom: 10px;
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.cn-sticker-pack-emoji {
+  font-size: 32px;
+}
+
+.cn-sticker-pack-card strong {
+  display: block;
+  font-size: 13px;
+}
+
+.cn-sticker-pack-card p {
+  margin: 2px 0;
+  font-size: 11px;
+  color: #64748b;
+}
+
+.cn-sticker-pack-card button {
+  padding: 8px 12px;
+  font-size: 11px;
+  border: none;
+  border-radius: 8px;
+  background: var(--cn-accent, #6366f1);
+  color: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.cn-sticker-panel-foot {
+  padding: 12px;
+  border-top: 1px solid rgba(148, 163, 184, 0.25);
+  background: #fff;
+}
+
+.cn-sticker-quick-ai {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.cn-sticker-quick-ai input {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  font-size: 12px;
+}
+
+.cn-sticker-quick-ai button {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 8px;
+  background: var(--cn-accent, #6366f1);
+  color: #fff;
+  cursor: pointer;
+}
+
+.cn-sticker-designer-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  border: 1px dashed color-mix(in srgb, var(--cn-accent, #6366f1) 50%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--cn-accent, #6366f1) 8%, #fff);
+  color: #0f172a;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* —— Diseñador IA (modal) —— */
+.cn-sticker-designer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  z-index: 130;
+}
+
+.cn-sticker-designer {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(440px, 94vw);
+  max-height: 85vh;
+  z-index: 131;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+.cn-sticker-designer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid #e2e8f0;
+  font-weight: 700;
+}
+
+.cn-sticker-designer-chat {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 16px;
+  min-height: 120px;
+  max-height: 240px;
+}
+
+.cn-sticker-designer-hint {
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.cn-sticker-chat-bubble {
+  margin: 8px 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.45;
+  max-width: 92%;
+}
+
+.cn-sticker-chat-bubble.is-user {
+  margin-left: auto;
+  background: color-mix(in srgb, var(--cn-accent, #6366f1) 15%, #fff);
+  color: #0f172a;
+}
+
+.cn-sticker-chat-bubble.is-assistant {
+  background: #f1f5f9;
+  color: #334155;
+}
+
+.cn-sticker-designer-preview {
+  padding: 12px 16px;
+  text-align: center;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.cn-sticker-designer-preview img {
+  max-width: 160px;
+  max-height: 160px;
+  object-fit: contain;
+}
+
+.cn-sticker-designer-insert {
+  margin-top: 8px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  background: var(--cn-accent, #6366f1);
+  color: #fff;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.cn-sticker-designer-error {
+  padding: 0 16px;
+  font-size: 12px;
+  color: #dc2626;
+}
+
+.cn-sticker-designer-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 16px;
+}
+
+.cn-sticker-designer-suggestions button {
+  font-size: 10px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  cursor: pointer;
+  color: #475569;
+}
+
+.cn-sticker-designer-foot {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.cn-sticker-designer-foot input {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  font-size: 13px;
+}
+
+.cn-sticker-designer-foot button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 10px;
+  background: var(--cn-accent, #6366f1);
+  color: #fff;
+  cursor: pointer;
+  font-weight: 600;
+}
