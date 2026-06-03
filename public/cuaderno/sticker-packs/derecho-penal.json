@@ -1,0 +1,191 @@
+{
+  "version": 1,
+  "pack": {
+    "id": "derecho-penal",
+    "label": "Derecho Penal",
+    "emoji": "⚖️",
+    "description": "Alertas, justicia y sentencias.",
+    "category": "derecho",
+    "stickerIds": [
+      "alerta",
+      "pen-delito",
+      "pen-castigo",
+      "pen-policial",
+      "pen-custodia",
+      "pen-victima",
+      "pen-imputado",
+      "pen-dolo",
+      "pen-culpa",
+      "pen-tentativa",
+      "pen-concurso",
+      "pen-prescrip",
+      "pen-extincion",
+      "pen-arrep",
+      "pen-reincid",
+      "pen-flagrancia"
+    ]
+  },
+  "count": 16,
+  "stickers": [
+    {
+      "id": "alerta",
+      "label": "Alerta legal",
+      "glyph": "⚠️",
+      "category": "derecho",
+      "tags": [
+        "riesgo"
+      ],
+      "svg": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%20role%3D%22img%22%20aria-label%3D%22Alerta%20legal%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3Cfilter%20id%3D%22sh%22%20x%3D%22-20%25%22%20y%3D%22-20%25%22%20width%3D%22140%25%22%20height%3D%22140%25%22%3E%0A%20%20%20%20%20%20%3CfeDropShadow%20dx%3D%220%22%20dy%3D%222%22%20stdDeviation%3D%222%22%20flood-color%3D%22%230f172a%22%20flood-opacity%3D%220.12%22%2F%3E%0A%20%20%20%20%3C%2Ffilter%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2229%22%20fill%3D%22%23eef2ff%22%20stroke%3D%22%236366f1%22%20stroke-width%3D%222%22%20filter%3D%22url(%23sh)%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2224%22%20fill%3D%22none%22%20stroke%3D%22%234338ca%22%20stroke-width%3D%221%22%20stroke-opacity%3D%220.25%22%2F%3E%0A%20%20%3Ctext%20x%3D%2232%22%20y%3D%2240%22%20text-anchor%3D%22middle%22%20font-size%3D%2228%22%20font-family%3D%22Segoe%20UI%20Emoji%2C%20Apple%20Color%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%E2%9A%A0%EF%B8%8F%3C%2Ftext%3E%0A%3C%2Fsvg%3E"
+    },
+    {
+      "id": "pen-delito",
+      "label": "Delito",
+      "glyph": "🚨",
+      "category": "derecho",
+      "tags": [
+        "tipo"
+      ],
+      "svg": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%20role%3D%22img%22%20aria-label%3D%22Delito%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3Cfilter%20id%3D%22sh%22%20x%3D%22-20%25%22%20y%3D%22-20%25%22%20width%3D%22140%25%22%20height%3D%22140%25%22%3E%0A%20%20%20%20%20%20%3CfeDropShadow%20dx%3D%220%22%20dy%3D%222%22%20stdDeviation%3D%222%22%20flood-color%3D%22%230f172a%22%20flood-opacity%3D%220.12%22%2F%3E%0A%20%20%20%20%3C%2Ffilter%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2229%22%20fill%3D%22%23eef2ff%22%20stroke%3D%22%236366f1%22%20stroke-width%3D%222%22%20filter%3D%22url(%23sh)%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2224%22%20fill%3D%22none%22%20stroke%3D%22%234338ca%22%20stroke-width%3D%221%22%20stroke-opacity%3D%220.25%22%2F%3E%0A%20%20%3Ctext%20x%3D%2232%22%20y%3D%2240%22%20text-anchor%3D%22middle%22%20font-size%3D%2228%22%20font-family%3D%22Segoe%20UI%20Emoji%2C%20Apple%20Color%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%9A%A8%3C%2Ftext%3E%0A%3C%2Fsvg%3E"
+    },
+    {
+      "id": "pen-castigo",
+      "label": "Pena",
+      "glyph": "⛓️",
+      "category": "derecho",
+      "tags": [
+        "sancion"
+      ],
+      "svg": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%20role%3D%22img%22%20aria-label%3D%22Pena%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3Cfilter%20id%3D%22sh%22%20x%3D%22-20%25%22%20y%3D%22-20%25%22%20width%3D%22140%25%22%20height%3D%22140%25%22%3E%0A%20%20%20%20%20%20%3CfeDropShadow%20dx%3D%220%22%20dy%3D%222%22%20stdDeviation%3D%222%22%20flood-color%3D%22%230f172a%22%20flood-opacity%3D%220.12%22%2F%3E%0A%20%20%20%20%3C%2Ffilter%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2229%22%20fill%3D%22%23eef2ff%22%20stroke%3D%22%236366f1%22%20stroke-width%3D%222%22%20filter%3D%22url(%23sh)%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2224%22%20fill%3D%22none%22%20stroke%3D%22%234338ca%22%20stroke-width%3D%221%22%20stroke-opacity%3D%220.25%22%2F%3E%0A%20%20%3Ctext%20x%3D%2232%22%20y%3D%2240%22%20text-anchor%3D%22middle%22%20font-size%3D%2228%22%20font-family%3D%22Segoe%20UI%20Emoji%2C%20Apple%20Color%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%E2%9B%93%EF%B8%8F%3C%2Ftext%3E%0A%3C%2Fsvg%3E"
+    },
+    {
+      "id": "pen-policial",
+      "label": "Policía",
+      "glyph": "👮",
+      "category": "derecho",
+      "tags": [
+        "investigacion"
+      ],
+      "svg": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%20role%3D%22img%22%20aria-label%3D%22Polic%C3%ADa%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3Cfilter%20id%3D%22sh%22%20x%3D%22-20%25%22%20y%3D%22-20%25%22%20width%3D%22140%25%22%20height%3D%22140%25%22%3E%0A%20%20%20%20%20%20%3CfeDropShadow%20dx%3D%220%22%20dy%3D%222%22%20stdDeviation%3D%222%22%20flood-color%3D%22%230f172a%22%20flood-opacity%3D%220.12%22%2F%3E%0A%20%20%20%20%3C%2Ffilter%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2229%22%20fill%3D%22%23eef2ff%22%20stroke%3D%22%236366f1%22%20stroke-width%3D%222%22%20filter%3D%22url(%23sh)%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2224%22%20fill%3D%22none%22%20stroke%3D%22%234338ca%22%20stroke-width%3D%221%22%20stroke-opacity%3D%220.25%22%2F%3E%0A%20%20%3Ctext%20x%3D%2232%22%20y%3D%2240%22%20text-anchor%3D%22middle%22%20font-size%3D%2228%22%20font-family%3D%22Segoe%20UI%20Emoji%2C%20Apple%20Color%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%91%AE%3C%2Ftext%3E%0A%3C%2Fsvg%3E"
+    },
+    {
+      "id": "pen-custodia",
+      "label": "Prisión",
+      "glyph": "🔒",
+      "category": "derecho",
+      "tags": [
+        "libertad"
+      ],
+      "svg": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%20role%3D%22img%22%20aria-label%3D%22Prisi%C3%B3n%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3Cfilter%20id%3D%22sh%22%20x%3D%22-20%25%22%20y%3D%22-20%25%22%20width%3D%22140%25%22%20height%3D%22140%25%22%3E%0A%20%20%20%20%20%20%3CfeDropShadow%20dx%3D%220%22%20dy%3D%222%22%20stdDeviation%3D%222%22%20flood-color%3D%22%230f172a%22%20flood-opacity%3D%220.12%22%2F%3E%0A%20%20%20%20%3C%2Ffilter%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2229%22%20fill%3D%22%23eef2ff%22%20stroke%3D%22%236366f1%22%20stroke-width%3D%222%22%20filter%3D%22url(%23sh)%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2224%22%20fill%3D%22none%22%20stroke%3D%22%234338ca%22%20stroke-width%3D%221%22%20stroke-opacity%3D%220.25%22%2F%3E%0A%20%20%3Ctext%20x%3D%2232%22%20y%3D%2240%22%20text-anchor%3D%22middle%22%20font-size%3D%2228%22%20font-family%3D%22Segoe%20UI%20Emoji%2C%20Apple%20Color%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%94%92%3C%2Ftext%3E%0A%3C%2Fsvg%3E"
+    },
+    {
+      "id": "pen-victima",
+      "label": "Víctima",
+      "glyph": "💔",
+      "category": "derecho",
+      "tags": [
+        "ofendido"
+      ],
+      "svg": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%20role%3D%22img%22%20aria-label%3D%22V%C3%ADctima%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3Cfilter%20id%3D%22sh%22%20x%3D%22-20%25%22%20y%3D%22-20%25%22%20width%3D%22140%25%22%20height%3D%22140%25%22%3E%0A%20%20%20%20%20%20%3CfeDropShadow%20dx%3D%220%22%20dy%3D%222%22%20stdDeviation%3D%222%22%20flood-color%3D%22%230f172a%22%20flood-opacity%3D%220.12%22%2F%3E%0A%20%20%20%20%3C%2Ffilter%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2229%22%20fill%3D%22%23eef2ff%22%20stroke%3D%22%236366f1%22%20stroke-width%3D%222%22%20filter%3D%22url(%23sh)%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2224%22%20fill%3D%22none%22%20stroke%3D%22%234338ca%22%20stroke-width%3D%221%22%20stroke-opacity%3D%220.25%22%2F%3E%0A%20%20%3Ctext%20x%3D%2232%22%20y%3D%2240%22%20text-anchor%3D%22middle%22%20font-size%3D%2228%22%20font-family%3D%22Segoe%20UI%20Emoji%2C%20Apple%20Color%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%92%94%3C%2Ftext%3E%0A%3C%2Fsvg%3E"
+    },
+    {
+      "id": "pen-imputado",
+      "label": "Imputado",
+      "glyph": "🧑‍⚖️",
+      "category": "derecho",
+      "tags": [
+        "acusado"
+      ],
+      "svg": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%20role%3D%22img%22%20aria-label%3D%22Imputado%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3Cfilter%20id%3D%22sh%22%20x%3D%22-20%25%22%20y%3D%22-20%25%22%20width%3D%22140%25%22%20height%3D%22140%25%22%3E%0A%20%20%20%20%20%20%3CfeDropShadow%20dx%3D%220%22%20dy%3D%222%22%20stdDeviation%3D%222%22%20flood-color%3D%22%230f172a%22%20flood-opacity%3D%220.12%22%2F%3E%0A%20%20%20%20%3C%2Ffilter%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2229%22%20fill%3D%22%23eef2ff%22%20stroke%3D%22%236366f1%22%20stroke-width%3D%222%22%20filter%3D%22url(%23sh)%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2224%22%20fill%3D%22none%22%20stroke%3D%22%234338ca%22%20stroke-width%3D%221%22%20stroke-opacity%3D%220.25%22%2F%3E%0A%20%20%3Ctext%20x%3D%2232%22%20y%3D%2240%22%20text-anchor%3D%22middle%22%20font-size%3D%2228%22%20font-family%3D%22Segoe%20UI%20Emoji%2C%20Apple%20Color%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%A7%91%E2%80%8D%E2%9A%96%EF%B8%8F%3C%2Ftext%3E%0A%3C%2Fsvg%3E"
+    },
+    {
+      "id": "pen-dolo",
+      "label": "Dolo",
+      "glyph": "🎭",
+      "category": "derecho",
+      "tags": [
+        "intencion"
+      ],
+      "svg": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%20role%3D%22img%22%20aria-label%3D%22Dolo%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3Cfilter%20id%3D%22sh%22%20x%3D%22-20%25%22%20y%3D%22-20%25%22%20width%3D%22140%25%22%20height%3D%22140%25%22%3E%0A%20%20%20%20%20%20%3CfeDropShadow%20dx%3D%220%22%20dy%3D%222%22%20stdDeviation%3D%222%22%20flood-color%3D%22%230f172a%22%20flood-opacity%3D%220.12%22%2F%3E%0A%20%20%20%20%3C%2Ffilter%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2229%22%20fill%3D%22%23eef2ff%22%20stroke%3D%22%236366f1%22%20stroke-width%3D%222%22%20filter%3D%22url(%23sh)%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2224%22%20fill%3D%22none%22%20stroke%3D%22%234338ca%22%20stroke-width%3D%221%22%20stroke-opacity%3D%220.25%22%2F%3E%0A%20%20%3Ctext%20x%3D%2232%22%20y%3D%2240%22%20text-anchor%3D%22middle%22%20font-size%3D%2228%22%20font-family%3D%22Segoe%20UI%20Emoji%2C%20Apple%20Color%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%8E%AD%3C%2Ftext%3E%0A%3C%2Fsvg%3E"
+    },
+    {
+      "id": "pen-culpa",
+      "label": "Culpa",
+      "glyph": "😓",
+      "category": "derecho",
+      "tags": [
+        "negligencia"
+      ],
+      "svg": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%20role%3D%22img%22%20aria-label%3D%22Culpa%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3Cfilter%20id%3D%22sh%22%20x%3D%22-20%25%22%20y%3D%22-20%25%22%20width%3D%22140%25%22%20height%3D%22140%25%22%3E%0A%20%20%20%20%20%20%3CfeDropShadow%20dx%3D%220%22%20dy%3D%222%22%20stdDeviation%3D%222%22%20flood-color%3D%22%230f172a%22%20flood-opacity%3D%220.12%22%2F%3E%0A%20%20%20%20%3C%2Ffilter%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2229%22%20fill%3D%22%23eef2ff%22%20stroke%3D%22%236366f1%22%20stroke-width%3D%222%22%20filter%3D%22url(%23sh)%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2224%22%20fill%3D%22none%22%20stroke%3D%22%234338ca%22%20stroke-width%3D%221%22%20stroke-opacity%3D%220.25%22%2F%3E%0A%20%20%3Ctext%20x%3D%2232%22%20y%3D%2240%22%20text-anchor%3D%22middle%22%20font-size%3D%2228%22%20font-family%3D%22Segoe%20UI%20Emoji%2C%20Apple%20Color%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%98%93%3C%2Ftext%3E%0A%3C%2Fsvg%3E"
+    },
+    {
+      "id": "pen-tentativa",
+      "label": "Tentativa",
+      "glyph": "🎯",
+      "category": "derecho",
+      "tags": [
+        "inicio"
+      ],
+      "svg": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%20role%3D%22img%22%20aria-label%3D%22Tentativa%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3Cfilter%20id%3D%22sh%22%20x%3D%22-20%25%22%20y%3D%22-20%25%22%20width%3D%22140%25%22%20height%3D%22140%25%22%3E%0A%20%20%20%20%20%20%3CfeDropShadow%20dx%3D%220%22%20dy%3D%222%22%20stdDeviation%3D%222%22%20flood-color%3D%22%230f172a%22%20flood-opacity%3D%220.12%22%2F%3E%0A%20%20%20%20%3C%2Ffilter%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2229%22%20fill%3D%22%23eef2ff%22%20stroke%3D%22%236366f1%22%20stroke-width%3D%222%22%20filter%3D%22url(%23sh)%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2224%22%20fill%3D%22none%22%20stroke%3D%22%234338ca%22%20stroke-width%3D%221%22%20stroke-opacity%3D%220.25%22%2F%3E%0A%20%20%3Ctext%20x%3D%2232%22%20y%3D%2240%22%20text-anchor%3D%22middle%22%20font-size%3D%2228%22%20font-family%3D%22Segoe%20UI%20Emoji%2C%20Apple%20Color%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%8E%AF%3C%2Ftext%3E%0A%3C%2Fsvg%3E"
+    },
+    {
+      "id": "pen-concurso",
+      "label": "Concurso",
+      "glyph": "📊",
+      "category": "derecho",
+      "tags": [
+        "pluralidad"
+      ],
+      "svg": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%20role%3D%22img%22%20aria-label%3D%22Concurso%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3Cfilter%20id%3D%22sh%22%20x%3D%22-20%25%22%20y%3D%22-20%25%22%20width%3D%22140%25%22%20height%3D%22140%25%22%3E%0A%20%20%20%20%20%20%3CfeDropShadow%20dx%3D%220%22%20dy%3D%222%22%20stdDeviation%3D%222%22%20flood-color%3D%22%230f172a%22%20flood-opacity%3D%220.12%22%2F%3E%0A%20%20%20%20%3C%2Ffilter%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2229%22%20fill%3D%22%23eef2ff%22%20stroke%3D%22%236366f1%22%20stroke-width%3D%222%22%20filter%3D%22url(%23sh)%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2224%22%20fill%3D%22none%22%20stroke%3D%22%234338ca%22%20stroke-width%3D%221%22%20stroke-opacity%3D%220.25%22%2F%3E%0A%20%20%3Ctext%20x%3D%2232%22%20y%3D%2240%22%20text-anchor%3D%22middle%22%20font-size%3D%2228%22%20font-family%3D%22Segoe%20UI%20Emoji%2C%20Apple%20Color%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%93%8A%3C%2Ftext%3E%0A%3C%2Fsvg%3E"
+    },
+    {
+      "id": "pen-prescrip",
+      "label": "Prescripción",
+      "glyph": "⏳",
+      "category": "derecho",
+      "tags": [
+        "tiempo"
+      ],
+      "svg": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%20role%3D%22img%22%20aria-label%3D%22Prescripci%C3%B3n%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3Cfilter%20id%3D%22sh%22%20x%3D%22-20%25%22%20y%3D%22-20%25%22%20width%3D%22140%25%22%20height%3D%22140%25%22%3E%0A%20%20%20%20%20%20%3CfeDropShadow%20dx%3D%220%22%20dy%3D%222%22%20stdDeviation%3D%222%22%20flood-color%3D%22%230f172a%22%20flood-opacity%3D%220.12%22%2F%3E%0A%20%20%20%20%3C%2Ffilter%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2229%22%20fill%3D%22%23eef2ff%22%20stroke%3D%22%236366f1%22%20stroke-width%3D%222%22%20filter%3D%22url(%23sh)%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2224%22%20fill%3D%22none%22%20stroke%3D%22%234338ca%22%20stroke-width%3D%221%22%20stroke-opacity%3D%220.25%22%2F%3E%0A%20%20%3Ctext%20x%3D%2232%22%20y%3D%2240%22%20text-anchor%3D%22middle%22%20font-size%3D%2228%22%20font-family%3D%22Segoe%20UI%20Emoji%2C%20Apple%20Color%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%E2%8F%B3%3C%2Ftext%3E%0A%3C%2Fsvg%3E"
+    },
+    {
+      "id": "pen-extincion",
+      "label": "Extinción",
+      "glyph": "🌅",
+      "category": "derecho",
+      "tags": [
+        "punibilidad"
+      ],
+      "svg": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%20role%3D%22img%22%20aria-label%3D%22Extinci%C3%B3n%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3Cfilter%20id%3D%22sh%22%20x%3D%22-20%25%22%20y%3D%22-20%25%22%20width%3D%22140%25%22%20height%3D%22140%25%22%3E%0A%20%20%20%20%20%20%3CfeDropShadow%20dx%3D%220%22%20dy%3D%222%22%20stdDeviation%3D%222%22%20flood-color%3D%22%230f172a%22%20flood-opacity%3D%220.12%22%2F%3E%0A%20%20%20%20%3C%2Ffilter%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2229%22%20fill%3D%22%23eef2ff%22%20stroke%3D%22%236366f1%22%20stroke-width%3D%222%22%20filter%3D%22url(%23sh)%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2224%22%20fill%3D%22none%22%20stroke%3D%22%234338ca%22%20stroke-width%3D%221%22%20stroke-opacity%3D%220.25%22%2F%3E%0A%20%20%3Ctext%20x%3D%2232%22%20y%3D%2240%22%20text-anchor%3D%22middle%22%20font-size%3D%2228%22%20font-family%3D%22Segoe%20UI%20Emoji%2C%20Apple%20Color%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%8C%85%3C%2Ftext%3E%0A%3C%2Fsvg%3E"
+    },
+    {
+      "id": "pen-arrep",
+      "label": "Arrepentimiento",
+      "glyph": "🙏",
+      "category": "derecho",
+      "tags": [
+        "atenuante"
+      ],
+      "svg": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%20role%3D%22img%22%20aria-label%3D%22Arrepentimiento%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3Cfilter%20id%3D%22sh%22%20x%3D%22-20%25%22%20y%3D%22-20%25%22%20width%3D%22140%25%22%20height%3D%22140%25%22%3E%0A%20%20%20%20%20%20%3CfeDropShadow%20dx%3D%220%22%20dy%3D%222%22%20stdDeviation%3D%222%22%20flood-color%3D%22%230f172a%22%20flood-opacity%3D%220.12%22%2F%3E%0A%20%20%20%20%3C%2Ffilter%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2229%22%20fill%3D%22%23eef2ff%22%20stroke%3D%22%236366f1%22%20stroke-width%3D%222%22%20filter%3D%22url(%23sh)%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2224%22%20fill%3D%22none%22%20stroke%3D%22%234338ca%22%20stroke-width%3D%221%22%20stroke-opacity%3D%220.25%22%2F%3E%0A%20%20%3Ctext%20x%3D%2232%22%20y%3D%2240%22%20text-anchor%3D%22middle%22%20font-size%3D%2228%22%20font-family%3D%22Segoe%20UI%20Emoji%2C%20Apple%20Color%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%99%8F%3C%2Ftext%3E%0A%3C%2Fsvg%3E"
+    },
+    {
+      "id": "pen-reincid",
+      "label": "Reincidencia",
+      "glyph": "🔁",
+      "category": "derecho",
+      "tags": [
+        "agravante"
+      ],
+      "svg": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%20role%3D%22img%22%20aria-label%3D%22Reincidencia%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3Cfilter%20id%3D%22sh%22%20x%3D%22-20%25%22%20y%3D%22-20%25%22%20width%3D%22140%25%22%20height%3D%22140%25%22%3E%0A%20%20%20%20%20%20%3CfeDropShadow%20dx%3D%220%22%20dy%3D%222%22%20stdDeviation%3D%222%22%20flood-color%3D%22%230f172a%22%20flood-opacity%3D%220.12%22%2F%3E%0A%20%20%20%20%3C%2Ffilter%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2229%22%20fill%3D%22%23eef2ff%22%20stroke%3D%22%236366f1%22%20stroke-width%3D%222%22%20filter%3D%22url(%23sh)%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2224%22%20fill%3D%22none%22%20stroke%3D%22%234338ca%22%20stroke-width%3D%221%22%20stroke-opacity%3D%220.25%22%2F%3E%0A%20%20%3Ctext%20x%3D%2232%22%20y%3D%2240%22%20text-anchor%3D%22middle%22%20font-size%3D%2228%22%20font-family%3D%22Segoe%20UI%20Emoji%2C%20Apple%20Color%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%94%81%3C%2Ftext%3E%0A%3C%2Fsvg%3E"
+    },
+    {
+      "id": "pen-flagrancia",
+      "label": "Flagrancia",
+      "glyph": "📸",
+      "category": "derecho",
+      "tags": [
+        "captura"
+      ],
+      "svg": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%20role%3D%22img%22%20aria-label%3D%22Flagrancia%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3Cfilter%20id%3D%22sh%22%20x%3D%22-20%25%22%20y%3D%22-20%25%22%20width%3D%22140%25%22%20height%3D%22140%25%22%3E%0A%20%20%20%20%20%20%3CfeDropShadow%20dx%3D%220%22%20dy%3D%222%22%20stdDeviation%3D%222%22%20flood-color%3D%22%230f172a%22%20flood-opacity%3D%220.12%22%2F%3E%0A%20%20%20%20%3C%2Ffilter%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2229%22%20fill%3D%22%23eef2ff%22%20stroke%3D%22%236366f1%22%20stroke-width%3D%222%22%20filter%3D%22url(%23sh)%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2224%22%20fill%3D%22none%22%20stroke%3D%22%234338ca%22%20stroke-width%3D%221%22%20stroke-opacity%3D%220.25%22%2F%3E%0A%20%20%3Ctext%20x%3D%2232%22%20y%3D%2240%22%20text-anchor%3D%22middle%22%20font-size%3D%2228%22%20font-family%3D%22Segoe%20UI%20Emoji%2C%20Apple%20Color%20Emoji%2C%20Noto%20Color%20Emoji%2C%20sans-serif%22%3E%F0%9F%93%B8%3C%2Ftext%3E%0A%3C%2Fsvg%3E"
+    }
+  ]
+}

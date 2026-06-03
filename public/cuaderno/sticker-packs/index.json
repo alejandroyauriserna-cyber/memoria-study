@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "packs": [
+    {
+      "id": "derecho-constitucional",
+      "label": "Derecho Constitucional",
+      "emoji": "🏛️",
+      "file": "/cuaderno/sticker-packs/derecho-constitucional.json"
+    },
+    {
+      "id": "derecho-civil",
+      "label": "Derecho Civil",
+      "emoji": "📕",
+      "file": "/cuaderno/sticker-packs/derecho-civil.json"
+    },
+    {
+      "id": "derecho-penal",
+      "label": "Derecho Penal",
+      "emoji": "⚖️",
+      "file": "/cuaderno/sticker-packs/derecho-penal.json"
+    },
+    {
+      "id": "derecho-tributario",
+      "label": "Derecho Tributario",
+      "emoji": "💰",
+      "file": "/cuaderno/sticker-packs/derecho-tributario.json"
+    },
+    {
+      "id": "derecho-procesal",
+      "label": "Derecho Procesal",
+      "emoji": "📋",
+      "file": "/cuaderno/sticker-packs/derecho-procesal.json"
+    },
+    {
+      "id": "examenes-finales",
+      "label": "Exámenes Finales",
+      "emoji": "🔥",
+      "file": "/cuaderno/sticker-packs/examenes-finales.json"
+    },
+    {
+      "id": "productividad-uni",
+      "label": "Productividad Universitaria",
+      "emoji": "☕",
+      "file": "/cuaderno/sticker-packs/productividad-uni.json"
+    }
+  ]
+}

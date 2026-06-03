@@ -45,33 +45,10 @@ export const STICKER_CATEGORIES: Array<{ id: StickerCategoryId; label: string; i
   { id: "corporativo", label: "Corporativo", icon: "💼" },
 ];
 
-export const STICKER_CATALOG: StickerCatalogItem[] = [
-  { id: "balanza", label: "Balanza", glyph: "⚖️", category: "derecho", tags: ["justicia", "ley"], packIds: ["derecho-constitucional", "derecho-civil"] },
-  { id: "martillo", label: "Martillo", glyph: "🔨", category: "derecho", tags: ["juez", "sentencia"], packIds: ["derecho-procesal"] },
-  { id: "constitucion", label: "Constitución", glyph: "📜", category: "constitucional", tags: ["norma", "estado"], packIds: ["derecho-constitucional"] },
-  { id: "libro", label: "Libro abierto", glyph: "📖", category: "estudio", tags: ["leer", "clase"], packIds: ["productividad-uni", "derecho-civil"] },
-  { id: "codigo", label: "Código civil", glyph: "📕", category: "legislacion", tags: ["codigo", "articulo"], packIds: ["derecho-civil"] },
-  { id: "pergamino", label: "Pergamino", glyph: "📃", category: "legislacion", tags: ["decreto", "ley"], packIds: ["derecho-constitucional"] },
-  { id: "juez", label: "Juez", glyph: "👨‍⚖️", category: "derecho", tags: ["tribunal"], packIds: ["derecho-procesal"] },
-  { id: "toga", label: "Toga", glyph: "🎓", category: "universidad", tags: ["abogado", "egresado"], packIds: ["productividad-uni"] },
-  { id: "sello", label: "Sello notarial", glyph: "🔏", category: "derecho", tags: ["notaria", "fe"], packIds: ["derecho-civil"] },
-  { id: "marcador", label: "Marcador", glyph: "🖍️", category: "apuntes", tags: ["resaltar"], packIds: ["productividad-uni", "examenes-finales"] },
-  { id: "estrella", label: "Estrella", glyph: "⭐", category: "motivacion", tags: ["importante"], packIds: ["examenes-finales", "productividad-uni"] },
-  { id: "check", label: "Check", glyph: "✅", category: "productividad", tags: ["hecho", "lista"], packIds: ["productividad-uni", "examenes-finales"] },
-  { id: "idea", label: "Idea", glyph: "💡", category: "estudio", tags: ["concepto", "foco"], packIds: ["productividad-uni"] },
-  { id: "cerebro", label: "IA / mente", glyph: "🧠", category: "ia", tags: ["inteligencia"], packIds: ["productividad-uni"] },
-  { id: "cafe", label: "Café estudio", glyph: "☕", category: "productividad", tags: ["focus"], packIds: ["productividad-uni", "examenes-finales"] },
-  { id: "reloj", label: "Fecha límite", glyph: "⏰", category: "productividad", tags: ["examen", "fecha"], packIds: ["examenes-finales"] },
-  { id: "corazon-kawaii", label: "Kawaii", glyph: "💖", category: "kawaii", tags: ["cute"], packIds: ["productividad-uni"] },
-  { id: "tribunal", label: "Tribunal", glyph: "🏛️", category: "constitucional", tags: ["estado"], packIds: ["derecho-constitucional"] },
-  { id: "maletin", label: "Corporativo", glyph: "💼", category: "corporativo", tags: ["empresa"], packIds: ["derecho-tributario"] },
-  { id: "alerta", label: "Alerta legal", glyph: "⚠️", category: "derecho", tags: ["riesgo"], packIds: ["derecho-penal"] },
-  { id: "dinero", label: "Tributario", glyph: "💰", category: "corporativo", tags: ["impuesto"], packIds: ["derecho-tributario"] },
-  { id: "mano", label: "Firmar", glyph: "✍️", category: "apuntes", tags: ["firma"], packIds: ["derecho-civil"] },
-  { id: "clip", label: "Clip", glyph: "📎", category: "apuntes", tags: ["adjunto"], packIds: ["productividad-uni"] },
-  { id: "fuego", label: "Urgente", glyph: "🔥", category: "motivacion", tags: ["prioridad"], packIds: ["examenes-finales"] },
-  { id: "target", label: "Meta", glyph: "🎯", category: "motivacion", tags: ["objetivo"], packIds: ["examenes-finales"] },
-];
+import { STICKER_CATALOG_ITEMS } from "@/lib/cuaderno/sticker-catalog-items";
+import { getStickerSvgDataUrl } from "@/lib/cuaderno/sticker-svg";
+
+export const STICKER_CATALOG: StickerCatalogItem[] = STICKER_CATALOG_ITEMS;
 
 export const STICKER_MARKETPLACE: StickerPack[] = [
   {
@@ -134,6 +111,23 @@ export const STICKER_MARKETPLACE: StickerPack[] = [
 
 export function getStickerById(id: string): StickerCatalogItem | undefined {
   return STICKER_CATALOG.find((s) => s.id === id);
+}
+
+export function getPackExport(packId: string) {
+  const pack = STICKER_MARKETPLACE.find((p) => p.id === packId);
+  if (!pack) return null;
+  const stickers = pack.stickerIds
+    .map((id) => getStickerById(id))
+    .filter((s): s is StickerCatalogItem => !!s)
+    .map((s) => ({
+      id: s.id,
+      label: s.label,
+      glyph: s.glyph,
+      category: s.category,
+      tags: s.tags,
+      svg: getStickerSvgDataUrl(s),
+    }));
+  return { pack, stickers, count: stickers.length };
 }
 
 export function searchStickers(query: string, category?: StickerCategoryId | "all"): StickerCatalogItem[] {

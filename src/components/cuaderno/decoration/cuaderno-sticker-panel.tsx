@@ -12,6 +12,11 @@ import {
   type PostItColor,
 } from "@/lib/cuaderno/decoration-objects";
 import {
+  DECORATION_DRAG_MIME,
+  encodeDecorationDrag,
+} from "@/lib/cuaderno/decoration-drag";
+import { getStickerSvgDataUrl } from "@/lib/cuaderno/sticker-svg";
+import {
   STICKER_CATEGORIES,
   STICKER_MARKETPLACE,
   getStickerById,
@@ -66,7 +71,7 @@ export function CuadernoStickerPanel({
   );
 
   const addSticker = (item: StickerCatalogItem) => {
-    const dec = createStickerFromCatalog(item.id, undefined, item.label);
+    const dec = createStickerFromCatalog(item.id, getStickerSvgDataUrl(item), item.label);
     onAdd(dec);
     const next = [item.id, ...recents.filter((id) => id !== item.id)];
     setRecents(next);
@@ -121,7 +126,10 @@ export function CuadernoStickerPanel({
               transition={{ type: "spring", stiffness: 380, damping: 36 }}
             >
               <header className="cn-sticker-panel-head">
-                <span>✨ Stickers</span>
+                <div>
+                  <span>✨ Stickers</span>
+                  <p className="cn-sticker-panel-hint">Arrastra a la hoja o haz clic para insertar</p>
+                </div>
                 <button type="button" onClick={onClose} aria-label="Cerrar">
                   <X size={18} />
                 </button>
@@ -202,13 +210,21 @@ export function CuadernoStickerPanel({
 
               {tab === "postits" ? (
                 <div className="cn-sticker-postits">
-                  <p>Arrastra un color a la hoja (se inserta al centro)</p>
+                  <p>Arrastra un color a la hoja o pulsa para insertar</p>
                   <div className="cn-sticker-postit-grid">
                     {(["yellow", "green", "blue", "pink", "purple"] as PostItColor[]).map((c) => (
                       <button
                         key={c}
                         type="button"
-                        className={`cn-sticker-postit-btn cn-postit-${c}`}
+                        className={`cn-sticker-postit-btn cn-postit-${c} cn-draggable-source`}
+                        draggable
+                        onDragStart={(e) => {
+                          e.dataTransfer.setData(
+                            DECORATION_DRAG_MIME,
+                            encodeDecorationDrag({ type: "postit", color: c }),
+                          );
+                          e.dataTransfer.effectAllowed = "copy";
+                        }}
                         onClick={() => onAdd(createPostIt(c))}
                       >
                         📝 {c}
@@ -233,6 +249,15 @@ export function CuadernoStickerPanel({
                     <button
                       key={kind}
                       type="button"
+                      className="cn-draggable-source"
+                      draggable
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData(
+                          DECORATION_DRAG_MIME,
+                          encodeDecorationDrag({ type: "deco", kind }),
+                        );
+                        e.dataTransfer.effectAllowed = "copy";
+                      }}
                       onClick={() => onAdd(createDecoElement(kind))}
                     >
                       {label}
@@ -251,17 +276,26 @@ export function CuadernoStickerPanel({
                         <p>{pack.description}</p>
                         <span>{pack.stickerIds.length} stickers</span>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          pack.stickerIds.forEach((id) => {
-                            const s = getStickerById(id);
-                            if (s) addSticker(s);
-                          });
-                        }}
-                      >
-                        Añadir pack
-                      </button>
+                      <div className="cn-sticker-pack-actions">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            pack.stickerIds.forEach((id) => {
+                              const s = getStickerById(id);
+                              if (s) addSticker(s);
+                            });
+                          }}
+                        >
+                          Añadir pack
+                        </button>
+                        <a
+                          href={`/api/cuaderno/stickers/packs/${pack.id}`}
+                          download={`${pack.id}.json`}
+                          className="cn-sticker-pack-download"
+                        >
+                          Descargar
+                        </a>
+                      </div>
                     </article>
                   ))}
                 </div>
@@ -318,8 +352,25 @@ function StickerGrid({
       <div className="cn-sticker-grid">
         {items.map((item) => (
           <div key={item.id} className="cn-sticker-cell">
-            <button type="button" className="cn-sticker-cell-main" onClick={() => onPick(item)}>
-              <span className="cn-sticker-cell-glyph">{item.glyph}</span>
+            <button
+              type="button"
+              className="cn-sticker-cell-main cn-draggable-source"
+              draggable
+              onDragStart={(e) => {
+                e.dataTransfer.setData(
+                  DECORATION_DRAG_MIME,
+                  encodeDecorationDrag({ type: "sticker", stickerId: item.id }),
+                );
+                e.dataTransfer.effectAllowed = "copy";
+              }}
+              onClick={() => onPick(item)}
+            >
+              <img
+                src={getStickerSvgDataUrl(item)}
+                alt=""
+                className="cn-sticker-cell-img"
+                draggable={false}
+              />
               <span>{item.label}</span>
             </button>
             <button

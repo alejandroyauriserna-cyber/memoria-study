@@ -18,6 +18,9 @@ import {
   type PostItColor,
 } from "@/lib/cuaderno/decoration-objects";
 import { getStickerById } from "@/lib/cuaderno/sticker-catalog";
+import { getStickerSvgDataUrl } from "@/lib/cuaderno/sticker-svg";
+import { parseDecorationDrag } from "@/lib/cuaderno/decoration-drag";
+import { createDecorationFromDrop } from "@/lib/cuaderno/decoration-drop-factory";
 
 type DragMode = "move" | "resize" | "rotate" | null;
 
@@ -126,15 +129,42 @@ export function CuadernoDecorationLayer({
   };
 
   const sorted = sortByZIndex(decorations);
+  const [dragOver, setDragOver] = useState(false);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    if (!active) return;
+    if (!e.dataTransfer.types.includes("application/x-cuaderno-decoration")) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+    setDragOver(true);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    if (!active) return;
+    const payload = parseDecorationDrag(e.dataTransfer);
+    if (!payload) return;
+    const norm = toNorm(e.clientX, e.clientY);
+    if (!norm) return;
+    const item = createDecorationFromDrop(payload, { x: norm.nx, y: norm.ny });
+    if (!item) return;
+    onChange([...decorations, item]);
+    onSelectId(item.id);
+  };
 
   return (
     <div
       ref={layerRef}
-      className={`cn-decoration-layer${active ? " is-active" : ""}`}
+      className={`cn-decoration-layer${active ? " is-active" : ""}${dragOver ? " is-drag-over" : ""}`}
       onPointerDown={onLayerPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={endDrag}
       onPointerCancel={endDrag}
+      onDragEnter={handleDragOver}
+      onDragOver={handleDragOver}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={handleDrop}
     >
       {sorted.map((obj) => {
         const selected = selectedId === obj.id;
@@ -247,9 +277,10 @@ function DecorationBody({
 
   if (obj.kind === "sticker") {
     const catalog = obj.stickerId ? getStickerById(obj.stickerId) : undefined;
-    if (obj.src) {
+    const src = obj.src ?? (catalog ? getStickerSvgDataUrl(catalog) : undefined);
+    if (src) {
       return (
-        <img src={obj.src} alt={obj.label ?? ""} className="cn-sticker-img" draggable={false} />
+        <img src={src} alt={obj.label ?? catalog?.label ?? ""} className="cn-sticker-img" draggable={false} />
       );
     }
     return (

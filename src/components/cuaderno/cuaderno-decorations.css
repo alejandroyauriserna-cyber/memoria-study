@@ -11,6 +11,12 @@
   pointer-events: auto;
 }
 
+.cn-decoration-layer.is-drag-over {
+  outline: 2px dashed color-mix(in srgb, var(--cn-accent, #6366f1) 70%, transparent);
+  outline-offset: -4px;
+  background: color-mix(in srgb, var(--cn-accent, #6366f1) 6%, transparent);
+}
+
 .cn-decoration-item {
   position: absolute;
   transform-origin: center center;
@@ -250,13 +256,21 @@
 
 .cn-sticker-panel-head {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
+  gap: 8px;
   padding: 14px 16px;
   font-weight: 700;
   font-size: 15px;
   color: #0f172a;
   border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.cn-sticker-panel-hint {
+  margin: 4px 0 0;
+  font-size: 11px;
+  font-weight: 400;
+  color: #64748b;
 }
 
 .cn-sticker-panel-head button {
@@ -389,6 +403,44 @@
 .cn-sticker-cell-glyph {
   font-size: 28px;
   line-height: 1;
+}
+
+.cn-sticker-cell-img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+
+.cn-draggable-source[draggable="true"] {
+  cursor: grab;
+}
+
+.cn-draggable-source[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+.cn-sticker-pack-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: stretch;
+}
+
+.cn-sticker-pack-download {
+  display: block;
+  text-align: center;
+  padding: 6px 10px;
+  font-size: 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  color: #475569;
+  text-decoration: none;
+  background: #f8fafc;
+}
+
+.cn-sticker-pack-download:hover {
+  background: #f1f5f9;
+  color: #0f172a;
 }
 
 .cn-sticker-fav {
