@@ -32,10 +32,11 @@ export function buildLegalSourcesPromptBlock(
   const strictBlock = strictMode
     ? `
 MODO ESTRICTO ACADÉMICO ACTIVO:
-- Responde ÚNICAMENTE con las fuentes autorizadas listadas abajo.
-- Si la respuesta no está en esas fuentes ni en el PDF en estudio, responde exactamente:
+- Responde ÚNICAMENTE con las fuentes autorizadas listadas abajo Y el texto del PDF en estudio.
+- El PDF que el estudiante está leyendo SIEMPRE está autorizado como fuente principal.
+- Si la respuesta no está en esas fuentes ni en el PDF, responde exactamente:
   "No encontré esta información dentro de las fuentes autorizadas por el usuario."
-- NO uses conocimiento general del modelo.
+- NO uses conocimiento general del modelo fuera de las fuentes autorizadas.
 - Cuando haya contradicción, indica qué fuente prevalece según la jerarquía.
 `
     : `

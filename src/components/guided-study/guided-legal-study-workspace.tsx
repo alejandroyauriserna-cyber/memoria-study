@@ -149,10 +149,11 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
           activeSources: payload.activeSources ?? [],
         });
       } catch (caught) {
-        setTutorState((prev) => ({
-          ...prev,
+        setTutorState({
+          analysis: null,
           customReply: caught instanceof Error ? caught.message : "Error consultando al profesor.",
-        }));
+          activeSources: [],
+        });
       } finally {
         setTutorLoading(false);
       }

@@ -179,28 +179,37 @@ export function LegalTutorPanel({
             <Loader2 size={22} className="animate-spin text-[#00FFD5]" />
             <p className="text-xs text-muted-foreground">Analizando esta página...</p>
           </div>
-        ) : analysis ? (
+        ) : analysis || customReply ? (
           <motion.div
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             className="space-y-3"
           >
-            <CompactConceptChips
-              keyLearning={analysis.keyLearning}
-              highlights={analysis.highlights}
-              examOnly={examOnly}
-              activeHighlightId={activeHighlightId}
-              onSelect={onHighlightFocus}
-            />
-            <ProfessorLessonView
-              analysis={analysis}
-              examOnly={examOnly}
-              activeHighlightId={activeHighlightId}
-              onConceptClick={onHighlightFocus}
-              customReply={customReply}
-              hideKeyLearning
-            />
-            {!examOnly ? <ExamModePanel examMode={analysis.examMode} /> : null}
+            {customReply && !analysis ? (
+              <div className="gs-custom-reply">
+                <p className="text-sm leading-7 text-[#F5F7FA]">{customReply}</p>
+              </div>
+            ) : null}
+            {analysis ? (
+              <>
+                <CompactConceptChips
+                  keyLearning={analysis.keyLearning}
+                  highlights={analysis.highlights}
+                  examOnly={examOnly}
+                  activeHighlightId={activeHighlightId}
+                  onSelect={onHighlightFocus}
+                />
+                <ProfessorLessonView
+                  analysis={analysis}
+                  examOnly={examOnly}
+                  activeHighlightId={activeHighlightId}
+                  onConceptClick={onHighlightFocus}
+                  customReply={customReply}
+                  hideKeyLearning
+                />
+                {!examOnly ? <ExamModePanel examMode={analysis.examMode} /> : null}
+              </>
+            ) : null}
           </motion.div>
         ) : null}
       </div>

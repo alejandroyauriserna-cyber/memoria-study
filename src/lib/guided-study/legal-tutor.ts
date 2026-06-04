@@ -36,95 +36,10 @@ const DocumentIndexSchema = z.object({
   ),
 });
 
-const HighlightCategorySchema = z.enum([
-  "concepto",
-  "definicion",
-  "teoria",
-  "principio",
-  "clasificacion",
-  "excepcion",
-  "examen",
-  "norma",
-]);
-
-const PageAnalysisSchema = z.object({
-  pageFocus: z.string(),
-  secondaryMentions: z
-    .array(z.object({ mention: z.string(), briefNote: z.string() }))
-    .default([]),
-  keyLearning: z
-    .array(
-      z.object({
-        id: z.string(),
-        label: z.string(),
-        highlightId: z.string().optional(),
-        essential: z.boolean().optional(),
-      }),
-    )
-    .default([]),
-  highlights: z
-    .array(
-      z.object({
-        id: z.string(),
-        phrase: z.string(),
-        category: HighlightCategorySchema,
-        essential: z.boolean().optional(),
-      }),
-    )
-    .default([]),
-  conceptCards: z
-    .array(
-      z.object({
-        id: z.string(),
-        concept: z.string(),
-        explanation: z.string(),
-        example: z.string(),
-        examImportance: z.string(),
-        peruLaw: z.string().optional(),
-        highlightId: z.string().optional(),
-        essential: z.boolean().optional(),
-      }),
-    )
-    .default([]),
-  examMode: z.object({
-    oral: z.array(z.string()).default([]),
-    desarrollo: z.array(z.string()).default([]),
-    test: z
-      .array(
-        z.object({
-          question: z.string(),
-          options: z.array(z.string()),
-          answerIndex: z.number(),
-          explanation: z.string(),
-        }),
-      )
-      .default([]),
-    memorableConcepts: z.array(z.string()).default([]),
-    commonErrors: z.array(z.string()).default([]),
-  }),
-  citations: z
-    .array(
-      z.object({
-        norm: z.string(),
-        article: z.string(),
-        text: z.string(),
-        updatedAt: z.string(),
-        sourceId: z.string().optional(),
-        sourceTitle: z.string().optional(),
-        page: z.string().optional(),
-        author: z.string().optional(),
-        fragment: z.string().optional(),
-      }),
-    )
-    .default([]),
-  comprehensionQuestion: z.string().optional(),
-});
-
-const TutorResponseSchema = z.object({
-  analysis: PageAnalysisSchema.optional(),
-  customReply: z.string().optional(),
-  answer: z.string().optional(),
-});
+import {
+  buildFallbackAnalysis,
+  parseTutorResponse,
+} from "@/lib/guided-study/parse-tutor-response";
 
 function samplePagesForAnalysis(pages: PdfPageContent[], totalPages: number) {
   const indices = new Set<number>([1, 2, 3, Math.ceil(totalPages / 2), totalPages - 1, totalPages]);
@@ -174,7 +89,7 @@ function validateCitations(
 }
 
 function filterEssentials(analysis: PageProfessorAnalysis): PageProfessorAnalysis {
-  return {
+  const filtered = {
     ...analysis,
     keyLearning: analysis.keyLearning.filter((k) => k.essential),
     highlights: analysis.highlights.filter((h) => h.essential),
@@ -182,6 +97,15 @@ function filterEssentials(analysis: PageProfessorAnalysis): PageProfessorAnalysi
     secondaryMentions: analysis.secondaryMentions.slice(0, 2),
     pageFocus: `Lo esencial para examen: ${analysis.pageFocus}`,
   };
+
+  if (!filtered.conceptCards.length && analysis.conceptCards.length) {
+    filtered.conceptCards = analysis.conceptCards.slice(0, 2);
+  }
+  if (!filtered.keyLearning.length && analysis.keyLearning.length) {
+    filtered.keyLearning = analysis.keyLearning.slice(0, 3);
+  }
+
+  return filtered;
 }
 
 export async function analyzeDocumentForStudy(input: {
@@ -259,7 +183,7 @@ export async function askLegalStudyTutor(input: {
   }));
 
   try {
-    const parsed = TutorResponseSchema.parse(JSON.parse(raw));
+    const parsed = parseTutorResponse(raw);
 
     if (parsed.customReply && !parsed.analysis) {
       return { customReply: parsed.customReply, activeSources };
@@ -274,6 +198,22 @@ export async function askLegalStudyTutor(input: {
             : validateCitations(parsed.analysis.citations, relevantArticles),
       };
 
+      if (!analysis.conceptCards.length && analysis.pageFocus) {
+        analysis = {
+          ...analysis,
+          conceptCards: [
+            {
+              id: "auto-1",
+              concept: "Idea central de la página",
+              explanation: analysis.pageFocus,
+              example: "Consulta el PDF y relaciona con tu curso.",
+              examImportance: "Comprende los conceptos antes de avanzar.",
+              essential: true,
+            },
+          ],
+        };
+      }
+
       if (input.action === "exam_essentials") {
         analysis = filterEssentials(analysis);
       }
@@ -284,15 +224,22 @@ export async function askLegalStudyTutor(input: {
         activeSources,
       };
     }
-  } catch {
-    // fallback below
+  } catch (error) {
+    console.error("[guided-study/tutor] parse error:", error, raw.slice(0, 500));
+  }
+
+  if (strictMode && !input.pageText.trim()) {
+    return {
+      customReply: "No encontré esta información dentro de las fuentes autorizadas por el usuario.",
+      activeSources,
+    };
   }
 
   return {
-    answer: raw,
-    customReply: strictMode
-      ? "No encontré esta información dentro de las fuentes autorizadas por el usuario."
-      : "No se pudo estructurar la respuesta. Intenta de nuevo.",
+    analysis: buildFallbackAnalysis(input.pageText, input.pageNumber),
+    customReply: input.pageText.trim()
+      ? undefined
+      : "No se pudo extraer texto de esta página. Revisa el PDF visualmente mientras el profesor te guía.",
     activeSources,
   };
 }

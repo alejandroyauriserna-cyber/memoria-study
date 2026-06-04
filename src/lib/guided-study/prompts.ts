@@ -65,6 +65,8 @@ Responde ÚNICAMENTE JSON válido (sin markdown) con esta forma:
   "comprehensionQuestion": "¿Entendiste X?"
 }
 
+IMPORTANTE: devuelve el objeto de análisis DIRECTAMENTE en la raíz del JSON (con pageFocus, conceptCards, etc.).
+NO envuelvas dentro de una clave "analysis" salvo que también incluyas customReply.
 Reglas del JSON:
 - highlights.phrase debe ser un fragmento recuperable del texto de la página.
 - Marca essential:true solo en el ~20% más importante para examen (regla 80/20).
