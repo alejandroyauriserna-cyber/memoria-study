@@ -1,0 +1,103 @@
+import {
+  DEFAULT_LEGAL_SOURCES,
+  mergeWithDefaultSources,
+} from "@/lib/legal-sources/defaults";
+import type {
+  LegalSourceAttribution,
+  LegalSourceRecord,
+  LegalSourcesSettings,
+} from "@/types/legal-sources";
+
+const STORAGE_KEY = "memoria-legal-sources-settings";
+
+export function loadLegalSourcesSettings(): LegalSourcesSettings {
+  if (typeof window === "undefined") {
+    return { strictMode: false, sources: DEFAULT_LEGAL_SOURCES };
+  }
+
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      return { strictMode: false, sources: DEFAULT_LEGAL_SOURCES };
+    }
+
+    const parsed = JSON.parse(raw) as LegalSourcesSettings;
+    return {
+      strictMode: Boolean(parsed.strictMode),
+      sources: mergeWithDefaultSources(parsed.sources ?? []),
+    };
+  } catch {
+    return { strictMode: false, sources: DEFAULT_LEGAL_SOURCES };
+  }
+}
+
+export function saveLegalSourcesSettings(settings: LegalSourcesSettings) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+}
+
+export function getEnabledSources(settings: LegalSourcesSettings): LegalSourceRecord[] {
+  return settings.sources
+    .filter((s) => s.enabled)
+    .sort((a, b) => a.priority - b.priority);
+}
+
+export function toSourceAttributions(sources: LegalSourceRecord[]): LegalSourceAttribution[] {
+  return sources.map((s) => ({
+    sourceId: s.id,
+    title: s.title,
+    category: s.category,
+  }));
+}
+
+export function updateSourceInSettings(
+  settings: LegalSourcesSettings,
+  id: string,
+  patch: Partial<LegalSourceRecord>,
+): LegalSourcesSettings {
+  return {
+    ...settings,
+    sources: settings.sources.map((s) => (s.id === id ? { ...s, ...patch } : s)),
+  };
+}
+
+export function addCustomSource(
+  settings: LegalSourcesSettings,
+  source: Omit<LegalSourceRecord, "id"> & { id?: string },
+): LegalSourcesSettings {
+  const id = source.id ?? `custom-${crypto.randomUUID()}`;
+  return {
+    ...settings,
+    sources: [{ ...source, id, kind: source.kind ?? "upload" }, ...settings.sources],
+  };
+}
+
+export function removeCustomSource(settings: LegalSourcesSettings, id: string): LegalSourcesSettings {
+  return {
+    ...settings,
+    sources: settings.sources.filter((s) => s.id !== id || s.kind === "builtin"),
+  };
+}
+
+export function reorderSourcePriority(
+  settings: LegalSourcesSettings,
+  id: string,
+  direction: "up" | "down",
+): LegalSourcesSettings {
+  const sorted = [...settings.sources].sort((a, b) => a.priority - b.priority);
+  const index = sorted.findIndex((s) => s.id === id);
+  if (index < 0) return settings;
+
+  const swapIndex = direction === "up" ? index - 1 : index + 1;
+  if (swapIndex < 0 || swapIndex >= sorted.length) return settings;
+
+  const current = sorted[index]!;
+  const swap = sorted[swapIndex]!;
+  const next = settings.sources.map((s) => {
+    if (s.id === current.id) return { ...s, priority: swap.priority };
+    if (s.id === swap.id) return { ...s, priority: current.priority };
+    return s;
+  });
+
+  return { ...settings, sources: next };
+}

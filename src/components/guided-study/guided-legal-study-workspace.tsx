@@ -13,8 +13,8 @@ import {
 } from "lucide-react";
 import { PdfViewerPanel } from "@/components/guided-study/pdf-viewer-panel";
 import { LegalTutorPanel } from "@/components/guided-study/legal-tutor-panel";
-import { KeyLearningPanel } from "@/components/guided-study/key-learning-panel";
 import { filterAnalysisForExamMode } from "@/lib/guided-study/legal-tutor";
+import { loadLegalSourcesSettings } from "@/lib/legal-sources/storage";
 import {
   getStudyProgressPercent,
   loadGuidedStudySession,
@@ -26,6 +26,7 @@ import type {
   GuidedStudyTutorAction,
   PageProfessorAnalysis,
 } from "@/types/guided-legal-study";
+import type { LegalSourceAttribution, LegalSourcesSettings } from "@/types/legal-sources";
 import "./guided-study.css";
 
 type MaterialInfo = {
@@ -41,7 +42,7 @@ type MaterialInfo = {
 type TutorState = {
   analysis: PageProfessorAnalysis | null;
   customReply: string | null;
-  pageText: string;
+  activeSources: LegalSourceAttribution[];
 };
 
 export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }) {
@@ -54,11 +55,12 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
   const [showIndex, setShowIndex] = useState(false);
   const [examOnly, setExamOnly] = useState(false);
   const [activeHighlightId, setActiveHighlightId] = useState<string | null>(null);
+  const [sourceSettings, setSourceSettings] = useState<LegalSourcesSettings | null>(null);
   const [tutorLoading, setTutorLoading] = useState(false);
   const [tutorState, setTutorState] = useState<TutorState>({
     analysis: null,
     customReply: null,
-    pageText: "",
+    activeSources: [],
   });
 
   useEffect(() => {
@@ -67,6 +69,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
       setCurrentPage(session.currentPage);
       setUnderstoodPages(session.understoodPages);
     }
+    setSourceSettings(loadLegalSourcesSettings());
   }, [materialId]);
 
   useEffect(() => {
@@ -117,8 +120,8 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
       if (!material) return;
 
       setTutorLoading(true);
-      setTutorState((prev) => ({ ...prev, analysis: null, customReply: null }));
       setActiveHighlightId(null);
+      const settings = sourceSettings ?? loadLegalSourcesSettings();
 
       try {
         const response = await fetch("/api/guided-study/tutor", {
@@ -131,6 +134,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
             customPrompt,
             index,
             examOnly,
+            sourceSettings: settings,
           }),
         });
 
@@ -142,19 +146,18 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
         setTutorState({
           analysis: payload.analysis ?? null,
           customReply: payload.customReply ?? null,
-          pageText: payload.pageText ?? "",
+          activeSources: payload.activeSources ?? [],
         });
       } catch (caught) {
-        setTutorState({
-          analysis: null,
+        setTutorState((prev) => ({
+          ...prev,
           customReply: caught instanceof Error ? caught.message : "Error consultando al profesor.",
-          pageText: "",
-        });
+        }));
       } finally {
         setTutorLoading(false);
       }
     },
-    [material, materialId, currentPage, index, examOnly],
+    [material, materialId, currentPage, index, examOnly, sourceSettings],
   );
 
   useEffect(() => {
@@ -170,7 +173,6 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
   function handlePageChange(page: number) {
     setCurrentPage(page);
     updateCurrentPage(materialId, page);
-    setTutorState({ analysis: null, customReply: null, pageText: "" });
     setActiveHighlightId(null);
   }
 
@@ -180,10 +182,6 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
     if (material && currentPage < material.totalPages) {
       handlePageChange(currentPage + 1);
     }
-  }
-
-  function handleHighlightFocus(highlightId: string) {
-    setActiveHighlightId(highlightId);
   }
 
   const progressPercent =
@@ -202,12 +200,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 text-center">
         <Loader2 size={32} className="animate-spin text-[#00FFD5]" />
-        <div>
-          <p className="text-lg font-semibold text-[#F5F7FA]">Preparando cátedra...</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Detectando ideas jurídicas, capítulos y resaltados inteligentes
-          </p>
-        </div>
+        <p className="text-lg font-semibold text-[#F5F7FA]">Preparando documento...</p>
       </div>
     );
   }
@@ -229,62 +222,37 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
   }
 
   return (
-    <div className="flex h-[calc(100dvh-5rem)] min-h-[32rem] flex-col gap-3">
-      <header className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[rgba(0,255,213,0.12)] bg-[rgba(7,19,26,0.5)] px-4 py-3">
+    <div className="flex h-[calc(100dvh-4.5rem)] min-h-[32rem] flex-col gap-2">
+      <header className="flex shrink-0 flex-wrap items-center justify-between gap-2 rounded-xl border border-[rgba(0,255,213,0.1)] bg-[rgba(7,19,26,0.45)] px-3 py-2">
         <div className="min-w-0 flex-1">
-          <p className="gs-section-label">
-            <Sparkles size={12} />
-            Modo Estudio Guiado Jurídico
+          <p className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#00FFD5]">
+            <Sparkles size={11} />
+            Estudio guiado
           </p>
-          <h1 className="mt-0.5 truncate text-lg font-bold text-[#F5F7FA]">{material.title}</h1>
-          <p className="text-xs text-muted-foreground">
-            {material.courseName} · {material.cycleLabel}
-            {currentChapter ? ` · ${currentChapter.title}` : ""}
-          </p>
+          <h1 className="truncate text-base font-bold text-[#F5F7FA]">{material.title}</h1>
         </div>
-
-        <div className="flex items-center gap-3">
-          <div className="hidden text-right sm:block">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Progreso</p>
-            <p className="text-sm font-bold text-[#00FFD5]">{progressPercent}%</p>
-          </div>
-          <div className="h-2 w-24 overflow-hidden rounded-full bg-[rgba(0,255,213,0.1)]">
-            <div className="h-full rounded-full bg-[#00FFD5] transition-all" style={{ width: `${progressPercent}%` }} />
-          </div>
+        <div className="flex items-center gap-2">
+          <span className="hidden text-xs text-muted-foreground sm:inline">
+            Pág. {currentPage}/{material.totalPages} · {progressPercent}%
+          </span>
           <button
             type="button"
-            onClick={() => setShowIndex((v) => !v)}
-            className="tron-btn-secondary flex h-9 items-center gap-1 rounded-lg px-3 text-xs font-semibold"
+            onClick={() => setShowIndex(true)}
+            className="tron-btn-secondary flex h-8 items-center gap-1 rounded-lg px-2.5 text-[11px] font-semibold"
           >
-            <BookOpen size={14} />
+            <BookOpen size={13} />
             Índice
           </button>
         </div>
       </header>
 
-      {displayAnalysis?.keyLearning.length ? (
-        <KeyLearningPanel
-          items={displayAnalysis.keyLearning}
-          examOnly={examOnly}
-          activeHighlightId={activeHighlightId}
-          onItemClick={(item) => {
-            if (item.highlightId) handleHighlightFocus(item.highlightId);
-          }}
-        />
-      ) : null}
-
       <div className="relative min-h-0 flex-1">
-        <div className="grid h-full gap-3 lg:grid-cols-2">
+        <div className="grid h-full gap-2 lg:grid-cols-[7fr_3fr]">
           <PdfViewerPanel
             fileUrl={material.fileUrl}
             pageNumber={currentPage}
             totalPages={material.totalPages}
-            pageText={tutorState.pageText}
-            highlights={displayAnalysis?.highlights}
-            examOnly={examOnly}
-            activeHighlightId={activeHighlightId}
             onPageChange={handlePageChange}
-            onHighlightClick={handleHighlightFocus}
           />
 
           <LegalTutorPanel
@@ -292,9 +260,10 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
             analysis={displayAnalysis}
             customReply={tutorState.customReply}
             examOnly={examOnly}
+            activeSources={tutorState.activeSources}
             onExamOnlyChange={setExamOnly}
             activeHighlightId={activeHighlightId}
-            onHighlightFocus={handleHighlightFocus}
+            onHighlightFocus={setActiveHighlightId}
             onAction={(action) => void askTutor(action)}
             onCustomAsk={(prompt) => void askTutor("custom", prompt)}
             onMarkUnderstood={handleMarkUnderstood}
@@ -313,20 +282,19 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
                 onClick={() => setShowIndex(false)}
               />
               <motion.aside
-                className="absolute left-0 top-0 z-30 flex h-full w-[min(100%,320px)] flex-col overflow-hidden rounded-2xl border border-[rgba(0,255,213,0.15)] bg-[#07131a] shadow-2xl"
-                initial={{ x: -320 }}
+                className="absolute left-0 top-0 z-30 flex h-full w-[min(100%,300px)] flex-col overflow-hidden rounded-2xl border border-[rgba(0,255,213,0.15)] bg-[#07131a] shadow-2xl"
+                initial={{ x: -300 }}
                 animate={{ x: 0 }}
-                exit={{ x: -320 }}
+                exit={{ x: -300 }}
               >
-                <div className="flex items-center justify-between border-b border-[rgba(0,255,213,0.1)] px-4 py-3">
-                  <p className="text-sm font-bold text-[#F5F7FA]">Índice de estudio</p>
-                  <button type="button" onClick={() => setShowIndex(false)} className="rounded-lg p-1 text-muted-foreground hover:text-white">
-                    <X size={18} />
+                <div className="flex items-center justify-between border-b border-[rgba(0,255,213,0.1)] px-3 py-2">
+                  <p className="text-sm font-bold text-[#F5F7FA]">Índice</p>
+                  <button type="button" onClick={() => setShowIndex(false)} className="rounded p-1 text-muted-foreground hover:text-white">
+                    <X size={16} />
                   </button>
                 </div>
-                <div className="min-h-0 flex-1 overflow-y-auto p-4">
-                  <p className="text-xs leading-5 text-muted-foreground">{index.summary}</p>
-                  <div className="mt-4 space-y-2">
+                <div className="min-h-0 flex-1 overflow-y-auto p-3">
+                  <div className="space-y-1.5">
                     {index.chapters.map((ch) => (
                       <button
                         key={ch.id}
@@ -335,19 +303,14 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
                           handlePageChange(ch.startPage);
                           setShowIndex(false);
                         }}
-                        className={`flex w-full items-start gap-2 rounded-xl border px-3 py-2.5 text-left transition ${
+                        className={`flex w-full items-start gap-2 rounded-lg border px-2.5 py-2 text-left text-sm ${
                           currentChapter?.id === ch.id
                             ? "border-[rgba(0,255,213,0.35)] bg-[rgba(0,255,213,0.08)]"
-                            : "border-[rgba(0,255,213,0.08)] hover:border-[rgba(0,255,213,0.2)]"
+                            : "border-[rgba(0,255,213,0.08)]"
                         }`}
                       >
-                        <ChevronRight size={14} className="mt-0.5 shrink-0 text-[#00FFD5]" />
-                        <div>
-                          <p className="text-sm font-medium text-[#F5F7FA]">{ch.title}</p>
-                          <p className="text-[10px] text-muted-foreground">
-                            Págs. {ch.startPage}–{ch.endPage}
-                          </p>
-                        </div>
+                        <ChevronRight size={13} className="mt-0.5 shrink-0 text-[#00FFD5]" />
+                        <span className="text-[#F5F7FA]">{ch.title}</span>
                       </button>
                     ))}
                   </div>

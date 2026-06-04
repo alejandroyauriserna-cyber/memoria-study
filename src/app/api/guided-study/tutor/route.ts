@@ -50,6 +50,7 @@ export async function POST(request: Request) {
       customPrompt?: string;
       index?: DocumentStudyIndex;
       examOnly?: boolean;
+      sourceSettings?: import("@/types/legal-sources").LegalSourcesSettings;
     };
 
     if (!body.materialId || !body.pageNumber) {
@@ -83,6 +84,7 @@ export async function POST(request: Request) {
       documentTitle: material.title,
       courseName: material.courseName,
       chapterTitle,
+      sourceSettings: body.sourceSettings,
     });
 
     return NextResponse.json({

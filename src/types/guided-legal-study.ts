@@ -113,6 +113,11 @@ export type LegalCitation = {
   article: string;
   text: string;
   updatedAt: string;
+  sourceId?: string;
+  sourceTitle?: string;
+  page?: string;
+  author?: string;
+  fragment?: string;
 };
 
 export type PageProfessorAnalysis = {
@@ -128,8 +133,8 @@ export type PageProfessorAnalysis = {
 
 export type TutorResponse = {
   analysis?: PageProfessorAnalysis;
-  /** Respuesta libre breve para preguntas custom (sin markdown). */
   customReply?: string;
+  activeSources?: Array<{ sourceId: string; title: string; category: string }>;
   /** @deprecated — solo fallback si falla el JSON */
   answer?: string;
 };

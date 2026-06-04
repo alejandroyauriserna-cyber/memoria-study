@@ -10,6 +10,8 @@ import {
   searchLegalBase,
   toLegalCitation,
 } from "@/lib/guided-study/legal-base";
+import { buildLegalSourcesPromptBlock } from "@/lib/legal-sources/prompt";
+import type { LegalSourceAttribution, LegalSourcesSettings } from "@/types/legal-sources";
 import type {
   DocumentStudyIndex,
   GuidedStudyTutorAction,
@@ -107,6 +109,11 @@ const PageAnalysisSchema = z.object({
         article: z.string(),
         text: z.string(),
         updatedAt: z.string(),
+        sourceId: z.string().optional(),
+        sourceTitle: z.string().optional(),
+        page: z.string().optional(),
+        author: z.string().optional(),
+        fragment: z.string().optional(),
       }),
     )
     .default([]),
@@ -219,35 +226,52 @@ export async function askLegalStudyTutor(input: {
   documentTitle: string;
   courseName?: string;
   chapterTitle?: string;
+  sourceSettings?: LegalSourcesSettings;
 }): Promise<TutorResponse> {
+  const enabledSources = getEnabledSourcesFromSettings(input.sourceSettings);
+  const strictMode = input.sourceSettings?.strictMode ?? false;
+  const sourcesBlock = buildLegalSourcesPromptBlock(enabledSources, strictMode);
+
   const relevantArticles = searchLegalBase(
     `${input.pageText} ${input.chapterTitle ?? ""} ${input.customPrompt ?? ""}`,
     8,
   );
-  const legalBaseBlock = formatLegalBaseForPrompt(relevantArticles);
+  const legalBaseBlock = enabledSources.length
+    ? ""
+    : formatLegalBaseForPrompt(relevantArticles);
   const structured = usesStructuredResponse(input.action) || input.action === "custom";
 
   const raw = await generateGeminiText({
     prompt: `${GUIDED_STUDY_SYSTEM_ROLE}\n\n${buildTutorUserPrompt({
       ...input,
       legalBaseBlock,
+      sourcesBlock: enabledSources.length ? sourcesBlock : undefined,
       structured,
     })}`,
     temperature: input.action === "exam_mode" ? 0.45 : 0.3,
     json: true,
   });
 
+  const activeSources: LegalSourceAttribution[] = enabledSources.map((s) => ({
+    sourceId: s.id,
+    title: s.title,
+    category: s.category,
+  }));
+
   try {
     const parsed = TutorResponseSchema.parse(JSON.parse(raw));
 
     if (parsed.customReply && !parsed.analysis) {
-      return { customReply: parsed.customReply };
+      return { customReply: parsed.customReply, activeSources };
     }
 
     if (parsed.analysis) {
       let analysis: PageProfessorAnalysis = {
         ...parsed.analysis,
-        citations: validateCitations(parsed.analysis.citations, relevantArticles),
+        citations:
+          parsed.analysis.citations.length > 0
+            ? parsed.analysis.citations
+            : validateCitations(parsed.analysis.citations, relevantArticles),
       };
 
       if (input.action === "exam_essentials") {
@@ -257,6 +281,7 @@ export async function askLegalStudyTutor(input: {
       return {
         analysis,
         customReply: parsed.customReply,
+        activeSources,
       };
     }
   } catch {
@@ -265,8 +290,16 @@ export async function askLegalStudyTutor(input: {
 
   return {
     answer: raw,
-    customReply: "No se pudo estructurar la respuesta. Intenta de nuevo.",
+    customReply: strictMode
+      ? "No encontré esta información dentro de las fuentes autorizadas por el usuario."
+      : "No se pudo estructurar la respuesta. Intenta de nuevo.",
+    activeSources,
   };
+}
+
+function getEnabledSourcesFromSettings(settings?: LegalSourcesSettings) {
+  if (!settings) return [];
+  return settings.sources.filter((s) => s.enabled).sort((a, b) => a.priority - b.priority);
 }
 
 export function findChapterForPage(

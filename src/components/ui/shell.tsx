@@ -12,6 +12,7 @@ const NAV = [
   { href: "/favorites", label: "Favoritos" },
   { href: "/organizers", label: "Organizadores" },
   { href: "/cuaderno", label: "Cuaderno IA" },
+  { href: "/fuentes-juridicas", label: "Fuentes" },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {

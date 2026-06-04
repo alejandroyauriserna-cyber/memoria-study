@@ -3,37 +3,71 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import {
+  ArrowRight,
+  BookOpen,
   Brain,
-  CheckCircle2,
+  Briefcase,
+  Check,
   Filter,
+  Gavel,
   GraduationCap,
+  Lightbulb,
   Loader2,
+  RefreshCw,
+  Scale,
   Send,
-  Sparkles,
 } from "lucide-react";
+import Link from "next/link";
 import { ProfessorLessonView } from "@/components/guided-study/professor-lesson-view";
 import { ExamModePanel } from "@/components/guided-study/exam-mode-panel";
+import { CompactConceptChips } from "@/components/guided-study/compact-concept-chips";
 import type {
   GuidedStudyTutorAction,
   PageProfessorAnalysis,
 } from "@/types/guided-legal-study";
+import type { LegalSourceAttribution } from "@/types/legal-sources";
 import "./guided-study.css";
 
-const PROFESSOR_ACTIONS: Array<{ id: GuidedStudyTutorAction; label: string }> = [
-  { id: "simpler", label: "Más fácil" },
-  { id: "first_cycle", label: "Primer ciclo" },
-  { id: "another_example", label: "Otro ejemplo" },
-  { id: "real_case", label: "Caso real" },
-  { id: "peru_law", label: "Derecho peruano" },
-  { id: "jurisprudence", label: "Jurisprudencia" },
-  { id: "civil_code", label: "Código Civil" },
+const PROFESSOR_ACTIONS: Array<{
+  id: GuidedStudyTutorAction;
+  label: string;
+  icon: typeof Lightbulb;
+  accent: string;
+}> = [
+  { id: "simpler", label: "Más fácil", icon: Lightbulb, accent: "#00BFFF" },
+  { id: "first_cycle", label: "Primer ciclo", icon: GraduationCap, accent: "#00FFD5" },
+  { id: "another_example", label: "Otro ejemplo", icon: RefreshCw, accent: "#5EEAD4" },
+  { id: "real_case", label: "Caso real", icon: Briefcase, accent: "#FF8A00" },
+  { id: "peru_law", label: "Derecho peruano", icon: Scale, accent: "#86EFAC" },
+  { id: "jurisprudence", label: "Jurisprudencia", icon: Gavel, accent: "#C084FC" },
+  { id: "civil_code", label: "Código Civil", icon: BookOpen, accent: "#93C5FD" },
 ];
+
+function SourcesBanner({ sources }: { sources: LegalSourceAttribution[] }) {
+  if (!sources.length) return null;
+
+  return (
+    <div className="gs-sources-banner">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-[#86EFAC]">
+        Explicación basada en
+      </p>
+      <div className="mt-1.5 flex flex-wrap gap-1">
+        {sources.map((s) => (
+          <span key={s.sourceId} className="gs-source-tag">
+            {s.title}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export function LegalTutorPanel({
   loading,
   analysis,
   customReply,
   examOnly,
+  activeSources,
   onExamOnlyChange,
   activeHighlightId,
   onHighlightFocus,
@@ -46,6 +80,7 @@ export function LegalTutorPanel({
   analysis: PageProfessorAnalysis | null;
   customReply?: string | null;
   examOnly: boolean;
+  activeSources?: LegalSourceAttribution[];
   onExamOnlyChange: (value: boolean) => void;
   activeHighlightId?: string | null;
   onHighlightFocus?: (highlightId: string) => void;
@@ -57,129 +92,137 @@ export function LegalTutorPanel({
   const [customPrompt, setCustomPrompt] = useState("");
 
   return (
-    <div className="flex h-full min-h-0 flex-col rounded-2xl border border-[rgba(0,255,213,0.15)] bg-[rgba(7,19,26,0.6)]">
-      <div className="border-b border-[rgba(0,255,213,0.1)] px-4 py-3">
-        <div className="flex items-start justify-between gap-2">
-          <div>
-            <p className="gs-section-label">
-              <GraduationCap size={12} />
-              Modo profesor
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Enseñanza jurídica — no resumen
-            </p>
-          </div>
+    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-[rgba(0,255,213,0.15)] bg-[rgba(7,19,26,0.6)]">
+      <div className="shrink-0 border-b border-[rgba(0,255,213,0.1)] px-3 py-2.5">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#00FFD5]">
+            Profesor IA
+          </p>
           <button
             type="button"
             onClick={() => onExamOnlyChange(!examOnly)}
-            className={`gs-exam-toggle shrink-0 ${examOnly ? "gs-exam-toggle--active" : ""}`}
-            title="Muestra solo el 20% esencial para examen (regla 80/20)"
+            className={`gs-exam-toggle shrink-0 text-[10px] ${examOnly ? "gs-exam-toggle--active" : ""}`}
           >
-            <Filter size={12} className="mr-1 inline" />
-            Solo lo importante para examen
+            <Filter size={10} className="mr-1 inline" />
+            Solo examen
           </button>
         </div>
-      </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
-        <section>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-            Modo profesor particular
-          </p>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {PROFESSOR_ACTIONS.map((item) => (
+        <div className="mt-2 grid grid-cols-2 gap-1.5">
+          {PROFESSOR_ACTIONS.map((item) => {
+            const Icon = item.icon;
+            return (
               <button
                 key={item.id}
                 type="button"
                 disabled={loading}
                 onClick={() => onAction(item.id)}
-                className="rounded-full border border-[rgba(0,255,213,0.12)] px-3 py-1 text-[11px] text-muted-foreground hover:border-[rgba(0,255,213,0.25)] hover:text-[#F5F7FA] disabled:opacity-50"
+                className="gs-action-tile"
+                style={{ "--gs-accent": item.accent } as React.CSSProperties}
               >
-                {item.label}
+                <Icon size={14} style={{ color: item.accent }} />
+                <span>{item.label}</span>
               </button>
-            ))}
-            <button
-              type="button"
-              disabled={loading}
-              onClick={() => onAction("exam_mode")}
-              className="rounded-full border border-[rgba(255,138,0,0.2)] px-3 py-1 text-[11px] text-[#FF8A00] hover:bg-[rgba(255,138,0,0.08)] disabled:opacity-50"
-            >
-              <Brain size={11} className="mr-1 inline" />
-              Modo examen
-            </button>
-          </div>
-        </section>
+            );
+          })}
+          <button
+            type="button"
+            disabled={loading}
+            onClick={() => onAction("exam_mode")}
+            className="gs-action-tile gs-action-tile--exam"
+          >
+            <Brain size={14} />
+            <span>Modo examen</span>
+          </button>
+        </div>
 
-        <section className="mt-4">
-          <div className="flex gap-2">
-            <input
-              value={customPrompt}
-              onChange={(e) => setCustomPrompt(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && customPrompt.trim()) {
-                  onCustomAsk(customPrompt.trim());
-                  setCustomPrompt("");
-                }
-              }}
-              placeholder="Pregunta al profesor sobre esta página..."
-              className="h-10 flex-1 rounded-xl border border-[rgba(0,255,213,0.12)] bg-[rgba(0,0,0,0.25)] px-3 text-sm text-[#F5F7FA] placeholder:text-muted-foreground"
-            />
-            <button
-              type="button"
-              disabled={loading || !customPrompt.trim()}
-              onClick={() => {
+        <div className="mt-2 flex gap-1.5">
+          <input
+            value={customPrompt}
+            onChange={(e) => setCustomPrompt(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && customPrompt.trim()) {
                 onCustomAsk(customPrompt.trim());
                 setCustomPrompt("");
-              }}
-              className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#00FFD5] text-[#07131a] disabled:opacity-40"
-              aria-label="Enviar"
-            >
-              <Send size={16} />
-            </button>
-          </div>
-        </section>
-
-        <div className="mt-5 min-h-[8rem]">
-          {loading ? (
-            <div className="flex flex-col items-center gap-3 py-8 text-center">
-              <Loader2 size={24} className="animate-spin text-[#00FFD5]" />
-              <p className="text-sm text-muted-foreground">
-                El profesor está analizando las ideas jurídicas de esta página...
-              </p>
-            </div>
-          ) : analysis ? (
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-              <ProfessorLessonView
-                analysis={analysis}
-                examOnly={examOnly}
-                activeHighlightId={activeHighlightId}
-                onConceptClick={onHighlightFocus}
-                customReply={customReply}
-              />
-              {!examOnly || analysis.examMode ? (
-                <ExamModePanel examMode={analysis.examMode} />
-              ) : null}
-            </motion.div>
-          ) : (
-            <div className="py-8 text-center">
-              <Sparkles size={28} className="mx-auto text-[#00FFD5]/50" />
-              <p className="mt-3 text-sm text-muted-foreground">
-                Navega por el PDF. El profesor explicará solo lo jurídicamente relevante.
-              </p>
-            </div>
-          )}
+              }
+            }}
+            placeholder="Pregunta al profesor..."
+            className="h-8 min-w-0 flex-1 rounded-lg border border-[rgba(0,255,213,0.12)] bg-[rgba(0,0,0,0.25)] px-2.5 text-xs text-[#F5F7FA] placeholder:text-muted-foreground"
+          />
+          <button
+            type="button"
+            disabled={loading || !customPrompt.trim()}
+            onClick={() => {
+              onCustomAsk(customPrompt.trim());
+              setCustomPrompt("");
+            }}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#00FFD5] text-[#07131a] disabled:opacity-40"
+            aria-label="Enviar"
+          >
+            <Send size={14} />
+          </button>
         </div>
+
+        <Link
+          href="/fuentes-juridicas"
+          className="mt-2 inline-flex text-[10px] text-muted-foreground hover:text-[#00FFD5]"
+        >
+          Configurar fuentes jurídicas →
+        </Link>
       </div>
 
-      <div className="border-t border-[rgba(0,255,213,0.1)] p-4">
+      <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
+        {activeSources?.length ? <SourcesBanner sources={activeSources} /> : null}
+
+        {loading ? (
+          <div className="flex flex-col items-center gap-2 py-10 text-center">
+            <Loader2 size={22} className="animate-spin text-[#00FFD5]" />
+            <p className="text-xs text-muted-foreground">Analizando esta página...</p>
+          </div>
+        ) : analysis ? (
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-3"
+          >
+            <CompactConceptChips
+              keyLearning={analysis.keyLearning}
+              highlights={analysis.highlights}
+              examOnly={examOnly}
+              activeHighlightId={activeHighlightId}
+              onSelect={onHighlightFocus}
+            />
+            <ProfessorLessonView
+              analysis={analysis}
+              examOnly={examOnly}
+              activeHighlightId={activeHighlightId}
+              onConceptClick={onHighlightFocus}
+              customReply={customReply}
+              hideKeyLearning
+            />
+            {!examOnly ? <ExamModePanel examMode={analysis.examMode} /> : null}
+          </motion.div>
+        ) : null}
+      </div>
+
+      <div className="shrink-0 border-t border-[rgba(0,255,213,0.08)] px-3 py-2">
         <button
           type="button"
           onClick={onMarkUnderstood}
-          disabled={pageUnderstood}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[rgba(0,255,213,0.12)] py-3 text-sm font-semibold text-[#00FFD5] transition hover:bg-[rgba(0,255,213,0.2)] disabled:cursor-default disabled:opacity-60"
+          disabled={pageUnderstood || loading}
+          className="gs-nav-control"
         >
-          <CheckCircle2 size={16} />
-          {pageUnderstood ? "Página comprendida ✓" : "Entendí — siguiente página"}
+          {pageUnderstood ? (
+            <>
+              <Check size={13} />
+              Comprendido
+            </>
+          ) : (
+            <>
+              Entendí
+              <ArrowRight size={13} />
+            </>
+          )}
         </button>
       </div>
     </div>

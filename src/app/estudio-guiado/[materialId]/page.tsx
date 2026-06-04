@@ -1,6 +1,4 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
 import { AppShell } from "@/components/ui/shell";
 import { GuidedLegalStudyWorkspace } from "@/components/guided-study/guided-legal-study-workspace";
 import { createClient } from "@/lib/supabase/server";
@@ -28,14 +26,7 @@ export default async function GuidedStudyPage({
 
   return (
     <AppShell>
-      <section className="mx-auto max-w-[1600px] px-3 py-4 sm:px-4 lg:px-6">
-        <Link
-          href={`/materials/${materialId}`}
-          className="mb-3 inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-[#00FFD5]"
-        >
-          <ArrowLeft size={14} />
-          Volver al material
-        </Link>
+      <section className="mx-auto max-w-[1600px] px-2 py-2 sm:px-3 lg:px-4">
         <GuidedLegalStudyWorkspace materialId={materialId} />
       </section>
     </AppShell>

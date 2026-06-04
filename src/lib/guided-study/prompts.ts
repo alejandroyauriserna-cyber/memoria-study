@@ -61,7 +61,7 @@ Responde ÚNICAMENTE JSON válido (sin markdown) con esta forma:
     "memorableConcepts": ["frase corta para memorizar"],
     "commonErrors": ["error frecuente del estudiante"]
   },
-  "citations": [{"norm": "...", "article": "...", "text": "...", "updatedAt": "..."}],
+  "citations": [{"norm":"...","article":"...","text":"...","updatedAt":"...","sourceId":"...","sourceTitle":"...","page":"...","author":"...","fragment":"..."}],
   "comprehensionQuestion": "¿Entendiste X?"
 }
 
@@ -70,7 +70,7 @@ Reglas del JSON:
 - Marca essential:true solo en el ~20% más importante para examen (regla 80/20).
 - conceptCards: uno por idea jurídica principal (máximo 6 por página).
 - secondaryMentions: solo lo secundario detectado; máximo 3 entradas breves.
-- citations: SOLO normas de la base jurídica oficial proporcionada.
+- citations: SOLO fuentes autorizadas y PDF en estudio. Incluye sourceTitle, article, page, author, fragment.
 `.trim();
 
 const ACTION_DIRECTIVES: Record<GuidedStudyTutorAction, string> = {
@@ -117,6 +117,7 @@ export function buildTutorUserPrompt(input: {
   courseName?: string;
   chapterTitle?: string;
   legalBaseBlock: string;
+  sourcesBlock?: string;
   structured?: boolean;
 }): string {
   const directive =
@@ -133,8 +134,9 @@ export function buildTutorUserPrompt(input: {
     "TEXTO DE LA PÁGINA (fuente para highlights.phrase):",
     input.pageText || "(Sin texto extraíble — indica al estudiante que revise el PDF visualmente.)",
     "",
-    "BASE JURÍDICA OFICIAL (citas normativas):",
-    input.legalBaseBlock,
+    input.sourcesBlock ?? "",
+    input.sourcesBlock ? "" : "BASE JURÍDICA OFICIAL (citas normativas):",
+    input.sourcesBlock ? "" : input.legalBaseBlock,
     "",
     `INSTRUCCIÓN: ${directive}`,
   ].filter(Boolean);
