@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ArrowDown, BookOpen, CalendarDays, Eye, Heart, Loader2, Search, Sparkles, Star, User } from "lucide-react";
+import { ArrowDown, BookOpen, CalendarDays, Eye, GraduationCap, Heart, Loader2, Search, Sparkles, Star, User } from "lucide-react";
 import { StudyWithAiStatus } from "@/components/organizers/study-with-ai-status";
 import { Button } from "@/components/ui/button";
 import { useStudyWithAi } from "@/hooks/use-study-with-ai";
@@ -208,6 +208,14 @@ export function MaterialCard({ material }: { material: Material }) {
             className="tron-btn-secondary inline-flex h-11 items-center justify-center gap-2 rounded-xl px-4 font-semibold"
           >
             <Search size={16} /> Ver detalle
+          </Link>
+        ) : null}
+        {material.id ? (
+          <Link
+            href={`/estudio-guiado/${material.id}`}
+            className="tron-btn-secondary inline-flex h-11 items-center justify-center gap-2 rounded-xl px-4 font-semibold"
+          >
+            <GraduationCap size={16} /> Estudio guiado
           </Link>
         ) : null}
         {material.id ? (

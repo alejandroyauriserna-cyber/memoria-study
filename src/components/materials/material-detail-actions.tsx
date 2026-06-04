@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowDown, BookOpen, Heart, Loader2, Sparkles, Star } from "lucide-react";
+import Link from "next/link";
+import { ArrowDown, BookOpen, GraduationCap, Heart, Loader2, Sparkles, Star } from "lucide-react";
 import { StudyWithAiStatus } from "@/components/organizers/study-with-ai-status";
 import { Button } from "@/components/ui/button";
 import { useStudyWithAi } from "@/hooks/use-study-with-ai";
@@ -140,6 +141,17 @@ export function MaterialDetailActions({
           )}
           {isGenerating ? stage.label : "Estudiar con IA"}
         </Button>
+        <Link
+          href={`/estudio-guiado/${materialId}`}
+          className="tron-btn-primary inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold transition disabled:pointer-events-none disabled:opacity-50"
+          aria-disabled={actionsDisabled}
+          onClick={(e) => {
+            if (actionsDisabled) e.preventDefault();
+          }}
+        >
+          <GraduationCap size={16} />
+          Estudio guiado jurídico
+        </Link>
       </div>
 
       <StudyWithAiStatus

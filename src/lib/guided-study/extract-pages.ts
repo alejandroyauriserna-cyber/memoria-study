@@ -1,0 +1,117 @@
+import PDFParser, { type Output } from "pdf2json";
+import { PDFDocument } from "pdf-lib";
+import type { PdfPageContent } from "@/types/guided-legal-study";
+
+type PdfParserError = { parserError: Error } | Error;
+
+function decodeTextRun(value: string) {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+function normalizeText(text: string) {
+  return text.replace(/\s+/g, " ").trim();
+}
+
+function textFromSinglePage(page: Output["Pages"][number]) {
+  const parts: string[] = [];
+
+  for (const item of page.Texts ?? []) {
+    for (const run of item.R ?? []) {
+      if (run.T) {
+        parts.push(decodeTextRun(run.T));
+      }
+    }
+  }
+
+  return normalizeText(parts.join(" "));
+}
+
+async function extractPagesWithPdf2Json(buffer: Buffer): Promise<PdfPageContent[]> {
+  const pdfParser = new PDFParser(null, true);
+
+  const pdfData = await new Promise<Output>((resolve, reject) => {
+    pdfParser.on("pdfParser_dataError", (errData: PdfParserError) => {
+      const error =
+        typeof errData === "object" &&
+        errData !== null &&
+        "parserError" in errData &&
+        errData.parserError instanceof Error
+          ? errData.parserError
+          : errData instanceof Error
+            ? errData
+            : new Error("Error leyendo PDF.");
+      reject(error);
+    });
+
+    pdfParser.on("pdfParser_dataReady", (data: Output) => resolve(data));
+    pdfParser.parseBuffer(buffer);
+  });
+
+  const pages = pdfData.Pages ?? [];
+
+  return pages.map((page, index) => ({
+    pageNumber: index + 1,
+    text: textFromSinglePage(page),
+  }));
+}
+
+function splitTextIntoPages(fullText: string, totalPages: number): PdfPageContent[] {
+  const normalized = fullText.trim();
+  if (!normalized || totalPages <= 0) {
+    return [];
+  }
+
+  const charsPerPage = Math.ceil(normalized.length / totalPages);
+  const pages: PdfPageContent[] = [];
+
+  for (let i = 0; i < totalPages; i++) {
+    const start = i * charsPerPage;
+    const end = Math.min(start + charsPerPage, normalized.length);
+    pages.push({
+      pageNumber: i + 1,
+      text: normalizeText(normalized.slice(start, end)),
+    });
+  }
+
+  return pages;
+}
+
+export async function getPdfPageCount(buffer: Buffer): Promise<number> {
+  const source = await PDFDocument.load(buffer, { ignoreEncryption: true });
+  return source.getPageCount();
+}
+
+export async function extractPdfPagesFromBuffer(
+  buffer: Buffer,
+  fallbackFullText?: string,
+): Promise<PdfPageContent[]> {
+  try {
+    const pages = await extractPagesWithPdf2Json(buffer);
+    const withText = pages.filter((p) => p.text.length >= 20);
+
+    if (withText.length >= Math.max(1, pages.length * 0.5)) {
+      return pages;
+    }
+  } catch {
+    // fallback below
+  }
+
+  const totalPages = await getPdfPageCount(buffer);
+  if (fallbackFullText?.trim()) {
+    return splitTextIntoPages(fallbackFullText, totalPages);
+  }
+
+  return Array.from({ length: totalPages }, (_, i) => ({
+    pageNumber: i + 1,
+    text: "",
+  }));
+}
+
+export function getPageText(pages: PdfPageContent[], pageNumber: number): string {
+  const page = pages.find((p) => p.pageNumber === pageNumber);
+  return page?.text ?? "";
+}
