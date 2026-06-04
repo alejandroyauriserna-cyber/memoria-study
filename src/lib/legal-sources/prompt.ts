@@ -19,10 +19,14 @@ export function buildLegalSourcesPromptBlock(
     .map((s) => {
       if (s.kind === "builtin") {
         const text = getBuiltinSourceExcerpt(s.id);
-        return text ? `=== ${s.title} ===\n${text}` : null;
+        return text ? `=== ${s.title} (id: ${s.id}) ===\n${text}` : null;
+      }
+      if (s.extractedText?.trim()) {
+        const meta = [s.author ? `Autor: ${s.author}` : null, s.description].filter(Boolean).join(" — ");
+        return `=== ${s.title} (id: ${s.id}) ===\n${meta ? `${meta}\n` : ""}${s.extractedText}`;
       }
       if (s.description) {
-        return `=== ${s.title} ===\n${s.description}`;
+        return `=== ${s.title} (id: ${s.id}) ===\n${s.description}`;
       }
       return null;
     })

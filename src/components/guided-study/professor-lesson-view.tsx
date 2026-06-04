@@ -18,6 +18,7 @@ import type {
   ProfessorConceptCard,
   SecondaryMention,
 } from "@/types/guided-legal-study";
+import { SourceCitationCard } from "@/components/legal-sources/source-citation-card";
 
 function SecondaryMentionsBlock({ items }: { items: SecondaryMention[] }) {
   if (!items.length) return null;
@@ -127,25 +128,11 @@ function CitationsRow({ citations }: { citations: LegalCitation[] }) {
     <div className="gs-citations-row">
       <p className="gs-section-label">
         <Gavel size={12} />
-        Fuentes citadas
+        Citación automática
       </p>
-      <div className="mt-2 space-y-2">
+      <div className="mt-2 space-y-3">
         {citations.map((c, i) => (
-          <div key={i} className="gs-citation-card">
-            <p className="text-xs font-semibold text-[#86EFAC]">
-              {c.sourceTitle ?? c.norm}
-              {c.article ? ` — ${c.article}` : ""}
-            </p>
-            {c.page ? (
-              <p className="mt-0.5 text-[10px] text-muted-foreground">Página: {c.page}</p>
-            ) : null}
-            {c.author ? (
-              <p className="text-[10px] text-muted-foreground">Autor: {c.author}</p>
-            ) : null}
-            <p className="mt-1 text-xs leading-5 text-muted-foreground">
-              {c.fragment ?? c.text}
-            </p>
-          </div>
+          <SourceCitationCard key={i} citation={c} />
         ))}
       </div>
     </div>

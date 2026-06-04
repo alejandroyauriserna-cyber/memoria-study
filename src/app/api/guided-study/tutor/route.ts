@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { askLegalStudyTutor, findChapterForPage } from "@/lib/guided-study/legal-tutor";
 import { getPageText } from "@/lib/guided-study/extract-pages";
 import { loadMaterialForGuidedStudy } from "@/lib/guided-study/load-material";
+import { enrichSourceSettings } from "@/lib/legal-sources/server";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/env";
 import type { DocumentStudyIndex, GuidedStudyTutorAction } from "@/types/guided-legal-study";
@@ -75,6 +76,8 @@ export async function POST(request: Request) {
       ? findChapterForPage(body.index, pageNumber)
       : undefined;
 
+    const sourceSettings = await enrichSourceSettings(user.id, body.sourceSettings);
+
     const response = await askLegalStudyTutor({
       action,
       customPrompt: body.customPrompt,
@@ -84,7 +87,7 @@ export async function POST(request: Request) {
       documentTitle: material.title,
       courseName: material.courseName,
       chapterTitle,
-      sourceSettings: body.sourceSettings,
+      sourceSettings,
     });
 
     return NextResponse.json({

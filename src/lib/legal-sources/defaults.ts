@@ -1,6 +1,7 @@
 import { PERU_LEGAL_ARTICLES } from "@/lib/guided-study/legal-base";
 import type { LegalSourceRecord } from "@/types/legal-sources";
 
+/** Fuentes integradas — el estudiante activa/desactiva y define prioridad. */
 export const DEFAULT_LEGAL_SOURCES: LegalSourceRecord[] = [
   {
     id: "src-cpp",
@@ -17,7 +18,7 @@ export const DEFAULT_LEGAL_SOURCES: LegalSourceRecord[] = [
     category: "normativa",
     kind: "builtin",
     enabled: true,
-    priority: 2,
+    priority: 4,
     updatedAt: "2026-03-01",
   },
   {
@@ -26,7 +27,7 @@ export const DEFAULT_LEGAL_SOURCES: LegalSourceRecord[] = [
     category: "normativa",
     kind: "builtin",
     enabled: true,
-    priority: 4,
+    priority: 5,
     updatedAt: "2026-03-01",
   },
   {
@@ -35,7 +36,7 @@ export const DEFAULT_LEGAL_SOURCES: LegalSourceRecord[] = [
     category: "normativa",
     kind: "builtin",
     enabled: false,
-    priority: 5,
+    priority: 6,
     updatedAt: "2026-03-01",
   },
   {
@@ -44,7 +45,16 @@ export const DEFAULT_LEGAL_SOURCES: LegalSourceRecord[] = [
     category: "normativa",
     kind: "builtin",
     enabled: false,
-    priority: 6,
+    priority: 7,
+    updatedAt: "2026-03-01",
+  },
+  {
+    id: "src-ct",
+    title: "Código Tributario",
+    category: "normativa",
+    kind: "builtin",
+    enabled: false,
+    priority: 8,
     updatedAt: "2026-03-01",
   },
   {
@@ -53,17 +63,35 @@ export const DEFAULT_LEGAL_SOURCES: LegalSourceRecord[] = [
     category: "normativa",
     kind: "builtin",
     enabled: false,
-    priority: 7,
+    priority: 9,
     updatedAt: "2026-03-01",
   },
   {
-    id: "src-juris",
-    title: "Jurisprudencia (TC / Casación)",
+    id: "src-juris-casacion",
+    title: "Casaciones (Corte Suprema)",
     category: "jurisprudencia",
     kind: "builtin",
     enabled: false,
-    priority: 8,
-    description: "Lineamientos jurisprudenciales curados",
+    priority: 10,
+    description: "Lineamientos de casación civil y penal",
+    updatedAt: "2026-03-01",
+  },
+  {
+    id: "src-juris-tc",
+    title: "Sentencias del Tribunal Constitucional",
+    category: "jurisprudencia",
+    kind: "builtin",
+    enabled: false,
+    priority: 11,
+    updatedAt: "2026-03-01",
+  },
+  {
+    id: "src-juris-tf",
+    title: "Resoluciones del Tribunal Fiscal",
+    category: "jurisprudencia",
+    kind: "builtin",
+    enabled: false,
+    priority: 12,
     updatedAt: "2026-03-01",
   },
 ];
@@ -90,7 +118,44 @@ export function getBuiltinSourceExcerpt(sourceId: string): string {
 }
 
 export function mergeWithDefaultSources(custom: LegalSourceRecord[]): LegalSourceRecord[] {
-  const customIds = new Set(custom.map((s) => s.id));
-  const builtins = DEFAULT_LEGAL_SOURCES.filter((s) => !customIds.has(s.id));
-  return [...custom, ...builtins].sort((a, b) => a.priority - b.priority);
+  const byId = new Map<string, LegalSourceRecord>();
+
+  for (const builtin of DEFAULT_LEGAL_SOURCES) {
+    byId.set(builtin.id, { ...builtin });
+  }
+
+  for (const source of custom) {
+    if (source.kind === "builtin" && byId.has(source.id)) {
+      byId.set(source.id, { ...byId.get(source.id)!, ...source, kind: "builtin" });
+    } else {
+      byId.set(source.id, source);
+    }
+  }
+
+  return [...byId.values()].sort((a, b) => a.priority - b.priority);
 }
+
+export const LEGAL_SOURCE_TYPE_HINTS: Record<string, string[]> = {
+  normativa: [
+    "Constitución Política del Perú",
+    "Código Civil",
+    "Código Procesal Civil",
+    "Código Penal",
+    "Código Tributario",
+    "Leyes especiales",
+    "Reglamentos",
+  ],
+  jurisprudencia: [
+    "Casaciones",
+    "Sentencias del Tribunal Constitucional",
+    "Resoluciones del Tribunal Fiscal",
+    "Precedentes vinculantes",
+  ],
+  doctrina: ["Libros", "Artículos académicos", "Revistas jurídicas", "Tesis"],
+  material_universitario: [
+    "Separatas",
+    "PDFs del profesor",
+    "Diapositivas",
+    "Manuales del curso",
+  ],
+};

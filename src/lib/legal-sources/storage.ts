@@ -79,6 +79,58 @@ export function removeCustomSource(settings: LegalSourcesSettings, id: string): 
   };
 }
 
+export async function syncLegalSourcesSettings(settings: LegalSourcesSettings): Promise<void> {
+  saveLegalSourcesSettings(settings);
+  try {
+    await fetch("/api/legal-sources", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(settings),
+    });
+  } catch {
+    // localStorage sigue siendo respaldo offline
+  }
+}
+
+export async function fetchLegalSourcesSettings(): Promise<LegalSourcesSettings> {
+  const local = loadLegalSourcesSettings();
+  try {
+    const res = await fetch("/api/legal-sources");
+    if (!res.ok) return local;
+    const remote = (await res.json()) as LegalSourcesSettings & { synced?: boolean };
+    if (!remote.sources?.length) return local;
+
+    const localById = new Map(local.sources.map((s) => [s.id, s]));
+    const remoteIds = new Set(remote.sources.map((s) => s.id));
+
+    const mergedList = remote.sources.map((s) => {
+      const localSource = localById.get(s.id);
+      if (!localSource) return s;
+      return {
+        ...s,
+        enabled: localSource.enabled,
+        priority: localSource.priority,
+        extractedText: s.extractedText ?? localSource.extractedText,
+      };
+    });
+
+    for (const s of local.sources) {
+      if (!remoteIds.has(s.id) && s.id.startsWith("custom-")) {
+        mergedList.push(s);
+      }
+    }
+
+    const settings: LegalSourcesSettings = {
+      strictMode: remote.strictMode ?? local.strictMode,
+      sources: mergeWithDefaultSources(mergedList),
+    };
+    saveLegalSourcesSettings(settings);
+    return settings;
+  } catch {
+    return local;
+  }
+}
+
 export function reorderSourcePriority(
   settings: LegalSourcesSettings,
   id: string,

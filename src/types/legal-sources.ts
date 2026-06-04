@@ -16,7 +16,10 @@ export type LegalSourceRecord = {
   author?: string;
   description?: string;
   fileUrl?: string;
+  fileName?: string;
   materialId?: string;
+  /** Texto extraído del PDF (recortado en cliente/servidor). */
+  extractedText?: string;
   updatedAt?: string;
 };
 
