@@ -26,6 +26,8 @@ export function loadLegalSourcesSettings(): LegalSourcesSettings {
       strictMode: Boolean(parsed.strictMode),
       strictNormativeMode: parsed.strictNormativeMode !== false,
       lpPresetUrls: parsed.lpPresetUrls,
+      studyCategories: parsed.studyCategories,
+      wizardCompleted: Boolean(parsed.wizardCompleted),
       sources: mergeWithDefaultSources(parsed.sources ?? []),
     };
   } catch {
@@ -42,7 +44,11 @@ export function getEnabledSources(settings: LegalSourcesSettings): LegalSourceRe
   return settings.sources
     .filter(
       (s) =>
-        s.enabled && !(s.kind === "builtin" && s.category === "normativa"),
+        s.enabled &&
+        !(
+          s.kind === "builtin" &&
+          (s.category === "normativa" || s.category === "jurisprudencia")
+        ),
     )
     .sort((a, b) => a.priority - b.priority);
 }
@@ -87,6 +93,21 @@ export function addCustomSource(
 ): LegalSourcesSettings {
   const id = source.id ?? `custom-${crypto.randomUUID()}`;
   return upsertCustomSource(settings, { ...source, id, kind: source.kind ?? "upload" });
+}
+
+export function upsertWebSource(
+  settings: LegalSourcesSettings,
+  source: LegalSourceRecord,
+): LegalSourcesSettings {
+  const without = settings.sources.filter(
+    (s) =>
+      s.id !== source.id &&
+      !(source.webTemplateId && s.webTemplateId === source.webTemplateId),
+  );
+  return {
+    ...settings,
+    sources: [source, ...without],
+  };
 }
 
 export function removeCustomSource(settings: LegalSourcesSettings, id: string): LegalSourcesSettings {
@@ -141,6 +162,8 @@ export async function fetchLegalSourcesSettings(): Promise<LegalSourcesSettings>
       strictMode: remote.strictMode ?? local.strictMode,
       strictNormativeMode: remote.strictNormativeMode ?? local.strictNormativeMode,
       lpPresetUrls: remote.lpPresetUrls ?? local.lpPresetUrls,
+      studyCategories: remote.studyCategories ?? local.studyCategories,
+      wizardCompleted: remote.wizardCompleted ?? local.wizardCompleted ?? false,
       sources: mergeWithDefaultSources(mergedList),
     };
     saveLegalSourcesSettings(settings);

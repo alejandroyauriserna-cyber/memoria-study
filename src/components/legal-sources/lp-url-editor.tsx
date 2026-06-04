@@ -10,6 +10,12 @@ type LpUrlEditorProps = {
   onChange: (urls: string[]) => void;
   disabled?: boolean;
   compact?: boolean;
+  validateUrl?: (url: string) => boolean;
+  urlLabel?: string;
+  invalidHint?: string;
+  allowedHostsHint?: string;
+  addUrlLabel?: string;
+  restoreLabel?: string;
 };
 
 export function LpUrlEditor({
@@ -18,6 +24,12 @@ export function LpUrlEditor({
   onChange,
   disabled,
   compact,
+  validateUrl = isAllowedLpUrl,
+  urlLabel = "URLs a sincronizar (lpderecho.pe)",
+  invalidHint = "Solo URLs de lpderecho.pe",
+  allowedHostsHint,
+  addUrlLabel = "Agregar otra URL (continuación)",
+  restoreLabel = "Restaurar catálogo",
 }: LpUrlEditorProps) {
   const rows = urls.length ? urls : [""];
 
@@ -51,7 +63,7 @@ export function LpUrlEditor({
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-          URLs a sincronizar (lpderecho.pe)
+          {urlLabel}
         </p>
         {catalogUrl ? (
           <button
@@ -60,14 +72,20 @@ export function LpUrlEditor({
             onClick={restoreCatalog}
             className="text-[10px] font-semibold text-[#86EFAC] hover:underline disabled:opacity-50"
           >
-            Restaurar catálogo
+            {restoreLabel}
           </button>
         ) : null}
       </div>
 
+      {allowedHostsHint ? (
+        <p className="text-[10px] leading-4 text-muted-foreground">
+          Dominios permitidos: {allowedHostsHint}
+        </p>
+      ) : null}
+
       {catalogUrl ? (
         <p className="text-[10px] leading-4 text-muted-foreground">
-          Catálogo LP sugiere:{" "}
+          URL sugerida:{" "}
           <span className="break-all font-mono text-[#00BFFF]/80">{catalogUrl}</span>
         </p>
       ) : null}
@@ -75,7 +93,7 @@ export function LpUrlEditor({
       <div className="space-y-2">
         {rows.map((url, index) => {
           const normalized = normalizeLpUrlInput(url);
-          const valid = !normalized || isAllowedLpUrl(normalized);
+          const valid = !normalized || validateUrl(normalized);
 
           return (
             <div key={`${index}-${url.slice(0, 24)}`} className="space-y-1">
@@ -86,9 +104,7 @@ export function LpUrlEditor({
                   disabled={disabled}
                   onChange={(e) => updateRow(index, e.target.value)}
                   placeholder={
-                    index === 0
-                      ? "https://lpderecho.pe/..."
-                      : "URL adicional (continuación, parte 2…)"
+                    index === 0 ? "https://..." : "URL adicional relacionada"
                   }
                   className={`min-w-0 flex-1 rounded-lg border bg-[rgba(0,0,0,0.25)] px-2.5 py-2 font-mono text-[10px] text-[#F5F7FA] outline-none focus:border-[rgba(0,255,213,0.35)] ${
                     valid
@@ -119,9 +135,7 @@ export function LpUrlEditor({
                   Abrir URL {index + 1}
                 </a>
               ) : null}
-              {!valid ? (
-                <p className="text-[10px] text-red-400">Solo URLs de lpderecho.pe</p>
-              ) : null}
+              {!valid ? <p className="text-[10px] text-red-400">{invalidHint}</p> : null}
             </div>
           );
         })}
@@ -134,7 +148,7 @@ export function LpUrlEditor({
         className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#00BFFF] hover:underline disabled:opacity-50"
       >
         <Plus size={12} />
-        Agregar otra URL (continuación)
+        {addUrlLabel}
       </button>
     </div>
   );

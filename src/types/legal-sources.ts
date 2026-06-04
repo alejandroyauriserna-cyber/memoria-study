@@ -26,6 +26,8 @@ export type LegalSourceRecord = {
   syncUrls?: string[];
   /** Identificador del preset LP (`lp-cc`, `lp-cpp`, …). */
   lpPresetId?: string;
+  /** Plantilla web jurisprudencia (`casacion`, `tc`, `tf`). */
+  webTemplateId?: string;
   /** Fecha ISO de la última sincronización web. */
   lastSyncedAt?: string;
   /** Cantidad de artículos indexados desde la URL. */
@@ -39,6 +41,10 @@ export type LegalSourcesSettings = {
   strictNormativeMode: boolean;
   /** URLs personalizadas por preset LP (`lp-cc`, `lp-cpp`, …). */
   lpPresetUrls?: Record<string, string[]>;
+  /** Categorías de fuente que el estudiante usa en este curso (Fase C). */
+  studyCategories?: LegalSourceCategory[];
+  /** Asistente inicial completado. */
+  wizardCompleted?: boolean;
   sources: LegalSourceRecord[];
 };
 

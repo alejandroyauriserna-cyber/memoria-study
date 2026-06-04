@@ -79,7 +79,13 @@ export function normalizeLpSourceTitle(source: LegalSourceRecord): LegalSourceRe
 
 export function coalesceLegalSources(sources: LegalSourceRecord[]): LegalSourceRecord[] {
   return sources
-    .filter((source) => !(source.kind === "builtin" && source.category === "normativa"))
+    .filter(
+      (source) =>
+        !(
+          source.kind === "builtin" &&
+          (source.category === "normativa" || source.category === "jurisprudencia")
+        ),
+    )
     .map((source) => normalizeLpSourceTitle(source));
 }
 

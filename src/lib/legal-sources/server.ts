@@ -5,7 +5,7 @@ import {
   mergeNormativeIndex,
 } from "@/lib/legal-sources/normative-index";
 import type { LegalArticleRecord } from "@/lib/guided-study/legal-base";
-import type { LegalSourceRecord, LegalSourcesSettings } from "@/types/legal-sources";
+import type { LegalSourceCategory, LegalSourceRecord, LegalSourcesSettings } from "@/types/legal-sources";
 
 const MAX_EXCERPT = 14_000;
 
@@ -32,6 +32,7 @@ export function mapDbRowToLegalSource(row: Record<string, unknown>): LegalSource
       ? (row.sync_urls as string[]).map(String)
       : undefined,
     lpPresetId: row.lp_preset_id ? String(row.lp_preset_id) : undefined,
+    webTemplateId: row.web_template_id ? String(row.web_template_id) : undefined,
     lastSyncedAt: row.last_synced_at ? String(row.last_synced_at) : undefined,
     articleCount: row.article_count != null ? Number(row.article_count) : undefined,
     extractedText: row.extracted_text
@@ -116,7 +117,7 @@ export async function loadUserLegalSourceSettings(userId: string): Promise<Legal
     admin
       .schema("public")
       .from("legal_source_settings")
-      .select("strict_mode, strict_normative_mode, source_overrides, lp_preset_urls")
+      .select("strict_mode, strict_normative_mode, source_overrides, lp_preset_urls, study_categories, wizard_completed")
       .eq("user_id", userId)
       .maybeSingle(),
     loadUserLegalSourcesFromDb(userId),
@@ -142,6 +143,10 @@ export async function loadUserLegalSourceSettings(userId: string): Promise<Legal
     strictMode: Boolean(settingsRow?.strict_mode),
     strictNormativeMode: settingsRow?.strict_normative_mode !== false,
     lpPresetUrls: (settingsRow?.lp_preset_urls as Record<string, string[]> | null) ?? undefined,
+    studyCategories: (settingsRow?.study_categories as LegalSourceCategory[] | null)?.length
+      ? (settingsRow?.study_categories as LegalSourceCategory[])
+      : undefined,
+    wizardCompleted: Boolean(settingsRow?.wizard_completed),
     sources: sources.map((s) => ({
       ...s,
       ...(overrides[s.id] ?? {}),
@@ -175,6 +180,8 @@ export async function enrichSourceSettings(
       strictNormativeMode:
         clientSettings.strictNormativeMode ?? fromDb?.strictNormativeMode ?? true,
       lpPresetUrls: clientSettings.lpPresetUrls ?? fromDb?.lpPresetUrls,
+      studyCategories: clientSettings.studyCategories ?? fromDb?.studyCategories,
+      wizardCompleted: clientSettings.wizardCompleted ?? fromDb?.wizardCompleted ?? false,
       sources: [...merged.values()].sort((a, b) => a.priority - b.priority),
     };
   } catch {
@@ -203,6 +210,8 @@ export async function saveUserLegalSourceSettings(
       strict_normative_mode: settings.strictNormativeMode,
       source_overrides: overrides,
       lp_preset_urls: settings.lpPresetUrls ?? {},
+      study_categories: settings.studyCategories ?? [],
+      wizard_completed: Boolean(settings.wizardCompleted),
       updated_at: new Date().toISOString(),
     },
     { onConflict: "user_id" },

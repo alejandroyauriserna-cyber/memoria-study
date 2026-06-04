@@ -69,34 +69,6 @@ export const DEFAULT_LEGAL_SOURCES: LegalSourceRecord[] = [
     priority: 9,
     updatedAt: "2026-03-01",
   },
-  {
-    id: "src-juris-casacion",
-    title: "Casaciones (Corte Suprema)",
-    category: "jurisprudencia",
-    kind: "builtin",
-    enabled: false,
-    priority: 10,
-    description: "Lineamientos de casación civil y penal",
-    updatedAt: "2026-03-01",
-  },
-  {
-    id: "src-juris-tc",
-    title: "Sentencias del Tribunal Constitucional",
-    category: "jurisprudencia",
-    kind: "builtin",
-    enabled: false,
-    priority: 11,
-    updatedAt: "2026-03-01",
-  },
-  {
-    id: "src-juris-tf",
-    title: "Resoluciones del Tribunal Fiscal",
-    category: "jurisprudencia",
-    kind: "builtin",
-    enabled: false,
-    priority: 12,
-    updatedAt: "2026-03-01",
-  },
 ];
 
 const SOURCE_NORM_MAP: Record<string, string[]> = {
@@ -144,9 +116,8 @@ export const LEGAL_SOURCE_TYPE_HINTS: Record<string, string[]> = {
     "Reglamentos",
   ],
   jurisprudencia: [
-    "Casaciones",
-    "Sentencias del Tribunal Constitucional",
-    "Resoluciones del Tribunal Fiscal",
+    "Sube PDF: casaciones, TC, Tribunal Fiscal",
+    "Compendios del curso o extractos oficiales",
     "Precedentes vinculantes",
   ],
   doctrina: ["Libros", "Artículos académicos", "Revistas jurídicas", "Tesis"],

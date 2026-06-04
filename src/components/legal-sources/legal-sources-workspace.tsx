@@ -13,6 +13,7 @@ import {
   RefreshCw,
   Scale,
   Search,
+  Sparkles,
   Trash2,
   Upload,
 } from "lucide-react";
@@ -26,6 +27,15 @@ import {
   type LegalSourcesSettings,
 } from "@/types/legal-sources";
 import { LEGAL_SOURCE_TYPE_HINTS } from "@/lib/legal-sources/defaults";
+import { getJurisprudenceTemplate } from "@/lib/legal-sources/jurisprudence-templates";
+import { JurisprudenceSourcesSection } from "@/components/legal-sources/jurisprudence-sources-section";
+import { LegalSourcesWizard } from "@/components/legal-sources/legal-sources-wizard";
+import {
+  isAllowedWebUrlForCategory,
+  sanitizeWebUrlList,
+  validateWebUrlList,
+} from "@/lib/legal-sources/allowed-url-domains";
+import { usesStudyCategory, DEFAULT_STUDY_CATEGORIES } from "@/lib/legal-sources/study-categories";
 import {
   applyLpSyncToSettings,
   resolvePresetSyncUrls,
@@ -46,6 +56,7 @@ import {
   syncLegalSourcesSettings,
   updateSourceInSettings,
   upsertCustomSource,
+  upsertWebSource,
 } from "@/lib/legal-sources/storage";
 
 type MaterialOption = { id: string; title: string; courseName?: string };
@@ -54,7 +65,7 @@ export function LegalSourcesWorkspace() {
   const [settings, setSettings] = useState<LegalSourcesSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
-  const [addMode, setAddMode] = useState<"manual" | "upload" | "link">("upload");
+  const [addMode, setAddMode] = useState<"manual" | "upload" | "link" | "web">("upload");
   const [newTitle, setNewTitle] = useState("");
   const [newCategory, setNewCategory] = useState<LegalSourceCategory>("doctrina");
   const [newAuthor, setNewAuthor] = useState("");
@@ -65,8 +76,27 @@ export function LegalSourcesWorkspace() {
   const [selectedMaterialId, setSelectedMaterialId] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [syncingPresetId, setSyncingPresetId] = useState<string | null>(null);
+  const [activeJurisTemplateId, setActiveJurisTemplateId] = useState<string | null>(null);
+  const [jurisTemplateUrls, setJurisTemplateUrls] = useState<Record<string, string[]>>({});
+  const [syncingWebTemplateId, setSyncingWebTemplateId] = useState<string | null>(null);
+  const [genericWebUrls, setGenericWebUrls] = useState<string[]>([""]);
+  const [showReconfigureWizard, setShowReconfigureWizard] = useState(false);
   const pageLoadProgress = useLoadingProgress(loading, "profile");
-  const uploadProgress = useLoadingProgress(uploading || Boolean(syncingPresetId), "legalSources");
+  const uploadProgress = useLoadingProgress(
+    uploading || Boolean(syncingPresetId) || Boolean(syncingWebTemplateId),
+    "legalSources",
+  );
+
+  useEffect(() => {
+    if (!settings) return;
+    const fromSources: Record<string, string[]> = {};
+    for (const source of settings.sources) {
+      if (!source.webTemplateId) continue;
+      if (source.syncUrls?.length) fromSources[source.webTemplateId] = source.syncUrls;
+      else if (source.sourceUrl) fromSources[source.webTemplateId] = [source.sourceUrl];
+    }
+    setJurisTemplateUrls((prev) => ({ ...prev, ...fromSources }));
+  }, [settings]);
 
   useEffect(() => {
     fetchLegalSourcesSettings()
@@ -80,8 +110,20 @@ export function LegalSourcesWorkspace() {
     return LEGAL_SOURCE_CATEGORY_ORDER.map((cat) => ({
       category: cat,
       hints: LEGAL_SOURCE_TYPE_HINTS[cat] ?? [],
-      items: sorted.filter((s) => s.category === cat),
-    })).filter((g) => g.items.length);
+      items: sorted.filter((s) => {
+        if (s.category !== cat) return false;
+        if (cat === "jurisprudencia") return false;
+        if (cat === "normativa" && s.kind === "url" && s.lpPresetId) return false;
+        return true;
+      }),
+    })).filter((g) => g.items.length && usesStudyCategory(settings!, g.category));
+  }, [settings]);
+
+  const jurisprudenceSources = useMemo(() => {
+    if (!settings) return [];
+    return [...settings.sources]
+      .filter((s) => s.category === "jurisprudencia")
+      .sort((a, b) => a.priority - b.priority);
   }, [settings]);
 
   const enabledSources = useMemo(
@@ -268,6 +310,122 @@ export function LegalSourcesWorkspace() {
     persist(setPresetSyncUrls(settings, presetId, sanitizeLpUrlList(urls.length ? urls : [catalogUrl])));
   }
 
+  function updateJurisTemplateUrls(templateId: string, urls: string[]) {
+    setJurisTemplateUrls((prev) => ({ ...prev, [templateId]: sanitizeWebUrlList(urls) }));
+  }
+
+  async function handleSyncWebDocument(templateId: string, urlsOverride?: string[]) {
+    if (!settings) return;
+    const template = getJurisprudenceTemplate(templateId);
+    const urls = sanitizeWebUrlList(
+      urlsOverride?.length
+        ? urlsOverride
+        : jurisTemplateUrls[templateId]?.length
+          ? jurisTemplateUrls[templateId]!
+          : template?.exampleUrl
+            ? [template.exampleUrl]
+            : [],
+    );
+
+    const validationError = validateWebUrlList(urls, "jurisprudencia");
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    setSyncingWebTemplateId(templateId);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/legal-sources/sync-web", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          webTemplateId: templateId,
+          sourceUrls: urls,
+          category: "jurisprudencia",
+          title: template?.title,
+          author: template?.author,
+        }),
+      });
+      const data = (await res.json()) as {
+        source?: LegalSourceRecord;
+        error?: string;
+        sourceUrls?: string[];
+      };
+
+      if (!res.ok || !data.source) {
+        throw new Error(data.error ?? "No se pudo sincronizar la URL.");
+      }
+
+      const syncedUrls = sanitizeWebUrlList(data.sourceUrls ?? urls);
+      setJurisTemplateUrls((prev) => ({ ...prev, [templateId]: syncedUrls }));
+      persist(
+        upsertWebSource(settings, {
+          ...data.source,
+          enabled: true,
+          priority: 2,
+          webTemplateId: templateId,
+          syncUrls: syncedUrls,
+        }),
+      );
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Error al sincronizar URL.");
+    } finally {
+      setSyncingWebTemplateId(null);
+    }
+  }
+
+  async function handleSyncGenericWeb() {
+    if (!settings || !newTitle.trim()) return;
+    if (newCategory !== "doctrina" && newCategory !== "jurisprudencia") {
+      setError("Solo doctrina o jurisprudencia admiten sincronización web.");
+      return;
+    }
+    const category = newCategory;
+    const urls = sanitizeWebUrlList(genericWebUrls);
+    const validationError = validateWebUrlList(urls, category);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    setUploading(true);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/legal-sources/sync-web", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sourceUrls: urls,
+          category,
+          title: newTitle.trim(),
+          author: newAuthor.trim() || undefined,
+        }),
+      });
+      const data = (await res.json()) as { source?: LegalSourceRecord; error?: string };
+
+      if (!res.ok || !data.source) {
+        throw new Error(data.error ?? "No se pudo sincronizar la URL.");
+      }
+
+      persist(
+        upsertWebSource(settings, {
+          ...data.source,
+          enabled: true,
+          priority: 1,
+          title: newTitle.trim(),
+        }),
+      );
+      resetAddForm();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Error al sincronizar URL.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
   async function handleRemove(source: LegalSourceRecord) {
     if (!settings || source.kind === "builtin") return;
 
@@ -282,6 +440,54 @@ export function LegalSourcesWorkspace() {
     persist(restoreBuiltinAfterLpRemove(removeCustomSource(settings, source.id), source));
   }
 
+  function openQuickJurisUpload(templateId: string) {
+    const template = getJurisprudenceTemplate(templateId);
+    if (!template) return;
+    setActiveJurisTemplateId(templateId);
+    setNewCategory("jurisprudencia");
+    setNewTitle("");
+    setNewAuthor(template.author ?? "");
+    setUploadFile(null);
+    setAddMode("upload");
+    setShowAdd(true);
+    setError(null);
+  }
+
+  function renderSourceRow(source: LegalSourceRecord) {
+    if (!settings) return null;
+    const preset = source.lpPresetId
+      ? LP_NORMATIVE_PRESETS.find((p) => p.id === source.lpPresetId)
+      : undefined;
+    const sourceUrls =
+      source.kind === "url" && source.lpPresetId && preset
+        ? resolvePresetSyncUrls(settings, source.lpPresetId, preset.url)
+        : sanitizeLpUrlList(source.syncUrls ?? (source.sourceUrl ? [source.sourceUrl] : []));
+
+    return (
+      <SourceRow
+        key={source.id}
+        source={source}
+        syncUrls={sourceUrls.length ? sourceUrls : undefined}
+        catalogUrl={preset?.url}
+        onToggle={() => toggleSource(source.id)}
+        onMoveUp={() => persist(reorderSourcePriority(settings, source.id, "up"))}
+        onMoveDown={() => persist(reorderSourcePriority(settings, source.id, "down"))}
+        onUrlsChange={
+          source.kind === "url" && source.lpPresetId && preset
+            ? (urls) => updatePresetUrls(source.lpPresetId!, preset.url, urls)
+            : undefined
+        }
+        onResync={
+          source.kind === "url" && source.lpPresetId
+            ? (urls) => void handleSyncPreset(source.lpPresetId!, urls)
+            : undefined
+        }
+        resyncing={syncingPresetId === source.lpPresetId}
+        onRemove={source.kind !== "builtin" ? () => void handleRemove(source) : undefined}
+      />
+    );
+  }
+
   function resetAddForm() {
     setNewTitle("");
     setNewAuthor("");
@@ -289,6 +495,8 @@ export function LegalSourcesWorkspace() {
     setMaterialQuery("");
     setMaterialOptions([]);
     setSelectedMaterialId("");
+    setActiveJurisTemplateId(null);
+    setGenericWebUrls([""]);
     setShowAdd(false);
     setError(null);
   }
@@ -302,6 +510,33 @@ export function LegalSourcesWorkspace() {
           percent={pageLoadProgress.percent}
           message={pageLoadProgress.message}
           stageLabel={pageLoadProgress.stageLabel}
+        />
+      </div>
+    );
+  }
+
+  if (!settings.wizardCompleted || showReconfigureWizard) {
+    return (
+      <div className="mx-auto max-w-4xl space-y-6 py-6">
+        <LegalSourcesWizard
+          settings={settings}
+          onComplete={(next) => {
+            persist(next);
+            setShowReconfigureWizard(false);
+          }}
+          onDismiss={() => {
+            if (settings.wizardCompleted) {
+              setShowReconfigureWizard(false);
+              return;
+            }
+            persist({
+              ...settings,
+              wizardCompleted: true,
+              studyCategories: settings.studyCategories?.length
+                ? settings.studyCategories
+                : DEFAULT_STUDY_CATEGORIES,
+            });
+          }}
         />
       </div>
     );
@@ -349,6 +584,14 @@ export function LegalSourcesWorkspace() {
             {enabledSources.length} fuente{enabledSources.length === 1 ? "" : "s"} activa
             {enabledSources.length === 1 ? "" : "s"}
           </span>
+          <button
+            type="button"
+            onClick={() => setShowReconfigureWizard(true)}
+            className="inline-flex items-center gap-2 rounded-xl border border-[rgba(0,255,213,0.15)] px-3 py-2 text-xs font-semibold text-muted-foreground transition hover:text-[#F5F7FA]"
+          >
+            <Sparkles size={13} className="text-[#00FFD5]" />
+            Reconfigurar tipos de fuente
+          </button>
         </div>
 
         {settings.strictNormativeMode ? (
@@ -409,62 +652,11 @@ export function LegalSourcesWorkspace() {
         </section>
       ) : null}
 
-      {grouped.map(({ category, hints, items }) => (
-        <section key={category} className="tron-panel rounded-2xl p-5">
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <h2 className="text-sm font-bold text-[#F5F7FA]">
-              {LEGAL_SOURCE_CATEGORY_LABELS[category]}
-            </h2>
-            <p className="max-w-md text-[10px] text-muted-foreground">
-              {hints.join(" · ")}
-            </p>
-          </div>
-          <div className="mt-3 space-y-2">
-            {items.map((source) => {
-              const preset = source.lpPresetId
-                ? LP_NORMATIVE_PRESETS.find((p) => p.id === source.lpPresetId)
-                : undefined;
-              const sourceUrls =
-                source.kind === "url" && settings
-                  ? source.lpPresetId && preset
-                    ? resolvePresetSyncUrls(settings, source.lpPresetId, preset.url)
-                    : sanitizeLpUrlList(source.syncUrls ?? (source.sourceUrl ? [source.sourceUrl] : []))
-                  : [];
-
-              return (
-              <SourceRow
-                key={source.id}
-                source={source}
-                syncUrls={sourceUrls}
-                catalogUrl={preset?.url}
-                onToggle={() => toggleSource(source.id)}
-                onMoveUp={() => persist(reorderSourcePriority(settings, source.id, "up"))}
-                onMoveDown={() => persist(reorderSourcePriority(settings, source.id, "down"))}
-                onUrlsChange={
-                  source.kind === "url" && source.lpPresetId && preset
-                    ? (urls) => updatePresetUrls(source.lpPresetId!, preset.url, urls)
-                    : undefined
-                }
-                onResync={
-                  source.kind === "url" && source.lpPresetId
-                    ? (urls) => void handleSyncPreset(source.lpPresetId!, urls)
-                    : undefined
-                }
-                resyncing={syncingPresetId === source.lpPresetId}
-                onRemove={
-                  source.kind !== "builtin" ? () => void handleRemove(source) : undefined
-                }
-              />
-              );
-            })}
-          </div>
-        </section>
-      ))}
-
+      {usesStudyCategory(settings, "normativa") ? (
       <section className="tron-panel rounded-2xl p-5">
         <p className="flex items-center gap-2 text-sm font-bold text-[#F5F7FA]">
           <Globe size={16} className="text-[#00BFFF]" />
-          Sincronizar desde web (LP Derecho)
+          Normativa — sincronizar desde web (LP Derecho)
         </p>
         <p className="mt-2 text-xs leading-5 text-muted-foreground">
           Descarga normativa desde LP Pasión por el Derecho. Es la única fuente normativa
@@ -539,8 +731,36 @@ export function LegalSourcesWorkspace() {
         </div>
         {error ? <p className="mt-3 text-xs text-red-400">{error}</p> : null}
       </section>
+      ) : null}
+
+      {usesStudyCategory(settings, "jurisprudencia") ? (
+      <JurisprudenceSourcesSection
+        sources={jurisprudenceSources}
+        templateUrls={jurisTemplateUrls}
+        syncingWebTemplateId={syncingWebTemplateId}
+        onQuickUpload={openQuickJurisUpload}
+        onTemplateUrlsChange={updateJurisTemplateUrls}
+        onSyncWebUrl={(templateId, urls) => void handleSyncWebDocument(templateId, urls)}
+        renderSourceRow={(source) => renderSourceRow(source)!}
+      />
+      ) : null}
+
+      {grouped.map(({ category, hints, items }) => (
+        <section key={category} className="tron-panel rounded-2xl p-5">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <h2 className="text-sm font-bold text-[#F5F7FA]">
+              {LEGAL_SOURCE_CATEGORY_LABELS[category]}
+            </h2>
+            <p className="max-w-md text-[10px] text-muted-foreground">{hints.join(" · ")}</p>
+          </div>
+          <div className="mt-3 space-y-2">{items.map((source) => renderSourceRow(source))}</div>
+        </section>
+      ))}
 
       <div className="tron-panel rounded-2xl p-5">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Agregar otra fuente
+        </p>
         {!showAdd ? (
           <div className="flex flex-wrap gap-2">
             <button
@@ -568,6 +788,18 @@ export function LegalSourcesWorkspace() {
             <button
               type="button"
               onClick={() => {
+                setAddMode("web");
+                setNewCategory("doctrina");
+                setShowAdd(true);
+              }}
+              className="tron-btn-secondary inline-flex h-11 items-center gap-2 rounded-xl px-4 text-sm font-semibold"
+            >
+              <Globe size={16} />
+              Sincronizar URL
+            </button>
+            <button
+              type="button"
+              onClick={() => {
                 setAddMode("manual");
                 setShowAdd(true);
               }}
@@ -580,7 +812,7 @@ export function LegalSourcesWorkspace() {
         ) : (
           <div className="space-y-4">
             <div className="flex flex-wrap gap-2">
-              {(["upload", "link", "manual"] as const).map((mode) => (
+              {(["upload", "link", "web", "manual"] as const).map((mode) => (
                 <button
                   key={mode}
                   type="button"
@@ -591,7 +823,13 @@ export function LegalSourcesWorkspace() {
                       : "text-muted-foreground"
                   }`}
                 >
-                  {mode === "upload" ? "Subir PDF" : mode === "link" ? "Vincular" : "Metadatos"}
+                  {mode === "upload"
+                    ? "Subir PDF"
+                    : mode === "link"
+                      ? "Vincular"
+                      : mode === "web"
+                        ? "URL web"
+                        : "Metadatos"}
                 </button>
               ))}
             </div>
@@ -601,11 +839,13 @@ export function LegalSourcesWorkspace() {
               onChange={(e) => setNewCategory(e.target.value as LegalSourceCategory)}
               className="h-10 w-full rounded-xl border border-[rgba(0,255,213,0.12)] bg-[rgba(0,0,0,0.25)] px-3 text-sm"
             >
-              {LEGAL_SOURCE_CATEGORY_ORDER.map((cat) => (
-                <option key={cat} value={cat}>
-                  {LEGAL_SOURCE_CATEGORY_LABELS[cat]}
-                </option>
-              ))}
+              {LEGAL_SOURCE_CATEGORY_ORDER.filter((cat) => usesStudyCategory(settings, cat)).map(
+                (cat) => (
+                  <option key={cat} value={cat}>
+                    {LEGAL_SOURCE_CATEGORY_LABELS[cat]}
+                  </option>
+                ),
+              )}
             </select>
 
             {addMode === "upload" ? (
@@ -613,7 +853,14 @@ export function LegalSourcesWorkspace() {
                 <input
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
-                  placeholder="Ej. Manual de Acto Jurídico — Juan Espinoza"
+                  placeholder={
+                    activeJurisTemplateId
+                      ? (getJurisprudenceTemplate(activeJurisTemplateId)?.placeholder ??
+                        "Título del PDF de jurisprudencia")
+                      : newCategory === "jurisprudencia"
+                        ? "Ej. Compendio de casaciones civiles — 2024"
+                        : "Ej. Manual de Acto Jurídico — Juan Espinoza"
+                  }
                   className="h-10 w-full rounded-xl border border-[rgba(0,255,213,0.12)] bg-[rgba(0,0,0,0.25)] px-3 text-sm"
                 />
                 <input
@@ -670,6 +917,41 @@ export function LegalSourcesWorkspace() {
               </>
             ) : null}
 
+            {addMode === "web" ? (
+              <>
+                <input
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  placeholder={
+                    newCategory === "doctrina"
+                      ? "Ej. Artículo — Revista de Derecho Civil"
+                      : "Ej. Sentencia TC — expediente 1234"
+                  }
+                  className="h-10 w-full rounded-xl border border-[rgba(0,255,213,0.12)] bg-[rgba(0,0,0,0.25)] px-3 text-sm"
+                />
+                <input
+                  value={newAuthor}
+                  onChange={(e) => setNewAuthor(e.target.value)}
+                  placeholder="Autor u órgano (opcional)"
+                  className="h-10 w-full rounded-xl border border-[rgba(0,255,213,0.12)] bg-[rgba(0,0,0,0.25)] px-3 text-sm"
+                />
+                <LpUrlEditor
+                  urls={genericWebUrls}
+                  disabled={uploading}
+                  validateUrl={(url) =>
+                    isAllowedWebUrlForCategory(
+                      url,
+                      newCategory === "doctrina" ? "doctrina" : "jurisprudencia",
+                    )
+                  }
+                  urlLabel="URLs a sincronizar (LP · TC · PJ · SUNAT · SPIJ)"
+                  invalidHint="Solo dominios jurídicos permitidos"
+                  allowedHostsHint="LP · TC · PJ · SUNAT · SPIJ"
+                  onChange={setGenericWebUrls}
+                />
+              </>
+            ) : null}
+
             {addMode === "manual" ? (
               <>
                 <input
@@ -706,6 +988,7 @@ export function LegalSourcesWorkspace() {
                 onClick={() => {
                   if (addMode === "upload") void handleUpload();
                   else if (addMode === "link") void handleLinkMaterial();
+                  else if (addMode === "web") void handleSyncGenericWeb();
                   else handleAddManual();
                 }}
                 className="tron-btn-primary inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-semibold disabled:opacity-50"

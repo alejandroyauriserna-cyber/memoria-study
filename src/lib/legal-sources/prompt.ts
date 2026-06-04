@@ -24,15 +24,21 @@ export function buildLegalSourcesPromptBlock(
       }
       if (s.kind === "url") {
         const urlList = s.syncUrls?.length ? s.syncUrls : s.sourceUrl ? [s.sourceUrl] : [];
+        const isNormativeLp = Boolean(s.lpPresetId);
         const syncMeta = [
           urlList.length ? `URLs: ${urlList.join(" | ")}` : null,
           s.lastSyncedAt ? `Sincronizado: ${s.lastSyncedAt}` : null,
-          s.articleCount ? `${s.articleCount} artículos indexados` : null,
+          isNormativeLp && s.articleCount
+            ? `${s.articleCount} artículos indexados`
+            : s.extractedText
+              ? "Texto documento indexado (sin validación artículo a artículo)"
+              : null,
         ]
           .filter(Boolean)
           .join(" · ");
+        const tag = isNormativeLp ? "LP Derecho" : "Documento web";
         const body = s.extractedText?.trim() || s.description || "";
-        return `=== ${s.title} (id: ${s.id}) — LP Derecho ===\n${syncMeta}${body ? `\n${body}` : ""}`;
+        return `=== ${s.title} (id: ${s.id}) — ${tag} ===\n${syncMeta}${body ? `\n${body}` : ""}`;
       }
       if (s.extractedText?.trim()) {
         const meta = [s.author ? `Autor: ${s.author}` : null, s.description].filter(Boolean).join(" — ");
