@@ -7,6 +7,7 @@ import {
   ChevronUp,
   FileUp,
   Globe,
+  ExternalLink,
   Link2,
   Lock,
   Plus,
@@ -353,6 +354,17 @@ export function LegalSourcesWorkspace() {
               >
                 <span className="mr-2 text-xs font-bold text-[#86EFAC]">{i + 1}.</span>
                 <span className="min-w-0 flex-1 truncate">{s.title}</span>
+                {s.kind === "url" && s.sourceUrl ? (
+                  <a
+                    href={s.sourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="shrink-0 max-w-[45%] truncate font-mono text-[10px] text-[#00BFFF] hover:underline"
+                    title={s.sourceUrl}
+                  >
+                    {s.sourceUrl.replace(/^https?:\/\//, "")}
+                  </a>
+                ) : null}
                 {s.extractedText ? (
                   <span className="shrink-0 text-[10px] text-[#86EFAC]">PDF indexado</span>
                 ) : null}
@@ -423,6 +435,13 @@ export function LegalSourcesWorkspace() {
                   <p className="text-sm font-semibold text-[#F5F7FA]">{preset.title}</p>
                   <p className="mt-0.5 text-[10px] text-muted-foreground">{preset.normShort}</p>
                 </div>
+                <LpUrlField url={preset.url} label="URL que usará la app al sincronizar" />
+                {synced?.sourceUrl && synced.sourceUrl !== preset.url ? (
+                  <LpUrlField
+                    url={synced.sourceUrl}
+                    label="URL guardada en la última sincronización"
+                  />
+                ) : null}
                 {synced ? (
                   <p className="text-[10px] text-[#86EFAC]">
                     {synced.articleCount ?? "?"} artículos ·{" "}
@@ -705,6 +724,9 @@ function SourceRow({
             <span className="text-[10px] text-[#00BFFF]">Biblioteca</span>
           ) : null}
         </div>
+        {source.kind === "url" && source.sourceUrl ? (
+          <LpUrlField url={source.sourceUrl} label="URL indexada" compact />
+        ) : null}
       </div>
 
       <div className="flex shrink-0 items-center gap-1">
@@ -745,6 +767,62 @@ function SourceRow({
             <Trash2 size={14} />
           </button>
         ) : null}
+      </div>
+    </div>
+  );
+}
+
+function LpUrlField({
+  url,
+  label,
+  compact,
+}: {
+  url: string;
+  label: string;
+  compact?: boolean;
+}) {
+  async function copyUrl() {
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      // ignore
+    }
+  }
+
+  return (
+    <div
+      className={`rounded-lg border border-[rgba(0,191,255,0.12)] bg-[rgba(0,0,0,0.22)] ${
+        compact ? "mt-1.5 px-2 py-1.5" : "px-2.5 py-2"
+      }`}
+    >
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+        {label}
+      </p>
+      <p
+        className={`mt-1 break-all font-mono text-[#00BFFF] ${
+          compact ? "text-[9px] leading-3.5" : "text-[10px] leading-4"
+        }`}
+        title={url}
+      >
+        {url}
+      </p>
+      <div className="mt-1.5 flex flex-wrap gap-2">
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#86EFAC] hover:underline"
+        >
+          <ExternalLink size={11} />
+          Abrir en LP
+        </a>
+        <button
+          type="button"
+          onClick={() => void copyUrl()}
+          className="inline-flex items-center gap-1 text-[10px] font-semibold text-muted-foreground hover:text-[#F5F7FA]"
+        >
+          Copiar URL
+        </button>
       </div>
     </div>
   );
