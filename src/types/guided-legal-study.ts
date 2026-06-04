@@ -1,4 +1,7 @@
 export type GuidedStudyTutorAction =
+  | "analyze_page"
+  | "exam_essentials"
+  | "exam_mode"
   | "explain_page"
   | "examples"
   | "peru_law"
@@ -13,19 +16,61 @@ export type GuidedStudyTutorAction =
   | "civil_code"
   | "custom";
 
+export type HighlightCategory =
+  | "concepto"
+  | "definicion"
+  | "teoria"
+  | "principio"
+  | "clasificacion"
+  | "excepcion"
+  | "examen"
+  | "norma";
+
 export type LegalConceptType =
   | "definicion"
   | "principio"
   | "requisito"
   | "elemento"
   | "excepcion"
-  | "clasificacion";
+  | "clasificacion"
+  | "teoria";
+
+export type TextHighlight = {
+  id: string;
+  phrase: string;
+  category: HighlightCategory;
+  essential?: boolean;
+};
+
+export type KeyLearningItem = {
+  id: string;
+  label: string;
+  highlightId?: string;
+  essential?: boolean;
+};
+
+export type SecondaryMention = {
+  mention: string;
+  briefNote: string;
+};
+
+export type ProfessorConceptCard = {
+  id: string;
+  concept: string;
+  explanation: string;
+  example: string;
+  examImportance: string;
+  peruLaw?: string;
+  highlightId?: string;
+  essential?: boolean;
+};
 
 export type DetectedLegalConcept = {
   id: string;
   term: string;
   type: LegalConceptType;
   summary: string;
+  essential?: boolean;
 };
 
 export type DocumentChapter = {
@@ -55,6 +100,14 @@ export type ExamQuestionSet = {
   }>;
 };
 
+export type ExamModeContent = {
+  oral: string[];
+  desarrollo: string[];
+  test: ExamQuestionSet["test"];
+  memorableConcepts: string[];
+  commonErrors: string[];
+};
+
 export type LegalCitation = {
   norm: string;
   article: string;
@@ -62,12 +115,23 @@ export type LegalCitation = {
   updatedAt: string;
 };
 
+export type PageProfessorAnalysis = {
+  pageFocus: string;
+  secondaryMentions: SecondaryMention[];
+  keyLearning: KeyLearningItem[];
+  highlights: TextHighlight[];
+  conceptCards: ProfessorConceptCard[];
+  examMode: ExamModeContent;
+  citations: LegalCitation[];
+  comprehensionQuestion?: string;
+};
+
 export type TutorResponse = {
-  answer: string;
-  citations?: LegalCitation[];
-  concepts?: DetectedLegalConcept[];
-  questions?: ExamQuestionSet;
-  comprehensionCheck?: string;
+  analysis?: PageProfessorAnalysis;
+  /** Respuesta libre breve para preguntas custom (sin markdown). */
+  customReply?: string;
+  /** @deprecated — solo fallback si falla el JSON */
+  answer?: string;
 };
 
 export type GuidedStudySession = {
@@ -80,4 +144,58 @@ export type GuidedStudySession = {
 export type PdfPageContent = {
   pageNumber: number;
   text: string;
+};
+
+export const HIGHLIGHT_COLORS: Record<
+  HighlightCategory,
+  { bg: string; border: string; label: string; text: string }
+> = {
+  concepto: {
+    bg: "rgba(0,255,213,0.18)",
+    border: "rgba(0,255,213,0.45)",
+    label: "Concepto",
+    text: "#00FFD5",
+  },
+  definicion: {
+    bg: "rgba(255,214,0,0.18)",
+    border: "rgba(255,214,0,0.45)",
+    label: "Definición",
+    text: "#FFD600",
+  },
+  teoria: {
+    bg: "rgba(168,85,247,0.18)",
+    border: "rgba(168,85,247,0.45)",
+    label: "Teoría",
+    text: "#C084FC",
+  },
+  principio: {
+    bg: "rgba(0,255,213,0.12)",
+    border: "rgba(0,255,213,0.35)",
+    label: "Principio",
+    text: "#5EEAD4",
+  },
+  clasificacion: {
+    bg: "rgba(59,130,246,0.15)",
+    border: "rgba(59,130,246,0.4)",
+    label: "Clasificación",
+    text: "#93C5FD",
+  },
+  excepcion: {
+    bg: "rgba(251,146,60,0.15)",
+    border: "rgba(251,146,60,0.4)",
+    label: "Excepción",
+    text: "#FDBA74",
+  },
+  examen: {
+    bg: "rgba(248,113,113,0.15)",
+    border: "rgba(248,113,113,0.4)",
+    label: "Posible examen",
+    text: "#FCA5A5",
+  },
+  norma: {
+    bg: "rgba(74,222,128,0.15)",
+    border: "rgba(74,222,128,0.4)",
+    label: "Norma",
+    text: "#86EFAC",
+  },
 };

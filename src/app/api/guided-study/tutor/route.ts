@@ -10,6 +10,9 @@ export const runtime = "nodejs";
 export const maxDuration = 120;
 
 const VALID_ACTIONS = new Set<GuidedStudyTutorAction>([
+  "analyze_page",
+  "exam_essentials",
+  "exam_mode",
   "explain_page",
   "examples",
   "peru_law",
@@ -46,6 +49,7 @@ export async function POST(request: Request) {
       action?: GuidedStudyTutorAction;
       customPrompt?: string;
       index?: DocumentStudyIndex;
+      examOnly?: boolean;
     };
 
     if (!body.materialId || !body.pageNumber) {
@@ -55,8 +59,12 @@ export async function POST(request: Request) {
       );
     }
 
-    const action =
-      body.action && VALID_ACTIONS.has(body.action) ? body.action : "explain_page";
+    let action =
+      body.action && VALID_ACTIONS.has(body.action) ? body.action : "analyze_page";
+
+    if (body.examOnly && action === "analyze_page") {
+      action = "exam_essentials";
+    }
 
     const material = await loadMaterialForGuidedStudy(body.materialId);
     const totalPages = material.pages.length;
@@ -81,6 +89,7 @@ export async function POST(request: Request) {
       action,
       pageNumber,
       chapterTitle,
+      pageText,
       ...response,
     });
   } catch (caught) {

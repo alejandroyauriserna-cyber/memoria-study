@@ -2,48 +2,109 @@ import { UNT_DERECHO_AUDIENCE } from "@/lib/ai/prompts";
 import type { GuidedStudyTutorAction } from "@/types/guided-legal-study";
 
 export const GUIDED_STUDY_SYSTEM_ROLE = `
-Eres un profesor universitario de Derecho peruano, especializado en acompañar estudiantes de la UNT página por página.
+Eres un profesor universitario de Derecho peruano de la UNT. Enseñas página por página como en cátedra, NO como un chatbot que resume.
 
-REGLAS FUNDAMENTALES:
-- NO resumas páginas enteras en un párrafo. Explica TODOS los conceptos jurídicos relevantes de la página.
-- NO omitas definiciones, requisitos, elementos, excepciones, clasificaciones ni ejemplos del texto.
-- Conserva los términos técnicos; explícalos con lenguaje sencillo pero riguroso.
-- Comportate como un docente particular: paciente, didáctico, exigente.
-- Responde en español jurídico peruano.
-- Audiencia: ${UNT_DERECHO_AUDIENCE}
+PRIORIDAD ABSOLUTA — ENSEÑAR DERECHO:
+- Conceptos jurídicos, teorías, principios, definiciones, clasificaciones, diferencias doctrinales.
+- Aplicaciones prácticas y posibles preguntas de examen.
+- Relación con el ordenamiento peruano cuando corresponda.
 
-SOBRE CITAS LEGALES:
-- Solo cita normas peruanas que aparezcan en la BASE JURÍDICA OFICIAL proporcionada.
-- Indica norma, artículo, texto aplicable y fecha de actualización.
-- Si no hay base suficiente, indícalo claramente; NO inventes artículos.
-- Puedes complementar con el contenido del PDF cuando la norma no esté en la base.
+IGNORAR O MINIMIZAR (salvo que sea indispensable para entender un concepto):
+- Datos biográficos extensos de autores.
+- Contexto histórico general no vinculado a un instituto jurídico.
+- Referencias editoriales, agradecimientos, notas al pie irrelevantes.
+- Cualquier dato secundario que no aporte al aprendizaje jurídico.
 
-FORMATO: usa markdown claro con encabezados cuando sea útil.
+REGLA SOBRE AUTORES Y PERSONAS:
+- Si aparece un autor (ej. "Juan Espinoza Espinoza"), NO dediques párrafos a su biografía.
+- Máximo una línea: "Autor doctrinario peruano citado en el texto."
+- Luego pasa de inmediato al contenido jurídico relevante.
+
+PROHIBIDO:
+- Resumir la página en un párrafo genérico.
+- Usar markdown (**negritas**, ### títulos, listas con guiones).
+- Explicar elementos secundarios con la misma profundidad que conceptos jurídicos.
+- Inventar artículos de ley no presentes en la base jurídica oficial.
+
+Audiencia: ${UNT_DERECHO_AUDIENCE}
+`.trim();
+
+export const STRUCTURED_PAGE_JSON_SCHEMA = `
+Responde ÚNICAMENTE JSON válido (sin markdown) con esta forma:
+{
+  "pageFocus": "Una oración: qué debe aprender el estudiante en esta página",
+  "secondaryMentions": [
+    {"mention": "Nombre o dato secundario", "briefNote": "Una línea máximo, ej: Autor doctrinario peruano citado."}
+  ],
+  "keyLearning": [
+    {"id": "kl1", "label": "Interpretación objetiva", "highlightId": "h1", "essential": true}
+  ],
+  "highlights": [
+    {"id": "h1", "phrase": "fragmento exacto o casi exacto del texto de la página", "category": "concepto|definicion|teoria|principio|clasificacion|excepcion|examen|norma", "essential": true}
+  ],
+  "conceptCards": [
+    {
+      "id": "cc1",
+      "concept": "Nombre del concepto jurídico",
+      "explanation": "Explicación sencilla y rigurosa",
+      "example": "Caso práctico peruano",
+      "examImportance": "Por qué podría caer en examen",
+      "peruLaw": "Relación con CC, CPP u otra norma peruana",
+      "highlightId": "h1",
+      "essential": true
+    }
+  ],
+  "examMode": {
+    "oral": ["pregunta oral probable"],
+    "desarrollo": ["pregunta de desarrollo"],
+    "test": [{"question": "...", "options": ["A","B","C","D"], "answerIndex": 0, "explanation": "..."}],
+    "memorableConcepts": ["frase corta para memorizar"],
+    "commonErrors": ["error frecuente del estudiante"]
+  },
+  "citations": [{"norm": "...", "article": "...", "text": "...", "updatedAt": "..."}],
+  "comprehensionQuestion": "¿Entendiste X?"
+}
+
+Reglas del JSON:
+- highlights.phrase debe ser un fragmento recuperable del texto de la página.
+- Marca essential:true solo en el ~20% más importante para examen (regla 80/20).
+- conceptCards: uno por idea jurídica principal (máximo 6 por página).
+- secondaryMentions: solo lo secundario detectado; máximo 3 entradas breves.
+- citations: SOLO normas de la base jurídica oficial proporcionada.
 `.trim();
 
 const ACTION_DIRECTIVES: Record<GuidedStudyTutorAction, string> = {
+  analyze_page:
+    "Analiza la página como profesor. Detecta ideas jurídicas principales, genera tarjetas de enseñanza, resaltados, ideas clave y modo examen completo.",
+  exam_essentials:
+    "Filtra al 20% esencial para examen (regla 80/20). Solo keyLearning, highlights y conceptCards con essential:true. Reduce secondaryMentions al mínimo.",
+  exam_mode:
+    "Genera modo examen ampliado: oral, desarrollo, test, conceptos memorables y errores frecuentes. Mantén conceptCards solo si son indispensables para responder.",
   explain_page:
-    "Explica el contenido COMPLETO de la página actual. Enumera cada concepto jurídico importante. No omitas definiciones ni matices.",
+    "Enseña la página completa priorizando aprendizaje jurídico. Mismo formato estructurado que analyze_page.",
   examples:
-    "Genera ejemplos prácticos: uno cotidiano, uno académico y uno jurídico-peruano que ilustren los conceptos de esta página.",
+    "Amplía los conceptCards con ejemplos más claros. Mantén el resto del JSON.",
   peru_law:
-    "Relaciona el contenido con el Derecho peruano vigente. Conecta con CPP, CC, CPC, CP, CPPenal y legislación especial cuando corresponda, usando SOLO la base jurídica oficial.",
+    "Enfatiza peruLaw en cada conceptCard y citations del ordenamiento peruano.",
   detect_concepts:
-    "Identifica definiciones, principios, requisitos, elementos, excepciones y clasificaciones de esta página.",
+    "Prioriza highlights y keyLearning. conceptCards breves.",
   exam_questions:
-    "Genera preguntas de examen: 3 orales, 2 de desarrollo y 3 tipo test (4 opciones cada una con respuesta correcta).",
+    "Prioriza examMode completo.",
   verify_comprehension:
-    "Formula una pregunta de verificación sobre el concepto central de la página. Pregunta si el estudiante lo comprendió antes de continuar.",
-  simpler: "Explica el mismo contenido con palabras más sencillas, sin perder precisión jurídica.",
+    "Genera comprehensionQuestion clara y un conceptCard de repaso del concepto central.",
+  simpler:
+    "Simplifica explanation de cada conceptCard sin perder rigor jurídico.",
   first_cycle:
-    "Explica como si fuera el primer ciclo de Derecho: analogías, paso a paso, sin dar por sentado conocimientos previos.",
-  another_example: "Da otro ejemplo diferente al anterior, preferiblemente un caso peruano concreto.",
-  real_case: "Relaciona con un caso real o hipotético verosímil del sistema jurídico peruano.",
+    "Explica como primer ciclo: explanation y example más didácticos.",
+  another_example:
+    "Cambia example de cada conceptCard por uno nuevo y distinto.",
+  real_case:
+    "Enfoca example en casos reales o hipotéticos verosímiles peruanos.",
   jurisprudence:
-    "Relaciona con líneas jurisprudenciales del Tribunal Constitucional o Corte Suprema cuando sea pertinente. Si no hay datos en la base, indícalo.",
+    "Enriquece peruLaw con líneas jurisprudenciales cuando proceda; si no hay base, indícalo en examImportance.",
   civil_code:
-    "Relaciona específicamente con el Código Civil peruano, citando artículos de la base jurídica oficial.",
-  custom: "Responde la consulta del estudiante sobre la página actual.",
+    "Enriquece peruLaw y citations con Código Civil peruano de la base oficial.",
+  custom: "Responde la consulta del estudiante en customReply (texto plano breve, sin markdown). Mantén analysis si aporta contexto.",
 };
 
 export function buildTutorUserPrompt(input: {
@@ -56,7 +117,7 @@ export function buildTutorUserPrompt(input: {
   courseName?: string;
   chapterTitle?: string;
   legalBaseBlock: string;
-  jsonMode?: boolean;
+  structured?: boolean;
 }): string {
   const directive =
     input.action === "custom" && input.customPrompt?.trim()
@@ -66,33 +127,28 @@ export function buildTutorUserPrompt(input: {
   const contextParts = [
     `DOCUMENTO: ${input.documentTitle}`,
     input.courseName ? `CURSO: ${input.courseName}` : null,
-    input.chapterTitle ? `CAPÍTULO ACTUAL: ${input.chapterTitle}` : null,
+    input.chapterTitle ? `CAPÍTULO: ${input.chapterTitle}` : null,
     `PÁGINA: ${input.pageNumber} de ${input.totalPages}`,
     "",
-    "CONTENIDO DE LA PÁGINA ACTUAL:",
-    input.pageText || "(Sin texto extraíble en esta página — indica al estudiante que revise visualmente el PDF.)",
+    "TEXTO DE LA PÁGINA (fuente para highlights.phrase):",
+    input.pageText || "(Sin texto extraíble — indica al estudiante que revise el PDF visualmente.)",
     "",
-    "BASE JURÍDICA OFICIAL (Perú — usar SOLO para citas normativas):",
+    "BASE JURÍDICA OFICIAL (citas normativas):",
     input.legalBaseBlock,
     "",
     `INSTRUCCIÓN: ${directive}`,
   ].filter(Boolean);
 
-  if (input.jsonMode) {
-    contextParts.push(`
-Responde ÚNICAMENTE en JSON válido con esta forma:
-{
-  "answer": "string — respuesta principal en markdown",
-  "citations": [{"norm":"string","article":"string","text":"string","updatedAt":"string"}],
-  "concepts": [{"id":"c1","term":"string","type":"definicion|principio|requisito|elemento|excepcion|clasificacion","summary":"string"}],
-  "questions": {
-    "oral": ["string"],
-    "desarrollo": ["string"],
-    "test": [{"question":"string","options":["A","B","C","D"],"answerIndex":0,"explanation":"string"}]
-  },
-  "comprehensionCheck": "string opcional"
-}
-Incluye solo los campos relevantes para la acción solicitada.`);
+  if (input.structured) {
+    if (input.action === "custom") {
+      contextParts.push(`
+Responde JSON:
+{"customReply": "respuesta breve en texto plano", "analysis": null}
+O si conviene enseñar con tarjetas: incluye analysis con el schema completo y customReply vacío.
+${STRUCTURED_PAGE_JSON_SCHEMA}`);
+    } else {
+      contextParts.push(STRUCTURED_PAGE_JSON_SCHEMA);
+    }
   }
 
   return contextParts.join("\n");
@@ -109,34 +165,21 @@ export function buildAnalyzeDocumentPrompt(input: {
 
   return `
 Analiza este documento jurídico para crear un índice de estudio progresivo.
+Prioriza temas jurídicos sobre datos biográficos o contexto editorial.
 
 DOCUMENTO: ${input.title}
 TOTAL DE PÁGINAS: ${input.totalPages}
 
-MUESTRA DE CONTENIDO:
+MUESTRA:
 ${sampleBlock}
 
-Genera JSON con esta forma exacta:
+JSON exacto:
 {
   "title": "string",
   "totalPages": ${input.totalPages},
-  "summary": "string — descripción del documento en 2-3 oraciones",
-  "topics": ["tema1", "tema2"],
-  "chapters": [
-    {
-      "id": "ch1",
-      "title": "string",
-      "startPage": 1,
-      "endPage": 10,
-      "subtopics": ["subtema1"]
-    }
-  ]
+  "summary": "2 oraciones sobre el contenido jurídico del documento",
+  "topics": ["tema jurídico 1"],
+  "chapters": [{"id":"ch1","title":"string","startPage":1,"endPage":10,"subtopics":["subtema"]}]
 }
-
-Reglas:
-- Identifica capítulos, temas y subtítulos reales del documento.
-- Los capítulos deben cubrir todas las páginas sin solaparse.
-- topics: lista de 5-12 temas principales del documento.
-- Responde SOLO JSON válido en español.
 `.trim();
 }

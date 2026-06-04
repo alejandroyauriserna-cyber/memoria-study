@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import { PdfViewerPanel } from "@/components/guided-study/pdf-viewer-panel";
 import { LegalTutorPanel } from "@/components/guided-study/legal-tutor-panel";
+import { KeyLearningPanel } from "@/components/guided-study/key-learning-panel";
+import { filterAnalysisForExamMode } from "@/lib/guided-study/legal-tutor";
 import {
   getStudyProgressPercent,
   loadGuidedStudySession,
@@ -20,12 +22,11 @@ import {
   updateCurrentPage,
 } from "@/lib/guided-study/progress";
 import type {
-  DetectedLegalConcept,
   DocumentStudyIndex,
-  ExamQuestionSet,
   GuidedStudyTutorAction,
-  LegalCitation,
+  PageProfessorAnalysis,
 } from "@/types/guided-legal-study";
+import "./guided-study.css";
 
 type MaterialInfo = {
   id: string;
@@ -38,11 +39,9 @@ type MaterialInfo = {
 };
 
 type TutorState = {
-  answer: string | null;
-  citations?: LegalCitation[];
-  concepts?: DetectedLegalConcept[];
-  questions?: ExamQuestionSet;
-  comprehensionCheck?: string;
+  analysis: PageProfessorAnalysis | null;
+  customReply: string | null;
+  pageText: string;
 };
 
 export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }) {
@@ -52,10 +51,15 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
   const [index, setIndex] = useState<DocumentStudyIndex | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [understoodPages, setUnderstoodPages] = useState<number[]>([]);
-  const [showIndex, setShowIndex] = useState(true);
+  const [showIndex, setShowIndex] = useState(false);
+  const [examOnly, setExamOnly] = useState(false);
+  const [activeHighlightId, setActiveHighlightId] = useState<string | null>(null);
   const [tutorLoading, setTutorLoading] = useState(false);
-  const [tutorState, setTutorState] = useState<TutorState>({ answer: null });
-  const [detectedConcepts, setDetectedConcepts] = useState<DetectedLegalConcept[]>([]);
+  const [tutorState, setTutorState] = useState<TutorState>({
+    analysis: null,
+    customReply: null,
+    pageText: "",
+  });
 
   useEffect(() => {
     const session = loadGuidedStudySession(materialId);
@@ -113,7 +117,8 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
       if (!material) return;
 
       setTutorLoading(true);
-      setTutorState({ answer: null });
+      setTutorState((prev) => ({ ...prev, analysis: null, customReply: null }));
+      setActiveHighlightId(null);
 
       try {
         const response = await fetch("/api/guided-study/tutor", {
@@ -125,6 +130,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
             action,
             customPrompt,
             index,
+            examOnly,
           }),
         });
 
@@ -134,42 +140,38 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
         }
 
         setTutorState({
-          answer: payload.answer,
-          citations: payload.citations,
-          concepts: payload.concepts,
-          questions: payload.questions,
-          comprehensionCheck: payload.comprehensionCheck,
+          analysis: payload.analysis ?? null,
+          customReply: payload.customReply ?? null,
+          pageText: payload.pageText ?? "",
         });
-
-        if (payload.concepts?.length) {
-          setDetectedConcepts((prev) => {
-            const merged = [...prev];
-            for (const c of payload.concepts as DetectedLegalConcept[]) {
-              if (!merged.some((m) => m.term === c.term)) merged.push(c);
-            }
-            return merged;
-          });
-        }
       } catch (caught) {
         setTutorState({
-          answer: caught instanceof Error ? caught.message : "Error consultando al tutor.",
+          analysis: null,
+          customReply: caught instanceof Error ? caught.message : "Error consultando al profesor.",
+          pageText: "",
         });
       } finally {
         setTutorLoading(false);
       }
     },
-    [material, materialId, currentPage, index],
+    [material, materialId, currentPage, index, examOnly],
   );
 
   useEffect(() => {
     if (phase !== "ready" || !material) return;
-    void askTutor("explain_page");
-  }, [currentPage, phase, material?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+    void askTutor(examOnly ? "exam_essentials" : "analyze_page");
+  }, [currentPage, phase, material?.id, examOnly]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const displayAnalysis = useMemo(() => {
+    if (!tutorState.analysis) return null;
+    return filterAnalysisForExamMode(tutorState.analysis, examOnly);
+  }, [tutorState.analysis, examOnly]);
 
   function handlePageChange(page: number) {
     setCurrentPage(page);
     updateCurrentPage(materialId, page);
-    setTutorState({ answer: null });
+    setTutorState({ analysis: null, customReply: null, pageText: "" });
+    setActiveHighlightId(null);
   }
 
   function handleMarkUnderstood() {
@@ -178,6 +180,10 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
     if (material && currentPage < material.totalPages) {
       handlePageChange(currentPage + 1);
     }
+  }
+
+  function handleHighlightFocus(highlightId: string) {
+    setActiveHighlightId(highlightId);
   }
 
   const progressPercent =
@@ -197,9 +203,9 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 text-center">
         <Loader2 size={32} className="animate-spin text-[#00FFD5]" />
         <div>
-          <p className="text-lg font-semibold text-[#F5F7FA]">Analizando documento...</p>
+          <p className="text-lg font-semibold text-[#F5F7FA]">Preparando cátedra...</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Generando índice de temas, capítulos y preparando el tutor jurídico
+            Detectando ideas jurídicas, capítulos y resaltados inteligentes
           </p>
         </div>
       </div>
@@ -226,7 +232,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
     <div className="flex h-[calc(100dvh-5rem)] min-h-[32rem] flex-col gap-3">
       <header className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[rgba(0,255,213,0.12)] bg-[rgba(7,19,26,0.5)] px-4 py-3">
         <div className="min-w-0 flex-1">
-          <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#00FFD5]">
+          <p className="gs-section-label">
             <Sparkles size={12} />
             Modo Estudio Guiado Jurídico
           </p>
@@ -243,10 +249,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
             <p className="text-sm font-bold text-[#00FFD5]">{progressPercent}%</p>
           </div>
           <div className="h-2 w-24 overflow-hidden rounded-full bg-[rgba(0,255,213,0.1)]">
-            <div
-              className="h-full rounded-full bg-[#00FFD5] transition-all"
-              style={{ width: `${progressPercent}%` }}
-            />
+            <div className="h-full rounded-full bg-[#00FFD5] transition-all" style={{ width: `${progressPercent}%` }} />
           </div>
           <button
             type="button"
@@ -259,22 +262,39 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
         </div>
       </header>
 
+      {displayAnalysis?.keyLearning.length ? (
+        <KeyLearningPanel
+          items={displayAnalysis.keyLearning}
+          examOnly={examOnly}
+          activeHighlightId={activeHighlightId}
+          onItemClick={(item) => {
+            if (item.highlightId) handleHighlightFocus(item.highlightId);
+          }}
+        />
+      ) : null}
+
       <div className="relative min-h-0 flex-1">
         <div className="grid h-full gap-3 lg:grid-cols-2">
           <PdfViewerPanel
             fileUrl={material.fileUrl}
             pageNumber={currentPage}
             totalPages={material.totalPages}
+            pageText={tutorState.pageText}
+            highlights={displayAnalysis?.highlights}
+            examOnly={examOnly}
+            activeHighlightId={activeHighlightId}
             onPageChange={handlePageChange}
+            onHighlightClick={handleHighlightFocus}
           />
 
           <LegalTutorPanel
             loading={tutorLoading}
-            answer={tutorState.answer}
-            citations={tutorState.citations}
-            concepts={tutorState.concepts}
-            questions={tutorState.questions}
-            comprehensionCheck={tutorState.comprehensionCheck}
+            analysis={displayAnalysis}
+            customReply={tutorState.customReply}
+            examOnly={examOnly}
+            onExamOnlyChange={setExamOnly}
+            activeHighlightId={activeHighlightId}
+            onHighlightFocus={handleHighlightFocus}
             onAction={(action) => void askTutor(action)}
             onCustomAsk={(prompt) => void askTutor("custom", prompt)}
             onMarkUnderstood={handleMarkUnderstood}
@@ -300,20 +320,12 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
               >
                 <div className="flex items-center justify-between border-b border-[rgba(0,255,213,0.1)] px-4 py-3">
                   <p className="text-sm font-bold text-[#F5F7FA]">Índice de estudio</p>
-                  <button
-                    type="button"
-                    onClick={() => setShowIndex(false)}
-                    className="rounded-lg p-1 text-muted-foreground hover:text-white"
-                  >
+                  <button type="button" onClick={() => setShowIndex(false)} className="rounded-lg p-1 text-muted-foreground hover:text-white">
                     <X size={18} />
                   </button>
                 </div>
                 <div className="min-h-0 flex-1 overflow-y-auto p-4">
                   <p className="text-xs leading-5 text-muted-foreground">{index.summary}</p>
-                  <p className="mt-3 text-[10px] font-semibold uppercase tracking-wider text-[#00FFD5]">
-                    {material.totalPages} páginas · {index.chapters.length} capítulos
-                  </p>
-
                   <div className="mt-4 space-y-2">
                     {index.chapters.map((ch) => (
                       <button
@@ -339,24 +351,6 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
                       </button>
                     ))}
                   </div>
-
-                  {detectedConcepts.length ? (
-                    <div className="mt-6">
-                      <p className="text-[10px] font-semibold uppercase tracking-wider text-[#00FFD5]">
-                        Conceptos de esta sesión
-                      </p>
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        {detectedConcepts.map((c) => (
-                          <span
-                            key={c.id}
-                            className="rounded-full border border-[rgba(0,255,213,0.15)] px-2 py-0.5 text-[10px] text-muted-foreground"
-                          >
-                            {c.term}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  ) : null}
                 </div>
               </motion.aside>
             </>

@@ -13,6 +13,7 @@ import {
 import type {
   DocumentStudyIndex,
   GuidedStudyTutorAction,
+  PageProfessorAnalysis,
   TutorResponse,
 } from "@/types/guided-legal-study";
 import type { PdfPageContent } from "@/types/guided-legal-study";
@@ -33,8 +34,72 @@ const DocumentIndexSchema = z.object({
   ),
 });
 
-const TutorResponseSchema = z.object({
-  answer: z.string(),
+const HighlightCategorySchema = z.enum([
+  "concepto",
+  "definicion",
+  "teoria",
+  "principio",
+  "clasificacion",
+  "excepcion",
+  "examen",
+  "norma",
+]);
+
+const PageAnalysisSchema = z.object({
+  pageFocus: z.string(),
+  secondaryMentions: z
+    .array(z.object({ mention: z.string(), briefNote: z.string() }))
+    .default([]),
+  keyLearning: z
+    .array(
+      z.object({
+        id: z.string(),
+        label: z.string(),
+        highlightId: z.string().optional(),
+        essential: z.boolean().optional(),
+      }),
+    )
+    .default([]),
+  highlights: z
+    .array(
+      z.object({
+        id: z.string(),
+        phrase: z.string(),
+        category: HighlightCategorySchema,
+        essential: z.boolean().optional(),
+      }),
+    )
+    .default([]),
+  conceptCards: z
+    .array(
+      z.object({
+        id: z.string(),
+        concept: z.string(),
+        explanation: z.string(),
+        example: z.string(),
+        examImportance: z.string(),
+        peruLaw: z.string().optional(),
+        highlightId: z.string().optional(),
+        essential: z.boolean().optional(),
+      }),
+    )
+    .default([]),
+  examMode: z.object({
+    oral: z.array(z.string()).default([]),
+    desarrollo: z.array(z.string()).default([]),
+    test: z
+      .array(
+        z.object({
+          question: z.string(),
+          options: z.array(z.string()),
+          answerIndex: z.number(),
+          explanation: z.string(),
+        }),
+      )
+      .default([]),
+    memorableConcepts: z.array(z.string()).default([]),
+    commonErrors: z.array(z.string()).default([]),
+  }),
   citations: z
     .array(
       z.object({
@@ -44,52 +109,21 @@ const TutorResponseSchema = z.object({
         updatedAt: z.string(),
       }),
     )
-    .optional(),
-  concepts: z
-    .array(
-      z.object({
-        id: z.string(),
-        term: z.string(),
-        type: z.enum([
-          "definicion",
-          "principio",
-          "requisito",
-          "elemento",
-          "excepcion",
-          "clasificacion",
-        ]),
-        summary: z.string(),
-      }),
-    )
-    .optional(),
-  questions: z
-    .object({
-      oral: z.array(z.string()),
-      desarrollo: z.array(z.string()),
-      test: z.array(
-        z.object({
-          question: z.string(),
-          options: z.array(z.string()),
-          answerIndex: z.number(),
-          explanation: z.string(),
-        }),
-      ),
-    })
-    .optional(),
-  comprehensionCheck: z.string().optional(),
+    .default([]),
+  comprehensionQuestion: z.string().optional(),
+});
+
+const TutorResponseSchema = z.object({
+  analysis: PageAnalysisSchema.optional(),
+  customReply: z.string().optional(),
+  answer: z.string().optional(),
 });
 
 function samplePagesForAnalysis(pages: PdfPageContent[], totalPages: number) {
-  const indices = new Set<number>();
-
-  indices.add(1);
-  if (totalPages > 1) indices.add(2);
-  if (totalPages > 2) indices.add(3);
-  indices.add(Math.ceil(totalPages / 2));
-  indices.add(Math.max(1, totalPages - 1));
-  indices.add(totalPages);
+  const indices = new Set<number>([1, 2, 3, Math.ceil(totalPages / 2), totalPages - 1, totalPages]);
 
   return [...indices]
+    .filter((n) => n >= 1 && n <= totalPages)
     .sort((a, b) => a - b)
     .map((n) => pages.find((p) => p.pageNumber === n) ?? { pageNumber: n, text: "" })
     .filter((p) => p.text.length > 0)
@@ -102,12 +136,11 @@ function fallbackIndex(title: string, totalPages: number): DocumentStudyIndex {
   let id = 1;
 
   for (let start = 1; start <= totalPages; start += chunkSize) {
-    const end = Math.min(start + chunkSize - 1, totalPages);
     chapters.push({
       id: `ch${id}`,
-      title: `Bloque ${id} (págs. ${start}-${end})`,
+      title: `Bloque ${id}`,
       startPage: start,
-      endPage: end,
+      endPage: Math.min(start + chunkSize - 1, totalPages),
       subtopics: [],
     });
     id++;
@@ -116,9 +149,31 @@ function fallbackIndex(title: string, totalPages: number): DocumentStudyIndex {
   return {
     title,
     totalPages,
-    summary: "Documento jurídico para estudio progresivo página por página.",
-    topics: ["Contenido del documento"],
+    summary: "Documento jurídico para estudio progresivo.",
+    topics: ["Contenido jurídico"],
     chapters,
+  };
+}
+
+function validateCitations(
+  citations: PageProfessorAnalysis["citations"],
+  relevantArticles: ReturnType<typeof searchLegalBase>,
+) {
+  const validated = citations.filter((c) =>
+    relevantArticles.some((a) => a.norm === c.norm && a.article === c.article),
+  );
+  if (validated.length) return validated;
+  return relevantArticles.slice(0, 3).map(toLegalCitation);
+}
+
+function filterEssentials(analysis: PageProfessorAnalysis): PageProfessorAnalysis {
+  return {
+    ...analysis,
+    keyLearning: analysis.keyLearning.filter((k) => k.essential),
+    highlights: analysis.highlights.filter((h) => h.essential),
+    conceptCards: analysis.conceptCards.filter((c) => c.essential),
+    secondaryMentions: analysis.secondaryMentions.slice(0, 2),
+    pageFocus: `Lo esencial para examen: ${analysis.pageFocus}`,
   };
 }
 
@@ -133,32 +188,26 @@ export async function analyzeDocumentForStudy(input: {
     return fallbackIndex(input.title, totalPages);
   }
 
-  const prompt = buildAnalyzeDocumentPrompt({
-    title: input.title,
-    totalPages,
-    samplePages,
-  });
-
   try {
     const raw = await generateGeminiText({
-      prompt: `${GUIDED_STUDY_SYSTEM_ROLE}\n\n${prompt}`,
+      prompt: `${GUIDED_STUDY_SYSTEM_ROLE}\n\n${buildAnalyzeDocumentPrompt({
+        title: input.title,
+        totalPages,
+        samplePages,
+      })}`,
       temperature: 0.2,
       json: true,
     });
 
     const parsed = DocumentIndexSchema.parse(JSON.parse(raw));
-    return {
-      ...parsed,
-      totalPages,
-      title: parsed.title || input.title,
-    };
+    return { ...parsed, totalPages, title: parsed.title || input.title };
   } catch {
     return fallbackIndex(input.title, totalPages);
   }
 }
 
-function needsJsonResponse(action: GuidedStudyTutorAction): boolean {
-  return action === "detect_concepts" || action === "exam_questions";
+function usesStructuredResponse(action: GuidedStudyTutorAction): boolean {
+  return action !== "custom";
 }
 
 export async function askLegalStudyTutor(input: {
@@ -176,55 +225,63 @@ export async function askLegalStudyTutor(input: {
     8,
   );
   const legalBaseBlock = formatLegalBaseForPrompt(relevantArticles);
-  const jsonMode = needsJsonResponse(input.action);
-
-  const userPrompt = buildTutorUserPrompt({
-    ...input,
-    legalBaseBlock,
-    jsonMode,
-  });
+  const structured = usesStructuredResponse(input.action) || input.action === "custom";
 
   const raw = await generateGeminiText({
-    prompt: `${GUIDED_STUDY_SYSTEM_ROLE}\n\n${userPrompt}`,
-    temperature: input.action === "exam_questions" ? 0.45 : 0.35,
-    json: jsonMode,
+    prompt: `${GUIDED_STUDY_SYSTEM_ROLE}\n\n${buildTutorUserPrompt({
+      ...input,
+      legalBaseBlock,
+      structured,
+    })}`,
+    temperature: input.action === "exam_mode" ? 0.45 : 0.3,
+    json: true,
   });
 
-  if (jsonMode) {
-    try {
-      const parsed = TutorResponseSchema.parse(JSON.parse(raw));
-      const validatedCitations =
-        parsed.citations?.filter((c) =>
-          relevantArticles.some(
-            (a) => a.norm === c.norm && a.article === c.article,
-          ),
-        ) ?? relevantArticles.slice(0, 3).map(toLegalCitation);
+  try {
+    const parsed = TutorResponseSchema.parse(JSON.parse(raw));
+
+    if (parsed.customReply && !parsed.analysis) {
+      return { customReply: parsed.customReply };
+    }
+
+    if (parsed.analysis) {
+      let analysis: PageProfessorAnalysis = {
+        ...parsed.analysis,
+        citations: validateCitations(parsed.analysis.citations, relevantArticles),
+      };
+
+      if (input.action === "exam_essentials") {
+        analysis = filterEssentials(analysis);
+      }
 
       return {
-        ...parsed,
-        citations: validatedCitations.length ? validatedCitations : undefined,
+        analysis,
+        customReply: parsed.customReply,
       };
-    } catch {
-      return { answer: raw };
     }
+  } catch {
+    // fallback below
   }
 
-  const citations =
-    input.action === "peru_law" ||
-    input.action === "civil_code" ||
-    input.action === "jurisprudence"
-      ? relevantArticles.slice(0, 4).map(toLegalCitation)
-      : undefined;
-
-  return { answer: raw, citations };
+  return {
+    answer: raw,
+    customReply: "No se pudo estructurar la respuesta. Intenta de nuevo.",
+  };
 }
 
 export function findChapterForPage(
   index: DocumentStudyIndex,
   pageNumber: number,
 ): string | undefined {
-  const chapter = index.chapters.find(
+  return index.chapters.find(
     (ch) => pageNumber >= ch.startPage && pageNumber <= ch.endPage,
-  );
-  return chapter?.title;
+  )?.title;
+}
+
+export function filterAnalysisForExamMode(
+  analysis: PageProfessorAnalysis,
+  examOnly: boolean,
+): PageProfessorAnalysis {
+  if (!examOnly) return analysis;
+  return filterEssentials(analysis);
 }
