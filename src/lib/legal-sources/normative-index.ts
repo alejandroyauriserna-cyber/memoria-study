@@ -1,7 +1,4 @@
-import {
-  PERU_LEGAL_ARTICLES,
-  type LegalArticleRecord,
-} from "@/lib/guided-study/legal-base";
+import type { LegalArticleRecord } from "@/lib/guided-study/legal-base";
 import { extractArticleNumber } from "@/lib/guided-study/validate-citations";
 
 function normKey(norm: string): string {
@@ -18,9 +15,9 @@ function articleKey(article: LegalArticleRecord): string {
   return `${normKey(article.norm)}::${num.toLowerCase()}`;
 }
 
-/** Combina base curada con artículos sincronizados desde URL (estos prevalecen en duplicados). */
+/** Combina artículos sincronizados desde URL. Sin fallback estático no verificado. */
 export function mergeNormativeIndex(
-  staticArticles: LegalArticleRecord[] = PERU_LEGAL_ARTICLES,
+  staticArticles: LegalArticleRecord[] = [],
   urlArticles: LegalArticleRecord[] = [],
 ): LegalArticleRecord[] {
   const map = new Map<string, LegalArticleRecord>();

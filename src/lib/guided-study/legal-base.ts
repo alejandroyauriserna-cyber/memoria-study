@@ -16,7 +16,7 @@ export type LegalArticleRecord = {
   syncProvider?: string;
 };
 
-/** Base jurídica oficial curada — ampliar periódicamente con textos vigentes. */
+/** Base jurídica oficial curada — LEGACY: no se usa en validación del tutor; solo LP sincronizado. */
 export const LEGAL_BASE_UPDATED_AT = "2026-03-01";
 
 export const PERU_LEGAL_ARTICLES: LegalArticleRecord[] = [

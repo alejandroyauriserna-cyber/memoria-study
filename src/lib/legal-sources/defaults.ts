@@ -1,4 +1,4 @@
-import { PERU_LEGAL_ARTICLES } from "@/lib/guided-study/legal-base";
+import { coalesceLegalSources } from "@/lib/legal-sources/lp-presets";
 import type { LegalSourceRecord } from "@/types/legal-sources";
 
 /** Fuentes integradas — el estudiante activa/desactiva y define prioridad. */
@@ -8,8 +8,9 @@ export const DEFAULT_LEGAL_SOURCES: LegalSourceRecord[] = [
     title: "Constitución Política del Perú",
     category: "normativa",
     kind: "builtin",
-    enabled: true,
+    enabled: false,
     priority: 3,
+    description: "Muestra interna limitada — no usar. Sincroniza desde LP Derecho.",
     updatedAt: "2026-03-01",
   },
   {
@@ -17,8 +18,9 @@ export const DEFAULT_LEGAL_SOURCES: LegalSourceRecord[] = [
     title: "Código Civil",
     category: "normativa",
     kind: "builtin",
-    enabled: true,
+    enabled: false,
     priority: 4,
+    description: "Muestra interna limitada — no usar. Sincroniza desde LP Derecho.",
     updatedAt: "2026-03-01",
   },
   {
@@ -26,8 +28,9 @@ export const DEFAULT_LEGAL_SOURCES: LegalSourceRecord[] = [
     title: "Código Procesal Civil",
     category: "normativa",
     kind: "builtin",
-    enabled: true,
+    enabled: false,
     priority: 5,
+    description: "Muestra interna limitada — no usar. Sincroniza desde LP Derecho.",
     updatedAt: "2026-03-01",
   },
   {
@@ -108,13 +111,8 @@ export function getBuiltinSourceExcerpt(sourceId: string): string {
   const norms = SOURCE_NORM_MAP[sourceId];
   if (!norms?.length) return "";
 
-  const articles = PERU_LEGAL_ARTICLES.filter((a) =>
-    norms.some((n) => a.norm.includes(n) || a.normShort === n),
-  );
-
-  return articles
-    .map((a) => `[${a.norm} — ${a.article}] ${a.title}: "${a.text}"`)
-    .join("\n");
+  // Normativa integrada deshabilitada: no enviar muestras estáticas al tutor.
+  return "";
 }
 
 export function mergeWithDefaultSources(custom: LegalSourceRecord[]): LegalSourceRecord[] {
@@ -132,7 +130,7 @@ export function mergeWithDefaultSources(custom: LegalSourceRecord[]): LegalSourc
     }
   }
 
-  return [...byId.values()].sort((a, b) => a.priority - b.priority);
+  return coalesceLegalSources([...byId.values()].sort((a, b) => a.priority - b.priority));
 }
 
 export const LEGAL_SOURCE_TYPE_HINTS: Record<string, string[]> = {

@@ -1,3 +1,5 @@
+import type { LegalSourceRecord } from "@/types/legal-sources";
+
 export type LpNormativePreset = {
   id: string;
   title: string;
@@ -11,7 +13,7 @@ export type LpNormativePreset = {
 export const LP_NORMATIVE_PRESETS: LpNormativePreset[] = [
   {
     id: "lp-cpp",
-    title: "Constitución Política del Perú (LP)",
+    title: "Constitución Política del Perú",
     url: "https://lpderecho.pe/constitucion-politica-peru-actualizada/",
     norm: "Constitución Política del Perú",
     normShort: "CPP",
@@ -19,7 +21,7 @@ export const LP_NORMATIVE_PRESETS: LpNormativePreset[] = [
   },
   {
     id: "lp-cc",
-    title: "Código Civil (LP)",
+    title: "Código Civil",
     url: "https://lpderecho.pe/codigo-civil-peruano-realmente-actualizado/",
     norm: "Código Civil",
     normShort: "CC",
@@ -27,7 +29,7 @@ export const LP_NORMATIVE_PRESETS: LpNormativePreset[] = [
   },
   {
     id: "lp-cp",
-    title: "Código Penal (LP)",
+    title: "Código Penal",
     url: "https://lpderecho.pe/codigo-penal-peruano-actualizado/",
     norm: "Código Penal",
     normShort: "CP",
@@ -35,7 +37,7 @@ export const LP_NORMATIVE_PRESETS: LpNormativePreset[] = [
   },
   {
     id: "lp-cpc",
-    title: "Código Procesal Civil (LP)",
+    title: "Código Procesal Civil",
     url: "https://lpderecho.pe/codigo-procesal-civil-actualizado/",
     norm: "Código Procesal Civil",
     normShort: "CPC",
@@ -43,13 +45,43 @@ export const LP_NORMATIVE_PRESETS: LpNormativePreset[] = [
   },
   {
     id: "lp-ncpp",
-    title: "Código Procesal Penal (LP)",
+    title: "Código Procesal Penal",
     url: "https://lpderecho.pe/nuevo-codigo-procesal-penal-peruano-actualizado/",
     norm: "Código Procesal Penal",
     normShort: "NCPP",
     description: "Nuevo Código Procesal Penal — primera parte en LP.",
   },
 ];
+
+/** Fuente integrada que queda oculta cuando existe la versión LP sincronizada. */
+export const LP_PRESET_BUILTIN_MAP: Record<string, string> = {
+  "lp-cpp": "src-cpp",
+  "lp-cc": "src-cc",
+  "lp-cp": "src-cp",
+  "lp-cpc": "src-cpc",
+  "lp-ncpp": "src-cppenal",
+};
+
+export function getBuiltinIdForLpPreset(presetId: string): string | undefined {
+  return LP_PRESET_BUILTIN_MAP[presetId];
+}
+
+export function getLpPresetForBuiltinId(builtinId: string): string | undefined {
+  return Object.entries(LP_PRESET_BUILTIN_MAP).find(([, id]) => id === builtinId)?.[0];
+}
+
+export function normalizeLpSourceTitle(source: LegalSourceRecord): LegalSourceRecord {
+  if (source.kind !== "url" || !source.lpPresetId) return source;
+  const preset = getLpPresetById(source.lpPresetId);
+  if (!preset) return source;
+  return { ...source, title: preset.norm };
+}
+
+export function coalesceLegalSources(sources: LegalSourceRecord[]): LegalSourceRecord[] {
+  return sources
+    .filter((source) => !(source.kind === "builtin" && source.category === "normativa"))
+    .map((source) => normalizeLpSourceTitle(source));
+}
 
 export function getLpPresetById(presetId: string): LpNormativePreset | undefined {
   return LP_NORMATIVE_PRESETS.find((p) => p.id === presetId);

@@ -133,3 +133,25 @@ export function buildExtractedSummary(articles: LegalArticleRecord[], maxChars =
   }
   return output.trim();
 }
+
+function articleNumberKey(article: LegalArticleRecord): string {
+  const match = article.article.match(/(\d+(?:-[A-Za-z])?|[IVXLCDM]+)/i);
+  return match ? match[1]!.toLowerCase() : article.id;
+}
+
+/** Fusiona artículos de varias URLs LP (continuaciones, partes). */
+export function mergeLegalArticleRecords(chunks: LegalArticleRecord[][]): LegalArticleRecord[] {
+  const byKey = new Map<string, LegalArticleRecord>();
+
+  for (const articles of chunks) {
+    for (const article of articles) {
+      const key = articleNumberKey(article);
+      const existing = byKey.get(key);
+      if (!existing || article.text.length > existing.text.length) {
+        byKey.set(key, article);
+      }
+    }
+  }
+
+  return [...byKey.values()];
+}

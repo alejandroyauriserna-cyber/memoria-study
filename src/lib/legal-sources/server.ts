@@ -28,6 +28,9 @@ export function mapDbRowToLegalSource(row: Record<string, unknown>): LegalSource
     fileName: row.file_name ? String(row.file_name) : undefined,
     materialId: row.material_id ? String(row.material_id) : undefined,
     sourceUrl: row.source_url ? String(row.source_url) : undefined,
+    syncUrls: Array.isArray(row.sync_urls)
+      ? (row.sync_urls as string[]).map(String)
+      : undefined,
     lpPresetId: row.lp_preset_id ? String(row.lp_preset_id) : undefined,
     lastSyncedAt: row.last_synced_at ? String(row.last_synced_at) : undefined,
     articleCount: row.article_count != null ? Number(row.article_count) : undefined,
@@ -74,7 +77,7 @@ export async function buildNormativeIndexForUser(
   userId: string | undefined,
   settings?: LegalSourcesSettings,
 ): Promise<LegalArticleRecord[]> {
-  if (!userId) return mergeNormativeIndex();
+  if (!userId) return [];
 
   const urlSources = await loadUserUrlParsedArticles(userId);
   const settingsById = new Map((settings?.sources ?? []).map((s) => [s.id, s]));
@@ -90,7 +93,7 @@ export async function buildNormativeIndexForUser(
     }),
   );
 
-  return mergeNormativeIndex(undefined, urlArticles);
+  return mergeNormativeIndex([], urlArticles);
 }
 
 export async function loadUserLegalSourcesFromDb(userId: string): Promise<LegalSourceRecord[]> {
@@ -113,7 +116,7 @@ export async function loadUserLegalSourceSettings(userId: string): Promise<Legal
     admin
       .schema("public")
       .from("legal_source_settings")
-      .select("strict_mode, strict_normative_mode, source_overrides")
+      .select("strict_mode, strict_normative_mode, source_overrides, lp_preset_urls")
       .eq("user_id", userId)
       .maybeSingle(),
     loadUserLegalSourcesFromDb(userId),
@@ -138,6 +141,7 @@ export async function loadUserLegalSourceSettings(userId: string): Promise<Legal
   return {
     strictMode: Boolean(settingsRow?.strict_mode),
     strictNormativeMode: settingsRow?.strict_normative_mode !== false,
+    lpPresetUrls: (settingsRow?.lp_preset_urls as Record<string, string[]> | null) ?? undefined,
     sources: sources.map((s) => ({
       ...s,
       ...(overrides[s.id] ?? {}),
@@ -155,7 +159,9 @@ export async function enrichSourceSettings(
 
   try {
     const fromDb = await loadUserLegalSourceSettings(userId);
-    if (!clientSettings) return fromDb ?? { strictMode: false, strictNormativeMode: true, sources: mergeWithDefaultSources([]) };
+    if (!clientSettings) {
+      return fromDb ?? { strictMode: false, strictNormativeMode: true, sources: mergeWithDefaultSources([]) };
+    }
 
     const merged = new Map<string, LegalSourceRecord>();
     for (const s of fromDb?.sources ?? []) merged.set(s.id, s);
@@ -168,6 +174,7 @@ export async function enrichSourceSettings(
       strictMode: clientSettings.strictMode,
       strictNormativeMode:
         clientSettings.strictNormativeMode ?? fromDb?.strictNormativeMode ?? true,
+      lpPresetUrls: clientSettings.lpPresetUrls ?? fromDb?.lpPresetUrls,
       sources: [...merged.values()].sort((a, b) => a.priority - b.priority),
     };
   } catch {
@@ -195,6 +202,7 @@ export async function saveUserLegalSourceSettings(
       strict_mode: settings.strictMode,
       strict_normative_mode: settings.strictNormativeMode,
       source_overrides: overrides,
+      lp_preset_urls: settings.lpPresetUrls ?? {},
       updated_at: new Date().toISOString(),
     },
     { onConflict: "user_id" },

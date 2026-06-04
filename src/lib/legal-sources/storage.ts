@@ -25,6 +25,7 @@ export function loadLegalSourcesSettings(): LegalSourcesSettings {
     return {
       strictMode: Boolean(parsed.strictMode),
       strictNormativeMode: parsed.strictNormativeMode !== false,
+      lpPresetUrls: parsed.lpPresetUrls,
       sources: mergeWithDefaultSources(parsed.sources ?? []),
     };
   } catch {
@@ -39,7 +40,10 @@ export function saveLegalSourcesSettings(settings: LegalSourcesSettings) {
 
 export function getEnabledSources(settings: LegalSourcesSettings): LegalSourceRecord[] {
   return settings.sources
-    .filter((s) => s.enabled)
+    .filter(
+      (s) =>
+        s.enabled && !(s.kind === "builtin" && s.category === "normativa"),
+    )
     .sort((a, b) => a.priority - b.priority);
 }
 
@@ -136,6 +140,7 @@ export async function fetchLegalSourcesSettings(): Promise<LegalSourcesSettings>
     const settings: LegalSourcesSettings = {
       strictMode: remote.strictMode ?? local.strictMode,
       strictNormativeMode: remote.strictNormativeMode ?? local.strictNormativeMode,
+      lpPresetUrls: remote.lpPresetUrls ?? local.lpPresetUrls,
       sources: mergeWithDefaultSources(mergedList),
     };
     saveLegalSourcesSettings(settings);

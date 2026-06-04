@@ -18,12 +18,14 @@ export function buildLegalSourcesPromptBlock(
   const excerpts = enabledSources
     .map((s) => {
       if (s.kind === "builtin") {
+        if (s.category === "normativa") return null;
         const text = getBuiltinSourceExcerpt(s.id);
         return text ? `=== ${s.title} (id: ${s.id}) ===\n${text}` : null;
       }
       if (s.kind === "url") {
+        const urlList = s.syncUrls?.length ? s.syncUrls : s.sourceUrl ? [s.sourceUrl] : [];
         const syncMeta = [
-          s.sourceUrl ? `URL: ${s.sourceUrl}` : null,
+          urlList.length ? `URLs: ${urlList.join(" | ")}` : null,
           s.lastSyncedAt ? `Sincronizado: ${s.lastSyncedAt}` : null,
           s.articleCount ? `${s.articleCount} artículos indexados` : null,
         ]

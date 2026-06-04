@@ -22,6 +22,8 @@ export type LegalSourceRecord = {
   extractedText?: string;
   /** URL de origen (LP Derecho u otra fuente web permitida). */
   sourceUrl?: string;
+  /** Todas las URLs usadas en la última sincronización (partes / continuaciones). */
+  syncUrls?: string[];
   /** Identificador del preset LP (`lp-cc`, `lp-cpp`, …). */
   lpPresetId?: string;
   /** Fecha ISO de la última sincronización web. */
@@ -35,6 +37,8 @@ export type LegalSourcesSettings = {
   strictMode: boolean;
   /** Solo mostrar artículos verificados en la base jurídica indexada. */
   strictNormativeMode: boolean;
+  /** URLs personalizadas por preset LP (`lp-cc`, `lp-cpp`, …). */
+  lpPresetUrls?: Record<string, string[]>;
   sources: LegalSourceRecord[];
 };
 

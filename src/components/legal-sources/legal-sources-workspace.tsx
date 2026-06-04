@@ -7,7 +7,6 @@ import {
   ChevronUp,
   FileUp,
   Globe,
-  ExternalLink,
   Link2,
   Lock,
   Plus,
@@ -27,7 +26,16 @@ import {
   type LegalSourcesSettings,
 } from "@/types/legal-sources";
 import { LEGAL_SOURCE_TYPE_HINTS } from "@/lib/legal-sources/defaults";
+import {
+  applyLpSyncToSettings,
+  resolvePresetSyncUrls,
+  restoreBuiltinAfterLpRemove,
+  setPresetSyncUrls,
+  sanitizeLpUrlList,
+  validateLpUrlList,
+} from "@/lib/legal-sources/lp-url-overrides";
 import { LP_NORMATIVE_PRESETS } from "@/lib/legal-sources/lp-presets";
+import { LpUrlEditor } from "@/components/legal-sources/lp-url-editor";
 import {
   addCustomSource,
   fetchLegalSourcesSettings,
@@ -207,8 +215,23 @@ export function LegalSourcesWorkspace() {
     }
   }
 
-  async function handleSyncPreset(presetId: string) {
+  async function handleSyncPreset(presetId: string, urlsOverride?: string[]) {
     if (!settings) return;
+    const preset = LP_NORMATIVE_PRESETS.find((p) => p.id === presetId);
+    if (!preset) return;
+
+    const sourceUrls = sanitizeLpUrlList(
+      urlsOverride?.length
+        ? urlsOverride
+        : resolvePresetSyncUrls(settings, presetId, preset.url),
+    );
+
+    const validationError = validateLpUrlList(sourceUrls);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
     setSyncingPresetId(presetId);
     setError(null);
 
@@ -216,30 +239,33 @@ export function LegalSourcesWorkspace() {
       const res = await fetch("/api/legal-sources/sync-url", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ presetId }),
+        body: JSON.stringify({ presetId, sourceUrls }),
       });
       const data = (await res.json()) as {
         source?: LegalSourceRecord;
         error?: string;
         articleCount?: number;
+        sourceUrls?: string[];
       };
 
       if (!res.ok || !data.source) {
         throw new Error(data.error ?? "No se pudo sincronizar la fuente web.");
       }
 
+      const syncedUrls = sanitizeLpUrlList(data.sourceUrls ?? sourceUrls);
       persist(
-        upsertCustomSource(settings, {
-          ...data.source,
-          enabled: true,
-          priority: 1,
-        }),
+        applyLpSyncToSettings(settings, data.source, presetId, syncedUrls),
       );
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Error al sincronizar desde LP.");
     } finally {
       setSyncingPresetId(null);
     }
+  }
+
+  function updatePresetUrls(presetId: string, catalogUrl: string, urls: string[]) {
+    if (!settings) return;
+    persist(setPresetSyncUrls(settings, presetId, sanitizeLpUrlList(urls.length ? urls : [catalogUrl])));
   }
 
   async function handleRemove(source: LegalSourceRecord) {
@@ -253,7 +279,7 @@ export function LegalSourcesWorkspace() {
       }
     }
 
-    persist(removeCustomSource(settings, source.id));
+    persist(restoreBuiltinAfterLpRemove(removeCustomSource(settings, source.id), source));
   }
 
   function resetAddForm() {
@@ -290,8 +316,8 @@ export function LegalSourcesWorkspace() {
         </p>
         <h1 className="mt-2 text-3xl font-bold text-[#F5F7FA]">Mi Biblioteca Jurídica</h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-          Controla qué fuentes puede usar la IA. Solo las fuentes activadas se utilizarán para
-          explicar, citar y enseñar durante el estudio guiado.
+          Controla qué fuentes puede usar la IA. La normativa verificable proviene únicamente de
+          LP Derecho que sincronices tú (con URL y fecha). No usamos códigos integrados estáticos.
         </p>
 
         <div className="mt-5 flex flex-wrap items-center gap-3">
@@ -327,8 +353,8 @@ export function LegalSourcesWorkspace() {
 
         {settings.strictNormativeMode ? (
           <p className="mt-3 rounded-xl border border-[rgba(74,222,128,0.2)] bg-[rgba(74,222,128,0.06)] px-3 py-2 text-xs text-[#86EFAC]">
-            Modo normativo estricto: solo se muestran artículos verificados en la base jurídica
-            indexada. Si no hay certeza, no se citará ningún número de artículo.
+            Modo normativo estricto: solo se muestran artículos presentes en tus fuentes LP
+            sincronizadas. Sin sync activo, el tutor no citará números de artículo.
           </p>
         ) : null}
         {settings.strictMode ? (
@@ -354,7 +380,11 @@ export function LegalSourcesWorkspace() {
               >
                 <span className="mr-2 text-xs font-bold text-[#86EFAC]">{i + 1}.</span>
                 <span className="min-w-0 flex-1 truncate">{s.title}</span>
-                {s.kind === "url" && s.sourceUrl ? (
+                {s.kind === "url" && (s.syncUrls?.length ?? 0) > 1 ? (
+                  <span className="shrink-0 text-[10px] text-[#00BFFF]">
+                    {s.syncUrls!.length} URLs LP
+                  </span>
+                ) : s.kind === "url" && s.sourceUrl ? (
                   <a
                     href={s.sourceUrl}
                     target="_blank"
@@ -390,16 +420,34 @@ export function LegalSourcesWorkspace() {
             </p>
           </div>
           <div className="mt-3 space-y-2">
-            {items.map((source) => (
+            {items.map((source) => {
+              const preset = source.lpPresetId
+                ? LP_NORMATIVE_PRESETS.find((p) => p.id === source.lpPresetId)
+                : undefined;
+              const sourceUrls =
+                source.kind === "url" && settings
+                  ? source.lpPresetId && preset
+                    ? resolvePresetSyncUrls(settings, source.lpPresetId, preset.url)
+                    : sanitizeLpUrlList(source.syncUrls ?? (source.sourceUrl ? [source.sourceUrl] : []))
+                  : [];
+
+              return (
               <SourceRow
                 key={source.id}
                 source={source}
+                syncUrls={sourceUrls}
+                catalogUrl={preset?.url}
                 onToggle={() => toggleSource(source.id)}
                 onMoveUp={() => persist(reorderSourcePriority(settings, source.id, "up"))}
                 onMoveDown={() => persist(reorderSourcePriority(settings, source.id, "down"))}
+                onUrlsChange={
+                  source.kind === "url" && source.lpPresetId && preset
+                    ? (urls) => updatePresetUrls(source.lpPresetId!, preset.url, urls)
+                    : undefined
+                }
                 onResync={
                   source.kind === "url" && source.lpPresetId
-                    ? () => void handleSyncPreset(source.lpPresetId!)
+                    ? (urls) => void handleSyncPreset(source.lpPresetId!, urls)
                     : undefined
                 }
                 resyncing={syncingPresetId === source.lpPresetId}
@@ -407,7 +455,8 @@ export function LegalSourcesWorkspace() {
                   source.kind !== "builtin" ? () => void handleRemove(source) : undefined
                 }
               />
-            ))}
+              );
+            })}
           </div>
         </section>
       ))}
@@ -418,13 +467,15 @@ export function LegalSourcesWorkspace() {
           Sincronizar desde web (LP Derecho)
         </p>
         <p className="mt-2 text-xs leading-5 text-muted-foreground">
-          Descarga normativa actualizada desde LP Pasión por el Derecho. Los artículos se indexan
-          para validación estricta del tutor — no se inventan referencias fuera de lo sincronizado.
+          Descarga normativa desde LP Pasión por el Derecho. Es la única fuente normativa
+          verificable de la app: tú eliges la URL, revisas el enlace y queda registrada la fecha de
+          sync. Puedes agregar varias URLs si LP divide un código en partes.
         </p>
         <div className="mt-4 grid gap-2 sm:grid-cols-2">
           {LP_NORMATIVE_PRESETS.map((preset) => {
             const synced = syncedPresets.get(preset.id);
             const busy = syncingPresetId === preset.id;
+            const presetUrls = resolvePresetSyncUrls(settings, preset.id, preset.url);
 
             return (
               <div
@@ -433,18 +484,25 @@ export function LegalSourcesWorkspace() {
               >
                 <div>
                   <p className="text-sm font-semibold text-[#F5F7FA]">{preset.title}</p>
-                  <p className="mt-0.5 text-[10px] text-muted-foreground">{preset.normShort}</p>
+                  <div className="mt-0.5 flex flex-wrap items-center gap-2">
+                    <span className="text-[10px] text-muted-foreground">{preset.normShort}</span>
+                    <span className="rounded bg-[rgba(0,191,255,0.15)] px-1.5 py-0.5 text-[9px] font-semibold text-[#00BFFF]">
+                      LP Derecho
+                    </span>
+                  </div>
                 </div>
-                <LpUrlField url={preset.url} label="URL que usará la app al sincronizar" />
-                {synced?.sourceUrl && synced.sourceUrl !== preset.url ? (
-                  <LpUrlField
-                    url={synced.sourceUrl}
-                    label="URL guardada en la última sincronización"
-                  />
-                ) : null}
+                <LpUrlEditor
+                  urls={presetUrls}
+                  catalogUrl={preset.url}
+                  disabled={Boolean(syncingPresetId)}
+                  onChange={(urls) => updatePresetUrls(preset.id, preset.url, urls)}
+                />
                 {synced ? (
                   <p className="text-[10px] text-[#86EFAC]">
                     {synced.articleCount ?? "?"} artículos ·{" "}
+                    {synced.syncUrls && synced.syncUrls.length > 1
+                      ? `${synced.syncUrls.length} URLs · `
+                      : ""}
                     {synced.lastSyncedAt
                       ? new Date(synced.lastSyncedAt).toLocaleDateString("es-PE")
                       : "sincronizado"}
@@ -455,7 +513,7 @@ export function LegalSourcesWorkspace() {
                 <button
                   type="button"
                   disabled={Boolean(syncingPresetId)}
-                  onClick={() => void handleSyncPreset(preset.id)}
+                  onClick={() => void handleSyncPreset(preset.id, presetUrls)}
                   className="tron-btn-secondary inline-flex h-9 items-center justify-center gap-2 rounded-lg px-3 text-xs font-semibold disabled:opacity-50"
                 >
                   {busy ? (
@@ -676,18 +734,24 @@ export function LegalSourcesWorkspace() {
 
 function SourceRow({
   source,
+  syncUrls,
+  catalogUrl,
   onToggle,
   onMoveUp,
   onMoveDown,
+  onUrlsChange,
   onResync,
   resyncing,
   onRemove,
 }: {
   source: LegalSourceRecord;
+  syncUrls?: string[];
+  catalogUrl?: string;
   onToggle: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
-  onResync?: () => void;
+  onUrlsChange?: (urls: string[]) => void;
+  onResync?: (urls: string[]) => void;
   resyncing?: boolean;
   onRemove?: () => void;
 }) {
@@ -717,23 +781,29 @@ function SourceRow({
           ) : null}
           {source.kind === "url" ? (
             <span className="text-[10px] text-[#00BFFF]">
-              LP{source.articleCount ? ` · ${source.articleCount} arts.` : ""}
+              LP Derecho{source.articleCount ? ` · ${source.articleCount} arts.` : ""}
             </span>
           ) : null}
           {source.kind === "material" ? (
             <span className="text-[10px] text-[#00BFFF]">Biblioteca</span>
           ) : null}
         </div>
-        {source.kind === "url" && source.sourceUrl ? (
-          <LpUrlField url={source.sourceUrl} label="URL indexada" compact />
+        {source.kind === "url" && syncUrls?.length && onUrlsChange ? (
+          <LpUrlEditor
+            urls={syncUrls}
+            catalogUrl={catalogUrl}
+            compact
+            disabled={resyncing}
+            onChange={onUrlsChange}
+          />
         ) : null}
       </div>
 
       <div className="flex shrink-0 items-center gap-1">
-        {onResync ? (
+        {onResync && syncUrls?.length ? (
           <button
             type="button"
-            onClick={onResync}
+            onClick={() => onResync(syncUrls)}
             disabled={resyncing}
             className="rounded p-1 text-[#00BFFF]/80 hover:text-[#00BFFF] disabled:opacity-50"
             aria-label="Re-sincronizar"
@@ -767,62 +837,6 @@ function SourceRow({
             <Trash2 size={14} />
           </button>
         ) : null}
-      </div>
-    </div>
-  );
-}
-
-function LpUrlField({
-  url,
-  label,
-  compact,
-}: {
-  url: string;
-  label: string;
-  compact?: boolean;
-}) {
-  async function copyUrl() {
-    try {
-      await navigator.clipboard.writeText(url);
-    } catch {
-      // ignore
-    }
-  }
-
-  return (
-    <div
-      className={`rounded-lg border border-[rgba(0,191,255,0.12)] bg-[rgba(0,0,0,0.22)] ${
-        compact ? "mt-1.5 px-2 py-1.5" : "px-2.5 py-2"
-      }`}
-    >
-      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-        {label}
-      </p>
-      <p
-        className={`mt-1 break-all font-mono text-[#00BFFF] ${
-          compact ? "text-[9px] leading-3.5" : "text-[10px] leading-4"
-        }`}
-        title={url}
-      >
-        {url}
-      </p>
-      <div className="mt-1.5 flex flex-wrap gap-2">
-        <a
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#86EFAC] hover:underline"
-        >
-          <ExternalLink size={11} />
-          Abrir en LP
-        </a>
-        <button
-          type="button"
-          onClick={() => void copyUrl()}
-          className="inline-flex items-center gap-1 text-[10px] font-semibold text-muted-foreground hover:text-[#F5F7FA]"
-        >
-          Copiar URL
-        </button>
       </div>
     </div>
   );

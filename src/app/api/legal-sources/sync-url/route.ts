@@ -4,8 +4,10 @@ import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/env";
 import { fetchUrlContent } from "@/lib/legal-sources/fetch-url-content";
 import { getLpPresetById, isAllowedLpUrl } from "@/lib/legal-sources/lp-presets";
+import { sanitizeLpUrlList } from "@/lib/legal-sources/lp-url-overrides";
 import {
   buildExtractedSummary,
+  mergeLegalArticleRecords,
   parseLpLegalArticles,
 } from "@/lib/legal-sources/parse-lp-html";
 import { mapDbRowToLegalSource, truncateExtractedText } from "@/lib/legal-sources/server";
@@ -15,6 +17,25 @@ export const maxDuration = 120;
 
 function rowToClientSource(row: Record<string, unknown>) {
   return mapDbRowToLegalSource(row);
+}
+
+function resolveSourceUrls(body: {
+  presetId?: string;
+  sourceUrl?: string;
+  sourceUrls?: string[];
+}): { preset: ReturnType<typeof getLpPresetById>; urls: string[] } {
+  const preset = body.presetId ? getLpPresetById(body.presetId) : undefined;
+  const fromBody = sanitizeLpUrlList(
+    body.sourceUrls?.length
+      ? body.sourceUrls
+      : body.sourceUrl
+        ? [body.sourceUrl]
+        : [],
+  );
+
+  const urls = fromBody.length ? fromBody : preset ? [preset.url] : [];
+
+  return { preset, urls };
 }
 
 export async function POST(request: Request) {
@@ -32,18 +53,30 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Debes iniciar sesión." }, { status: 401 });
     }
 
-    const body = (await request.json()) as { presetId?: string; sourceUrl?: string };
-    const preset = body.presetId ? getLpPresetById(body.presetId) : undefined;
-    const sourceUrl = preset?.url ?? body.sourceUrl?.trim();
+    const body = (await request.json()) as {
+      presetId?: string;
+      sourceUrl?: string;
+      sourceUrls?: string[];
+      title?: string;
+      norm?: string;
+      normShort?: string;
+    };
 
-    if (!sourceUrl || !isAllowedLpUrl(sourceUrl)) {
-      return NextResponse.json(
-        { error: "Solo se admiten URLs de lpderecho.pe desde el catálogo LP." },
-        { status: 400 },
-      );
+    const { preset, urls: sourceUrls } = resolveSourceUrls(body);
+
+    if (!sourceUrls.length) {
+      return NextResponse.json({ error: "Debes indicar al menos una URL de LP." }, { status: 400 });
     }
 
-    const html = await fetchUrlContent(sourceUrl);
+    for (const url of sourceUrls) {
+      if (!isAllowedLpUrl(url)) {
+        return NextResponse.json(
+          { error: `URL no permitida: ${url}. Solo se admiten enlaces de lpderecho.pe.` },
+          { status: 400 },
+        );
+      }
+    }
+
     const syncedAt = new Date().toISOString();
     const admin = createAdminClient();
 
@@ -55,37 +88,54 @@ export async function POST(request: Request) {
 
     const { data: existing } = preset
       ? await existingQuery.eq("lp_preset_id", preset.id).maybeSingle()
-      : await existingQuery.eq("source_url", sourceUrl).maybeSingle();
+      : await existingQuery.eq("source_url", sourceUrls[0]!).maybeSingle();
 
     const sourceId = existing?.id ?? crypto.randomUUID();
-    const norm = preset?.norm ?? "Normativa LP";
-    const normShort = preset?.normShort ?? "LP";
-    const title = preset?.title ?? `Fuente LP — ${norm}`;
+    const norm = preset?.norm ?? body.norm?.trim() ?? "Normativa LP";
+    const normShort = preset?.normShort ?? body.normShort?.trim() ?? "LP";
+    const title = preset?.norm ?? body.title?.trim() ?? `Fuente LP — ${norm}`;
 
-    const articles = parseLpLegalArticles(html, {
-      norm,
-      normShort,
-      sourceId,
-      sourceUrl,
-      syncedAt,
-    });
+    const articleChunks: Awaited<ReturnType<typeof parseLpLegalArticles>>[] = [];
+    for (const url of sourceUrls) {
+      const html = await fetchUrlContent(url);
+      articleChunks.push(
+        parseLpLegalArticles(html, {
+          norm,
+          normShort,
+          sourceId,
+          sourceUrl: url,
+          syncedAt,
+        }),
+      );
+    }
+
+    const articles = mergeLegalArticleRecords(articleChunks);
 
     if (!articles.length) {
       return NextResponse.json(
-        { error: "No se pudieron extraer artículos de la página. LP puede haber cambiado su formato." },
+        {
+          error:
+            "No se pudieron extraer artículos de las URLs indicadas. LP puede haber cambiado su formato.",
+        },
         { status: 422 },
       );
     }
 
     const extractedText = truncateExtractedText(buildExtractedSummary(articles));
+    const urlsNote =
+      sourceUrls.length > 1
+        ? `Sincronizado desde ${sourceUrls.length} URLs LP.`
+        : `Sincronizado desde ${sourceUrls[0]}`;
+
     const payload = {
       user_id: user.id,
       title,
       category: "normativa" as const,
       kind: "url" as const,
       author: "LP Pasión por el Derecho",
-      description: preset?.description ?? `Sincronizado desde ${sourceUrl}`,
-      source_url: sourceUrl,
+      description: preset?.description ?? urlsNote,
+      source_url: sourceUrls[0],
+      sync_urls: sourceUrls,
       lp_preset_id: preset?.id ?? null,
       parsed_articles: articles,
       article_count: articles.length,
@@ -117,10 +167,34 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No se pudo guardar la fuente sincronizada." }, { status: 500 });
     }
 
+    if (preset?.id && body.sourceUrls?.length) {
+      const currentSettings = await admin
+        .schema("public")
+        .from("legal_source_settings")
+        .select("lp_preset_urls")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      const lpPresetUrls = {
+        ...((currentSettings.data?.lp_preset_urls as Record<string, string[]> | null) ?? {}),
+        [preset.id]: sourceUrls,
+      };
+
+      await admin.schema("public").from("legal_source_settings").upsert(
+        {
+          user_id: user.id,
+          lp_preset_urls: lpPresetUrls,
+          updated_at: syncedAt,
+        },
+        { onConflict: "user_id" },
+      );
+    }
+
     return NextResponse.json({
       source: rowToClientSource(row),
       articleCount: articles.length,
       syncedAt,
+      sourceUrls,
     });
   } catch (caught) {
     console.error("[legal-sources/sync-url]", caught);
