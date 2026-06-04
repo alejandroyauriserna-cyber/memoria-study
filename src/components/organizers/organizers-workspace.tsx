@@ -16,6 +16,8 @@ import {
   Trash2,
 } from "lucide-react";
 import { OrganizerCreatedNotice } from "@/components/organizers/organizer-created-notice";
+import { LoadingState } from "@/components/ui/loading-state";
+import { useLoadingProgress } from "@/hooks/use-loading-progress";
 import { OrganizerDetailModal } from "@/components/organizers/organizer-detail-modal";
 import { OrganizerListSkeleton } from "@/components/organizers/organizer-skeleton";
 import { useToast } from "@/components/ui/toast";
@@ -39,6 +41,7 @@ function ConfirmDialog({
   description,
   confirmLabel,
   loading,
+  preset = "generic",
   onConfirm,
   onCancel,
 }: {
@@ -47,9 +50,12 @@ function ConfirmDialog({
   description: string;
   confirmLabel: string;
   loading?: boolean;
+  preset?: "generic" | "regenerate";
   onConfirm: () => void;
   onCancel: () => void;
 }) {
+  const dialogProgress = useLoadingProgress(Boolean(loading), preset);
+
   if (!open) return null;
 
   return (
@@ -61,6 +67,17 @@ function ConfirmDialog({
       >
         <h3 className="text-lg font-semibold text-foreground">{title}</h3>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
+        {loading ? (
+          <LoadingState
+            active
+            preset={preset}
+            percent={dialogProgress.percent}
+            message={dialogProgress.message}
+            stageLabel={dialogProgress.stageLabel}
+            variant="inline"
+            className="mt-4"
+          />
+        ) : null}
         <div className="mt-6 flex justify-end gap-2">
           <button
             type="button"
@@ -77,7 +94,7 @@ function ConfirmDialog({
             className="inline-flex h-10 items-center gap-2 rounded-xl bg-red-600 px-4 text-sm font-semibold text-white hover:bg-red-700"
           >
             {loading ? <Loader2 className="animate-spin" size={16} /> : null}
-            {confirmLabel}
+            {loading ? `${dialogProgress.stageLabel} ${dialogProgress.percent}%` : confirmLabel}
           </button>
         </div>
       </motion.div>
@@ -138,6 +155,7 @@ function OrganizerCardItem({
   viewMode,
   highlighted,
   regenerating,
+  regenerateLabel,
   onView,
   onRegenerate,
   onDelete,
@@ -147,6 +165,7 @@ function OrganizerCardItem({
   viewMode: ViewMode;
   highlighted?: boolean;
   regenerating: boolean;
+  regenerateLabel?: string;
   onView: () => void;
   onRegenerate: () => void;
   onDelete: () => void;
@@ -177,6 +196,7 @@ function OrganizerCardItem({
           </button>
           <CardActionBar
             regenerating={regenerating}
+            regenerateLabel={regenerateLabel}
             hasMaterial={Boolean(organizer.material_id)}
             onView={onView}
             onRegenerate={onRegenerate}
@@ -222,6 +242,7 @@ function OrganizerCardItem({
         <div className="absolute inset-x-0 bottom-0 translate-y-full border-t border-white/20 bg-white/80 p-2 backdrop-blur-xl transition duration-300 group-hover:translate-y-0 dark:bg-black/50">
           <CardActionBar
             regenerating={regenerating}
+            regenerateLabel={regenerateLabel}
             hasMaterial={Boolean(organizer.material_id)}
             onView={onView}
             onRegenerate={onRegenerate}
@@ -240,6 +261,7 @@ function CardActionBar({
   onDelete,
   onShare,
   regenerating,
+  regenerateLabel,
   hasMaterial,
   compact = false,
 }: {
@@ -248,6 +270,7 @@ function CardActionBar({
   onDelete: () => void;
   onShare: () => void;
   regenerating: boolean;
+  regenerateLabel?: string;
   hasMaterial: boolean;
   compact?: boolean;
 }) {
@@ -267,7 +290,7 @@ function CardActionBar({
         className={btnClass}
       >
         {regenerating ? <Loader2 className="animate-spin" size={13} /> : <RefreshCw size={13} />}
-        {compact ? null : "Regenerar"}
+        {regenerating ? regenerateLabel : compact ? null : "Regenerar"}
       </button>
       <button type="button" onClick={onShare} className={btnClass} title="Compartir">
         <Share2 size={13} /> {compact ? null : "Compartir"}
@@ -304,6 +327,7 @@ export function OrganizersWorkspace({
   const [deleteTarget, setDeleteTarget] = useState<OrganizerRecord | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  const regenerateProgress = useLoadingProgress(regeneratingId !== null, "regenerate");
 
   useEffect(() => {
     const timer = window.setTimeout(() => setHydrated(true), 80);
@@ -512,6 +536,11 @@ export function OrganizersWorkspace({
                   viewMode={viewMode}
                   highlighted={organizer.id === highlightId}
                   regenerating={regeneratingId === organizer.id}
+                  regenerateLabel={
+                    regeneratingId === organizer.id
+                      ? `${regenerateProgress.stageLabel} ${regenerateProgress.percent}%`
+                      : undefined
+                  }
                   onView={() => setSelected(organizer)}
                   onRegenerate={() => handleRegenerate(organizer)}
                   onDelete={() => setDeleteTarget(organizer)}
@@ -552,6 +581,7 @@ export function OrganizersWorkspace({
         description="Esta acción no se puede deshacer."
         confirmLabel="Eliminar"
         loading={deleting}
+        preset="generic"
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
       />

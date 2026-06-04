@@ -8,11 +8,12 @@ import {
   BookOpen,
   Brain,
   ClipboardList,
-  Loader2,
   Sparkles,
   Wand2,
   type LucideIcon,
 } from "lucide-react";
+import { LoadingState } from "@/components/ui/loading-state";
+import { useLoadingProgress } from "@/hooks/use-loading-progress";
 import { CuadernoCanvasEditor } from "@/components/cuaderno/cuaderno-canvas-editor";
 import { COVER_GRADIENTS } from "@/lib/cuaderno/preferences";
 import { getCourseVisualPrefs } from "@/lib/cuaderno/preferences";
@@ -50,6 +51,8 @@ export function CuadernoClassEditor({ initialClass }: { initialClass: CuadernoCl
   const [genLoading, setGenLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [sideTab, setSideTab] = useState<"dictionary" | "ai">("dictionary");
+  const askProgress = useLoadingProgress(askLoading, "aiGenerate");
+  const genProgress = useLoadingProgress(Boolean(genLoading), "aiGenerate");
 
   const persist = useCallback(
     async (patch: Record<string, unknown>) => {
@@ -308,9 +311,16 @@ export function CuadernoClassEditor({ initialClass }: { initialClass: CuadernoCl
                 Selecciona texto en la hoja o usa los botones inferiores.
               </p>
               {askLoading ? (
-                <p className="mt-3 text-xs text-muted-foreground">
-                  <Loader2 size={12} className="mr-1 inline animate-spin" /> Pensando…
-                </p>
+                <div className="mt-3">
+                  <LoadingState
+                    active
+                    preset="aiGenerate"
+                    percent={askProgress.percent}
+                    message={askProgress.message}
+                    stageLabel={askProgress.stageLabel}
+                    variant="inline"
+                  />
+                </div>
               ) : null}
               {askAnswer ? (
                 <div className="mt-3 max-h-72 overflow-y-auto rounded-xl bg-black/25 p-3 text-xs leading-relaxed whitespace-pre-wrap text-[#F5F7FA]/90">
@@ -325,9 +335,9 @@ export function CuadernoClassEditor({ initialClass }: { initialClass: CuadernoCl
               Generar desde apuntes
             </h2>
             <div className="mt-3 flex flex-wrap gap-2">
-              <GenButton icon={Brain} label="Organizador" loading={genLoading === "organizer"} onClick={generateOrganizer} />
-              <GenButton icon={Sparkles} label="Flashcards" loading={genLoading === "deck"} onClick={() => generateDeck("deck")} />
-              <GenButton icon={ClipboardList} label="Examen" loading={genLoading === "exam"} onClick={() => generateDeck("exam")} />
+              <GenButton icon={Brain} label="Organizador" loading={genLoading === "organizer"} loadingPercent={genProgress.percent} onClick={generateOrganizer} />
+              <GenButton icon={Sparkles} label="Flashcards" loading={genLoading === "deck"} loadingPercent={genProgress.percent} onClick={() => generateDeck("deck")} />
+              <GenButton icon={ClipboardList} label="Examen" loading={genLoading === "exam"} loadingPercent={genProgress.percent} onClick={() => generateDeck("exam")} />
               <GenButton icon={Wand2} label="Mapa" loading={false} onClick={generateOrganizer} />
             </div>
           </section>
@@ -343,11 +353,13 @@ function GenButton({
   icon: Icon,
   label,
   loading,
+  loadingPercent,
   onClick,
 }: {
   icon: LucideIcon;
   label: string;
   loading: boolean;
+  loadingPercent?: number;
   onClick: () => void;
 }) {
   return (
@@ -357,8 +369,8 @@ function GenButton({
       onClick={onClick}
       className="inline-flex items-center gap-2 rounded-xl border border-[#00FFD5]/25 bg-[#00FFD5]/8 px-3 py-2 text-[11px] font-semibold text-[#00FFD5] disabled:opacity-50"
     >
-      {loading ? <Loader2 size={12} className="animate-spin" /> : <Icon size={12} />}
-      {label}
+      <Icon size={12} />
+      {loading && loadingPercent != null ? `${label} ${loadingPercent}%` : label}
     </button>
   );
 }

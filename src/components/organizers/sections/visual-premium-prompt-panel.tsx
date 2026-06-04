@@ -22,6 +22,8 @@ import {
   Wand2,
   X,
 } from "lucide-react";
+import { LoadingState } from "@/components/ui/loading-state";
+import { useLoadingProgress } from "@/hooks/use-loading-progress";
 import {
   ATLAS_JURIDICO_MODULE_SUBTITLE,
   ATLAS_JURIDICO_MODULE_TITLE,
@@ -98,6 +100,7 @@ export function VisualPremiumPromptPanel({
   );
   const [imageTitle, setImageTitle] = useState(visualPremiumPrompt?.studentTitle ?? "");
   const [generating, setGenerating] = useState(false);
+  const genProgress = useLoadingProgress(generating, "aiGenerate");
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [promptResult, setPromptResult] = useState<VisualPremiumPrompt | null>(null);
@@ -613,8 +616,8 @@ export function VisualPremiumPromptPanel({
               >
                 {generating ? (
                   <>
-                    <Loader2 size={18} className="animate-spin" />
-                    {rubricFile ? "Analizando PDF y rúbrica…" : "Analizando tu PDF…"}
+                    {rubricFile ? "Analizando PDF y rúbrica…" : "Analizando tu PDF…"}{" "}
+                    {genProgress.percent}%
                   </>
                 ) : (
                   <>
@@ -623,6 +626,16 @@ export function VisualPremiumPromptPanel({
                   </>
                 )}
               </button>
+              {generating ? (
+                <LoadingState
+                  active
+                  preset="aiGenerate"
+                  percent={genProgress.percent}
+                  message={genProgress.message}
+                  stageLabel={genProgress.stageLabel}
+                  className="mt-3"
+                />
+              ) : null}
               {error ? <p className="mt-3 text-sm text-red-400">{error}</p> : null}
             </section>
 

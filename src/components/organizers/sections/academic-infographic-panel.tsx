@@ -10,6 +10,8 @@ import {
   Sparkles,
   Wand2,
 } from "lucide-react";
+import { LoadingState } from "@/components/ui/loading-state";
+import { useLoadingProgress } from "@/hooks/use-loading-progress";
 import type { AcademicInfographic } from "@/lib/organizers/academic-infographic-types";
 
 function slugify(text: string) {
@@ -79,6 +81,7 @@ export function AcademicInfographicPanel({
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [local, setLocal] = useState<AcademicInfographic | null>(academicInfographic ?? null);
+  const generateProgress = useLoadingProgress(generating, "infographic");
 
   useEffect(() => {
     if (academicInfographic) setLocal(academicInfographic);
@@ -236,10 +239,7 @@ export function AcademicInfographicPanel({
           className="tron-btn-primary inline-flex h-12 items-center gap-2 rounded-xl px-8 text-sm font-semibold disabled:opacity-60"
         >
           {generating ? (
-            <>
-              <Loader2 size={18} className="animate-spin" />
-              Generando infografía con Gemini…
-            </>
+            <>Generando infografía… {generateProgress.percent}%</>
           ) : (
             <>
               <Sparkles size={18} />
@@ -249,10 +249,14 @@ export function AcademicInfographicPanel({
         </button>
         {error ? <p className="text-sm text-red-400">{error}</p> : null}
         {generating ? (
-          <p className="max-w-sm text-xs text-muted-foreground">
-            Construyendo prompt académico, generando ilustraciones y componiendo la infografía
-            horizontal…
-          </p>
+          <LoadingState
+            active
+            preset="infographic"
+            percent={generateProgress.percent}
+            message={generateProgress.message}
+            stageLabel={generateProgress.stageLabel}
+            className="max-w-sm"
+          />
         ) : null}
       </div>
     );
@@ -299,11 +303,29 @@ export function AcademicInfographicPanel({
             disabled={generating}
             className="inline-flex items-center gap-1.5 rounded-xl border border-[rgba(167,139,250,0.35)] bg-[rgba(167,139,250,0.1)] px-3 py-2 text-[11px] font-semibold text-[#A78BFA] transition hover:bg-[rgba(167,139,250,0.18)] disabled:opacity-50"
           >
-            {generating ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
-            Regenerar
+            {generating ? (
+              `Regenerar ${generateProgress.percent}%`
+            ) : (
+              <>
+                <Sparkles size={12} />
+                Regenerar
+              </>
+            )}
           </button>
         </div>
       </div>
+
+      {generating ? (
+        <LoadingState
+          active
+          preset="infographic"
+          percent={generateProgress.percent}
+          message={generateProgress.message}
+          stageLabel={generateProgress.stageLabel}
+          variant="inline"
+          className="mx-4 shrink-0 sm:mx-6"
+        />
+      ) : null}
 
       {error ? <p className="shrink-0 px-4 py-2 text-xs text-red-400 sm:px-6">{error}</p> : null}
       {notice ? (

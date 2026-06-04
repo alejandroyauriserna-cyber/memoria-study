@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Sparkles, Wand2 } from "lucide-react";
+import { Sparkles, Wand2 } from "lucide-react";
+import { LoadingState } from "@/components/ui/loading-state";
+import { useLoadingProgress } from "@/hooks/use-loading-progress";
 import { VisualMindMapCanvas } from "@/components/organizers/sections/visual-mind-map-canvas";
 import type { VisualMindMap } from "@/lib/organizers/visual-mind-map-types";
 import { MAX_VISUAL_MIND_MAP_IMAGES } from "@/lib/organizers/visual-mind-map-types";
@@ -18,6 +20,7 @@ export function VisualMindMapPanel({
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [localMap, setLocalMap] = useState<VisualMindMap | null>(visualMindMap ?? null);
+  const generateProgress = useLoadingProgress(generating, "mindMap");
 
   useEffect(() => {
     if (visualMindMap) setLocalMap(visualMindMap);
@@ -72,10 +75,7 @@ export function VisualMindMapPanel({
           className="tron-btn-primary inline-flex h-11 items-center gap-2 rounded-xl px-6 text-sm font-semibold disabled:opacity-60"
         >
           {generating ? (
-            <>
-              <Loader2 size={16} className="animate-spin" />
-              Generando mapa visual…
-            </>
+            <>Generando mapa visual… {generateProgress.percent}%</>
           ) : (
             <>
               <Sparkles size={16} />
@@ -85,9 +85,14 @@ export function VisualMindMapPanel({
         </button>
         {error ? <p className="text-sm text-red-400">{error}</p> : null}
         {generating ? (
-          <p className="max-w-sm text-xs text-muted-foreground">
-            Extrayendo conceptos, construyendo estructura y generando imágenes con Gemini…
-          </p>
+          <LoadingState
+            active
+            preset="mindMap"
+            percent={generateProgress.percent}
+            message={generateProgress.message}
+            stageLabel={generateProgress.stageLabel}
+            className="max-w-sm"
+          />
         ) : null}
       </div>
     );
@@ -106,10 +111,27 @@ export function VisualMindMapPanel({
           disabled={generating}
           className="inline-flex items-center gap-1.5 rounded-lg border border-[rgba(0,255,213,0.25)] px-3 py-1.5 text-[11px] font-semibold text-[#00FFD5] transition hover:bg-[rgba(0,255,213,0.1)] disabled:opacity-50"
         >
-          {generating ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
-          Regenerar
+          {generating ? (
+            `Regenerar ${generateProgress.percent}%`
+          ) : (
+            <>
+              <Sparkles size={12} />
+              Regenerar
+            </>
+          )}
         </button>
       </div>
+      {generating ? (
+        <LoadingState
+          active
+          preset="mindMap"
+          percent={generateProgress.percent}
+          message={generateProgress.message}
+          stageLabel={generateProgress.stageLabel}
+          variant="inline"
+          className="mx-4 shrink-0"
+        />
+      ) : null}
       {error ? <p className="shrink-0 px-4 py-2 text-xs text-red-400">{error}</p> : null}
       <div className="min-h-0 flex-1 p-3">
         <VisualMindMapCanvas map={map} fullscreen />

@@ -7,6 +7,7 @@ export function StudyPageNavigator({
   currentPage,
   totalPages,
   loading,
+  loadingPercent,
   onPageChange,
   onGenerate,
   pageUnderstood,
@@ -14,6 +15,7 @@ export function StudyPageNavigator({
   currentPage: number;
   totalPages: number;
   loading?: boolean;
+  loadingPercent?: number;
   onPageChange: (page: number) => void;
   onGenerate: () => void;
   pageUnderstood?: boolean;
@@ -105,11 +107,16 @@ export function StudyPageNavigator({
           className="gs-page-nav-generate"
         >
           {loading ? (
-            <Loader2 size={15} className="animate-spin" />
+            <>
+              <Loader2 size={15} className="animate-spin" />
+              Explicar página {loadingPercent != null ? `${loadingPercent}%` : ""}
+            </>
           ) : (
-            <Sparkles size={15} />
+            <>
+              <Sparkles size={15} />
+              Explicar página
+            </>
           )}
-          Explicar página
         </button>
       </div>
     </div>

@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bot, Loader2, Send, Sparkles } from "lucide-react";
+import { Bot, Send, Sparkles } from "lucide-react";
+import { LoadingState } from "@/components/ui/loading-state";
+import { useLoadingProgress } from "@/hooks/use-loading-progress";
 import { get } from "idb-keyval";
 
 export function AcademicTutorChat() {
@@ -10,6 +12,7 @@ export function AcademicTutorChat() {
   const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const queryProgress = useLoadingProgress(loading, "aiGenerate");
 
   async function askPdf(event: React.FormEvent) {
     event.preventDefault();
@@ -76,25 +79,23 @@ export function AcademicTutorChat() {
           disabled={loading || !question.trim()}
           className="tron-btn-primary inline-flex h-11 items-center gap-2 rounded-lg px-5 text-sm font-semibold disabled:opacity-50"
         >
-          {loading ? <Loader2 className="animate-spin" size={16} /> : <Send size={16} />}
-          {loading ? "Generando respuesta..." : "Enviar pregunta"}
+          {loading ? <Send size={16} /> : <Send size={16} />}
+          {loading ? `Generando… ${queryProgress.percent}%` : "Enviar pregunta"}
         </button>
       </form>
 
-      <AnimatePresence mode="wait">
-        {loading ? (
-          <motion.div
-            key="loading"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            className="mt-6 space-y-2"
-          >
-            <div className="h-3 w-3/4 animate-pulse rounded bg-[rgba(0,255,213,0.12)]" />
-            <div className="h-3 w-1/2 animate-pulse rounded bg-[rgba(0,255,213,0.08)]" />
-          </motion.div>
-        ) : null}
+      {loading ? (
+        <LoadingState
+          active
+          preset="aiGenerate"
+          percent={queryProgress.percent}
+          message={queryProgress.message}
+          stageLabel={queryProgress.stageLabel}
+          className="mt-6"
+        />
+      ) : null}
 
+      <AnimatePresence mode="wait">
         {error ? (
           <motion.p key="error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-6 text-sm text-[#FF8A00]">
             {error}

@@ -231,7 +231,7 @@ export function MaterialCard({ material }: { material: Material }) {
             ) : (
               <Sparkles size={16} />
             )}
-            {isGenerating ? stage.label : "Estudiar con IA"}
+            {isGenerating ? `${stage.label} ${displayPercent}%` : "Estudiar con IA"}
           </button>
         ) : null}
       </div>

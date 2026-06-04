@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Brain, FileText, Loader2, Search, Sparkles, Star } from "lucide-react";
+import { Brain, FileText, Search, Sparkles, Star } from "lucide-react";
+import { LoadingState } from "@/components/ui/loading-state";
+import { useLoadingProgress } from "@/hooks/use-loading-progress";
 import { MaterialCard } from "@/components/library/material-card";
 import type { Material } from "@/types/material";
 import type { SearchSuggestion } from "@/lib/search/score";
@@ -22,6 +24,7 @@ export function LibrarySearch({ compact = false }: { compact?: boolean }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<number | null>(null);
+  const searchProgress = useLoadingProgress(isLoading, "search");
 
   const trimmed = query.trim();
   const hasQuery = trimmed.length > 0;
@@ -189,7 +192,9 @@ export function LibrarySearch({ compact = false }: { compact?: boolean }) {
             aria-controls="search-suggestions"
           />
           {isLoading ? (
-            <Loader2 className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 animate-spin text-[#00FFD5]" />
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold tabular-nums text-[#00FFD5]">
+              {searchProgress.percent}%
+            </span>
           ) : null}
         </label>
 
@@ -206,6 +211,17 @@ export function LibrarySearch({ compact = false }: { compact?: boolean }) {
             >
               {suggestions.length === 0 && !isLoading ? (
                 <p className="px-4 py-6 text-sm text-muted-foreground">Sin coincidencias para «{trimmed}»</p>
+              ) : isLoading ? (
+                <div className="px-4 py-4">
+                  <LoadingState
+                    active
+                    preset="search"
+                    percent={searchProgress.percent}
+                    message={searchProgress.message}
+                    stageLabel={searchProgress.stageLabel}
+                    variant="inline"
+                  />
+                </div>
               ) : (
                 <ul className="max-h-[min(420px,50vh)] overflow-y-auto py-2">
                   {suggestions.map((item, index) => (

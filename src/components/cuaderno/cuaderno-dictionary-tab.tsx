@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { BookOpen, Loader2, Search } from "lucide-react";
+import { BookOpen, Search } from "lucide-react";
+import { LoadingState } from "@/components/ui/loading-state";
+import { useLoadingProgress } from "@/hooks/use-loading-progress";
 import type { CuadernoDictionaryResponse } from "@/types/cuaderno";
 
 const EXAMPLES = [
@@ -18,6 +20,7 @@ export function CuadernoDictionaryTab() {
   const [loading, setLoading] = useState(false);
   const [entry, setEntry] = useState<CuadernoDictionaryResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const dictProgress = useLoadingProgress(loading, "dictionary");
 
   async function lookup(query: string) {
     const q = query.trim();
@@ -91,15 +94,19 @@ export function CuadernoDictionaryTab() {
           onClick={() => lookup(term)}
           className="tron-btn-primary mt-6 w-full rounded-xl py-3 text-sm font-semibold disabled:opacity-50"
         >
-          {loading ? (
-            <span className="inline-flex items-center justify-center gap-2">
-              <Loader2 size={16} className="animate-spin" /> Consultando IA…
-            </span>
-          ) : (
-            "Consultar"
-          )}
+          {loading ? `Consultando… ${dictProgress.percent}%` : "Consultar"}
         </button>
       </div>
+
+      {loading ? (
+        <LoadingState
+          active
+          preset="dictionary"
+          percent={dictProgress.percent}
+          message={dictProgress.message}
+          stageLabel={dictProgress.stageLabel}
+        />
+      ) : null}
 
       {error ? <p className="text-sm text-red-400">{error}</p> : null}
 

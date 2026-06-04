@@ -23,6 +23,8 @@ import { VisualSummaryCard } from "@/components/organizers/sections/visual-summa
 import { VisualMindMapPanel } from "@/components/organizers/sections/visual-mind-map-panel";
 import { VisualPremiumPromptPanel } from "@/components/organizers/sections/visual-premium-prompt-panel";
 import { OrganizerContentSkeleton } from "@/components/organizers/organizer-skeleton";
+import { LoadingState } from "@/components/ui/loading-state";
+import { useLoadingProgress } from "@/hooks/use-loading-progress";
 import { useLearningAnalytics } from "@/components/organizers/sections/learning-analytics-panel";
 
 export function OrganizerContentView({
@@ -41,6 +43,7 @@ export function OrganizerContentView({
   onContentUpdate?: (content: unknown) => void;
 }) {
   const [activePanel, setActivePanel] = useState<StudioPanelId>(null);
+  const loadProgress = useLoadingProgress(loading, "generic");
   const analyticsKey = deckKey ?? "organizer";
   const { recordConcept, recordAnswer } = useLearningAnalytics(analyticsKey);
 
@@ -53,7 +56,20 @@ export function OrganizerContentView({
   const reviewBundle = mergeReviewContent(parsed);
 
   if (loading) {
-    return <OrganizerContentSkeleton studio={studio} />;
+    return (
+      <div className="relative min-h-[200px]">
+        <OrganizerContentSkeleton studio={studio} />
+        <LoadingState
+          active
+          preset="generic"
+          percent={loadProgress.percent}
+          message={loadProgress.message}
+          stageLabel={loadProgress.stageLabel}
+          variant="overlay"
+          className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 backdrop-blur-[2px]"
+        />
+      </div>
+    );
   }
 
   if (!hasOrganizerSections(parsed)) {

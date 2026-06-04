@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, Sparkles, X } from "lucide-react";
+import { Sparkles, X } from "lucide-react";
+import { LoadingState } from "@/components/ui/loading-state";
+import { useLoadingProgress } from "@/hooks/use-loading-progress";
 import { generateGeminiText } from "@/lib/ai/gemini-text";
 
 const SUGGESTIONS = [
@@ -29,6 +31,7 @@ export function CuadernoStickerDesigner({
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState<{ src: string; label: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const stickerProgress = useLoadingProgress(loading, "sticker");
 
   useEffect(() => {
     if (open && initialPrompt) setPrompt(initialPrompt);
@@ -149,6 +152,18 @@ Responde en 2 frases: 1) idea visual del sticker 2) prompt corto en inglés para
 
             {error ? <p className="cn-sticker-designer-error">{error}</p> : null}
 
+            {loading ? (
+              <LoadingState
+                active
+                preset="sticker"
+                percent={stickerProgress.percent}
+                message={stickerProgress.message}
+                stageLabel={stickerProgress.stageLabel}
+                variant="inline"
+                className="mx-4 mb-2"
+              />
+            ) : null}
+
             <div className="cn-sticker-designer-suggestions">
               {SUGGESTIONS.map((s) => (
                 <button key={s} type="button" onClick={() => setPrompt(s)}>
@@ -165,8 +180,12 @@ Responde en 2 frases: 1) idea visual del sticker 2) prompt corto en inglés para
                 onKeyDown={(e) => e.key === "Enter" && !loading && void askDesigner()}
               />
               <button type="button" disabled={loading} onClick={() => void askDesigner()}>
-                {loading ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
-                Crear
+                {loading ? `Creando… ${stickerProgress.percent}%` : (
+                  <>
+                    <Sparkles size={16} />
+                    Crear
+                  </>
+                )}
               </button>
             </footer>
           </motion.div>

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { AcademicNavigator } from "@/components/study/academic-navigator";
 import { AiAnalysisBanner } from "@/components/study/ai-analysis-banner";
 import { GenerationProgress } from "@/components/study/generation-progress";
+import { LoadingState } from "@/components/ui/loading-state";
 import { GenerationSettings } from "@/components/study/generation-settings";
 import { StudyHub } from "@/components/study/study-hub";
 import { detectionToSelection } from "@/lib/academic/detect-course";
@@ -34,6 +35,32 @@ function isExtractDone(
   event: PdfExtractStreamEvent,
 ): event is Extract<PdfExtractStreamEvent, { stage: "done" }> {
   return event.stage === "done" && "text" in event;
+}
+
+function mapExtractEvent(event: PdfExtractStreamEvent): ProgressState | null {
+  if (event.stage === "error" || isExtractDone(event)) return null;
+
+  const stageLabel =
+    event.stage === "ocr"
+      ? "OCR (documento escaneado)"
+      : event.stage === "parse"
+        ? "Leyendo PDF"
+        : "Subiendo";
+
+  const mappedPercent =
+    event.stage === "ocr"
+      ? 8 + Math.round(event.percent * 0.42)
+      : event.stage === "parse"
+        ? 8 + Math.round(event.percent * 0.35)
+        : event.percent;
+
+  return {
+    percent: mappedPercent,
+    message: event.message,
+    stageLabel,
+    currentChunk: event.currentChunk,
+    totalChunks: event.totalChunks,
+  };
 }
 
 async function readPdfExtractStream(
@@ -86,6 +113,7 @@ export function UploadGenerator() {
   const [academic, setAcademic] = useState<AcademicSelection | null>(() => loadAcademicSelection());
   const [detection, setDetection] = useState<CourseDetectionResult | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
+  const [analyzeProgress, setAnalyzeProgress] = useState<ProgressState | null>(null);
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
   const handleAcademicChange = useCallback((selection: AcademicSelection) => {
@@ -102,6 +130,11 @@ export function UploadGenerator() {
     setAnalyzing(true);
     setError("");
     setDetection(null);
+    setAnalyzeProgress({
+      percent: 2,
+      message: "Analizando PDF...",
+      stageLabel: "Leyendo PDF",
+    });
 
     try {
       const extractData = new FormData();
@@ -127,7 +160,15 @@ export function UploadGenerator() {
         }
         if (isExtractDone(event)) {
           extractedText = event.text;
+          setAnalyzeProgress({
+            percent: 100,
+            message: "Detectando curso académico...",
+            stageLabel: "Finalizando",
+          });
+          return;
         }
+        const mapped = mapExtractEvent(event);
+        if (mapped) setAnalyzeProgress(mapped);
       });
 
       if (extractError) throw new Error(extractError);
@@ -157,6 +198,7 @@ export function UploadGenerator() {
       setError(caught instanceof Error ? caught.message : "Error al analizar el PDF.");
     } finally {
       setAnalyzing(false);
+      setAnalyzeProgress(null);
     }
   }
 
@@ -236,27 +278,8 @@ export function UploadGenerator() {
           return;
         }
 
-        const stageLabel =
-          event.stage === "ocr"
-            ? "OCR (documento escaneado)"
-            : event.stage === "parse"
-              ? "Leyendo PDF"
-              : "Subiendo";
-
-        const mappedPercent =
-          event.stage === "ocr"
-            ? 8 + Math.round(event.percent * 0.42)
-            : event.stage === "parse"
-              ? 8 + Math.round(event.percent * 0.35)
-              : event.percent;
-
-        setProgress({
-          percent: mappedPercent,
-          message: event.message,
-          stageLabel,
-          currentChunk: event.currentChunk,
-          totalChunks: event.totalChunks,
-        });
+        const mapped = mapExtractEvent(event);
+        if (mapped) setProgress(mapped);
       });
 
       if (extractError) {
@@ -465,13 +488,29 @@ export function UploadGenerator() {
               }}
             >
               {analyzing ? <Loader2 className="animate-spin" size={16} /> : <Sparkles size={16} />}
-              {analyzing ? "Analizando..." : "Analizar y detectar curso"}
+              {analyzing
+                ? `Analizando… ${analyzeProgress?.percent ?? 0}%`
+                : "Analizar y detectar curso"}
             </Button>
             <Button type="submit" disabled={isWorking || !academic || !fileName}>
               {isWorking ? <Loader2 className="animate-spin" size={16} /> : <WandSparkles size={16} />}
               {isWorking ? "Procesando..." : "Generar material"}
             </Button>
           </div>
+
+          {analyzing && analyzeProgress ? (
+            <div className="mt-4">
+              <LoadingState
+                active
+                preset="pdfExtract"
+                percent={analyzeProgress.percent}
+                message={analyzeProgress.message}
+                stageLabel={analyzeProgress.stageLabel}
+                currentChunk={analyzeProgress.currentChunk}
+                totalChunks={analyzeProgress.totalChunks}
+              />
+            </div>
+          ) : null}
 
           {progress && isWorking ? (
             <div className="mt-4">

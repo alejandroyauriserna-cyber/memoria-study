@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Loader2, Sparkles, Star } from "lucide-react";
+import { Sparkles, Star } from "lucide-react";
 import { useState } from "react";
+import { LoadingState } from "@/components/ui/loading-state";
+import { useLoadingProgress } from "@/hooks/use-loading-progress";
 import { formatCuadernoRelativeTime } from "@/lib/cuaderno/format";
 import { getTemplatePreviewClass } from "@/lib/cuaderno/paper-styles";
 import { estimatePageCount, parseNoteContent, type SheetCoverMeta } from "@/lib/cuaderno/note-meta";
@@ -30,6 +32,7 @@ export function CuadernoSheetCover({
   const sheet = meta.sheetCover;
   const [generating, setGenerating] = useState(false);
   const [localSheet, setLocalSheet] = useState<SheetCoverMeta | undefined>(sheet);
+  const coverProgress = useLoadingProgress(generating, "aiGenerate");
 
   const display = localSheet ?? defaultSheet(item, courseCover);
   const pages = estimatePageCount(item.notes);
@@ -96,10 +99,21 @@ export function CuadernoSheetCover({
         }}
         disabled={generating}
         className="cn-sheet-ai-btn"
-        title="Generar mini portada con IA"
+        title={generating ? `Generando mini portada… ${coverProgress.percent}%` : "Generar mini portada con IA"}
       >
-        {generating ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+        {generating ? `${coverProgress.percent}%` : <Sparkles size={12} />}
       </button>
+      {generating ? (
+        <LoadingState
+          active
+          preset="aiGenerate"
+          percent={coverProgress.percent}
+          message={coverProgress.message}
+          stageLabel={coverProgress.stageLabel}
+          variant="inline"
+          className="cn-sheet-ai-progress"
+        />
+      ) : null}
     </motion.article>
   );
 }

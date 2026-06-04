@@ -7,13 +7,14 @@ import {
   AlertCircle,
   BookOpen,
   ChevronRight,
-  Loader2,
   Sparkles,
   X,
 } from "lucide-react";
 import { PdfViewerPanel } from "@/components/guided-study/pdf-viewer-panel";
 import { LegalTutorPanel } from "@/components/guided-study/legal-tutor-panel";
 import { StudyPageNavigator } from "@/components/guided-study/study-page-navigator";
+import { LoadingState } from "@/components/ui/loading-state";
+import { useLoadingProgress } from "@/hooks/use-loading-progress";
 import { filterAnalysisForExamMode } from "@/lib/guided-study/legal-tutor";
 import { loadLegalSourcesSettings } from "@/lib/legal-sources/storage";
 import {
@@ -65,6 +66,8 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
   });
   const [analyzedPage, setAnalyzedPage] = useState<number | null>(null);
   const initialAnalysisDone = useRef(false);
+  const initProgress = useLoadingProgress(phase === "loading", "guidedStudyInit");
+  const tutorProgress = useLoadingProgress(tutorLoading, "aiAnalyze");
 
   useEffect(() => {
     const session = loadGuidedStudySession(materialId);
@@ -217,10 +220,15 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
 
   if (phase === "loading") {
     return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 text-center">
-        <Loader2 size={32} className="animate-spin text-[#00FFD5]" />
-        <p className="text-lg font-semibold text-[#F5F7FA]">Preparando documento...</p>
-      </div>
+      <LoadingState
+        active
+        preset="guidedStudyInit"
+        percent={initProgress.percent}
+        message={initProgress.message}
+        stageLabel={initProgress.stageLabel}
+        variant="overlay"
+        className="min-h-[60vh]"
+      />
     );
   }
 
@@ -269,6 +277,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
         currentPage={currentPage}
         totalPages={material.totalPages}
         loading={tutorLoading}
+        loadingPercent={tutorProgress.percent}
         onPageChange={handlePageChange}
         onGenerate={handleGeneratePage}
         pageUnderstood={understoodPages.includes(currentPage)}
@@ -285,6 +294,9 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
 
           <LegalTutorPanel
             loading={tutorLoading}
+            loadingPercent={tutorProgress.percent}
+            loadingMessage={tutorProgress.message}
+            loadingStageLabel={tutorProgress.stageLabel}
             analysis={displayAnalysis}
             customReply={tutorState.customReply}
             examOnly={examOnly}

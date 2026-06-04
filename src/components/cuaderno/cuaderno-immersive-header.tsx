@@ -6,7 +6,6 @@ import {
   ArrowLeft,
   FileText,
   LayoutGrid,
-  Loader2,
   Maximize2,
   Minimize2,
   MoreHorizontal,
@@ -15,6 +14,7 @@ import {
   Sparkles,
   Star,
 } from "lucide-react";
+import { useLoadingProgress } from "@/hooks/use-loading-progress";
 import { CuadernoFloatingMenu, FloatingMenuItem } from "@/components/cuaderno/cuaderno-floating-menu";
 import { PAGE_SIZE_OPTIONS, type CuadernoPageSizeMode } from "@/lib/cuaderno/page-size";
 import { saveLayoutMode, type CuadernoLayoutMode } from "@/lib/cuaderno/editor-preferences";
@@ -68,11 +68,12 @@ export function CuadernoImmersiveHeader({
   const menuRef = useRef<HTMLButtonElement>(null);
   const sheetRef = useRef<HTMLButtonElement>(null);
   const viewRef = useRef<HTMLButtonElement>(null);
+  const saveProgress = useLoadingProgress(saveState === "saving", "save");
 
   const status =
     saveState === "saving" ? (
       <span className="cn-immersive-header-status">
-        <Loader2 size={11} className="animate-spin" /> Guardando
+        Guardando {saveProgress.percent}%
       </span>
     ) : saveState === "saved" ? (
       <span className="cn-immersive-header-status">Guardado</span>

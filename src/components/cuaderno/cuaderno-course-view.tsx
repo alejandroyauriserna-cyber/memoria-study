@@ -4,7 +4,8 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowLeft, Loader2, Plus } from "lucide-react";
+import { ArrowLeft, Plus } from "lucide-react";
+import { useLoadingProgress } from "@/hooks/use-loading-progress";
 import { buildCuadernoFolders } from "@/lib/cuaderno/folders";
 import { CuadernoNotebookCover } from "@/components/cuaderno/cuaderno-notebook-cover";
 import { CuadernoSheetCover } from "@/components/cuaderno/cuaderno-sheet-cover";
@@ -51,6 +52,7 @@ function CuadernoCourseViewInner({
   const [pickerOpen, setPickerOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const createProgress = useLoadingProgress(creating, "generic");
 
   const located = useMemo(() => findCourseById(courseId), [courseId]);
 
@@ -161,8 +163,14 @@ function CuadernoCourseViewInner({
             onClick={() => setPickerOpen(true)}
             className="tron-btn-primary mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3.5 text-sm font-bold sm:w-auto"
           >
-            {creating ? <Loader2 size={18} className="animate-spin" /> : <Plus size={18} />}
-            Nueva clase
+            {creating ? (
+              `Creando… ${createProgress.percent}%`
+            ) : (
+              <>
+                <Plus size={18} />
+                Nueva clase
+              </>
+            )}
           </button>
         </div>
       </motion.div>

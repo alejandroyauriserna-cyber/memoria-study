@@ -23,6 +23,8 @@ import {
   Zap,
 } from "lucide-react";
 import { ProfileForm } from "@/components/profile/profile-form";
+import { LoadingState } from "@/components/ui/loading-state";
+import { useLoadingProgress } from "@/hooks/use-loading-progress";
 import {
   aggregateClientLearningStats,
   formatStudyHours,
@@ -144,6 +146,8 @@ export function LearningHub({
   );
 
   const level = useMemo(() => (stats ? computeStudyLevel(stats) : null), [stats]);
+  const profileLoading = stats === null;
+  const profileProgress = useLoadingProgress(profileLoading, "profile");
 
   const earnedCount = achievements.filter((a) => a.earned).length;
 
@@ -323,7 +327,15 @@ export function LearningHub({
               </div>
             </div>
           ) : (
-            <p className="mt-4 text-sm text-muted-foreground">Cargando perfil...</p>
+            <LoadingState
+              active={profileLoading}
+              preset="profile"
+              percent={profileProgress.percent}
+              message={profileProgress.message}
+              stageLabel={profileProgress.stageLabel}
+              variant="inline"
+              className="mt-4"
+            />
           )}
         </section>
 

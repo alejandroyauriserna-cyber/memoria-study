@@ -9,11 +9,12 @@ import {
   GitBranch,
   HelpCircle,
   Layers,
-  Loader2,
   Scale,
   Sparkles,
   X,
 } from "lucide-react";
+import { LoadingState } from "@/components/ui/loading-state";
+import { useLoadingProgress } from "@/hooks/use-loading-progress";
 import type { CuadernoAskAction, CuadernoDictionaryResponse } from "@/types/cuaderno";
 
 type AiActionId =
@@ -79,6 +80,9 @@ export function CuadernoAiSidebar({
   genLoading: string | null;
   courseAccent?: string;
 }) {
+  const genActive = genLoading !== null;
+  const genProgress = useLoadingProgress(genActive, "aiGenerate");
+
   return (
     <>
       <div
@@ -197,14 +201,12 @@ export function CuadernoAiSidebar({
                   onClick={onAskCustom}
                   className="cn-ai-btn-primary mt-2 w-full"
                 >
-                  {askLoading ? "Pensando…" : "Preguntar"}
-                </button>
-                {askLoading ? (
-                  <p className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-                    <Loader2 size={14} className="animate-spin" /> Generando…
-                  </p>
-                ) : null}
-                {askAnswer ? (
+                {askLoading ? "Pensando…" : "Preguntar"}
+              </button>
+              {askLoading ? (
+                <LoadingState active preset="aiGenerate" variant="inline" className="mt-3" />
+              ) : null}
+              {askAnswer ? (
                   <div className="cn-ai-answer mt-4 whitespace-pre-wrap">{askAnswer}</div>
                 ) : null}
               </section>
@@ -218,7 +220,9 @@ export function CuadernoAiSidebar({
                     onClick={onGenerateOrganizer}
                     className="cn-ai-chip"
                   >
-                    {genLoading === "organizer" ? "Generando…" : "Organizador / mapa"}
+                    {genLoading === "organizer"
+                      ? `Generando… ${genProgress.percent}%`
+                      : "Organizador / mapa"}
                   </button>
                   <button
                     type="button"
@@ -226,7 +230,9 @@ export function CuadernoAiSidebar({
                     onClick={onGenerateDeck}
                     className="cn-ai-chip"
                   >
-                    {genLoading === "deck" ? "Generando…" : "Flashcards → mazo"}
+                    {genLoading === "deck"
+                      ? `Generando… ${genProgress.percent}%`
+                      : "Flashcards → mazo"}
                   </button>
                   <button
                     type="button"
@@ -234,9 +240,22 @@ export function CuadernoAiSidebar({
                     onClick={onGenerateExam}
                     className="cn-ai-chip"
                   >
-                    {genLoading === "exam" ? "Generando…" : "Simulacro → Exámenes"}
+                    {genLoading === "exam"
+                      ? `Generando… ${genProgress.percent}%`
+                      : "Simulacro → Exámenes"}
                   </button>
                 </div>
+                {genActive ? (
+                  <LoadingState
+                    active
+                    preset="aiGenerate"
+                    percent={genProgress.percent}
+                    message={genProgress.message}
+                    stageLabel={genProgress.stageLabel}
+                    variant="inline"
+                    className="mt-3"
+                  />
+                ) : null}
               </section>
             </div>
           </motion.aside>

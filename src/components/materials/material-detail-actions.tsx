@@ -139,7 +139,7 @@ export function MaterialDetailActions({
           ) : (
             <Sparkles size={16} />
           )}
-          {isGenerating ? stage.label : "Estudiar con IA"}
+          {isGenerating ? `${stage.label} ${displayPercent}%` : "Estudiar con IA"}
         </Button>
         <Link
           href={`/estudio-guiado/${materialId}`}

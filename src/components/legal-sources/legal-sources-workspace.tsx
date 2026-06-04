@@ -7,7 +7,6 @@ import {
   ChevronUp,
   FileUp,
   Link2,
-  Loader2,
   Lock,
   Plus,
   Scale,
@@ -15,6 +14,8 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
+import { LoadingState } from "@/components/ui/loading-state";
+import { useLoadingProgress } from "@/hooks/use-loading-progress";
 import {
   LEGAL_SOURCE_CATEGORY_LABELS,
   LEGAL_SOURCE_CATEGORY_ORDER,
@@ -50,6 +51,8 @@ export function LegalSourcesWorkspace() {
   const [materialOptions, setMaterialOptions] = useState<MaterialOption[]>([]);
   const [selectedMaterialId, setSelectedMaterialId] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const pageLoadProgress = useLoadingProgress(loading, "profile");
+  const uploadProgress = useLoadingProgress(uploading, "legalSources");
 
   useEffect(() => {
     fetchLegalSourcesSettings()
@@ -209,8 +212,14 @@ export function LegalSourcesWorkspace() {
 
   if (loading || !settings) {
     return (
-      <div className="flex justify-center py-20">
-        <Loader2 className="animate-spin text-[#00FFD5]" size={28} />
+      <div className="mx-auto max-w-4xl py-12">
+        <LoadingState
+          active
+          preset="profile"
+          percent={pageLoadProgress.percent}
+          message={pageLoadProgress.message}
+          stageLabel={pageLoadProgress.stageLabel}
+        />
       </div>
     );
   }
@@ -455,6 +464,16 @@ export function LegalSourcesWorkspace() {
 
             {error ? <p className="text-xs text-red-400">{error}</p> : null}
 
+            {uploading ? (
+              <LoadingState
+                active
+                preset="legalSources"
+                percent={uploadProgress.percent}
+                message={uploadProgress.message}
+                stageLabel={uploadProgress.stageLabel}
+              />
+            ) : null}
+
             <div className="flex gap-2">
               <button
                 type="button"
@@ -466,8 +485,7 @@ export function LegalSourcesWorkspace() {
                 }}
                 className="tron-btn-primary inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-semibold disabled:opacity-50"
               >
-                {uploading ? <Loader2 size={14} className="animate-spin" /> : null}
-                Guardar fuente
+                {uploading ? `Guardando… ${uploadProgress.percent}%` : "Guardar fuente"}
               </button>
               <button
                 type="button"

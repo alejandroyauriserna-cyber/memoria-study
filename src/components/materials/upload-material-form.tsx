@@ -2,8 +2,10 @@
 
 import { useCallback, useState } from "react";
 import type { FormEvent } from "react";
-import { Loader2, Upload } from "lucide-react";
+import { Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LoadingState } from "@/components/ui/loading-state";
+import { useLoadingProgress } from "@/hooks/use-loading-progress";
 import { AcademicNavigator } from "@/components/study/academic-navigator";
 import type { AcademicSelection } from "@/types/academic";
 
@@ -34,6 +36,7 @@ export function UploadMaterialForm() {
   const [status, setStatus] = useState<"idle" | "uploading" | "saved" | "error">("idle");
   const [message, setMessage] = useState("");
   const [errors, setErrors] = useState<FieldErrors>({});
+  const uploadProgress = useLoadingProgress(status === "uploading", "upload");
 
   const clearFieldError = useCallback((field: keyof FieldErrors) => {
     setErrors((current) => ({ ...current, [field]: undefined }));
@@ -227,9 +230,20 @@ export function UploadMaterialForm() {
       </label>
 
       <Button type="submit" disabled={status === "uploading"}>
-        {status === "uploading" ? <Loader2 className="animate-spin" size={16} /> : <Upload size={16} />}
-        {status === "uploading" ? "Subiendo..." : "Compartir material"}
+        <Upload size={16} />
+        {status === "uploading" ? `Subiendo… ${uploadProgress.percent}%` : "Compartir material"}
       </Button>
+
+      {status === "uploading" ? (
+        <LoadingState
+          active
+          preset="upload"
+          percent={uploadProgress.percent}
+          message={uploadProgress.message}
+          stageLabel={uploadProgress.stageLabel}
+          className="mt-3"
+        />
+      ) : null}
 
       {message ? (
         <p className={`mt-3 text-sm ${status === "error" ? "text-red-500" : "text-accent"}`}>

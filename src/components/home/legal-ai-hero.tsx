@@ -9,12 +9,13 @@ import {
   FileText,
   Gavel,
   GraduationCap,
-  Loader2,
   Network,
   Scale,
   Send,
   Sparkles,
 } from "lucide-react";
+import { LoadingState } from "@/components/ui/loading-state";
+import { useLoadingProgress } from "@/hooks/use-loading-progress";
 import { get } from "idb-keyval";
 
 const QUICK_ACTIONS = [
@@ -31,6 +32,7 @@ export function LegalAiHero() {
   const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const queryProgress = useLoadingProgress(loading, "aiGenerate");
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -111,11 +113,22 @@ export function LegalAiHero() {
             disabled={loading || !question.trim()}
             className="tron-btn-primary inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl px-6 text-sm font-semibold disabled:opacity-50"
           >
-            {loading ? <Loader2 className="animate-spin" size={16} /> : <Send size={16} />}
-            {loading ? "Analizando…" : "Consultar IA"}
+            {loading ? <Send size={16} /> : <Send size={16} />}
+            {loading ? `Analizando… ${queryProgress.percent}%` : "Consultar IA"}
           </button>
         </div>
       </form>
+
+      {loading ? (
+        <LoadingState
+          active
+          preset="aiGenerate"
+          percent={queryProgress.percent}
+          message={queryProgress.message}
+          stageLabel={queryProgress.stageLabel}
+          className="relative z-[1] mx-auto mt-6 max-w-3xl"
+        />
+      ) : null}
 
       <div className="relative z-[1] mx-auto mt-6 flex max-w-3xl flex-wrap justify-center gap-2">
         {QUICK_ACTIONS.map((action) => {
@@ -143,18 +156,6 @@ export function LegalAiHero() {
       </div>
 
       <AnimatePresence mode="wait">
-        {loading ? (
-          <motion.div
-            key="loading"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            className="relative z-[1] mx-auto mt-8 max-w-3xl space-y-2"
-          >
-            <div className="h-3 w-full animate-pulse rounded bg-[rgba(0,255,213,0.1)]" />
-            <div className="h-3 w-4/5 animate-pulse rounded bg-[rgba(0,255,213,0.06)]" />
-          </motion.div>
-        ) : null}
         {error ? (
           <motion.p
             key="error"

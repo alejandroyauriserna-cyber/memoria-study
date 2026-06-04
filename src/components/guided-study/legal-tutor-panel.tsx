@@ -12,7 +12,6 @@ import {
   Gavel,
   GraduationCap,
   Lightbulb,
-  Loader2,
   RefreshCw,
   Scale,
   Send,
@@ -22,6 +21,7 @@ import Link from "next/link";
 import { ProfessorLessonView } from "@/components/guided-study/professor-lesson-view";
 import { ExamModePanel } from "@/components/guided-study/exam-mode-panel";
 import { CompactConceptChips } from "@/components/guided-study/compact-concept-chips";
+import { LoadingState } from "@/components/ui/loading-state";
 import type {
   GuidedStudyTutorAction,
   PageProfessorAnalysis,
@@ -65,6 +65,9 @@ function SourcesBanner({ sources }: { sources: LegalSourceAttribution[] }) {
 
 export function LegalTutorPanel({
   loading,
+  loadingPercent,
+  loadingMessage,
+  loadingStageLabel,
   analysis,
   customReply,
   examOnly,
@@ -80,6 +83,9 @@ export function LegalTutorPanel({
   pageUnderstood,
 }: {
   loading: boolean;
+  loadingPercent?: number;
+  loadingMessage?: string;
+  loadingStageLabel?: string;
   analysis: PageProfessorAnalysis | null;
   customReply?: string | null;
   examOnly: boolean;
@@ -180,10 +186,14 @@ export function LegalTutorPanel({
         {activeSources?.length ? <SourcesBanner sources={activeSources} /> : null}
 
         {loading ? (
-          <div className="flex flex-col items-center gap-2 py-10 text-center">
-            <Loader2 size={22} className="animate-spin text-[#00FFD5]" />
-            <p className="text-xs text-muted-foreground">Analizando esta página...</p>
-          </div>
+          <LoadingState
+            active
+            preset="aiAnalyze"
+            percent={loadingPercent}
+            message={loadingMessage}
+            stageLabel={loadingStageLabel}
+            className="my-4"
+          />
         ) : needsGeneration && !analysis && !customReply ? (
           <div className="gs-page-prompt">
             <Sparkles size={22} className="text-[#00FFD5]" />

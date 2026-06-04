@@ -1,8 +1,10 @@
 "use client";
 
-import { Eye, EyeOff, Loader2, LogIn, UserPlus } from "lucide-react";
+import { Eye, EyeOff, LogIn, UserPlus } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { LoadingState } from "@/components/ui/loading-state";
+import { useLoadingProgress } from "@/hooks/use-loading-progress";
 import { AcademicNavigator } from "@/components/study/academic-navigator";
 import { CycleSelector } from "@/components/auth/cycle-selector";
 import { saveAcademicSelection } from "@/lib/academic/storage";
@@ -33,6 +35,7 @@ export function AuthForm() {
     () => (mode === "signup" ? "Registrarse" : "Ingresar"),
     [mode],
   );
+  const authProgress = useLoadingProgress(status === "loading", "auth");
 
   const handleAcademicChange = useCallback((selection: AcademicSelection) => {
     setAcademic(selection);
@@ -227,9 +230,26 @@ export function AuthForm() {
           )}
 
           <Button className="w-full" disabled={status === "loading"}>
-            {status === "loading" ? <Loader2 className="animate-spin" size={16} /> : mode === "signup" ? <UserPlus size={16} /> : <LogIn size={16} />}
-            {mode === "signup" ? "Registrarse" : password ? "Ingresar" : "Enviar enlace mágico"}
+            {status !== "loading" ? (mode === "signup" ? <UserPlus size={16} /> : <LogIn size={16} />) : null}
+            {status === "loading"
+              ? `${actionLabel}… ${authProgress.percent}%`
+              : mode === "signup"
+                ? "Registrarse"
+                : password
+                  ? "Ingresar"
+                  : "Enviar enlace mágico"}
           </Button>
+
+          {status === "loading" ? (
+            <LoadingState
+              active
+              preset="auth"
+              percent={authProgress.percent}
+              message={authProgress.message}
+              stageLabel={authProgress.stageLabel}
+              className="mt-3"
+            />
+          ) : null}
 
           {message ? (
             <p className={`mt-3 text-sm ${status === "error" ? "text-red-500" : "text-accent"}`}>
