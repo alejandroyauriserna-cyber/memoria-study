@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { PdfViewerPanel } from "@/components/guided-study/pdf-viewer-panel";
 import { LegalTutorPanel } from "@/components/guided-study/legal-tutor-panel";
+import { StudyPageNavigator } from "@/components/guided-study/study-page-navigator";
 import { filterAnalysisForExamMode } from "@/lib/guided-study/legal-tutor";
 import { loadLegalSourcesSettings } from "@/lib/legal-sources/storage";
 import {
@@ -62,6 +63,8 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
     customReply: null,
     activeSources: [],
   });
+  const [analyzedPage, setAnalyzedPage] = useState<number | null>(null);
+  const initialAnalysisDone = useRef(false);
 
   useEffect(() => {
     const session = loadGuidedStudySession(materialId);
@@ -148,6 +151,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
           customReply: payload.customReply ?? null,
           activeSources: payload.activeSources ?? [],
         });
+        setAnalyzedPage(currentPage);
       } catch (caught) {
         setTutorState({
           analysis: null,
@@ -162,9 +166,16 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
   );
 
   useEffect(() => {
-    if (phase !== "ready" || !material) return;
+    if (phase !== "ready" || !material || initialAnalysisDone.current) return;
+    initialAnalysisDone.current = true;
     void askTutor(examOnly ? "exam_essentials" : "analyze_page");
-  }, [currentPage, phase, material?.id, examOnly]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [phase, material?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!initialAnalysisDone.current || phase !== "ready" || !material) return;
+    if (analyzedPage !== currentPage) return;
+    void askTutor(examOnly ? "exam_essentials" : "analyze_page");
+  }, [examOnly]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const displayAnalysis = useMemo(() => {
     if (!tutorState.analysis) return null;
@@ -175,6 +186,13 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
     setCurrentPage(page);
     updateCurrentPage(materialId, page);
     setActiveHighlightId(null);
+    if (page !== analyzedPage) {
+      setTutorState({ analysis: null, customReply: null, activeSources: [] });
+    }
+  }
+
+  function handleGeneratePage() {
+    void askTutor(examOnly ? "exam_essentials" : "analyze_page");
   }
 
   function handleMarkUnderstood() {
@@ -247,6 +265,15 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
         </div>
       </header>
 
+      <StudyPageNavigator
+        currentPage={currentPage}
+        totalPages={material.totalPages}
+        loading={tutorLoading}
+        onPageChange={handlePageChange}
+        onGenerate={handleGeneratePage}
+        pageUnderstood={understoodPages.includes(currentPage)}
+      />
+
       <div className="relative min-h-0 flex-1">
         <div className="grid h-full gap-2 lg:grid-cols-[7fr_3fr]">
           <PdfViewerPanel
@@ -262,12 +289,14 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
             customReply={tutorState.customReply}
             examOnly={examOnly}
             activeSources={tutorState.activeSources}
+            needsGeneration={analyzedPage !== currentPage}
             onExamOnlyChange={setExamOnly}
             activeHighlightId={activeHighlightId}
             onHighlightFocus={setActiveHighlightId}
             onAction={(action) => void askTutor(action)}
             onCustomAsk={(prompt) => void askTutor("custom", prompt)}
             onMarkUnderstood={handleMarkUnderstood}
+            onGeneratePage={handleGeneratePage}
             pageUnderstood={understoodPages.includes(currentPage)}
           />
         </div>

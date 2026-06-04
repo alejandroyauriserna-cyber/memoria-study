@@ -16,6 +16,7 @@ import {
   RefreshCw,
   Scale,
   Send,
+  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 import { ProfessorLessonView } from "@/components/guided-study/professor-lesson-view";
@@ -68,12 +69,14 @@ export function LegalTutorPanel({
   customReply,
   examOnly,
   activeSources,
+  needsGeneration,
   onExamOnlyChange,
   activeHighlightId,
   onHighlightFocus,
   onAction,
   onCustomAsk,
   onMarkUnderstood,
+  onGeneratePage,
   pageUnderstood,
 }: {
   loading: boolean;
@@ -81,12 +84,14 @@ export function LegalTutorPanel({
   customReply?: string | null;
   examOnly: boolean;
   activeSources?: LegalSourceAttribution[];
+  needsGeneration?: boolean;
   onExamOnlyChange: (value: boolean) => void;
   activeHighlightId?: string | null;
   onHighlightFocus?: (highlightId: string) => void;
   onAction: (action: GuidedStudyTutorAction) => void;
   onCustomAsk: (prompt: string) => void;
   onMarkUnderstood: () => void;
+  onGeneratePage?: () => void;
   pageUnderstood: boolean;
 }) {
   const [customPrompt, setCustomPrompt] = useState("");
@@ -178,6 +183,20 @@ export function LegalTutorPanel({
           <div className="flex flex-col items-center gap-2 py-10 text-center">
             <Loader2 size={22} className="animate-spin text-[#00FFD5]" />
             <p className="text-xs text-muted-foreground">Analizando esta página...</p>
+          </div>
+        ) : needsGeneration && !analysis && !customReply ? (
+          <div className="gs-page-prompt">
+            <Sparkles size={22} className="text-[#00FFD5]" />
+            <p>
+              Estás en una página nueva. Pulsa <strong className="text-[#F5F7FA]">Explicar página</strong>{" "}
+              arriba para que el profesor analice este contenido.
+            </p>
+            {onGeneratePage ? (
+              <button type="button" onClick={onGeneratePage} className="gs-page-nav-generate mt-1">
+                <Sparkles size={15} />
+                Explicar página
+              </button>
+            ) : null}
           </div>
         ) : analysis || customReply ? (
           <motion.div
