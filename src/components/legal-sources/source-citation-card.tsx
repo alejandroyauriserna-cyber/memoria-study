@@ -1,11 +1,32 @@
 import type { LegalCitation } from "@/types/guided-legal-study";
 
+function ConfidenceBadge({ confidence }: { confidence?: LegalCitation["confidence"] }) {
+  if (confidence === "verified") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full border border-[rgba(74,222,128,0.25)] bg-[rgba(74,222,128,0.1)] px-2 py-0.5 text-[10px] font-semibold text-[#86EFAC]">
+        🟢 Verificado en fuente oficial
+      </span>
+    );
+  }
+
+  if (confidence === "conceptual") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full border border-[rgba(251,191,36,0.25)] bg-[rgba(251,191,36,0.08)] px-2 py-0.5 text-[10px] font-semibold text-[#FBBF24]">
+        🟡 Relación conceptual encontrada
+      </span>
+    );
+  }
+
+  return null;
+}
+
 export function SourceCitationCard({ citation }: { citation: LegalCitation }) {
   const title = citation.sourceTitle ?? citation.norm;
   const fragment = citation.fragment ?? citation.text;
 
   return (
     <article className="gs-citation-card space-y-1.5">
+      <ConfidenceBadge confidence={citation.confidence ?? "verified"} />
       <div className="grid gap-1 text-xs">
         <p>
           <span className="font-semibold text-muted-foreground">Fuente: </span>
@@ -38,6 +59,22 @@ export function SourceCitationCard({ citation }: { citation: LegalCitation }) {
           <p className="mt-1 text-xs leading-5 text-muted-foreground">{fragment}</p>
         </div>
       ) : null}
+    </article>
+  );
+}
+
+export function ConceptualNormCard({
+  label,
+  note,
+}: {
+  label: string;
+  note: string;
+}) {
+  return (
+    <article className="rounded-lg border border-[rgba(251,191,36,0.18)] bg-[rgba(251,191,36,0.05)] px-3 py-2.5">
+      <ConfidenceBadge confidence="conceptual" />
+      <p className="mt-1.5 text-sm font-semibold text-[#F5F7FA]">{label}</p>
+      <p className="mt-1 text-xs leading-5 text-muted-foreground">{note}</p>
     </article>
   );
 }

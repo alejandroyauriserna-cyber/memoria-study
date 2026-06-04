@@ -45,7 +45,7 @@ export async function loadUserLegalSourceSettings(userId: string): Promise<Legal
     admin
       .schema("public")
       .from("legal_source_settings")
-      .select("strict_mode, source_overrides")
+      .select("strict_mode, strict_normative_mode, source_overrides")
       .eq("user_id", userId)
       .maybeSingle(),
     loadUserLegalSourcesFromDb(userId),
@@ -69,6 +69,7 @@ export async function loadUserLegalSourceSettings(userId: string): Promise<Legal
 
   return {
     strictMode: Boolean(settingsRow?.strict_mode),
+    strictNormativeMode: settingsRow?.strict_normative_mode !== false,
     sources: sources.map((s) => ({
       ...s,
       ...(overrides[s.id] ?? {}),
@@ -81,12 +82,12 @@ export async function enrichSourceSettings(
   clientSettings?: LegalSourcesSettings,
 ): Promise<LegalSourcesSettings> {
   if (!userId) {
-    return clientSettings ?? { strictMode: false, sources: mergeWithDefaultSources([]) };
+    return clientSettings ?? { strictMode: false, strictNormativeMode: true, sources: mergeWithDefaultSources([]) };
   }
 
   try {
     const fromDb = await loadUserLegalSourceSettings(userId);
-    if (!clientSettings) return fromDb ?? { strictMode: false, sources: mergeWithDefaultSources([]) };
+    if (!clientSettings) return fromDb ?? { strictMode: false, strictNormativeMode: true, sources: mergeWithDefaultSources([]) };
 
     const merged = new Map<string, LegalSourceRecord>();
     for (const s of fromDb?.sources ?? []) merged.set(s.id, s);
@@ -97,10 +98,12 @@ export async function enrichSourceSettings(
 
     return {
       strictMode: clientSettings.strictMode,
+      strictNormativeMode:
+        clientSettings.strictNormativeMode ?? fromDb?.strictNormativeMode ?? true,
       sources: [...merged.values()].sort((a, b) => a.priority - b.priority),
     };
   } catch {
-    return clientSettings ?? { strictMode: false, sources: mergeWithDefaultSources([]) };
+    return clientSettings ?? { strictMode: false, strictNormativeMode: true, sources: mergeWithDefaultSources([]) };
   }
 }
 
@@ -122,6 +125,7 @@ export async function saveUserLegalSourceSettings(
     {
       user_id: userId,
       strict_mode: settings.strictMode,
+      strict_normative_mode: settings.strictNormativeMode,
       source_overrides: overrides,
       updated_at: new Date().toISOString(),
     },

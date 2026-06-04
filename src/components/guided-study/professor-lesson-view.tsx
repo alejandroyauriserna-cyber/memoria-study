@@ -13,12 +13,16 @@ import {
   Sparkles,
 } from "lucide-react";
 import type {
+  ConceptualNormLink,
   LegalCitation,
   PageProfessorAnalysis,
   ProfessorConceptCard,
   SecondaryMention,
 } from "@/types/guided-legal-study";
-import { SourceCitationCard } from "@/components/legal-sources/source-citation-card";
+import {
+  ConceptualNormCard,
+  SourceCitationCard,
+} from "@/components/legal-sources/source-citation-card";
 
 function SecondaryMentionsBlock({ items }: { items: SecondaryMention[] }) {
   if (!items.length) return null;
@@ -122,19 +126,76 @@ function Block({
   );
 }
 
-function CitationsRow({ citations }: { citations: LegalCitation[] }) {
-  if (!citations.length) return null;
+function DetectedConceptsBlock({
+  concepts,
+}: {
+  concepts: NonNullable<PageProfessorAnalysis["detectedConcepts"]>;
+}) {
+  if (!concepts.length) return null;
   return (
-    <div className="gs-citations-row">
+    <div className="gs-key-panel">
       <p className="gs-section-label">
-        <Gavel size={12} />
-        Citación automática
+        <BookOpen size={12} />
+        Conceptos jurídicos detectados
       </p>
-      <div className="mt-2 space-y-3">
-        {citations.map((c, i) => (
-          <SourceCitationCard key={i} citation={c} />
+      <ul className="mt-2 space-y-1.5">
+        {concepts.map((item) => (
+          <li key={item.id} className="flex items-start gap-2 text-sm text-[#F5F7FA]/90">
+            <Sparkles size={12} className="mt-1 shrink-0 text-[#00FFD5]" />
+            <span>{item.term}</span>
+          </li>
         ))}
-      </div>
+      </ul>
+    </div>
+  );
+}
+
+function NormativeBlock({
+  citations,
+  conceptualLinks,
+  notice,
+}: {
+  citations: LegalCitation[];
+  conceptualLinks?: ConceptualNormLink[];
+  notice?: string;
+}) {
+  if (!citations.length && !conceptualLinks?.length && !notice) return null;
+
+  return (
+    <div className="gs-citations-row space-y-3">
+      {citations.length ? (
+        <div>
+          <p className="gs-section-label">
+            <Scale size={12} />
+            Normativa relacionada
+          </p>
+          <div className="mt-2 space-y-3">
+            {citations.map((c, i) => (
+              <SourceCitationCard key={i} citation={c} />
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {conceptualLinks?.length ? (
+        <div>
+          <p className="gs-section-label">
+            <Gavel size={12} />
+            Relación conceptual (sin artículo verificado)
+          </p>
+          <div className="mt-2 space-y-2">
+            {conceptualLinks.map((item, i) => (
+              <ConceptualNormCard key={i} label={item.label} note={item.note} />
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {notice ? (
+        <div className="rounded-xl border border-[rgba(251,191,36,0.2)] bg-[rgba(251,191,36,0.06)] px-3 py-2.5">
+          <p className="text-xs leading-6 text-[#FBBF24]">{notice}</p>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -183,6 +244,8 @@ export function ProfessorLessonView({
 
       {!examOnly ? <SecondaryMentionsBlock items={analysis.secondaryMentions} /> : null}
 
+      <DetectedConceptsBlock concepts={analysis.detectedConcepts ?? []} />
+
       <div className="space-y-2">
         {cards.map((card) => (
           <ConceptCard
@@ -198,7 +261,11 @@ export function ProfessorLessonView({
         ))}
       </div>
 
-      <CitationsRow citations={analysis.citations} />
+      <NormativeBlock
+        citations={analysis.citations}
+        conceptualLinks={analysis.conceptualNormLinks}
+        notice={analysis.normativeNotice}
+      />
 
       {analysis.comprehensionQuestion ? (
         <div className="gs-comprehension-box">

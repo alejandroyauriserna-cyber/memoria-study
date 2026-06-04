@@ -25,6 +25,8 @@ export type LegalSourceRecord = {
 
 export type LegalSourcesSettings = {
   strictMode: boolean;
+  /** Solo mostrar artículos verificados en la base jurídica indexada. */
+  strictNormativeMode: boolean;
   sources: LegalSourceRecord[];
 };
 

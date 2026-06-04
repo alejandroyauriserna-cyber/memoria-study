@@ -80,9 +80,59 @@ export const PERU_LEGAL_ARTICLES: LegalArticleRecord[] = [
     norm: "Código Civil",
     normShort: "CC",
     article: "Artículo 75",
+    title: "Indivisibilidad de las obligaciones",
+    text: "Son indivisibles las obligaciones cuando su objeto, por su naturaleza o por disposición de la ley o de las partes, no es susceptible de cumplimiento parcial.",
+    keywords: ["obligaciones", "indivisibles", "cumplimiento", "deudores"],
+    updatedAt: LEGAL_BASE_UPDATED_AT,
+  },
+  {
+    id: "cc-art-140",
+    norm: "Código Civil",
+    normShort: "CC",
+    article: "Artículo 140",
     title: "Acto jurídico",
     text: "El acto jurídico es la declaración o manifestación de voluntad destinada a crear, modificar o extinguir derechos y obligaciones.",
-    keywords: ["acto jurídico", "voluntad", "derechos", "obligaciones", "declaración"],
+    keywords: [
+      "acto jurídico",
+      "acto juridico",
+      "voluntad",
+      "declaración",
+      "manifestación",
+      "derechos",
+      "obligaciones",
+    ],
+    updatedAt: LEGAL_BASE_UPDATED_AT,
+  },
+  {
+    id: "cc-art-168",
+    norm: "Código Civil",
+    normShort: "CC",
+    article: "Artículo 168",
+    title: "Interpretación de la declaración de voluntad",
+    text: "La interpretación de la declaración de voluntad deberá hacerse en atención al sentido propio del acto jurídico, y no a las palabras que se hayan empleado.",
+    keywords: [
+      "interpretación",
+      "interpretacion",
+      "declaración de voluntad",
+      "acto jurídico",
+      "sentido",
+    ],
+    updatedAt: LEGAL_BASE_UPDATED_AT,
+  },
+  {
+    id: "cc-art-169",
+    norm: "Código Civil",
+    normShort: "CC",
+    article: "Artículo 169",
+    title: "Reglas de interpretación",
+    text: "Para interpretar las declaraciones de voluntad se atenderá a la intención de los contratantes o partes, más que al sentido literal de las palabras.",
+    keywords: [
+      "interpretación",
+      "interpretacion",
+      "declaraciones de voluntad",
+      "intención",
+      "contratantes",
+    ],
     updatedAt: LEGAL_BASE_UPDATED_AT,
   },
   {
@@ -187,6 +237,25 @@ export const PERU_LEGAL_ARTICLES: LegalArticleRecord[] = [
   },
 ];
 
+const TOPIC_BOOST: Record<string, string[]> = {
+  "acto juridico": ["cc-art-140"],
+  "acto jurídico": ["cc-art-140"],
+  "negocio juridico": ["cc-art-140"],
+  interpretacion: ["cc-art-168", "cc-art-169"],
+  interpretación: ["cc-art-168", "cc-art-169"],
+  "declaracion de voluntad": ["cc-art-168", "cc-art-169"],
+  "declaración de voluntad": ["cc-art-168", "cc-art-169"],
+};
+
+function normalizeText(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export function searchLegalBase(query: string, limit = 6): LegalArticleRecord[] {
   const tokens = query
     .toLowerCase()
@@ -196,7 +265,15 @@ export function searchLegalBase(query: string, limit = 6): LegalArticleRecord[] 
     .filter((t) => t.length >= 4);
 
   if (!tokens.length) {
-    return PERU_LEGAL_ARTICLES.slice(0, limit);
+    return [];
+  }
+
+  const topicBoostIds = new Set<string>();
+  const normalizedQuery = normalizeText(query);
+  for (const [topic, ids] of Object.entries(TOPIC_BOOST)) {
+    if (normalizedQuery.includes(normalizeText(topic))) {
+      for (const id of ids) topicBoostIds.add(id);
+    }
   }
 
   const scored = PERU_LEGAL_ARTICLES.map((article) => {
@@ -214,6 +291,7 @@ export function searchLegalBase(query: string, limit = 6): LegalArticleRecord[] 
       .replace(/[\u0300-\u036f]/g, "");
 
     let score = 0;
+    if (topicBoostIds.has(article.id)) score += 12;
     for (const token of tokens) {
       if (haystack.includes(token)) score += 2;
       for (const kw of article.keywords) {
@@ -222,7 +300,7 @@ export function searchLegalBase(query: string, limit = 6): LegalArticleRecord[] 
     }
     return { article, score };
   })
-    .filter((item) => item.score > 0)
+    .filter((item) => item.score >= 3)
     .sort((a, b) => b.score - a.score);
 
   return scored.slice(0, limit).map((item) => item.article);

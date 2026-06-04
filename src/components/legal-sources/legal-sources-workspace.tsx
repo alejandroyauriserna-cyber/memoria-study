@@ -88,6 +88,11 @@ export function LegalSourcesWorkspace() {
     persist(updateSourceInSettings(settings, id, { enabled: !source.enabled }));
   }
 
+  function toggleStrictNormative() {
+    if (!settings) return;
+    persist({ ...settings, strictNormativeMode: !settings.strictNormativeMode });
+  }
+
   function toggleStrict() {
     if (!settings) return;
     persist({ ...settings, strictMode: !settings.strictMode });
@@ -250,12 +255,30 @@ export function LegalSourcesWorkspace() {
             <Lock size={15} />
             Solo responder con mis fuentes
           </button>
+          <button
+            type="button"
+            onClick={toggleStrictNormative}
+            className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition ${
+              settings.strictNormativeMode
+                ? "border-[rgba(74,222,128,0.35)] bg-[rgba(74,222,128,0.1)] text-[#86EFAC]"
+                : "border-[rgba(0,255,213,0.15)] text-muted-foreground hover:text-[#F5F7FA]"
+            }`}
+          >
+            <Scale size={15} />
+            Solo mostrar artículos verificados
+          </button>
           <span className="text-xs text-muted-foreground">
             {enabledSources.length} fuente{enabledSources.length === 1 ? "" : "s"} activa
             {enabledSources.length === 1 ? "" : "s"}
           </span>
         </div>
 
+        {settings.strictNormativeMode ? (
+          <p className="mt-3 rounded-xl border border-[rgba(74,222,128,0.2)] bg-[rgba(74,222,128,0.06)] px-3 py-2 text-xs text-[#86EFAC]">
+            Modo normativo estricto: solo se muestran artículos verificados en la base jurídica
+            indexada. Si no hay certeza, no se citará ningún número de artículo.
+          </p>
+        ) : null}
         {settings.strictMode ? (
           <p className="mt-3 rounded-xl border border-[rgba(248,113,113,0.2)] bg-[rgba(248,113,113,0.06)] px-3 py-2 text-xs text-[#FCA5A5]">
             Modo estricto: si la respuesta no está en tus fuentes autorizadas ni en el PDF en

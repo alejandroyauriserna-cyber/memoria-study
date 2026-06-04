@@ -8,8 +8,8 @@ import {
 import {
   formatLegalBaseForPrompt,
   searchLegalBase,
-  toLegalCitation,
 } from "@/lib/guided-study/legal-base";
+import { processNormativeAnalysis } from "@/lib/guided-study/validate-citations";
 import { buildLegalSourcesPromptBlock } from "@/lib/legal-sources/prompt";
 import type { LegalSourceAttribution, LegalSourcesSettings } from "@/types/legal-sources";
 import type {
@@ -75,17 +75,6 @@ function fallbackIndex(title: string, totalPages: number): DocumentStudyIndex {
     topics: ["Contenido jurídico"],
     chapters,
   };
-}
-
-function validateCitations(
-  citations: PageProfessorAnalysis["citations"],
-  relevantArticles: ReturnType<typeof searchLegalBase>,
-) {
-  const validated = citations.filter((c) =>
-    relevantArticles.some((a) => a.norm === c.norm && a.article === c.article),
-  );
-  if (validated.length) return validated;
-  return relevantArticles.slice(0, 3).map(toLegalCitation);
 }
 
 function filterEssentials(analysis: PageProfessorAnalysis): PageProfessorAnalysis {
@@ -154,22 +143,22 @@ export async function askLegalStudyTutor(input: {
 }): Promise<TutorResponse> {
   const enabledSources = getEnabledSourcesFromSettings(input.sourceSettings);
   const strictMode = input.sourceSettings?.strictMode ?? false;
+  const strictNormativeMode = input.sourceSettings?.strictNormativeMode !== false;
   const sourcesBlock = buildLegalSourcesPromptBlock(enabledSources, strictMode);
 
   const relevantArticles = searchLegalBase(
     `${input.pageText} ${input.chapterTitle ?? ""} ${input.customPrompt ?? ""}`,
     8,
   );
-  const legalBaseBlock = enabledSources.length
-    ? ""
-    : formatLegalBaseForPrompt(relevantArticles);
+  const indexedNormativeBlock = formatLegalBaseForPrompt(relevantArticles);
   const structured = usesStructuredResponse(input.action) || input.action === "custom";
 
   const raw = await generateGeminiText({
     prompt: `${GUIDED_STUDY_SYSTEM_ROLE}\n\n${buildTutorUserPrompt({
       ...input,
-      legalBaseBlock,
-      sourcesBlock: enabledSources.length ? sourcesBlock : undefined,
+      legalBaseBlock: indexedNormativeBlock,
+      sourcesBlock: sourcesBlock || undefined,
+      strictNormativeMode,
       structured,
     })}`,
     temperature: input.action === "exam_mode" ? 0.45 : 0.3,
@@ -190,13 +179,11 @@ export async function askLegalStudyTutor(input: {
     }
 
     if (parsed.analysis) {
-      let analysis: PageProfessorAnalysis = {
-        ...parsed.analysis,
-        citations:
-          parsed.analysis.citations.length > 0
-            ? parsed.analysis.citations
-            : validateCitations(parsed.analysis.citations, relevantArticles),
-      };
+      let analysis: PageProfessorAnalysis = processNormativeAnalysis(
+        parsed.analysis,
+        input.pageText,
+        { strictNormativeMode },
+      );
 
       if (!analysis.conceptCards.length && analysis.pageFocus) {
         analysis = {

@@ -87,9 +87,40 @@ export const PageAnalysisSchema = z.object({
         page: z.string().optional(),
         author: z.string().optional(),
         fragment: z.string().optional(),
+        confidence: z.enum(["verified", "conceptual"]).optional(),
+        legalBaseId: z.string().optional(),
       }),
     )
     .default([]),
+  detectedConcepts: z
+    .array(
+      z.object({
+        id: z.string(),
+        term: z.string(),
+        type: z.enum([
+          "definicion",
+          "principio",
+          "requisito",
+          "elemento",
+          "excepcion",
+          "clasificacion",
+          "teoria",
+        ]),
+        summary: z.string(),
+        essential: z.boolean().optional(),
+      }),
+    )
+    .optional(),
+  conceptualNormLinks: z
+    .array(
+      z.object({
+        label: z.string(),
+        note: z.string(),
+        confidence: z.literal("conceptual"),
+      }),
+    )
+    .optional(),
+  normativeNotice: z.string().optional(),
   comprehensionQuestion: z.string().optional(),
 });
 

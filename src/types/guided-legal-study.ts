@@ -118,6 +118,15 @@ export type LegalCitation = {
   page?: string;
   author?: string;
   fragment?: string;
+  /** Solo artículos validados contra la base jurídica indexada. */
+  confidence?: "verified" | "conceptual";
+  legalBaseId?: string;
+};
+
+export type ConceptualNormLink = {
+  label: string;
+  note: string;
+  confidence: "conceptual";
 };
 
 export type PageProfessorAnalysis = {
@@ -128,6 +137,9 @@ export type PageProfessorAnalysis = {
   conceptCards: ProfessorConceptCard[];
   examMode: ExamModeContent;
   citations: LegalCitation[];
+  detectedConcepts?: DetectedLegalConcept[];
+  conceptualNormLinks?: ConceptualNormLink[];
+  normativeNotice?: string;
   comprehensionQuestion?: string;
 };
 

@@ -12,22 +12,23 @@ const STORAGE_KEY = "memoria-legal-sources-settings";
 
 export function loadLegalSourcesSettings(): LegalSourcesSettings {
   if (typeof window === "undefined") {
-    return { strictMode: false, sources: DEFAULT_LEGAL_SOURCES };
+    return { strictMode: false, strictNormativeMode: true, sources: DEFAULT_LEGAL_SOURCES };
   }
 
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
-      return { strictMode: false, sources: DEFAULT_LEGAL_SOURCES };
+      return { strictMode: false, strictNormativeMode: true, sources: DEFAULT_LEGAL_SOURCES };
     }
 
     const parsed = JSON.parse(raw) as LegalSourcesSettings;
     return {
       strictMode: Boolean(parsed.strictMode),
+      strictNormativeMode: parsed.strictNormativeMode !== false,
       sources: mergeWithDefaultSources(parsed.sources ?? []),
     };
   } catch {
-    return { strictMode: false, sources: DEFAULT_LEGAL_SOURCES };
+    return { strictMode: false, strictNormativeMode: true, sources: DEFAULT_LEGAL_SOURCES };
   }
 }
 
@@ -122,6 +123,7 @@ export async function fetchLegalSourcesSettings(): Promise<LegalSourcesSettings>
 
     const settings: LegalSourcesSettings = {
       strictMode: remote.strictMode ?? local.strictMode,
+      strictNormativeMode: remote.strictNormativeMode ?? local.strictNormativeMode,
       sources: mergeWithDefaultSources(mergedList),
     };
     saveLegalSourcesSettings(settings);

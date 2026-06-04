@@ -15,6 +15,7 @@ export async function GET() {
     if (!hasSupabaseEnv()) {
       return NextResponse.json({
         strictMode: false,
+        strictNormativeMode: true,
         sources: mergeWithDefaultSources([]),
         synced: false,
       });

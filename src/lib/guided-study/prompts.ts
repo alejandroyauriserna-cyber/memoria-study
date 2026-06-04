@@ -20,11 +20,19 @@ REGLA SOBRE AUTORES Y PERSONAS:
 - Máximo una línea: "Autor doctrinario peruano citado en el texto."
 - Luego pasa de inmediato al contenido jurídico relevante.
 
-PROHIBIDO:
+PROHIBIDO (RIESGO ACADÉMICO):
 - Resumir la página en un párrafo genérico.
 - Usar markdown (**negritas**, ### títulos, listas con guiones).
 - Explicar elementos secundarios con la misma profundidad que conceptos jurídicos.
-- Inventar artículos de ley no presentes en la base jurídica oficial.
+- Inventar, inferir o completar números de artículo.
+- Citar artículos que NO estén listados en BASE JURÍDICA INDEXADA.
+- Copiar números de artículo desde el PDF del estudiante o desde memoria del modelo.
+
+REGLA NORMATIVA OBLIGATORIA:
+- Los artículos SOLO pueden provenir de BASE JURÍDICA INDEXADA (Código Civil, Constitución y códigos oficiales indexados).
+- Si no hay artículo verificable, NO pongas número de artículo en citations ni en peruLaw.
+- En peruLaw puedes describir relación conceptual sin citar número si no hay base verificada.
+- El texto citado debe ser literal de la base indexada, no parafraseado libremente.
 
 Audiencia: ${UNT_DERECHO_AUDIENCE}
 `.trim();
@@ -72,7 +80,9 @@ Reglas del JSON:
 - Marca essential:true solo en el ~20% más importante para examen (regla 80/20).
 - conceptCards: uno por idea jurídica principal (máximo 6 por página).
 - secondaryMentions: solo lo secundario detectado; máximo 3 entradas breves.
-- citations: SOLO fuentes autorizadas y PDF en estudio. Incluye sourceTitle, article, page, author, fragment.
+- conceptCards = conceptos doctrinarios/jurídicos. citations = SOLO normas verificables de BASE JURÍDICA INDEXADA.
+- citations: incluye únicamente artículos presentes en BASE JURÍDICA INDEXADA con texto literal. Si no hay certeza, citations debe ser [].
+- NO mezcles conceptos doctrinarios dentro de citations.
 `.trim();
 
 const ACTION_DIRECTIVES: Record<GuidedStudyTutorAction, string> = {
@@ -120,6 +130,7 @@ export function buildTutorUserPrompt(input: {
   chapterTitle?: string;
   legalBaseBlock: string;
   sourcesBlock?: string;
+  strictNormativeMode?: boolean;
   structured?: boolean;
 }): string {
   const directive =
@@ -137,8 +148,12 @@ export function buildTutorUserPrompt(input: {
     input.pageText || "(Sin texto extraíble — indica al estudiante que revise el PDF visualmente.)",
     "",
     input.sourcesBlock ?? "",
-    input.sourcesBlock ? "" : "BASE JURÍDICA OFICIAL (citas normativas):",
-    input.sourcesBlock ? "" : input.legalBaseBlock,
+    input.sourcesBlock ? "" : null,
+    "BASE JURÍDICA INDEXADA (ÚNICA fuente permitida para números de artículo):",
+    input.legalBaseBlock,
+    input.strictNormativeMode
+      ? "MODO ESTRICTO NORMATIVO: citations debe quedar vacío si no hay artículo verificable en la base indexada. NO inventes artículos."
+      : "",
     "",
     `INSTRUCCIÓN: ${directive}`,
   ].filter(Boolean);
