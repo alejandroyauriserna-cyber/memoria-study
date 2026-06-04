@@ -62,15 +62,27 @@ export function updateSourceInSettings(
   };
 }
 
+export function upsertCustomSource(
+  settings: LegalSourcesSettings,
+  source: LegalSourceRecord,
+): LegalSourcesSettings {
+  const without = settings.sources.filter(
+    (s) =>
+      s.id !== source.id &&
+      !(source.lpPresetId && s.lpPresetId === source.lpPresetId),
+  );
+  return {
+    ...settings,
+    sources: [source, ...without],
+  };
+}
+
 export function addCustomSource(
   settings: LegalSourcesSettings,
   source: Omit<LegalSourceRecord, "id"> & { id?: string },
 ): LegalSourcesSettings {
   const id = source.id ?? `custom-${crypto.randomUUID()}`;
-  return {
-    ...settings,
-    sources: [{ ...source, id, kind: source.kind ?? "upload" }, ...settings.sources],
-  };
+  return upsertCustomSource(settings, { ...source, id, kind: source.kind ?? "upload" });
 }
 
 export function removeCustomSource(settings: LegalSourcesSettings, id: string): LegalSourcesSettings {

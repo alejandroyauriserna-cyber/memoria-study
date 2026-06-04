@@ -18,6 +18,7 @@ const NORM_ALIASES: Record<string, string[]> = {
   cpp: ["constitucion politica", "constitucion", "cpp"],
   cpc: ["codigo procesal civil", "cpc"],
   cp: ["codigo penal", "cp"],
+  ncpp: ["codigo procesal penal", "ncpp", "nuevo codigo procesal penal"],
   lopj: ["ley organica del poder judicial", "lopj"],
 };
 
@@ -64,12 +65,13 @@ export function normsMatch(candidateNorm: string, baseNorm: string): boolean {
 export function findInLegalBase(
   norm: string,
   articleRef: string,
+  index: LegalArticleRecord[] = PERU_LEGAL_ARTICLES,
 ): LegalArticleRecord | null {
   const articleNum = extractArticleNumber(articleRef);
   if (!articleNum) return null;
 
   return (
-    PERU_LEGAL_ARTICLES.find((record) => {
+    index.find((record) => {
       const recordNum = extractArticleNumber(record.article);
       return recordNum === articleNum && normsMatch(norm || record.norm, record.norm);
     }) ?? null
@@ -105,9 +107,10 @@ function hasLiteralGrounding(fragment: string, officialText: string, pageText: s
 export function validateCitationAgainstBase(
   citation: LegalCitation,
   pageText: string,
+  index: LegalArticleRecord[] = PERU_LEGAL_ARTICLES,
 ): LegalCitation | null {
   const normRef = citation.norm || citation.sourceTitle || "";
-  const base = findInLegalBase(normRef, citation.article);
+  const base = findInLegalBase(normRef, citation.article, index);
   if (!base) return null;
 
   const fragment = citation.fragment ?? citation.text ?? "";
@@ -115,14 +118,18 @@ export function validateCitationAgainstBase(
     return null;
   }
 
+  const sourceTitle = base.syncSourceTitle
+    ? `${base.syncProvider ?? "LP"} — ${base.syncSourceTitle} (sincronizado ${base.updatedAt})`
+    : base.norm;
+
   return {
     norm: base.norm,
     article: base.article,
     text: base.text,
     fragment: base.text,
     updatedAt: base.updatedAt,
-    sourceId: base.id,
-    sourceTitle: base.norm,
+    sourceId: base.syncSourceId ?? base.id,
+    sourceTitle,
     confidence: "verified",
     legalBaseId: base.id,
   };
@@ -183,10 +190,11 @@ function scoreArticleForPage(article: LegalArticleRecord, pageText: string): num
 export function suggestVerifiedArticlesFromPage(
   pageText: string,
   limit = 4,
+  index: LegalArticleRecord[] = PERU_LEGAL_ARTICLES,
 ): LegalCitation[] {
   if (!pageText.trim()) return [];
 
-  const scored = PERU_LEGAL_ARTICLES.map((article) => ({
+  const scored = index.map((article) => ({
     article,
     score: scoreArticleForPage(article, pageText),
   }))
@@ -197,8 +205,10 @@ export function suggestVerifiedArticlesFromPage(
   return scored.map(({ article }) => ({
     ...toLegalCitation(article),
     fragment: article.text,
-    sourceId: article.id,
-    sourceTitle: article.norm,
+    sourceId: article.syncSourceId ?? article.id,
+    sourceTitle: article.syncSourceTitle
+      ? `${article.syncProvider ?? "LP"} — ${article.syncSourceTitle}`
+      : article.norm,
     confidence: "verified",
     legalBaseId: article.id,
   }));
@@ -207,20 +217,21 @@ export function suggestVerifiedArticlesFromPage(
 export function processNormativeAnalysis(
   analysis: PageProfessorAnalysis,
   pageText: string,
-  options: { strictNormativeMode: boolean },
+  options: { strictNormativeMode: boolean; normativeIndex?: LegalArticleRecord[] },
 ): PageProfessorAnalysis {
+  const index = options.normativeIndex ?? PERU_LEGAL_ARTICLES;
   const verified: LegalCitation[] = [];
   const seen = new Set<string>();
 
   for (const citation of analysis.citations) {
-    const validated = validateCitationAgainstBase(citation, pageText);
+    const validated = validateCitationAgainstBase(citation, pageText, index);
     if (!validated || seen.has(validated.legalBaseId!)) continue;
     seen.add(validated.legalBaseId!);
     verified.push(validated);
   }
 
   if (!options.strictNormativeMode) {
-    for (const suggested of suggestVerifiedArticlesFromPage(pageText)) {
+    for (const suggested of suggestVerifiedArticlesFromPage(pageText, 4, index)) {
       if (seen.has(suggested.legalBaseId!)) continue;
       seen.add(suggested.legalBaseId!);
       verified.push(suggested);

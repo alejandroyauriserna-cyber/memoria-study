@@ -11,6 +11,7 @@ import {
 } from "@/lib/guided-study/legal-base";
 import { processNormativeAnalysis } from "@/lib/guided-study/validate-citations";
 import { buildLegalSourcesPromptBlock } from "@/lib/legal-sources/prompt";
+import { buildNormativeIndexForUser } from "@/lib/legal-sources/server";
 import type { LegalSourceAttribution, LegalSourcesSettings } from "@/types/legal-sources";
 import type {
   DocumentStudyIndex,
@@ -140,15 +141,18 @@ export async function askLegalStudyTutor(input: {
   courseName?: string;
   chapterTitle?: string;
   sourceSettings?: LegalSourcesSettings;
+  userId?: string;
 }): Promise<TutorResponse> {
   const enabledSources = getEnabledSourcesFromSettings(input.sourceSettings);
   const strictMode = input.sourceSettings?.strictMode ?? false;
   const strictNormativeMode = input.sourceSettings?.strictNormativeMode !== false;
   const sourcesBlock = buildLegalSourcesPromptBlock(enabledSources, strictMode);
+  const normativeIndex = await buildNormativeIndexForUser(input.userId, input.sourceSettings);
 
   const relevantArticles = searchLegalBase(
     `${input.pageText} ${input.chapterTitle ?? ""} ${input.customPrompt ?? ""}`,
     8,
+    normativeIndex,
   );
   const indexedNormativeBlock = formatLegalBaseForPrompt(relevantArticles);
   const structured = usesStructuredResponse(input.action) || input.action === "custom";
@@ -182,7 +186,7 @@ export async function askLegalStudyTutor(input: {
       let analysis: PageProfessorAnalysis = processNormativeAnalysis(
         parsed.analysis,
         input.pageText,
-        { strictNormativeMode },
+        { strictNormativeMode, normativeIndex },
       );
 
       if (!analysis.conceptCards.length && analysis.pageFocus) {

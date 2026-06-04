@@ -9,6 +9,11 @@ export type LegalArticleRecord = {
   text: string;
   keywords: string[];
   updatedAt: string;
+  /** Fuente web sincronizada (LP Derecho). */
+  syncSourceId?: string;
+  syncSourceTitle?: string;
+  syncSourceUrl?: string;
+  syncProvider?: string;
 };
 
 /** Base jurídica oficial curada — ampliar periódicamente con textos vigentes. */
@@ -256,7 +261,11 @@ function normalizeText(value: string) {
     .trim();
 }
 
-export function searchLegalBase(query: string, limit = 6): LegalArticleRecord[] {
+export function searchLegalBase(
+  query: string,
+  limit = 6,
+  index: LegalArticleRecord[] = PERU_LEGAL_ARTICLES,
+): LegalArticleRecord[] {
   const tokens = query
     .toLowerCase()
     .normalize("NFD")
@@ -276,7 +285,7 @@ export function searchLegalBase(query: string, limit = 6): LegalArticleRecord[] 
     }
   }
 
-  const scored = PERU_LEGAL_ARTICLES.map((article) => {
+  const scored = index.map((article) => {
     const haystack = [
       article.norm,
       article.normShort,
@@ -312,10 +321,12 @@ export function formatLegalBaseForPrompt(articles: LegalArticleRecord[]): string
   }
 
   return articles
-    .map(
-      (a) =>
-        `[${a.normShort} — ${a.article}] ${a.title}\nTexto: "${a.text}"\nActualizado: ${a.updatedAt}`,
-    )
+    .map((a) => {
+      const sourceNote = a.syncProvider
+        ? `\nFuente: ${a.syncProvider}${a.syncSourceUrl ? ` — ${a.syncSourceUrl}` : ""} (sincronizado ${a.updatedAt})`
+        : "";
+      return `[${a.normShort} — ${a.article}] ${a.title}\nTexto: "${a.text}"\nActualizado: ${a.updatedAt}${sourceNote}`;
+    })
     .join("\n\n");
 }
 

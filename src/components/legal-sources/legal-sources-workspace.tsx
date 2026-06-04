@@ -6,9 +6,11 @@ import {
   ChevronDown,
   ChevronUp,
   FileUp,
+  Globe,
   Link2,
   Lock,
   Plus,
+  RefreshCw,
   Scale,
   Search,
   Trash2,
@@ -24,6 +26,7 @@ import {
   type LegalSourcesSettings,
 } from "@/types/legal-sources";
 import { LEGAL_SOURCE_TYPE_HINTS } from "@/lib/legal-sources/defaults";
+import { LP_NORMATIVE_PRESETS } from "@/lib/legal-sources/lp-presets";
 import {
   addCustomSource,
   fetchLegalSourcesSettings,
@@ -33,6 +36,7 @@ import {
   saveLegalSourcesSettings,
   syncLegalSourcesSettings,
   updateSourceInSettings,
+  upsertCustomSource,
 } from "@/lib/legal-sources/storage";
 
 type MaterialOption = { id: string; title: string; courseName?: string };
@@ -51,8 +55,9 @@ export function LegalSourcesWorkspace() {
   const [materialOptions, setMaterialOptions] = useState<MaterialOption[]>([]);
   const [selectedMaterialId, setSelectedMaterialId] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [syncingPresetId, setSyncingPresetId] = useState<string | null>(null);
   const pageLoadProgress = useLoadingProgress(loading, "profile");
-  const uploadProgress = useLoadingProgress(uploading, "legalSources");
+  const uploadProgress = useLoadingProgress(uploading || Boolean(syncingPresetId), "legalSources");
 
   useEffect(() => {
     fetchLegalSourcesSettings()
@@ -74,6 +79,17 @@ export function LegalSourcesWorkspace() {
     () => (settings ? getEnabledSources(settings) : []),
     [settings],
   );
+
+  const syncedPresets = useMemo(() => {
+    if (!settings) return new Map<string, LegalSourceRecord>();
+    const map = new Map<string, LegalSourceRecord>();
+    for (const source of settings.sources) {
+      if (source.kind === "url" && source.lpPresetId) {
+        map.set(source.lpPresetId, source);
+      }
+    }
+    return map;
+  }, [settings]);
 
   const persist = useCallback((next: LegalSourcesSettings) => {
     setSettings(next);
@@ -190,10 +206,45 @@ export function LegalSourcesWorkspace() {
     }
   }
 
+  async function handleSyncPreset(presetId: string) {
+    if (!settings) return;
+    setSyncingPresetId(presetId);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/legal-sources/sync-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ presetId }),
+      });
+      const data = (await res.json()) as {
+        source?: LegalSourceRecord;
+        error?: string;
+        articleCount?: number;
+      };
+
+      if (!res.ok || !data.source) {
+        throw new Error(data.error ?? "No se pudo sincronizar la fuente web.");
+      }
+
+      persist(
+        upsertCustomSource(settings, {
+          ...data.source,
+          enabled: true,
+          priority: 1,
+        }),
+      );
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Error al sincronizar desde LP.");
+    } finally {
+      setSyncingPresetId(null);
+    }
+  }
+
   async function handleRemove(source: LegalSourceRecord) {
     if (!settings || source.kind === "builtin") return;
 
-    if (source.kind === "upload" || source.kind === "material") {
+    if (source.kind === "upload" || source.kind === "material" || source.kind === "url") {
       try {
         await fetch(`/api/legal-sources/${source.id}`, { method: "DELETE" });
       } catch {
@@ -305,6 +356,11 @@ export function LegalSourcesWorkspace() {
                 {s.extractedText ? (
                   <span className="shrink-0 text-[10px] text-[#86EFAC]">PDF indexado</span>
                 ) : null}
+                {s.kind === "url" && s.articleCount ? (
+                  <span className="shrink-0 text-[10px] text-[#00BFFF]">
+                    {s.articleCount} arts. LP
+                  </span>
+                ) : null}
               </li>
             ))}
           </ol>
@@ -329,6 +385,12 @@ export function LegalSourcesWorkspace() {
                 onToggle={() => toggleSource(source.id)}
                 onMoveUp={() => persist(reorderSourcePriority(settings, source.id, "up"))}
                 onMoveDown={() => persist(reorderSourcePriority(settings, source.id, "down"))}
+                onResync={
+                  source.kind === "url" && source.lpPresetId
+                    ? () => void handleSyncPreset(source.lpPresetId!)
+                    : undefined
+                }
+                resyncing={syncingPresetId === source.lpPresetId}
                 onRemove={
                   source.kind !== "builtin" ? () => void handleRemove(source) : undefined
                 }
@@ -337,6 +399,69 @@ export function LegalSourcesWorkspace() {
           </div>
         </section>
       ))}
+
+      <section className="tron-panel rounded-2xl p-5">
+        <p className="flex items-center gap-2 text-sm font-bold text-[#F5F7FA]">
+          <Globe size={16} className="text-[#00BFFF]" />
+          Sincronizar desde web (LP Derecho)
+        </p>
+        <p className="mt-2 text-xs leading-5 text-muted-foreground">
+          Descarga normativa actualizada desde LP Pasión por el Derecho. Los artículos se indexan
+          para validación estricta del tutor — no se inventan referencias fuera de lo sincronizado.
+        </p>
+        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+          {LP_NORMATIVE_PRESETS.map((preset) => {
+            const synced = syncedPresets.get(preset.id);
+            const busy = syncingPresetId === preset.id;
+
+            return (
+              <div
+                key={preset.id}
+                className="flex flex-col gap-2 rounded-xl border border-[rgba(0,191,255,0.15)] bg-[rgba(0,191,255,0.04)] p-3"
+              >
+                <div>
+                  <p className="text-sm font-semibold text-[#F5F7FA]">{preset.title}</p>
+                  <p className="mt-0.5 text-[10px] text-muted-foreground">{preset.normShort}</p>
+                </div>
+                {synced ? (
+                  <p className="text-[10px] text-[#86EFAC]">
+                    {synced.articleCount ?? "?"} artículos ·{" "}
+                    {synced.lastSyncedAt
+                      ? new Date(synced.lastSyncedAt).toLocaleDateString("es-PE")
+                      : "sincronizado"}
+                  </p>
+                ) : (
+                  <p className="text-[10px] text-muted-foreground">Aún no sincronizado</p>
+                )}
+                <button
+                  type="button"
+                  disabled={Boolean(syncingPresetId)}
+                  onClick={() => void handleSyncPreset(preset.id)}
+                  className="tron-btn-secondary inline-flex h-9 items-center justify-center gap-2 rounded-lg px-3 text-xs font-semibold disabled:opacity-50"
+                >
+                  {busy ? (
+                    <>
+                      <RefreshCw size={13} className="animate-spin" />
+                      Sincronizando… {uploadProgress.percent}%
+                    </>
+                  ) : synced ? (
+                    <>
+                      <RefreshCw size={13} />
+                      Re-sincronizar
+                    </>
+                  ) : (
+                    <>
+                      <Globe size={13} />
+                      Sincronizar
+                    </>
+                  )}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+        {error ? <p className="mt-3 text-xs text-red-400">{error}</p> : null}
+      </section>
 
       <div className="tron-panel rounded-2xl p-5">
         {!showAdd ? (
@@ -535,12 +660,16 @@ function SourceRow({
   onToggle,
   onMoveUp,
   onMoveDown,
+  onResync,
+  resyncing,
   onRemove,
 }: {
   source: LegalSourceRecord;
   onToggle: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
+  onResync?: () => void;
+  resyncing?: boolean;
   onRemove?: () => void;
 }) {
   return (
@@ -567,6 +696,11 @@ function SourceRow({
           {source.extractedText ? (
             <span className="text-[10px] text-[#86EFAC]">Texto indexado</span>
           ) : null}
+          {source.kind === "url" ? (
+            <span className="text-[10px] text-[#00BFFF]">
+              LP{source.articleCount ? ` · ${source.articleCount} arts.` : ""}
+            </span>
+          ) : null}
           {source.kind === "material" ? (
             <span className="text-[10px] text-[#00BFFF]">Biblioteca</span>
           ) : null}
@@ -574,6 +708,17 @@ function SourceRow({
       </div>
 
       <div className="flex shrink-0 items-center gap-1">
+        {onResync ? (
+          <button
+            type="button"
+            onClick={onResync}
+            disabled={resyncing}
+            className="rounded p-1 text-[#00BFFF]/80 hover:text-[#00BFFF] disabled:opacity-50"
+            aria-label="Re-sincronizar"
+          >
+            <RefreshCw size={14} className={resyncing ? "animate-spin" : ""} />
+          </button>
+        ) : null}
         <button
           type="button"
           onClick={onMoveUp}

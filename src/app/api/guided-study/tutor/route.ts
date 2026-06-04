@@ -88,6 +88,7 @@ export async function POST(request: Request) {
       courseName: material.courseName,
       chapterTitle,
       sourceSettings,
+      userId: user.id,
     });
 
     return NextResponse.json({

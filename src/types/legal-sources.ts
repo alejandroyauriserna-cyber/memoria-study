@@ -4,7 +4,7 @@ export type LegalSourceCategory =
   | "doctrina"
   | "material_universitario";
 
-export type LegalSourceKind = "builtin" | "upload" | "material";
+export type LegalSourceKind = "builtin" | "upload" | "material" | "url";
 
 export type LegalSourceRecord = {
   id: string;
@@ -20,6 +20,14 @@ export type LegalSourceRecord = {
   materialId?: string;
   /** Texto extraído del PDF (recortado en cliente/servidor). */
   extractedText?: string;
+  /** URL de origen (LP Derecho u otra fuente web permitida). */
+  sourceUrl?: string;
+  /** Identificador del preset LP (`lp-cc`, `lp-cpp`, …). */
+  lpPresetId?: string;
+  /** Fecha ISO de la última sincronización web. */
+  lastSyncedAt?: string;
+  /** Cantidad de artículos indexados desde la URL. */
+  articleCount?: number;
   updatedAt?: string;
 };
 

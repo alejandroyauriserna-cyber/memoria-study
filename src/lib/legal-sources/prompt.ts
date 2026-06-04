@@ -21,6 +21,17 @@ export function buildLegalSourcesPromptBlock(
         const text = getBuiltinSourceExcerpt(s.id);
         return text ? `=== ${s.title} (id: ${s.id}) ===\n${text}` : null;
       }
+      if (s.kind === "url") {
+        const syncMeta = [
+          s.sourceUrl ? `URL: ${s.sourceUrl}` : null,
+          s.lastSyncedAt ? `Sincronizado: ${s.lastSyncedAt}` : null,
+          s.articleCount ? `${s.articleCount} artículos indexados` : null,
+        ]
+          .filter(Boolean)
+          .join(" · ");
+        const body = s.extractedText?.trim() || s.description || "";
+        return `=== ${s.title} (id: ${s.id}) — LP Derecho ===\n${syncMeta}${body ? `\n${body}` : ""}`;
+      }
       if (s.extractedText?.trim()) {
         const meta = [s.author ? `Autor: ${s.author}` : null, s.description].filter(Boolean).join(" — ");
         return `=== ${s.title} (id: ${s.id}) ===\n${meta ? `${meta}\n` : ""}${s.extractedText}`;
