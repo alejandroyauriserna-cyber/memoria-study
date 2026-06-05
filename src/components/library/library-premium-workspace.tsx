@@ -416,11 +416,11 @@ function SidebarSection({
         onClick={() => setOpen((v) => !v)}
         className="flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-left transition hover:bg-[rgba(0,255,213,0.05)]"
       >
-        <motion.span animate={{ rotate: open ? 90 : 0 }} className="text-[#00FFD5]/80">
+        <motion.span animate={{ rotate: open ? 90 : 0 }} className="text-accent/80">
           <ChevronRight size={12} />
         </motion.span>
-        <Icon size={13} className="text-[#00FFD5]" />
-        <span className="text-[11px] font-semibold text-[#F5F7FA]/90">{title}</span>
+        <Icon size={13} className="text-accent" />
+        <span className="library-sidebar-title text-[11px] font-semibold">{title}</span>
       </button>
       <AnimatePresence initial={false}>
         {open ? (
@@ -456,12 +456,10 @@ function QuickMaterialRow({
       type="button"
       onClick={() => onSelect(material)}
       className={`library-quick-row flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left text-xs transition ${
-        selected
-          ? "bg-[rgba(0,255,213,0.12)] text-[#F5F7FA]"
-          : "text-[#F5F7FA]/80 hover:bg-[rgba(0,255,213,0.06)]"
+        selected ? "is-selected" : ""
       }`}
     >
-      <span className="text-[#00FFD5]/70">•</span>
+      <span className="text-accent/70">•</span>
       <span className="min-w-0 flex-1 truncate font-medium">{material.title}</span>
       {meta ? <span className="shrink-0 text-[10px] text-muted-foreground">{meta}</span> : null}
     </button>
@@ -627,7 +625,7 @@ function LibraryWelcomePanel({
       <div className="library-welcome-icon flex h-16 w-16 items-center justify-center text-[#07131A]">
         <BookOpen size={28} />
       </div>
-      <h2 className="mt-6 text-2xl font-bold tracking-tight text-[#F5F7FA]">
+      <h2 className="mt-6 text-2xl font-bold tracking-tight text-foreground">
         {hasActiveSearch ? `${matchCount} materiales encontrados` : "Biblioteca académica UNT"}
       </h2>
       <p className="mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
@@ -674,7 +672,7 @@ function LibraryWelcomePanel({
 function StatPill({ label, value }: { label: string; value: string }) {
   return (
     <div className="library-stat-pill px-4 py-3">
-      <p className="text-xl font-bold tabular-nums text-[#00FFD5]">{value}</p>
+      <p className="text-xl font-bold tabular-nums text-accent">{value}</p>
       <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
         {label}
       </p>

@@ -806,7 +806,7 @@ export function CuadernoCanvasEditor({
   return (
     <div className="cn-canvas-workspace" data-layout={layoutMode}>
       {toolbar}
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/8 bg-black/25 px-3 py-2">
+      <div className="cn-surface-panel cn-surface-panel--compact flex flex-wrap items-center justify-between gap-2 px-3 py-2">
         <div className="flex items-center gap-1">
           <button
             type="button"

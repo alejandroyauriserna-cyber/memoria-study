@@ -227,6 +227,20 @@
 .library-quick-row {
   min-height: 2.15rem;
   border-radius: 0.75rem;
+  color: rgba(245, 247, 250, 0.8);
+}
+
+.library-quick-row:hover {
+  background: rgba(0, 255, 213, 0.06);
+}
+
+.library-quick-row.is-selected {
+  background: rgba(0, 255, 213, 0.12);
+  color: #f5f7fa;
+}
+
+.library-sidebar-title {
+  color: rgba(245, 247, 250, 0.9);
 }
 
 .library-cycle-branch > button {
@@ -817,7 +831,22 @@ html:not(.dark) .library-cycle-branch > button:hover {
 }
 
 html:not(.dark) .library-quick-row {
+  color: var(--muted-foreground);
+}
+
+html:not(.dark) .library-quick-row:hover,
+html:not(.dark) .library-quick-row.is-selected {
   color: var(--foreground);
+  background: color-mix(in srgb, var(--accent) 10%, #fff);
+}
+
+html:not(.dark) .library-sidebar-title,
+html:not(.dark) .library-sidebar-section .text-\[\#F5F7FA\]\/90 {
+  color: var(--foreground) !important;
+}
+
+html:not(.dark) .library-sidebar-section button:hover {
+  background: color-mix(in srgb, var(--accent) 8%, #fff);
 }
 
 html:not(.dark) .library-filter-row > button.is-active {
@@ -842,6 +871,73 @@ html:not(.dark) .library-welcome p {
 
 html:not(.dark) .library-welcome .text-muted-foreground {
   color: var(--muted-foreground);
+}
+
+html:not(.dark) .library-page-hero {
+  border-color: color-mix(in srgb, var(--accent) 22%, transparent);
+  background:
+    linear-gradient(140deg, color-mix(in srgb, var(--accent) 10%, #fff), transparent 32%),
+    radial-gradient(ellipse 80% 60% at 92% 12%, color-mix(in srgb, var(--accent-secondary, var(--accent)) 12%, #fff), transparent 58%),
+    linear-gradient(160deg, #f8fbfd 0%, #eef4f8 52%, #f5f9fc 100%);
+  box-shadow:
+    0 0 0 1px rgba(15, 23, 42, 0.04),
+    0 20px 48px rgba(15, 23, 42, 0.08);
+}
+
+html:not(.dark) .library-page-hero::before {
+  opacity: 0.22;
+}
+
+html:not(.dark) .library-page-hero-copy h1 {
+  background: linear-gradient(180deg, #0f172a, #334155);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+html:not(.dark) .library-page-stat {
+  border-color: color-mix(in srgb, var(--accent) 18%, transparent);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+}
+
+html:not(.dark) .library-page-stat strong {
+  color: var(--foreground);
+}
+
+html:not(.dark) .library-page-stat em {
+  color: var(--muted-foreground);
+}
+
+html:not(.dark) .library-page-stat-icon {
+  background: color-mix(in srgb, var(--accent) 12%, #fff);
+  color: var(--accent);
+}
+
+html:not(.dark) .library-stat-pill {
+  border-color: color-mix(in srgb, var(--accent) 18%, transparent);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+}
+
+html:not(.dark) .library-stat-pill .text-\[\#00FFD5\] {
+  color: var(--accent) !important;
+}
+
+html:not(.dark) .library-welcome .text-\[\#F5F7FA\] {
+  color: var(--foreground) !important;
+}
+
+html:not(.dark) .library-welcome-icon {
+  background: color-mix(in srgb, var(--accent) 12%, #fff);
+  border-color: color-mix(in srgb, var(--accent) 22%, transparent);
+  color: var(--accent);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+}
+
+html:not(.dark) .library-welcome {
+  background: radial-gradient(ellipse 55% 45% at 50% 45%, color-mix(in srgb, var(--accent) 8%, transparent), transparent 72%);
 }
 
 html:not(.dark) .lib-material-card-title,

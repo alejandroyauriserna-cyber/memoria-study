@@ -1613,8 +1613,8 @@
 
 /* —— Sticker panel premium 2025 —— */
 .cn-sticker-panel--premium {
-  width: min(420px, 96vw);
-  border-radius: 24px 0 0 24px;
+  width: var(--cn-decoration-panel-w, min(400px, 92vw));
+  border-radius: 0;
   background: rgba(255, 255, 255, 0.72);
   backdrop-filter: blur(24px) saturate(1.35);
   border-left: 1px solid rgba(255, 255, 255, 0.85);

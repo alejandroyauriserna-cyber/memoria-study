@@ -89,7 +89,7 @@ function CuadernoCollectionViewInner({
             favoriteClasses.map((item) => (
               <li key={item.id}>
                 <Link href={`/cuaderno/${item.id}`} className="cuaderno-sheet-card block px-5 py-4">
-                  <p className="font-semibold text-[#F5F7FA]">{item.title}</p>
+                  <p className="font-semibold text-foreground">{item.title}</p>
                   <p className="text-xs text-muted-foreground">{item.courseName}</p>
                 </Link>
               </li>
@@ -106,22 +106,22 @@ function CuadernoCollectionViewInner({
             </li>
           ) : (
             examItems.map((item) => (
-              <li key={item.id} className="rounded-xl border border-white/8 bg-[#12181f]/80 p-5">
+              <li key={item.id} className="cn-surface-panel p-5">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
-                    <p className="font-semibold text-[#00FFD5]">{item.title}</p>
+                    <p className="font-semibold text-accent">{item.title}</p>
                     <p className="text-xs text-muted-foreground">
                       {item.courseName}
                       {item.classTitle ? ` · ${item.classTitle}` : ""}
                     </p>
                   </div>
                   {item.classId ? (
-                    <Link href={`/cuaderno/${item.classId}`} className="text-xs text-[#00FFD5] hover:underline">
+                    <Link href={`/cuaderno/${item.classId}`} className="text-xs text-accent hover:underline">
                       Ver hoja
                     </Link>
                   ) : null}
                 </div>
-                <p className="mt-3 max-h-48 overflow-y-auto whitespace-pre-wrap text-sm text-[#F5F7FA]/85">
+                <p className="mt-3 max-h-48 overflow-y-auto whitespace-pre-wrap text-sm text-muted-foreground">
                   {item.content}
                 </p>
               </li>
@@ -138,19 +138,19 @@ function CuadernoCollectionViewInner({
             </li>
           ) : (
             summaryItems.map((item) => (
-              <li key={item.id} className="rounded-xl border border-white/8 bg-[#12181f]/80 p-5">
+              <li key={item.id} className="cn-surface-panel p-5">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
-                    <p className="font-semibold text-[#00FFD5]">{item.title}</p>
+                    <p className="font-semibold text-accent">{item.title}</p>
                     <p className="text-xs text-muted-foreground">{item.courseName}</p>
                   </div>
                   {item.classId ? (
-                    <Link href={`/cuaderno/${item.classId}`} className="text-xs text-[#00FFD5] hover:underline">
+                    <Link href={`/cuaderno/${item.classId}`} className="text-xs text-accent hover:underline">
                       Ver hoja
                     </Link>
                   ) : null}
                 </div>
-                <p className="mt-3 max-h-48 overflow-y-auto whitespace-pre-wrap text-sm text-[#F5F7FA]/85">
+                <p className="mt-3 max-h-48 overflow-y-auto whitespace-pre-wrap text-sm text-muted-foreground">
                   {item.content}
                 </p>
               </li>

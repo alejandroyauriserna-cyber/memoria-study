@@ -465,8 +465,19 @@
 .cn-perf-fps.is-bad { color: #f87171; }
 
 /* Panel stickers — encaja con studio */
+.cn-immersive-root--studio {
+  --cn-decoration-panel-w: min(400px, 92vw);
+  --cn-immersive-header-h: 52px;
+}
+
+.cn-immersive-root--studio .cn-sticker-panel,
+.cn-immersive-root--studio .cn-postit-panel {
+  top: var(--cn-immersive-header-h);
+  width: var(--cn-decoration-panel-w);
+  border-radius: 0;
+}
+
 .cn-immersive-root--studio .cn-sticker-panel {
-  top: 48px;
   background: rgba(18, 22, 28, 0.92);
   border-left-color: var(--cn-studio-border);
 }
@@ -477,7 +488,21 @@
 
 @media (min-width: 900px) {
   .cn-immersive-root--studio.cn-immersive-root--side-open .cn-immersive-main {
-    margin-right: min(380px, 32vw);
+    margin-right: var(--cn-decoration-panel-w);
+  }
+
+  .cn-immersive-root--studio.cn-immersive-root--side-open .cn-side-rail {
+    right: calc(var(--cn-decoration-panel-w) + 10px);
+  }
+
+  .cn-immersive-root--studio.cn-immersive-root--side-open .cn-immersive-canvas--studio .cn-canvas-viewport--immersive {
+    padding-right: 24px;
+  }
+}
+
+@media (max-width: 899px) {
+  .cn-immersive-root--studio.cn-immersive-root--side-open .cn-side-rail {
+    display: none;
   }
 }
 
@@ -1732,4 +1757,44 @@ html:not(.dark) .cn-course-sheets--netflix .col-span-full {
 
 html:not(.dark) .cn-shelf-label span {
   color: var(--muted-foreground);
+}
+
+html:not(.dark) .cn-immersive-root.cn-ambient-bg {
+  background:
+    radial-gradient(circle at 10% 10%, color-mix(in srgb, var(--accent) 8%, transparent), transparent 28%),
+    radial-gradient(circle at 85% 15%, color-mix(in srgb, var(--accent-secondary, var(--accent)) 8%, transparent), transparent 35%),
+    linear-gradient(180deg, #eef4f8 0%, #f5f9fc 100%) !important;
+}
+
+html:not(.dark) .cn-immersive-root--studio .cn-sticker-panel--premium,
+html:not(.dark) .cn-immersive-root--studio .cn-postit-panel.cn-sticker-panel--glass {
+  background: rgba(255, 255, 255, 0.96);
+  border-left-color: color-mix(in srgb, var(--border) 80%, transparent);
+  box-shadow: -16px 0 40px rgba(15, 23, 42, 0.08);
+}
+
+html:not(.dark) .cn-immersive-root--studio .cn-sticker-panel-search--premium,
+html:not(.dark) .cn-immersive-root--studio .cn-sticker-cell--premium .cn-sticker-cell-main--premium,
+html:not(.dark) .cn-immersive-root--studio .cn-sticker-import-hero,
+html:not(.dark) .cn-immersive-root--studio .cn-sticker-import-flow {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: color-mix(in srgb, var(--border) 75%, transparent);
+  color: var(--foreground);
+}
+
+html:not(.dark) .cn-immersive-root--studio .cn-sticker-cell-label,
+html:not(.dark) .cn-immersive-root--studio .cn-sticker-empty-title,
+html:not(.dark) .cn-immersive-root--studio .cn-sticker-import-hero-title,
+html:not(.dark) .cn-immersive-root--studio .cn-sticker-panel-head--premium .cn-sticker-panel-title {
+  color: var(--foreground);
+}
+
+html:not(.dark) .cn-immersive-root--studio .cn-sticker-panel-head--premium .cn-sticker-panel-hint {
+  color: var(--muted-foreground);
+}
+
+html:not(.dark) .cn-immersive-root--studio .cn-side-rail {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: color-mix(in srgb, var(--border) 80%, transparent);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
 }

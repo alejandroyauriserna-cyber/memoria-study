@@ -1,19 +1,29 @@
 "use client";
 
 import { useState } from "react";
-import { BookOpen, Search } from "lucide-react";
+import { BookOpen, Search, Sparkles } from "lucide-react";
 import { LoadingState } from "@/components/ui/loading-state";
 import { useLoadingProgress } from "@/hooks/use-loading-progress";
+import {
+  DICTIONARY_EXAMPLES,
+  DICTIONARY_FEATURED_PREVIEW,
+  DICTIONARY_STARTER_HINTS,
+} from "@/lib/cuaderno/dictionary-starter";
 import type { CuadernoDictionaryResponse } from "@/types/cuaderno";
 
-const EXAMPLES = [
-  "Exhorto",
-  "Acto jurídico",
-  "Negocio jurídico",
-  "Antijuridicidad",
-  "Compensación",
-  "Casación",
-];
+function DictionaryResult({ entry }: { entry: CuadernoDictionaryResponse }) {
+  return (
+    <article className="cn-dict-result space-y-4">
+      <h3 className="cn-dict-result-term">{entry.term}</h3>
+      {entry.sections.map((section) => (
+        <div key={section.id}>
+          <h4 className="cn-dict-result-section-title">{section.title}</h4>
+          <p className="cn-dict-result-section-body whitespace-pre-wrap">{section.content}</p>
+        </div>
+      ))}
+    </article>
+  );
+}
 
 export function CuadernoDictionaryTab() {
   const [term, setTerm] = useState("");
@@ -47,19 +57,21 @@ export function CuadernoDictionaryTab() {
 
   return (
     <section className="mx-auto max-w-3xl space-y-6">
-      <div className="rounded-2xl border border-white/8 bg-gradient-to-br from-[#12181f] to-[#0a0e14] p-8">
+      <div className="cn-surface-panel cn-dict-panel p-8">
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#00FFD5]/15 text-[#00FFD5]">
+          <div className="cn-dict-icon">
             <BookOpen size={24} />
           </div>
           <div>
-            <h2 className="cn-hero-title text-2xl font-bold text-[#F5F7FA]">Diccionario Jurídico</h2>
-            <p className="text-sm text-muted-foreground">Sin necesidad de PDF ni apunte abierto.</p>
+            <h2 className="cn-hero-title text-2xl font-bold text-foreground">Diccionario Jurídico</h2>
+            <p className="text-sm text-muted-foreground">
+              Consulta conceptos clave del derecho peruano con fichas estructuradas para estudio.
+            </p>
           </div>
         </div>
 
         <label className="mt-8 block">
-          <span className="text-sm font-medium text-[#F5F7FA]/80">¿Qué significa?</span>
+          <span className="text-sm font-medium text-foreground/80">¿Qué significa?</span>
           <div className="relative mt-2">
             <Search
               size={18}
@@ -70,18 +82,18 @@ export function CuadernoDictionaryTab() {
               onChange={(e) => setTerm(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && lookup(term)}
               placeholder="Ej.: Exhorto, acto jurídico…"
-              className="w-full rounded-xl border border-white/10 bg-black/30 py-3.5 pl-11 pr-4 text-sm text-[#F5F7FA] outline-none focus:border-[#00FFD5]/40"
+              className="cn-surface-input w-full py-3.5 pl-11 pr-4 text-sm"
             />
           </div>
         </label>
 
         <div className="mt-4 flex flex-wrap gap-2">
-          {EXAMPLES.map((sample) => (
+          {DICTIONARY_EXAMPLES.map((sample) => (
             <button
               key={sample}
               type="button"
               onClick={() => lookup(sample)}
-              className="rounded-full border border-white/10 px-3 py-1.5 text-xs text-muted-foreground transition hover:border-[#00FFD5]/30 hover:text-[#00FFD5]"
+              className="cn-surface-chip"
             >
               {sample}
             </button>
@@ -94,7 +106,7 @@ export function CuadernoDictionaryTab() {
           onClick={() => lookup(term)}
           className="tron-btn-primary mt-6 w-full rounded-xl py-3 text-sm font-semibold disabled:opacity-50"
         >
-          {loading ? `Consultando… ${dictProgress.percent}%` : "Consultar"}
+          {loading ? `Consultando… ${dictProgress.percent}%` : "Consultar con IA"}
         </button>
       </div>
 
@@ -108,20 +120,41 @@ export function CuadernoDictionaryTab() {
         />
       ) : null}
 
-      {error ? <p className="text-sm text-red-400">{error}</p> : null}
+      {error ? <p className="text-sm text-red-500">{error}</p> : null}
 
       {entry ? (
-        <article className="space-y-4 rounded-2xl border border-[#00FFD5]/20 bg-[#00FFD5]/5 p-6">
-          <h3 className="text-xl font-bold text-[#00FFD5]">{entry.term}</h3>
-          {entry.sections.map((section) => (
-            <div key={section.id}>
-              <h4 className="text-sm font-semibold text-[#F5F7FA]">{section.title}</h4>
-              <p className="mt-1 text-sm leading-relaxed text-muted-foreground whitespace-pre-wrap">
-                {section.content}
-              </p>
+        <DictionaryResult entry={entry} />
+      ) : !loading ? (
+        <div className="space-y-6">
+          <div className="cn-dict-starter">
+            <div className="cn-dict-starter-head">
+              <Sparkles size={16} />
+              <h3>Conceptos frecuentes en la carrera</h3>
             </div>
-          ))}
-        </article>
+            <p className="cn-dict-starter-lead">
+              Toca un concepto para generar una ficha completa con definición, ejemplo, relación con el curso y
+              claves de examen.
+            </p>
+            <div className="cn-dict-starter-grid">
+              {DICTIONARY_EXAMPLES.map((sample) => (
+                <button
+                  key={sample}
+                  type="button"
+                  onClick={() => lookup(sample)}
+                  className="cn-dict-starter-card"
+                >
+                  <strong>{sample}</strong>
+                  <span>{DICTIONARY_STARTER_HINTS[sample]}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="cn-dict-preview">
+            <p className="cn-dict-preview-kicker">Vista previa · ejemplo</p>
+            <DictionaryResult entry={DICTIONARY_FEATURED_PREVIEW} />
+          </div>
+        </div>
       ) : null}
     </section>
   );

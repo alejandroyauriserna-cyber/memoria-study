@@ -551,3 +551,58 @@
     transform: none;
   }
 }
+
+/* —— Tema claro —— */
+
+html:not(.dark) .dash-home__hero {
+  border-color: color-mix(in srgb, var(--accent) 20%, transparent);
+  background:
+    linear-gradient(140deg, color-mix(in srgb, var(--accent) 10%, #fff), transparent 35%),
+    radial-gradient(ellipse 70% 55% at 95% 100%, color-mix(in srgb, var(--accent-secondary, var(--accent)) 10%, #fff), transparent 55%),
+    linear-gradient(160deg, #f8fbfd 0%, #eef4f8 52%, #f5f9fc 100%);
+  box-shadow:
+    0 0 0 1px rgba(15, 23, 42, 0.04),
+    0 20px 48px rgba(15, 23, 42, 0.08);
+}
+
+html:not(.dark) .dash-home__hero::before {
+  opacity: 0.2;
+}
+
+html:not(.dark) .dash-home__hero-title {
+  color: var(--foreground);
+}
+
+html:not(.dark) .dash-home__hero-topic,
+html:not(.dark) .dash-home__hero-time-badge {
+  color: var(--muted-foreground);
+}
+
+html:not(.dark) .dash-home__hero-time-badge {
+  background: color-mix(in srgb, var(--accent) 10%, #fff);
+  border-color: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+html:not(.dark) .dash-home__metrics-inline strong {
+  color: var(--foreground);
+}
+
+html:not(.dark) .dash-home__glass {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: color-mix(in srgb, var(--border) 75%, transparent);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.06);
+}
+
+html:not(.dark) .dash-home__timeline-row {
+  background: rgba(255, 255, 255, 0.82);
+  border-color: color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+html:not(.dark) .dash-home__timeline-title {
+  color: var(--foreground);
+}
+
+html:not(.dark) .dash-home__timeline-sub,
+html:not(.dark) .dash-home__timeline-time {
+  color: var(--muted-foreground);
+}

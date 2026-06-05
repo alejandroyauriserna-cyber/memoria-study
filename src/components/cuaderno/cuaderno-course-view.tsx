@@ -106,7 +106,7 @@ function CuadernoCourseViewInner({
 
   return (
     <motion.div
-      className="cuaderno-premium ms-notebook-shell cuaderno-shell cn-immersive-root--luxury mx-auto max-w-6xl space-y-8 px-4 py-8 sm:px-6"
+      className="cuaderno-premium ms-notebook-shell cuaderno-shell mx-auto max-w-6xl space-y-8 px-4 py-8 sm:px-6"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.35 }}

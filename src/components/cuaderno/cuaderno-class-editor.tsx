@@ -246,7 +246,7 @@ export function CuadernoClassEditor({ initialClass }: { initialClass: CuadernoCl
         </section>
 
         <aside className="space-y-4 xl:col-span-4">
-          <div className="flex gap-1 rounded-xl border border-white/8 bg-black/20 p-1">
+          <div className="cn-surface-panel cn-surface-panel--compact flex gap-1 p-1">
             <button
               type="button"
               className="cn-tab flex-1"
@@ -266,7 +266,7 @@ export function CuadernoClassEditor({ initialClass }: { initialClass: CuadernoCl
           </div>
 
           {sideTab === "dictionary" ? (
-            <section className="rounded-2xl border border-white/8 bg-[#12181f]/80 p-5">
+            <section className="cn-surface-panel p-5">
               <h2 className="flex items-center gap-2 text-sm font-bold text-[#F5F7FA]">
                 <BookOpen size={16} className="text-[#00FFD5]" />
                 Diccionario Jurídico
@@ -276,7 +276,7 @@ export function CuadernoClassEditor({ initialClass }: { initialClass: CuadernoCl
                 onChange={(e) => setDictTerm(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && lookupTerm(dictTerm)}
                 placeholder="¿Qué significa?"
-                className="mt-3 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm outline-none focus:border-[#00FFD5]/40"
+                className="cn-surface-input mt-3 w-full px-3 py-2.5 text-sm"
               />
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {DICTIONARY_EXAMPLES.map((sample) => (
@@ -311,7 +311,7 @@ export function CuadernoClassEditor({ initialClass }: { initialClass: CuadernoCl
               ) : null}
             </section>
           ) : (
-            <section className="rounded-2xl border border-white/8 bg-[#12181f]/80 p-5">
+            <section className="cn-surface-panel p-5">
               <p className="text-xs text-muted-foreground">
                 Selecciona texto en la hoja o usa los botones inferiores.
               </p>
@@ -328,15 +328,15 @@ export function CuadernoClassEditor({ initialClass }: { initialClass: CuadernoCl
                 </div>
               ) : null}
               {askAnswer ? (
-                <div className="mt-3 max-h-72 overflow-y-auto rounded-xl bg-black/25 p-3 text-xs leading-relaxed whitespace-pre-wrap text-[#F5F7FA]/90">
+                <div className="cn-surface-inset mt-3 max-h-72 overflow-y-auto p-3 text-xs leading-relaxed whitespace-pre-wrap text-foreground/90">
                   {askAnswer}
                 </div>
               ) : null}
             </section>
           )}
 
-          <section className="rounded-2xl border border-white/8 bg-[#12181f]/80 p-5">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-[#00FFD5]">
+          <section className="cn-surface-panel p-5">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-accent">
               Generar desde apuntes
             </h2>
             <div className="mt-3 flex flex-wrap gap-2">

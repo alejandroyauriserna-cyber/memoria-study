@@ -75,6 +75,14 @@
   color: rgba(245, 247, 250, 0.45);
 }
 
+.cn-bookshelf-hero-continue {
+  margin-top: 22px;
+  padding: 18px 20px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+}
+
 .cn-bookshelf-hero-cta {
   display: inline-flex;
   align-items: center;
@@ -455,7 +463,9 @@ html:not(.dark) .cn-bookshelf-nav .cn-tab {
 html:not(.dark) .cn-bookshelf-nav .cn-tab[data-active="true"] {
   background: rgba(255, 255, 255, 0.92);
   color: var(--foreground);
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent),
+    0 8px 24px rgba(15, 23, 42, 0.08);
 }
 
 html:not(.dark) .cn-bookshelf-hero-greeting,
@@ -472,7 +482,12 @@ html:not(.dark) .cn-bookshelf-hero-course {
 
 html:not(.dark) .cn-bookshelf-hero-stats div {
   background: rgba(255, 255, 255, 0.82);
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
   box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+}
+
+html:not(.dark) .cn-shelf-stage::before {
+  background: linear-gradient(180deg, transparent, rgba(15, 23, 42, 0.04));
 }
 
 html:not(.dark) .cn-bookshelf-hero-stats dt {
@@ -498,6 +513,18 @@ html:not(.dark) .cn-bookshelf-footer-stats dd {
 
 html:not(.dark) .cn-bookshelf-footer-stats div {
   border-top-color: color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+html:not(.dark) .cn-bookshelf-hero-continue {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: color-mix(in srgb, var(--border) 75%, transparent);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+}
+
+html:not(.dark) .cn-bookshelf-hero-cta {
+  background: var(--foreground);
+  color: #fff;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
 }
 
 html:not(.dark) .cn-shelf-plank--library {

@@ -26,7 +26,7 @@ export function CuadernoWorkspace({
 
   return (
     <CuadernoSyncProvider>
-      <div className="cuaderno-premium ms-notebook-shell cuaderno-shell cn-immersive-root--luxury cn-bookshelf-page mx-auto max-w-[1180px] px-4 py-6 sm:px-6 lg:px-8">
+      <div className="cuaderno-premium ms-notebook-shell cuaderno-shell cn-bookshelf-page mx-auto max-w-[1180px] px-4 py-6 sm:px-6 lg:px-8">
         <nav className="cn-bookshelf-nav" aria-label="Secciones del cuaderno">
           <button type="button" className="cn-tab" data-active={tab === "notes"} onClick={() => setTab("notes")}>
             Biblioteca

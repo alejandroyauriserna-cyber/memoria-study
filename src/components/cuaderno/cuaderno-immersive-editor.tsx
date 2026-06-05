@@ -375,9 +375,11 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
     });
   }
 
+  const decorationPanelOpen = stickerPanelOpen || postitPanelOpen;
+
   return (
     <motion.div
-      className={`cn-immersive-root cn-immersive-root--studio cn-immersive-root--luxury cn-ambient-bg cuaderno-shell ${aiOpen ? "cn-immersive-root--ai-open" : ""}${stickerPanelOpen ? " cn-immersive-root--side-open" : ""}${focusMode || studyMode ? " cn-immersive-root--focus cn-immersive-root--study" : ""}${notebookGateOpen ? " cn-immersive-root--gate" : ""}`}
+      className={`cn-immersive-root cn-immersive-root--studio cn-immersive-root--luxury cn-ambient-bg cuaderno-shell ${aiOpen ? " cn-immersive-root--ai-open" : ""}${decorationPanelOpen ? " cn-immersive-root--side-open" : ""}${focusMode || studyMode ? " cn-immersive-root--focus cn-immersive-root--study" : ""}${notebookGateOpen ? " cn-immersive-root--gate" : ""}`}
       data-layout={chrome.layoutMode}
       data-focus={focusMode ? "true" : "false"}
       style={
@@ -418,7 +420,7 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
         onPageSizeChange={(mode) => applyDoc(updatePage(doc, activePage.id, { pageSizeMode: mode }))}
         onOpenFormatPanel={() => setFormatPanelOpen(true)}
         onOpenPageSettings={() => setPageSettingsOpen(true)}
-        stickersOpen={stickerPanelOpen}
+        stickersOpen={decorationPanelOpen}
         onOpenStickers={() => {
           setSideRailTab("stickers");
           setPostitPanelOpen(false);
