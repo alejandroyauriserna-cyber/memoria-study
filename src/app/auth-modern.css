@@ -1,0 +1,203 @@
+/* ——— Auth / acceso ——— */
+
+.auth-page {
+  min-height: calc(100vh - 9rem);
+}
+
+.auth-hero,
+.auth-card {
+  border-radius: 1rem;
+  border: 1px solid rgba(0, 255, 213, 0.12);
+  background:
+    linear-gradient(160deg, rgba(16, 39, 48, 0.72), rgba(7, 19, 26, 0.92));
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.28);
+}
+
+.auth-kicker {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.auth-title {
+  margin-top: 0.75rem;
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  color: #f5f7fa;
+}
+
+.auth-lead {
+  margin-top: 1.25rem;
+  max-width: 36rem;
+  font-size: 1.125rem;
+  line-height: 1.75;
+  color: var(--muted-foreground);
+}
+
+.auth-tabs {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.25rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(0, 255, 213, 0.15);
+  background: rgba(7, 19, 26, 0.5);
+}
+
+.auth-tab {
+  flex: 1;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  transition: color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.auth-tab:hover {
+  color: var(--accent);
+}
+
+.auth-tab.is-active {
+  background: linear-gradient(135deg, #00ffd5, #00bfff);
+  color: #07131a;
+  box-shadow: 0 0 16px rgba(0, 255, 213, 0.3);
+}
+
+.auth-banner {
+  border-radius: 0.75rem;
+  border: 1px solid rgba(0, 255, 213, 0.15);
+  background: rgba(0, 255, 213, 0.06);
+  padding: 0.75rem 1rem;
+}
+
+.auth-banner-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #f5f7fa;
+}
+
+.auth-field-block {
+  border-radius: 0.75rem;
+  border: 1px solid rgba(0, 255, 213, 0.12);
+  background: rgba(7, 19, 26, 0.4);
+  padding: 1.25rem;
+}
+
+.auth-field-block > * + * {
+  margin-top: 1rem;
+}
+
+.auth-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #f5f7fa;
+}
+
+.auth-input {
+  margin-top: 0.5rem;
+  height: 2.75rem;
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(0, 255, 213, 0.2);
+  background: rgba(7, 19, 26, 0.6);
+  padding: 0 0.75rem;
+  font-size: 0.875rem;
+  color: #f5f7fa;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.auth-input:focus {
+  border-color: rgba(0, 255, 213, 0.45);
+  box-shadow: 0 0 24px rgba(0, 255, 213, 0.12);
+}
+
+.auth-input-wrap {
+  position: relative;
+}
+
+.auth-input-wrap .auth-input {
+  padding-right: 2.75rem;
+}
+
+.auth-link {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.auth-link:hover {
+  text-decoration: underline;
+}
+
+.auth-error {
+  margin-bottom: 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.1);
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  color: #f87171;
+}
+
+.auth-footnote {
+  text-align: center;
+  font-size: 0.6875rem;
+  color: var(--muted-foreground);
+}
+
+/* ——— Tema claro ——— */
+
+html:not(.dark) .auth-hero,
+html:not(.dark) .auth-card {
+  border-color: color-mix(in srgb, var(--accent) 18%, transparent);
+  background:
+    linear-gradient(160deg, #f8fbfd 0%, #eef4f8 52%, #f5f9fc 100%);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+}
+
+html:not(.dark) .auth-title {
+  color: var(--foreground);
+}
+
+html:not(.dark) .auth-tabs {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: color-mix(in srgb, var(--border) 80%, transparent);
+}
+
+html:not(.dark) .auth-banner {
+  background: color-mix(in srgb, var(--accent) 8%, #fff);
+  border-color: color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+html:not(.dark) .auth-banner-title,
+html:not(.dark) .auth-label {
+  color: var(--foreground);
+}
+
+html:not(.dark) .auth-field-block {
+  background: rgba(255, 255, 255, 0.72);
+  border-color: color-mix(in srgb, var(--border) 75%, transparent);
+}
+
+html:not(.dark) .auth-input {
+  background: #fff;
+  border-color: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--foreground);
+}
+
+html:not(.dark) .auth-input:focus {
+  border-color: color-mix(in srgb, var(--accent) 42%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+html:not(.dark) .auth-error {
+  background: rgba(254, 226, 226, 0.72);
+  border-color: rgba(239, 68, 68, 0.25);
+  color: #b91c1c;
+}

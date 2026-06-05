@@ -38,23 +38,23 @@ export function ProfileLegalPanel() {
   }, []);
 
   return (
-    <section className="rounded-2xl border border-[rgba(0,255,213,0.12)] bg-[rgba(7,19,26,0.55)] p-5">
-      <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#00FFD5]">
+    <section className="profile-panel">
+      <p className="profile-kicker flex items-center gap-2">
         <Gavel size={13} />
         Fuentes jurídicas
       </p>
       <div className="mt-4 grid gap-2 sm:grid-cols-3">
-        <div className="rounded-xl border border-[rgba(0,255,213,0.1)] bg-[rgba(16,39,48,0.4)] p-3 text-center">
-          <p className="text-2xl font-bold text-[#F5F7FA]">{enabledCount}</p>
+        <div className="profile-subcard text-center">
+          <p className="profile-stat-value !mt-0 text-2xl">{enabledCount}</p>
           <p className="text-[10px] text-muted-foreground">Fuentes activas</p>
         </div>
-        <div className="rounded-xl border border-[rgba(0,255,213,0.1)] bg-[rgba(16,39,48,0.4)] p-3 text-center">
-          <Scale size={16} className="mx-auto text-[#00FFD5]" />
+        <div className="profile-subcard text-center">
+          <Scale size={16} className="mx-auto text-accent" />
           <p className="mt-1 text-[10px] text-muted-foreground">
             {hasLp ? "LP sincronizado" : "Sin normativa LP"}
           </p>
         </div>
-        <div className="rounded-xl border border-[rgba(0,255,213,0.1)] bg-[rgba(16,39,48,0.4)] p-3 text-center">
+        <div className="profile-subcard text-center">
           <Gavel size={16} className="mx-auto text-[#C084FC]" />
           <p className="mt-1 text-[10px] text-muted-foreground">
             {hasJuris ? "Jurisprudencia lista" : "Sin jurisprudencia"}
@@ -63,21 +63,15 @@ export function ProfileLegalPanel() {
       </div>
       {topSource ? (
         <p className="mt-3 text-xs text-muted-foreground">
-          Principal: <span className="text-[#F5F7FA]/85">{topSource}</span>
+          Principal: <span className="profile-text">{topSource}</span>
         </p>
       ) : null}
       <div className="mt-4 flex flex-wrap gap-2">
-        <Link
-          href="/fuentes-juridicas"
-          className="inline-flex items-center gap-1.5 rounded-xl bg-[rgba(0,255,213,0.12)] px-3 py-2 text-xs font-semibold text-[#00FFD5]"
-        >
+        <Link href="/fuentes-juridicas" className="profile-link-btn profile-link-btn--primary">
           Gestionar fuentes
           <ArrowRight size={12} />
         </Link>
-        <Link
-          href="/library"
-          className="inline-flex items-center gap-1.5 rounded-xl border border-[rgba(0,255,213,0.15)] px-3 py-2 text-xs font-semibold text-[#F5F7FA]"
-        >
+        <Link href="/library" className="profile-link-btn profile-link-btn--ghost">
           <Sparkles size={12} />
           Estudio guiado
         </Link>

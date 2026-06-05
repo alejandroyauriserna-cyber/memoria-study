@@ -84,9 +84,6 @@ export function ResetPasswordForm() {
     }
   }
 
-  const inputClass =
-    "mt-2 h-11 w-full rounded-xl border border-[rgba(0,255,213,0.2)] bg-[rgba(7,19,26,0.6)] px-3 text-sm text-[#F5F7FA] outline-none focus:border-[rgba(0,255,213,0.45)]";
-
   if (status === "checking") {
     return <p className="text-sm text-muted-foreground">Validando enlace de recuperación…</p>;
   }
@@ -94,11 +91,8 @@ export function ResetPasswordForm() {
   if (status === "error" && !password) {
     return (
       <div className="space-y-4">
-        <p className="text-sm text-red-400">{message}</p>
-        <a
-          href="/auth?mode=recovery"
-          className="inline-flex text-sm font-semibold text-[#00FFD5] hover:underline"
-        >
+        <p className="auth-error !mb-0">{message}</p>
+        <a href="/auth?mode=recovery" className="auth-link inline-flex text-sm">
           Solicitar nuevo enlace
         </a>
       </div>
@@ -106,21 +100,19 @@ export function ResetPasswordForm() {
   }
 
   if (status === "done") {
-    return <p className="text-sm text-[#00FFD5]">{message}</p>;
+    return <p className="text-sm text-accent">{message}</p>;
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <p className="text-sm text-muted-foreground">
-        Elige una contraseña nueva para tu cuenta.
-      </p>
-      <label className="block relative">
-        <span className="text-sm font-semibold text-[#F5F7FA]">Nueva contraseña</span>
+      <p className="text-sm text-muted-foreground">Elige una contraseña nueva para tu cuenta.</p>
+      <label className="auth-input-wrap block">
+        <span className="auth-label">Nueva contraseña</span>
         <input
           type={showPassword ? "text" : "password"}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className={`${inputClass} pr-11`}
+          className="auth-input"
           minLength={8}
           required
         />
@@ -134,12 +126,12 @@ export function ResetPasswordForm() {
         </button>
       </label>
       <label className="block">
-        <span className="text-sm font-semibold text-[#F5F7FA]">Confirmar contraseña</span>
+        <span className="auth-label">Confirmar contraseña</span>
         <input
           type={showPassword ? "text" : "password"}
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
-          className={inputClass}
+          className="auth-input"
           minLength={8}
           required
         />
@@ -152,9 +144,7 @@ export function ResetPasswordForm() {
         <LoadingState active preset="auth" percent={progress.percent} className="mt-2" />
       ) : null}
       {message ? (
-        <p className={`text-sm ${status === "error" ? "text-red-400" : "text-[#00FFD5]"}`}>
-          {message}
-        </p>
+        <p className={`text-sm ${status === "error" ? "text-red-500" : "text-accent"}`}>{message}</p>
       ) : null}
     </form>
   );

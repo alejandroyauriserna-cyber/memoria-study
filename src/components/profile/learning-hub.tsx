@@ -10,18 +10,17 @@ import {
   CheckCircle2,
   ChevronRight,
   Circle,
-  Clock,
   FileQuestion,
   GitBranch,
   Layers,
   Map,
   Palette,
   Settings2,
-  Sparkles,
   Target,
   Trophy,
   Zap,
 } from "lucide-react";
+import { ProfileHero } from "@/components/profile/profile-hero";
 import { ProfileAccountSection } from "@/components/profile/profile-account-section";
 import { ProfileForm } from "@/components/profile/profile-form";
 import { ProfileLegalPanel } from "@/components/profile/profile-legal-panel";
@@ -30,7 +29,6 @@ import { LoadingState } from "@/components/ui/loading-state";
 import { useLoadingProgress } from "@/hooks/use-loading-progress";
 import {
   aggregateClientLearningStats,
-  formatStudyHours,
   type AggregatedLearningStats,
 } from "@/lib/profile/aggregate-learning-stats";
 import {
@@ -62,6 +60,7 @@ type Props = {
   organizersCount: number;
   serverStats: ServerLearningStats;
   topCourses: CourseStudyCount[];
+  favoritesCount?: number;
   initialSettings?: Partial<ProfileStudySettings>;
 };
 
@@ -106,6 +105,7 @@ export function LearningHub({
   organizersCount,
   serverStats,
   topCourses,
+  favoritesCount = 0,
   initialSettings,
 }: Props) {
   const [settings, setSettings] = useState<ProfileStudySettings>(() => ({
@@ -206,9 +206,7 @@ export function LearningHub({
 
   const statCards = stats
     ? [
-        { label: "Horas estudiadas", value: formatStudyHours(stats.studyMinutes), icon: Clock },
         { label: "Páginas comprendidas", value: String(stats.pagesUnderstood), icon: BookOpen },
-        { label: "Racha de estudio", value: `${stats.studyStreakDays} días`, icon: Zap },
         { label: "Organizadores", value: String(stats.organizersCreated), icon: Brain },
         { label: "Mazos guardados", value: String(stats.decksSaved), icon: Layers },
         { label: "Preguntas", value: String(stats.questionsAnswered), icon: FileQuestion },
@@ -216,100 +214,29 @@ export function LearningHub({
     : [];
 
   return (
-    <div className="space-y-6">
-      {/* Hero */}
-      <section
-        className="relative overflow-hidden rounded-2xl border p-6 md:p-8"
-        style={{
-          borderColor: `${theme.accent}33`,
-          background: `linear-gradient(135deg, rgba(7,19,26,0.95) 0%, rgba(16,39,48,0.85) 100%)`,
-          boxShadow: `0 0 48px ${theme.glow}`,
-        }}
-      >
-        <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full opacity-20 blur-3xl" style={{ background: theme.accent }} />
-        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-          <div className="min-w-0 flex-1">
-            <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em]" style={{ color: theme.accent }}>
-              <Sparkles size={12} />
-              Centro de aprendizaje
-            </p>
-            <h1 className="mt-2 text-3xl font-bold tracking-tight text-[#F5F7FA] md:text-4xl">
-              {fullName}
-            </h1>
-            <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
-              {insight?.summary ??
-                "Tu asistente académico personal — seguimiento, objetivos y recomendaciones de estudio."}
-            </p>
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              <span
-                className="rounded-full px-3 py-1 text-xs font-semibold text-[#07131A]"
-                style={{ background: `linear-gradient(135deg, ${theme.accent}, rgba(0,191,255,0.85))` }}
-              >
-                {currentCycleLabel}
-              </span>
-              {level ? (
-                <span className="rounded-full border border-[rgba(0,255,213,0.2)] bg-[rgba(0,255,213,0.08)] px-3 py-1 text-xs font-semibold text-[#00FFD5]">
-                  {level.level} · {level.points} pts
-                </span>
-              ) : null}
-              {stats?.reputationPoints ? (
-                <span className="rounded-full border border-[rgba(255,214,0,0.2)] bg-[rgba(255,214,0,0.08)] px-3 py-1 text-xs font-semibold text-[#FDE68A]">
-                  {stats.reputationPoints} reputación
-                </span>
-              ) : null}
-              {insight ? (
-                <span className="rounded-full border border-[rgba(0,255,213,0.15)] px-3 py-1 text-xs text-muted-foreground">
-                  Estilo: {insight.studyStyle}
-                </span>
-              ) : null}
-            </div>
-          </div>
-
-          {level ? (
-            <div className="flex shrink-0 flex-col items-center gap-2">
-              <div className="relative h-24 w-24">
-                <svg className="h-full w-full -rotate-90" viewBox="0 0 100 100">
-                  <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(0,255,213,0.1)" strokeWidth="8" />
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="42"
-                    fill="none"
-                    stroke={theme.accent}
-                    strokeWidth="8"
-                    strokeLinecap="round"
-                    strokeDasharray={`${level.progress * 2.64} 264`}
-                    className="transition-all duration-700"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-xl font-bold text-[#F5F7FA]">{level.progress}%</span>
-                  <span className="text-[9px] uppercase tracking-wider text-muted-foreground">Nivel</span>
-                </div>
-              </div>
-              {level.nextLevel ? (
-                <p className="text-[10px] text-muted-foreground">→ {level.nextLevel}</p>
-              ) : null}
-            </div>
-          ) : null}
-        </div>
-      </section>
+    <div className="profile-page space-y-6">
+      <ProfileHero
+        fullName={fullName}
+        currentCycleLabel={currentCycleLabel}
+        stats={stats}
+        favoritesCount={favoritesCount}
+        level={level}
+        theme={theme}
+      />
 
       {isNewUser ? <ProfileOnboarding /> : null}
 
       {stats ? (
-        <section className="rounded-2xl border border-[rgba(0,255,213,0.12)] bg-[rgba(7,19,26,0.55)] p-5">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#00FFD5]">
-            Esta semana
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2 text-xs text-[#F5F7FA]/85">
-            <span className="rounded-full border border-[rgba(0,255,213,0.15)] px-3 py-1">
+        <section className="profile-panel">
+          <p className="profile-kicker">Esta semana</p>
+          <div className="mt-3 flex flex-wrap gap-2 text-xs profile-text">
+            <span className="profile-chip">
               {stats.weeklyPagesUnderstood} páginas comprendidas
             </span>
-            <span className="rounded-full border border-[rgba(0,255,213,0.15)] px-3 py-1">
+            <span className="profile-chip">
               {stats.weeklyMaterialsOpened} materiales abiertos
             </span>
-            <span className="rounded-full border border-[rgba(0,255,213,0.15)] px-3 py-1">
+            <span className="profile-chip">
               {stats.weeklyOrganizers} organizadores
             </span>
           </div>
@@ -332,13 +259,13 @@ export function LearningHub({
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
-                className="rounded-xl border border-[rgba(0,255,213,0.12)] bg-[rgba(16,39,48,0.6)] p-4 backdrop-blur-sm"
+                className="profile-stat-card"
               >
                 <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                   <Icon size={12} style={{ color: theme.accent }} />
                   {card.label}
                 </p>
-                <p className="mt-2 text-2xl font-bold text-[#F5F7FA]">{card.value}</p>
+                <p className="profile-stat-value mt-2 text-2xl">{card.value}</p>
               </motion.div>
             );
           })}
@@ -347,24 +274,24 @@ export function LearningHub({
 
       <div className="grid gap-6 lg:grid-cols-5">
         {/* AI Learning Profile */}
-        <section className="lg:col-span-3 rounded-2xl border border-[rgba(0,255,213,0.12)] bg-[rgba(7,19,26,0.55)] p-5">
-          <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#00FFD5]">
+        <section className="profile-panel lg:col-span-3">
+          <p className="profile-kicker">
             <Brain size={13} />
             Perfil de aprendizaje IA
           </p>
           {insight ? (
             <div className="mt-4 space-y-4">
-              <div className="rounded-xl border border-[rgba(0,255,213,0.1)] bg-[rgba(16,39,48,0.5)] p-4">
+              <div className="profile-subcard">
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Estilo de estudio</p>
-                <p className="mt-1 text-lg font-bold text-[#F5F7FA]">{insight.studyStyle}</p>
+                <p className="profile-text-strong mt-1 text-lg font-bold">{insight.studyStyle}</p>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-[#00FFD5]">Fortalezas</p>
+                  <p className="profile-kicker mb-2">Fortalezas</p>
                   <ul className="space-y-1.5">
                     {insight.strengths.map((item) => (
-                      <li key={item} className="flex items-start gap-2 text-sm text-[#F5F7FA]/85">
-                        <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-[#00FFD5]" />
+                      <li key={item} className="flex items-start gap-2 text-sm profile-text">
+                        <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-accent" />
                         {item}
                       </li>
                     ))}
@@ -374,7 +301,7 @@ export function LearningHub({
                   <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-amber-300">Áreas por reforzar</p>
                   <ul className="space-y-1.5">
                     {insight.areasToImprove.map((item) => (
-                      <li key={item} className="flex items-start gap-2 text-sm text-[#F5F7FA]/85">
+                      <li key={item} className="flex items-start gap-2 text-sm profile-text">
                         <Target size={14} className="mt-0.5 shrink-0 text-amber-400" />
                         {item}
                       </li>
@@ -397,8 +324,8 @@ export function LearningHub({
         </section>
 
         {/* Recommendations */}
-        <section className="lg:col-span-2 rounded-2xl border border-[rgba(0,255,213,0.12)] bg-[rgba(7,19,26,0.55)] p-5">
-          <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#00FFD5]">
+        <section className="profile-panel lg:col-span-2">
+          <p className="profile-kicker">
             <Zap size={13} />
             Recomendaciones
           </p>
@@ -408,12 +335,12 @@ export function LearningHub({
                 <Link
                   key={rec.id}
                   href={rec.href}
-                  className="group flex items-start gap-3 rounded-xl border border-[rgba(0,255,213,0.1)] bg-[rgba(16,39,48,0.45)] p-3 transition hover:border-[rgba(0,255,213,0.28)] hover:bg-[rgba(0,255,213,0.06)]"
+                  className="profile-rec-link group"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-[#F5F7FA]">{rec.title}</p>
+                    <p className="text-sm font-semibold profile-text-strong">{rec.title}</p>
                     <p className="mt-0.5 text-xs leading-5 text-muted-foreground">{rec.description}</p>
-                    <p className="mt-2 flex items-center gap-1 text-[11px] font-semibold text-[#00FFD5]">
+                    <p className="mt-2 flex items-center gap-1 text-[11px] font-semibold text-accent">
                       {rec.actionLabel}
                       <ArrowRight size={12} className="transition group-hover:translate-x-0.5" />
                     </p>
@@ -430,8 +357,8 @@ export function LearningHub({
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Top courses */}
-        <section className="rounded-2xl border border-[rgba(0,255,213,0.12)] bg-[rgba(7,19,26,0.55)] p-5">
-          <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#00FFD5]">
+        <section className="profile-panel">
+          <p className="profile-kicker">
             <BookOpen size={13} />
             Materias más estudiadas
           </p>
@@ -443,10 +370,10 @@ export function LearningHub({
                 return (
                   <div key={course.courseName}>
                     <div className="mb-1 flex items-center justify-between text-sm">
-                      <span className="font-medium text-[#F5F7FA]">{course.courseName}</span>
+                      <span className="font-medium profile-text-strong">{course.courseName}</span>
                       <span className="text-xs text-muted-foreground">{course.count} sesiones</span>
                     </div>
-                    <div className="h-1.5 overflow-hidden rounded-full bg-[rgba(0,255,213,0.08)]">
+                    <div className="profile-progress-track h-1.5">
                       <motion.div
                         className={`h-full rounded-full bg-gradient-to-r ${PROFILE_THEMES[settings.theme].gradient}`}
                         initial={{ width: 0 }}
@@ -466,8 +393,8 @@ export function LearningHub({
         </section>
 
         {/* Goals */}
-        <section className="rounded-2xl border border-[rgba(0,255,213,0.12)] bg-[rgba(7,19,26,0.55)] p-5">
-          <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#00FFD5]">
+        <section className="profile-panel">
+          <p className="profile-kicker">
             <Target size={13} />
             Objetivos académicos
           </p>
@@ -482,7 +409,7 @@ export function LearningHub({
                     goals: [...s.goals, createGoal(template.label)],
                   }));
                 }}
-                className="rounded-full border border-[rgba(0,255,213,0.15)] px-2.5 py-1 text-[10px] font-semibold text-[#00FFD5] hover:bg-[rgba(0,255,213,0.08)]"
+                className="profile-goal-template"
               >
                 + {template.label}
               </button>
@@ -495,7 +422,7 @@ export function LearningHub({
               onChange={(e) => setNewGoal(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && addGoal()}
               placeholder="Ej. Aprobar Civil I con 14"
-              className="h-10 flex-1 rounded-xl border border-[rgba(0,255,213,0.15)] bg-[rgba(16,39,48,0.6)] px-3 text-sm text-[#F5F7FA] outline-none placeholder:text-muted-foreground focus:border-[rgba(0,255,213,0.35)]"
+              className="profile-input"
             />
             <button
               type="button"
@@ -513,18 +440,18 @@ export function LearningHub({
                 return (
                 <li
                   key={goal.id}
-                  className="flex items-center gap-2 rounded-xl border border-[rgba(0,255,213,0.1)] bg-[rgba(16,39,48,0.4)] px-3 py-2"
+                  className="profile-subcard profile-subcard--soft flex items-center gap-2 !py-2"
                 >
-                  <button type="button" onClick={() => toggleGoal(goal)} className="shrink-0 text-[#00FFD5]">
+                  <button type="button" onClick={() => toggleGoal(goal)} className="shrink-0 text-accent">
                     {goal.completed ? <CheckCircle2 size={16} /> : <Circle size={16} className="text-muted-foreground" />}
                   </button>
-                  <span className={`flex-1 text-sm ${goal.completed ? "text-muted-foreground line-through" : "text-[#F5F7FA]"}`}>
+                  <span className={`flex-1 text-sm ${goal.completed ? "text-muted-foreground line-through" : "profile-text-strong"}`}>
                     {goal.label}
                   </span>
                   {template && !goal.completed ? (
                     <Link
                       href={template.href}
-                      className="shrink-0 text-[10px] font-semibold text-[#00FFD5] hover:underline"
+                      className="shrink-0 text-[10px] font-semibold text-accent hover:underline"
                     >
                       Ir →
                     </Link>
@@ -547,9 +474,9 @@ export function LearningHub({
       </div>
 
       {/* Achievements */}
-      <section className="rounded-2xl border border-[rgba(0,255,213,0.12)] bg-[rgba(7,19,26,0.55)] p-5">
+      <section className="profile-panel">
         <div className="flex items-center justify-between gap-2">
-          <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#00FFD5]">
+          <p className="profile-kicker">
             <Trophy size={13} />
             Logros de aprendizaje
           </p>
@@ -561,18 +488,14 @@ export function LearningHub({
           {achievements.map((badge) => (
             <div
               key={badge.id}
-              className={`rounded-xl border p-3 text-center transition ${
-                badge.earned
-                  ? "border-[rgba(0,255,213,0.3)] bg-[rgba(0,255,213,0.08)]"
-                  : "border-[rgba(0,255,213,0.08)] bg-[rgba(16,39,48,0.35)] opacity-60"
-              }`}
+              className={`profile-achievement ${badge.earned ? "is-earned" : ""}`}
             >
               <span className="text-2xl">{badge.emoji}</span>
-              <p className="mt-2 text-xs font-semibold text-[#F5F7FA]">{badge.label}</p>
+              <p className="mt-2 text-xs font-semibold profile-text-strong">{badge.label}</p>
               <p className="mt-1 text-[10px] leading-4 text-muted-foreground">{badge.description}</p>
               {!badge.earned && badge.progress !== undefined ? (
-                <div className="mt-2 h-1 overflow-hidden rounded-full bg-[rgba(0,255,213,0.08)]">
-                  <div className="h-full rounded-full bg-[#00FFD5]" style={{ width: `${badge.progress}%` }} />
+                <div className="profile-progress-track mt-2 h-1">
+                  <div className="h-full rounded-full bg-accent" style={{ width: `${badge.progress}%` }} />
                 </div>
               ) : null}
             </div>
@@ -581,8 +504,8 @@ export function LearningHub({
       </section>
 
       {/* Preferences + Theme */}
-      <section className="rounded-2xl border border-[rgba(0,255,213,0.12)] bg-[rgba(7,19,26,0.55)] p-5">
-        <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#00FFD5]">
+      <section className="profile-panel">
+        <p className="profile-kicker">
           <Palette size={13} />
           Preferencias de estudio
         </p>
@@ -596,14 +519,10 @@ export function LearningHub({
                 key={key}
                 type="button"
                 onClick={() => togglePreference(key)}
-                className={`rounded-xl border p-4 text-left transition ${
-                  active
-                    ? "border-[rgba(0,255,213,0.35)] bg-[rgba(0,255,213,0.1)]"
-                    : "border-[rgba(0,255,213,0.1)] bg-[rgba(16,39,48,0.4)] opacity-70"
-                }`}
+                className={`profile-pref-btn ${active ? "is-active" : ""}`}
               >
-                <Icon size={18} className={active ? "text-[#00FFD5]" : "text-muted-foreground"} />
-                <p className="mt-2 text-sm font-semibold text-[#F5F7FA]">{meta.label}</p>
+                <Icon size={18} className={active ? "text-accent" : "text-muted-foreground"} />
+                <p className="mt-2 text-sm font-semibold profile-text-strong">{meta.label}</p>
                 <p className="mt-0.5 text-[11px] text-muted-foreground">{meta.description}</p>
               </button>
             );
@@ -620,9 +539,7 @@ export function LearningHub({
                 key={key}
                 type="button"
                 onClick={() => setTheme(key)}
-                className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold transition ${
-                  selected ? "border-[rgba(0,255,213,0.4)] bg-[rgba(0,255,213,0.1)]" : "border-[rgba(0,255,213,0.12)]"
-                }`}
+                className={`profile-theme-btn ${selected ? "is-selected" : ""}`}
               >
                 <span className="h-3 w-3 rounded-full" style={{ background: t.accent, boxShadow: selected ? `0 0 8px ${t.glow}` : undefined }} />
                 {t.label}
@@ -633,11 +550,11 @@ export function LearningHub({
       </section>
 
       {/* Compact settings */}
-      <section className="rounded-2xl border border-[rgba(0,255,213,0.1)] bg-[rgba(7,19,26,0.4)]">
+      <section className="profile-panel profile-panel--muted">
         <button
           type="button"
           onClick={() => setShowSettings((v) => !v)}
-          className="flex w-full items-center justify-between px-5 py-4 text-left"
+          className="profile-settings-toggle"
         >
           <span className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
             <Settings2 size={16} />
@@ -646,7 +563,7 @@ export function LearningHub({
           <ChevronRight size={16} className={`text-muted-foreground transition ${showSettings ? "rotate-90" : ""}`} />
         </button>
         {showSettings ? (
-          <div className="border-t border-[rgba(0,255,213,0.08)] px-5 pb-5 pt-4">
+          <div className="profile-settings-divider px-5 pb-5 pt-4">
             <ProfileForm
               fullName={fullName}
               currentCycle={

@@ -138,13 +138,10 @@ export function AuthForm() {
     }
   }
 
-  const inputClass =
-    "mt-2 h-11 w-full rounded-xl border border-[rgba(0,255,213,0.2)] bg-[rgba(7,19,26,0.6)] px-3 text-sm text-[#F5F7FA] outline-none focus:border-[rgba(0,255,213,0.45)] focus:shadow-[0_0_24px_rgba(0,255,213,0.12)]";
-
   return (
     <div className="space-y-5">
       {mode !== "recovery" ? (
-        <div className="flex gap-2 rounded-xl border border-[rgba(0,255,213,0.15)] bg-[rgba(7,19,26,0.5)] p-1">
+        <div className="auth-tabs">
           <button
             type="button"
             onClick={() => {
@@ -152,11 +149,7 @@ export function AuthForm() {
               setMessage("");
               setStatus("idle");
             }}
-            className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold transition ${
-              mode === "signin"
-                ? "bg-gradient-to-r from-[#00FFD5] to-[#00BFFF] text-[#07131A] shadow-[0_0_16px_rgba(0,255,213,0.3)]"
-                : "text-muted-foreground hover:text-[#00FFD5]"
-            }`}
+            className={`auth-tab${mode === "signin" ? " is-active" : ""}`}
           >
             Ingresar
           </button>
@@ -167,18 +160,14 @@ export function AuthForm() {
               setMessage("");
               setStatus("idle");
             }}
-            className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold transition ${
-              mode === "signup"
-                ? "bg-gradient-to-r from-[#00FFD5] to-[#00BFFF] text-[#07131A] shadow-[0_0_16px_rgba(0,255,213,0.3)]"
-                : "text-muted-foreground hover:text-[#00FFD5]"
-            }`}
+            className={`auth-tab${mode === "signup" ? " is-active" : ""}`}
           >
             Registrarse
           </button>
         </div>
       ) : (
-        <div className="rounded-xl border border-[rgba(0,255,213,0.15)] bg-[rgba(0,255,213,0.06)] px-4 py-3">
-          <p className="text-sm font-semibold text-[#F5F7FA]">Recuperar contraseña</p>
+        <div className="auth-banner">
+          <p className="auth-banner-title">Recuperar contraseña</p>
           <p className="mt-1 text-xs text-muted-foreground">
             Te enviaremos un enlace al correo de tu cuenta.
           </p>
@@ -187,15 +176,15 @@ export function AuthForm() {
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {mode === "signup" ? (
-          <div className="rounded-xl border border-[rgba(0,255,213,0.12)] bg-[rgba(7,19,26,0.4)] p-5 space-y-4">
+          <div className="auth-field-block space-y-4">
             <label className="block">
-              <span className="text-sm font-semibold text-[#F5F7FA]">Nombre completo</span>
+              <span className="auth-label">Nombre completo</span>
               <input
                 type="text"
                 value={fullName}
                 onChange={(event) => setFullName(event.target.value)}
                 placeholder="Tu nombre completo"
-                className={inputClass}
+                className="auth-input"
                 required
               />
             </label>
@@ -206,29 +195,29 @@ export function AuthForm() {
           </div>
         ) : null}
 
-        <div className="rounded-xl border border-[rgba(0,255,213,0.12)] bg-[rgba(7,19,26,0.4)] p-5 space-y-4">
+        <div className="auth-field-block space-y-4">
           <label className="block">
-            <span className="text-sm font-semibold text-[#F5F7FA]">Correo</span>
+            <span className="auth-label">Correo</span>
             <input
               id="email"
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               placeholder="tu.correo@ejemplo.com"
-              className={inputClass}
+              className="auth-input"
               required
             />
           </label>
 
           {mode === "signin" ? (
-            <label className="block relative">
-              <span className="text-sm font-semibold text-[#F5F7FA]">Contraseña</span>
+            <label className="auth-input-wrap block">
+              <span className="auth-label">Contraseña</span>
               <input
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 placeholder="Tu contraseña"
-                className={`${inputClass} pr-11`}
+                className="auth-input"
                 required
               />
               <button
@@ -243,14 +232,14 @@ export function AuthForm() {
           ) : null}
 
           {mode === "signup" ? (
-            <label className="block relative">
-              <span className="text-sm font-semibold text-[#F5F7FA]">Contraseña</span>
+            <label className="auth-input-wrap block">
+              <span className="auth-label">Contraseña</span>
               <input
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 placeholder="Al menos 8 caracteres"
-                className={`${inputClass} pr-11`}
+                className="auth-input"
                 required
                 minLength={8}
               />
@@ -286,7 +275,7 @@ export function AuthForm() {
                 setMessage("");
                 setStatus("idle");
               }}
-              className="w-full text-center text-xs font-semibold text-[#00FFD5] hover:underline"
+              className="auth-link w-full text-center"
             >
               ¿Olvidaste tu contraseña?
             </button>
@@ -300,7 +289,7 @@ export function AuthForm() {
                 setMessage("");
                 setStatus("idle");
               }}
-              className="w-full text-center text-xs font-semibold text-muted-foreground hover:text-[#00FFD5]"
+              className="auth-link w-full text-center text-muted-foreground"
             >
               Volver a ingresar
             </button>
@@ -326,7 +315,7 @@ export function AuthForm() {
       </form>
 
       {mode === "signin" ? (
-        <p className="text-center text-[11px] text-muted-foreground">
+        <p className="auth-footnote">
           Tu ciclo, curso y semana ya están en tu perfil. Solo necesitas correo y contraseña.
         </p>
       ) : null}

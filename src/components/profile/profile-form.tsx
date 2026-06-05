@@ -56,9 +56,7 @@ export function ProfileForm({ fullName = "", currentCycle = null, compact = fals
     }
   }
 
-  const inputClass = compact
-    ? "mt-2 h-10 w-full rounded-xl border border-[rgba(0,255,213,0.15)] bg-[rgba(16,39,48,0.6)] px-3 text-sm text-[#F5F7FA] outline-none focus:border-[rgba(0,255,213,0.35)]"
-    : "mt-2 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-accent";
+  const inputClass = compact ? "profile-input mt-2 h-10" : "mt-2 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-accent";
 
   return (
     <form
@@ -94,7 +92,7 @@ export function ProfileForm({ fullName = "", currentCycle = null, compact = fals
       </Button>
 
       {message ? (
-        <p className={`text-sm ${status === "error" ? "text-red-400" : "text-[#00FFD5]"}`}>{message}</p>
+        <p className={`text-sm ${status === "error" ? "text-red-500" : "text-accent"}`}>{message}</p>
       ) : null}
     </form>
   );

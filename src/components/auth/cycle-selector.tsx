@@ -29,7 +29,7 @@ export function CycleSelector({ value, onChange }: Props) {
 
   return (
     <label className="block">
-      <span className="text-sm font-semibold">Ciclo actual</span>
+      <span className="auth-label">Ciclo actual</span>
       <select
         value={selected.cycleNumber}
         onChange={(event) => {
@@ -39,7 +39,7 @@ export function CycleSelector({ value, onChange }: Props) {
             onChange({ cycleNumber: next.cycleNumber, cycleLabel: next.cycleLabel });
           }
         }}
-        className="mt-2 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm"
+        className="auth-input mt-2"
       >
         {cycles.map((cycle) => (
           <option key={cycle.cycleNumber} value={cycle.cycleNumber}>

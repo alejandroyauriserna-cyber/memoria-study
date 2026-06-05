@@ -112,9 +112,7 @@ export function AuthEntry() {
   return (
     <>
       {callbackError ? (
-        <p className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-          {callbackError}
-        </p>
+        <p className="auth-error">{callbackError}</p>
       ) : null}
       <AuthForm />
     </>

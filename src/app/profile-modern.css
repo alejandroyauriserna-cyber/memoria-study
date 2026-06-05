@@ -1,0 +1,583 @@
+/* ——— Perfil / Centro de aprendizaje ——— */
+
+.profile-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.profile-kicker {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.profile-title {
+  margin-top: 0.5rem;
+  font-size: clamp(1.875rem, 4vw, 2.25rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  color: #f5f7fa;
+}
+
+.profile-panel {
+  border-radius: 1rem;
+  border: 1px solid rgba(0, 255, 213, 0.12);
+  background: rgba(7, 19, 26, 0.55);
+  padding: 1.25rem;
+}
+
+.profile-panel--muted {
+  background: rgba(7, 19, 26, 0.4);
+}
+
+.profile-subcard {
+  border-radius: 0.75rem;
+  border: 1px solid rgba(0, 255, 213, 0.1);
+  background: rgba(16, 39, 48, 0.45);
+  padding: 0.75rem 1rem;
+}
+
+.profile-subcard--soft {
+  background: rgba(16, 39, 48, 0.4);
+}
+
+.profile-stat-card {
+  border-radius: 0.75rem;
+  border: 1px solid rgba(0, 255, 213, 0.12);
+  background: rgba(16, 39, 48, 0.6);
+  padding: 1rem;
+  backdrop-filter: blur(8px);
+}
+
+.profile-stat-label {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.profile-stat-value {
+  margin-top: 0.5rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #f5f7fa;
+}
+
+.profile-text {
+  color: rgba(245, 247, 250, 0.85);
+}
+
+.profile-text-strong {
+  color: #f5f7fa;
+}
+
+.profile-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 255, 213, 0.15);
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  color: rgba(245, 247, 250, 0.85);
+}
+
+.profile-chip--accent {
+  border-color: rgba(0, 255, 213, 0.2);
+  background: rgba(0, 255, 213, 0.08);
+  color: var(--accent);
+}
+
+.profile-chip--gold {
+  border-color: rgba(255, 214, 0, 0.2);
+  background: rgba(255, 214, 0, 0.08);
+  color: #fde68a;
+}
+
+.profile-input {
+  height: 2.5rem;
+  flex: 1;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(0, 255, 213, 0.15);
+  background: rgba(16, 39, 48, 0.6);
+  padding: 0 0.75rem;
+  font-size: 0.875rem;
+  color: #f5f7fa;
+  outline: none;
+}
+
+.profile-input:focus {
+  border-color: rgba(0, 255, 213, 0.35);
+}
+
+.profile-input::placeholder {
+  color: var(--muted-foreground);
+}
+
+.profile-pref-btn {
+  border-radius: 0.75rem;
+  border: 1px solid rgba(0, 255, 213, 0.1);
+  background: rgba(16, 39, 48, 0.4);
+  padding: 1rem;
+  text-align: left;
+  opacity: 0.7;
+  transition: opacity 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.profile-pref-btn.is-active {
+  opacity: 1;
+  border-color: rgba(0, 255, 213, 0.35);
+  background: rgba(0, 255, 213, 0.1);
+}
+
+.profile-pref-btn .profile-text-strong {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.profile-rec-link {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(0, 255, 213, 0.1);
+  background: rgba(16, 39, 48, 0.45);
+  padding: 0.75rem;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.profile-rec-link:hover {
+  border-color: rgba(0, 255, 213, 0.28);
+  background: rgba(0, 255, 213, 0.06);
+}
+
+.profile-achievement {
+  border-radius: 0.75rem;
+  border: 1px solid rgba(0, 255, 213, 0.08);
+  background: rgba(16, 39, 48, 0.35);
+  padding: 0.75rem;
+  text-align: center;
+  opacity: 0.6;
+}
+
+.profile-achievement.is-earned {
+  opacity: 1;
+  border-color: rgba(0, 255, 213, 0.3);
+  background: rgba(0, 255, 213, 0.08);
+}
+
+.profile-settings-toggle {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  text-align: left;
+}
+
+.profile-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.profile-link-btn--primary {
+  background: rgba(0, 255, 213, 0.12);
+  color: var(--accent);
+}
+
+.profile-link-btn--ghost {
+  border: 1px solid rgba(0, 255, 213, 0.15);
+  color: #f5f7fa;
+}
+
+.profile-progress-track {
+  height: 0.375rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(0, 255, 213, 0.08);
+}
+
+.profile-level-ring {
+  stroke: rgba(0, 255, 213, 0.1);
+}
+
+html:not(.dark) .profile-level-ring {
+  stroke: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+html:not(.dark) .profile-progress-track {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+/* ==================================================
+   MEMORIASTUDY PROFILE 2026
+   ================================================== */
+
+/* HERO */
+
+.profile-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 36px;
+  padding: 2.5rem;
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba(0, 255, 213, 0.14),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at bottom left,
+      rgba(0, 153, 255, 0.14),
+      transparent 35%
+    ),
+    linear-gradient(
+      160deg,
+      #081219,
+      #0f1b24
+    );
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 40px 120px rgba(0, 0, 0, 0.35);
+  isolation: isolate;
+}
+
+/* GRID LUMINOSO */
+
+.profile-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(
+      rgba(255, 255, 255, 0.03) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.03) 1px,
+      transparent 1px
+    );
+  background-size: 42px 42px;
+  mask-image: linear-gradient(120deg, black, transparent 80%);
+  pointer-events: none;
+}
+
+/* AVATAR */
+
+.profile-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.25),
+    0 0 40px rgba(0, 255, 213, 0.15);
+}
+
+/* NOMBRE */
+
+.profile-name {
+  font-size: clamp(2rem, 4vw, 3.4rem);
+  font-weight: 900;
+  line-height: 0.92;
+  letter-spacing: -0.06em;
+  color: white;
+}
+
+/* CARRERA */
+
+.profile-career {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 1rem;
+  margin-top: 0.5rem;
+}
+
+/* BADGES */
+
+.profile-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* STATS */
+
+.profile-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-top: 2rem;
+}
+
+.profile-stat {
+  border-radius: 24px;
+  padding: 1.2rem;
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: all 0.3s ease;
+}
+
+.profile-stat:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+}
+
+.profile-stats .profile-stat-value {
+  font-size: 2rem;
+  font-weight: 900;
+  color: white;
+  letter-spacing: -0.05em;
+  margin-top: 0;
+}
+
+.profile-stats .profile-stat-label {
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 0.85rem;
+  margin-top: 0.35rem;
+}
+
+.profile-hero-progress-label {
+  color: rgba(255, 255, 255, 0.72);
+  font-weight: 600;
+}
+
+.profile-hero-progress-value {
+  color: white;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+/* CARDS DEL PERFIL */
+
+.profile-card {
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  box-shadow: 0 10px 40px rgba(15, 23, 42, 0.08);
+  transition: all 0.3s ease;
+}
+
+.profile-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 25px 60px rgba(15, 23, 42, 0.12);
+}
+
+/* TITULOS */
+
+.profile-section-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: #0f172a;
+}
+
+/* LIGHT MODE */
+
+html:not(.dark) .profile-hero {
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba(0, 255, 213, 0.12),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at bottom left,
+      rgba(0, 153, 255, 0.12),
+      transparent 35%
+    ),
+    linear-gradient(
+      180deg,
+      #ffffff,
+      #f8fafc
+    );
+  border-color: color-mix(in srgb, var(--accent) 16%, transparent);
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.08);
+}
+
+html:not(.dark) .profile-name {
+  color: #0f172a;
+}
+
+html:not(.dark) .profile-career {
+  color: #475569;
+}
+
+html:not(.dark) .profile-stat {
+  background: white;
+  border-color: color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+html:not(.dark) .profile-stats .profile-stat-value {
+  color: #0f172a;
+}
+
+html:not(.dark) .profile-stats .profile-stat-label {
+  color: #64748b;
+}
+
+html:not(.dark) .profile-badge {
+  color: #0f172a;
+  background: rgba(255, 255, 255, 0.8);
+  border-color: color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+html:not(.dark) .profile-hero-progress-label {
+  color: #475569;
+}
+
+html:not(.dark) .profile-hero-progress-value {
+  color: #0f172a;
+}
+
+html:not(.dark) .profile-avatar {
+  border-color: color-mix(in srgb, var(--accent) 24%, transparent);
+  box-shadow:
+    0 20px 60px rgba(15, 23, 42, 0.12),
+    0 0 40px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+html:not(.dark) .profile-text-strong,
+html:not(.dark) .profile-stat-value {
+  color: var(--foreground);
+}
+
+html:not(.dark) .profile-text,
+html:not(.dark) .profile-chip {
+  color: var(--muted-foreground);
+}
+
+html:not(.dark) .profile-panel,
+html:not(.dark) .profile-panel--muted {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: color-mix(in srgb, var(--border) 75%, transparent);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+}
+
+html:not(.dark) .profile-subcard,
+html:not(.dark) .profile-subcard--soft,
+html:not(.dark) .profile-stat-card,
+html:not(.dark) .profile-rec-link,
+html:not(.dark) .profile-achievement {
+  background: color-mix(in srgb, var(--background) 94%, #fff);
+  border-color: color-mix(in srgb, var(--border) 75%, transparent);
+}
+
+html:not(.dark) .profile-achievement.is-earned {
+  background: color-mix(in srgb, var(--accent) 10%, #fff);
+  border-color: color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+html:not(.dark) .profile-input {
+  background: #fff;
+  border-color: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--foreground);
+}
+
+html:not(.dark) .profile-pref-btn {
+  background: rgba(255, 255, 255, 0.82);
+  border-color: color-mix(in srgb, var(--border) 75%, transparent);
+}
+
+html:not(.dark) .profile-pref-btn.is-active {
+  background: color-mix(in srgb, var(--accent) 10%, #fff);
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+html:not(.dark) .profile-link-btn--ghost {
+  background: rgba(255, 255, 255, 0.82);
+  border-color: color-mix(in srgb, var(--border) 75%, transparent);
+  color: var(--foreground);
+}
+
+html:not(.dark) .profile-link-btn--primary {
+  background: color-mix(in srgb, var(--accent) 12%, #fff);
+}
+
+html:not(.dark) .profile-chip--accent {
+  color: var(--accent);
+}
+
+.profile-goal-template {
+  border-radius: 999px;
+  border: 1px solid rgba(0, 255, 213, 0.15);
+  padding: 0.25rem 0.625rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  color: var(--accent);
+  transition: background 0.2s ease;
+}
+
+.profile-goal-template:hover {
+  background: rgba(0, 255, 213, 0.08);
+}
+
+.profile-theme-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(0, 255, 213, 0.12);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.profile-theme-btn.is-selected {
+  border-color: rgba(0, 255, 213, 0.4);
+  background: rgba(0, 255, 213, 0.1);
+}
+
+.profile-settings-divider {
+  border-top: 1px solid rgba(0, 255, 213, 0.08);
+}
+
+html:not(.dark) .profile-settings-divider {
+  border-color: color-mix(in srgb, var(--border) 75%, transparent);
+}
+
+html:not(.dark) .profile-theme-btn {
+  background: rgba(255, 255, 255, 0.82);
+  border-color: color-mix(in srgb, var(--border) 75%, transparent);
+  color: var(--foreground);
+}
+
+html:not(.dark) .profile-theme-btn.is-selected {
+  background: color-mix(in srgb, var(--accent) 10%, #fff);
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+html:not(.dark) .profile-goal-template {
+  background: rgba(255, 255, 255, 0.82);
+  border-color: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+html:not(.dark) .profile-goal-template:hover {
+  background: color-mix(in srgb, var(--accent) 8%, #fff);
+}
+

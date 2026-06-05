@@ -4,6 +4,8 @@ import "./home-2026.css";
 import "./library-modern.css";
 import "./favorites-modern.css";
 import "./fuentes-modern.css";
+import "./profile-modern.css";
+import "./auth-modern.css";
 import { env } from "@/lib/env";
 
 const appUrl = env.appUrl.replace(/\/$/, "");

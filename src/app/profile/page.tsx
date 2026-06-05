@@ -40,7 +40,7 @@ export default async function ProfilePage() {
   }
 
   const admin = createAdminClient();
-  const [serverStats, { data: profileData }, { count: organizersCount }, { data: studyHistory }] =
+  const [serverStats, { data: profileData }, { count: organizersCount }, { count: favoritesCount }, { data: studyHistory }] =
     await Promise.all([
       fetchServerLearningStats(user.id),
       admin
@@ -50,6 +50,10 @@ export default async function ProfilePage() {
         .maybeSingle(),
       admin
         .from("organizers")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id),
+      admin
+        .from("favorites")
         .select("*", { count: "exact", head: true })
         .eq("user_id", user.id),
       admin
@@ -93,6 +97,7 @@ export default async function ProfilePage() {
           organizersCount={organizersCount ?? 0}
           serverStats={serverStats}
           topCourses={topCourses}
+          favoritesCount={favoritesCount ?? 0}
           initialSettings={{
             goals: Array.isArray(academicContext.goals) ? academicContext.goals : undefined,
             preferences:
