@@ -2,15 +2,16 @@
 
 import type { CuadernoAskAction } from "@/types/cuaderno";
 
-const ACTIONS: Array<{ id: CuadernoAskAction | "legislation" | "mind_map" | "jurisprudence"; label: string }> = [
-  { id: "explain", label: "Explicar" },
-  { id: "summarize", label: "Resumir" },
-  { id: "mind_map", label: "Mapa mental" },
-  { id: "flashcards", label: "Flashcards" },
-  { id: "exam_questions", label: "Preguntas" },
-  { id: "relate", label: "Relacionar" },
-  { id: "legislation", label: "Legislación" },
-  { id: "jurisprudence", label: "Jurisprudencia" },
+const ACTIONS: Array<{
+  id: CuadernoAskAction | "legislation" | "mind_map" | "jurisprudence" | "simplify";
+  label: string;
+  emoji: string;
+}> = [
+  { id: "explain", label: "Explicar", emoji: "💡" },
+  { id: "legislation", label: "Relacionar CC", emoji: "⚖️" },
+  { id: "flashcards", label: "Flashcard", emoji: "📚" },
+  { id: "exam_questions", label: "Posible examen", emoji: "🎓" },
+  { id: "simplify", label: "Simplificar", emoji: "🧠" },
 ];
 
 export function CuadernoSelectionMenu({
@@ -21,27 +22,36 @@ export function CuadernoSelectionMenu({
   x: number;
   y: number;
   onAction: (
-    action: CuadernoAskAction | "legislation" | "mind_map" | "jurisprudence",
+    action: CuadernoAskAction | "legislation" | "mind_map" | "jurisprudence" | "simplify",
     selectedText: string,
   ) => void;
 }) {
+  const selectedText = typeof window !== "undefined" ? window.getSelection()?.toString().trim() ?? "" : "";
+
   return (
     <div
-      className="cn-selection-menu"
-      style={{ left: x, top: y, transform: "translate(-50%, -100%)" }}
+      className="cn-selection-menu cn-selection-menu--perplexity"
+      style={{ left: x, top: y, transform: "translate(-50%, calc(-100% - 8px))" }}
       onMouseDown={(e) => e.preventDefault()}
+      role="toolbar"
+      aria-label="Acciones IA sobre selección"
     >
       {ACTIONS.map((action) => (
         <button
           key={action.id}
           type="button"
-          className="rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-[#F5F7FA]/90 hover:bg-[#00FFD5]/15 hover:text-[#00FFD5]"
+          className="cn-selection-menu-btn"
+          disabled={!selectedText}
           onClick={() => {
-            const text = window.getSelection()?.toString().trim() ?? "";
-            if (!text) return;
-            onAction(action.id, text);
+            if (!selectedText) return;
+            if (action.id === "simplify") {
+              onAction("explain", `Explica de forma simple y breve: «${selectedText}»`);
+              return;
+            }
+            onAction(action.id, selectedText);
           }}
         >
+          <span aria-hidden>{action.emoji}</span>
           {action.label}
         </button>
       ))}

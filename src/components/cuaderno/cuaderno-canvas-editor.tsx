@@ -65,7 +65,7 @@ import type { CuadernoAskAction } from "@/types/cuaderno";
 
 export type CuadernoWritingMode = "text" | "ink";
 
-type SelectionAction = CuadernoAskAction | "legislation" | "mind_map" | "jurisprudence";
+type SelectionAction = CuadernoAskAction | "legislation" | "mind_map" | "jurisprudence" | "simplify";
 
 export function CuadernoCanvasEditor({
   notes,
@@ -656,6 +656,7 @@ export function CuadernoCanvasEditor({
             courseAccent={courseAccent}
             className="cn-paper-editor cn-paper-editor--rich cn-paper-layer-text"
             lineHeight={lineHeight}
+            immersiveEdit={immersive}
             onSelectionAction={onSelectionAction}
             onClipboardImagePaste={writingMode === "text" ? handleClipboardPaste : undefined}
           />

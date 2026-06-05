@@ -70,7 +70,7 @@ export function CuadernoBookshelf({ classes }: { classes: CuadernoClass[] }) {
         <span>Mis cursos</span>
       </div>
       <div className="cn-shelf-plank" aria-hidden />
-      <div className="cn-shelf-row">
+      <div className="cn-shelf-row cn-shelf-row--courses">
         {courseNotebooks.map((item) =>
           item.type === "active" ? (
             <CourseNotebook key={item.folder.courseId} folder={item.folder} />

@@ -106,7 +106,7 @@ export function CuadernoClassEditor({ initialClass }: { initialClass: CuadernoCl
   }
 
   async function handleAsk(
-    action: CuadernoAskAction | "legislation" | "mind_map" | "jurisprudence",
+    action: CuadernoAskAction | "legislation" | "mind_map" | "jurisprudence" | "simplify",
     selectedText?: string,
   ) {
     setAskLoading(true);
@@ -125,6 +125,11 @@ export function CuadernoClassEditor({ initialClass }: { initialClass: CuadernoCl
     } else if (action === "jurisprudence") {
       apiAction = "explain";
       customPrompt = `Jurisprudencia y precedentes peruanos relevantes: «${selectedText ?? ""}»`;
+    } else if (action === "simplify" || selectedText?.startsWith("Explica de forma simple")) {
+      apiAction = "explain";
+      customPrompt = selectedText?.startsWith("Explica de forma simple")
+        ? selectedText
+        : `Explica de forma simple y breve: «${selectedText ?? ""}»`;
     } else {
       apiAction = action;
       if (selectedText) {
@@ -196,7 +201,7 @@ export function CuadernoClassEditor({ initialClass }: { initialClass: CuadernoCl
   }
 
   return (
-    <div className="cuaderno-premium mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6">
+    <div className="cuaderno-premium ms-notebook-shell cuaderno-shell mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
           href={`/cuaderno/curso/${cuadernoClass.courseId}`}

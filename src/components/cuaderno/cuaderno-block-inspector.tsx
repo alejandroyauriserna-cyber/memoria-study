@@ -33,14 +33,16 @@ export function CuadernoBlockInspector({
   if (!open || !editor) return null;
 
   const block = getSelectedBlock(editor);
+  const panelTitle =
+    block?.kind === "table" ? "Tabla" : block?.kind === "studyBlock" ? "Bloque jurídico" : "Contexto";
 
   return (
     <aside
-      className="cn-block-inspector"
+      className="cn-block-inspector cn-block-inspector--luxury"
       style={{ "--cn-inspector-accent": courseAccent } as React.CSSProperties}
     >
       <header className="cn-block-inspector-head">
-        <h3>Inspector</h3>
+        <h3>{panelTitle}</h3>
         <button type="button" onClick={onClose} aria-label="Cerrar inspector">
           <X size={16} />
         </button>
@@ -48,7 +50,7 @@ export function CuadernoBlockInspector({
 
       {!block?.kind ? (
         <p className="cn-block-inspector-empty">
-          Selecciona una tabla o bloque jurídico. Las imágenes se editan en la hoja (clic sobre la imagen).
+          Selecciona una tabla o bloque jurídico para ver opciones.
         </p>
       ) : block.kind === "table" ? (
         <TableInspector editor={editor} />

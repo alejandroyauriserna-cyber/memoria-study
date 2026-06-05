@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useCallback, useEffect, useRef } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
 import { bodyToEditorHtml } from "@/lib/cuaderno/rich-text";
@@ -8,6 +8,7 @@ import { getFontStack, getGoogleFontsHref, DEFAULT_FONT_ID } from "@/lib/cuadern
 import { createCuadernoEditorExtensions } from "@/lib/cuaderno/cuaderno-editor-extensions";
 import { CuadernoFormatBubble } from "@/components/cuaderno/cuaderno-format-bubble";
 import { CuadernoFloatingEditToolbar } from "@/components/cuaderno/cuaderno-floating-edit-toolbar";
+import { CuadernoSelectionMenu } from "@/components/cuaderno/cuaderno-selection-menu";
 import { CuadernoBlockHandles, useBlockClickSelect } from "@/components/cuaderno/cuaderno-block-handles";
 import { CuadernoTableChrome } from "@/components/cuaderno/blocks/cuaderno-table-chrome";
 import type { CuadernoAskAction } from "@/types/cuaderno";
@@ -45,7 +46,7 @@ function CuadernoRichEditorInner({
   lineHeight?: string;
   onOpenFormatPanel?: () => void;
   onSelectionAction?: (
-    action: CuadernoAskAction | "legislation" | "mind_map" | "jurisprudence",
+    action: CuadernoAskAction | "legislation" | "mind_map" | "jurisprudence" | "simplify",
     selectedText: string,
   ) => void;
   /** Si devuelve true, el editor no inserta texto (p. ej. URL de Pinterest → imagen flotante). */
@@ -53,6 +54,7 @@ function CuadernoRichEditorInner({
 }) {
   const lastEmitted = useRef<string>("");
   const skipExternalSync = useRef(false);
+  const [selectionMenu, setSelectionMenu] = useState<{ x: number; y: number } | null>(null);
 
   const emitChange = useCallback(
     (html: string) => {
@@ -155,6 +157,29 @@ function CuadernoRichEditorInner({
 
   useBlockClickSelect(editor);
 
+  useEffect(() => {
+    if (!editor || !immersiveEdit || !onSelectionAction) return;
+    const update = () => {
+      const { from, to } = editor.state.selection;
+      if (from === to) {
+        setSelectionMenu(null);
+        return;
+      }
+      const text = editor.state.doc.textBetween(from, to, " ").trim();
+      if (text.length < 2) {
+        setSelectionMenu(null);
+        return;
+      }
+      const coords = editor.view.coordsAtPos(to);
+      setSelectionMenu({ x: coords.left, y: coords.top });
+    };
+    update();
+    editor.on("selectionUpdate", update);
+    return () => {
+      editor.off("selectionUpdate", update);
+    };
+  }, [editor, immersiveEdit, onSelectionAction]);
+
   if (!editor) {
     return <div className={`cn-rich-editor-skeleton ${className}`} aria-hidden />;
   }
@@ -189,6 +214,13 @@ function CuadernoRichEditorInner({
           )}
           <CuadernoBlockHandles editor={editor} />
           <CuadernoTableChrome editor={editor} />
+          {immersiveEdit && selectionMenu && onSelectionAction ? (
+            <CuadernoSelectionMenu
+              x={selectionMenu.x}
+              y={selectionMenu.y}
+              onAction={onSelectionAction}
+            />
+          ) : null}
         </>
       ) : null}
     </div>

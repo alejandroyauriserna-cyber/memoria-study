@@ -102,7 +102,7 @@ export function CuadernoFloatingToolbar({
 
   return (
     <div
-      className="cn-float-toolbar-wrap"
+      className="cn-float-toolbar-wrap cn-float-toolbar-wrap--luxury"
       style={{ "--cn-studio-accent": courseAccent } as React.CSSProperties}
       role="toolbar"
       aria-label="Herramientas del cuaderno"

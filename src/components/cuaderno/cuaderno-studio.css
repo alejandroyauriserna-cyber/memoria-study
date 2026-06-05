@@ -9,10 +9,64 @@
   --cn-studio-accent-2: #2dd4bf;
   --cn-studio-text: #f1f5f9;
   --cn-studio-muted: rgba(148, 163, 184, 0.85);
+}
+
+.cn-immersive-root--studio {
   background: var(--cn-studio-bg);
-  background-image:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(20, 184, 166, 0.12), transparent),
-    radial-gradient(ellipse 60% 40% at 100% 50%, rgba(30, 58, 95, 0.15), transparent);
+}
+
+.cn-immersive-root.cn-ambient-bg {
+  position: relative;
+  overflow: hidden;
+}
+
+.cn-immersive-root.cn-ambient-bg::before,
+.cn-immersive-root.cn-ambient-bg::after {
+  content: "";
+  position: fixed;
+  inset: -20%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.cn-immersive-root.cn-ambient-bg::before {
+  background:
+    radial-gradient(circle at 10% 10%, rgba(0, 255, 213, 0.08), transparent 30%),
+    radial-gradient(circle at 90% 15%, rgba(0, 153, 255, 0.08), transparent 35%),
+    radial-gradient(circle at 50% 100%, rgba(139, 92, 246, 0.06), transparent 45%),
+    radial-gradient(ellipse 55% 45% at 20% 30%, rgba(30, 58, 95, 0.35), transparent 60%),
+    radial-gradient(ellipse 50% 40% at 80% 70%, rgba(88, 28, 135, 0.22), transparent 55%),
+    radial-gradient(ellipse 45% 35% at 55% 15%, rgba(20, 184, 166, 0.18), transparent 50%);
+  animation: cn-ambient-drift 28s ease-in-out infinite alternate;
+}
+
+.cn-immersive-root.cn-ambient-bg::after {
+  background:
+    radial-gradient(ellipse 40% 35% at 70% 25%, rgba(45, 212, 191, 0.12), transparent 55%),
+    radial-gradient(ellipse 35% 30% at 15% 80%, rgba(59, 130, 246, 0.1), transparent 50%);
+  animation: cn-ambient-drift-reverse 36s ease-in-out infinite alternate;
+}
+
+.cn-immersive-root.cn-ambient-bg > * {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes cn-ambient-drift {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(2%, -1.5%, 0) scale(1.04); }
+}
+
+@keyframes cn-ambient-drift-reverse {
+  from { transform: translate3d(0, 0, 0) scale(1.02); }
+  to { transform: translate3d(-1.5%, 2%, 0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cn-immersive-root.cn-ambient-bg::before,
+  .cn-immersive-root.cn-ambient-bg::after {
+    animation: none;
+  }
 }
 
 /* Header minimal */
@@ -435,4 +489,1056 @@
 
 .cn-immersive-root--studio .cn-immersive-zoom:hover {
   opacity: 1;
+}
+
+/* ==========================================================
+   MEMORIASTUDY NOTEBOOK 2026 ULTRA PREMIUM
+   PHASE 1 VISUAL OVERHAUL
+========================================================== */
+
+/* ===========================
+   FONDO CINEMATOGRÁFICO
+=========================== */
+
+.cn-immersive-root.cn-ambient-bg {
+  background:
+    radial-gradient(circle at 10% 10%, rgba(0, 255, 213, 0.08), transparent 28%),
+    radial-gradient(circle at 85% 15%, rgba(0, 153, 255, 0.08), transparent 35%),
+    radial-gradient(circle at 50% 90%, rgba(139, 92, 246, 0.06), transparent 42%),
+    linear-gradient(180deg, #05070b 0%, #070b12 40%, #05070b 100%) !important;
+}
+
+/* Overlay screen: usa workspace (root ya consume ::before/::after en ambient-bg) */
+
+.cn-immersive-workspace {
+  position: relative;
+}
+
+.cn-immersive-workspace::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(circle at 20% 15%, rgba(0, 255, 213, 0.05), transparent 30%),
+    radial-gradient(circle at 80% 20%, rgba(0, 153, 255, 0.05), transparent 35%);
+  mix-blend-mode: screen;
+}
+
+.cn-immersive-workspace > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ===========================
+   ROOT
+=========================== */
+
+.cn-immersive-root.cn-immersive-root--studio {
+  position: relative;
+  overflow: hidden;
+}
+
+/* ===========================
+   HEADER ESTILO ARC BROWSER
+=========================== */
+
+.cn-immersive-header {
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  background: rgba(10, 14, 20, 0.55) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+}
+
+/* ===========================
+   TIMELINE IZQUIERDO
+=========================== */
+
+.cn-page-timeline {
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  background:
+    linear-gradient(180deg, rgba(17, 24, 39, 0.7), rgba(8, 12, 18, 0.82)) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.04) !important;
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.03);
+}
+
+.cn-page-timeline-unit {
+  border-radius: 20px;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.cn-page-timeline-unit:hover {
+  transform: translateX(3px);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* ===========================
+   HOJA PREMIUM
+=========================== */
+
+.cn-immersive-root .cn-paper {
+  border: none !important;
+  box-shadow:
+    0 80px 180px rgba(0, 0, 0, 0.55),
+    0 25px 60px rgba(0, 0, 0, 0.35),
+    0 0 60px rgba(0, 255, 213, 0.04);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.cn-immersive-paper-shell:not(:focus-within):hover .cn-paper,
+.cn-immersive-root .cn-paper:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 100px 200px rgba(0, 0, 0, 0.6),
+    0 30px 70px rgba(0, 0, 0, 0.4),
+    0 0 90px rgba(0, 255, 213, 0.08);
+}
+
+/* ===========================
+   CONTENEDOR DE HOJA
+=========================== */
+
+.cn-immersive-paper-shell {
+  padding: 2rem;
+  border-radius: 32px;
+}
+
+/* ===========================
+   PANEL IA
+=========================== */
+
+.cn-ai-sidebar {
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  background:
+    linear-gradient(180deg, rgba(15, 20, 28, 0.75), rgba(8, 12, 18, 0.88)) !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.04);
+  box-shadow: -20px 0 60px rgba(0, 0, 0, 0.35);
+  position: relative;
+  overflow: hidden;
+}
+
+.cn-ai-sidebar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(circle at top right, rgba(0, 255, 213, 0.08), transparent 35%);
+  pointer-events: none;
+}
+
+.cn-ai-sidebar-head,
+.cn-ai-sidebar-scroll {
+  position: relative;
+  z-index: 1;
+}
+
+/* ===========================
+   INSPECTOR DERECHO
+=========================== */
+
+.cn-block-inspector {
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  background:
+    linear-gradient(180deg, rgba(18, 24, 35, 0.72), rgba(8, 12, 18, 0.88)) !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.04);
+  box-shadow: -15px 0 40px rgba(0, 0, 0, 0.25);
+}
+
+/* ===========================
+   TOOLBAR FLOTANTE
+=========================== */
+
+.cn-float-toolbar {
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  background: rgba(14, 18, 26, 0.72) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+
+/* ===========================
+   BOTONES ESTILO LINEAR
+=========================== */
+
+.cn-immersive-root button:not(:disabled):not(.cn-immersive-header-icon):not(.cn-page-timeline-star):not(.cn-page-timeline-page):not(.cn-page-timeline-unit-btn):not(.cn-selection-menu-btn):not(.cn-float-tb-btn):not(.cn-float-tb-chip):not(.cn-side-rail-btn) {
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.cn-immersive-root button:not(:disabled):not(.cn-immersive-header-icon):not(.cn-page-timeline-star):not(.cn-page-timeline-page):not(.cn-page-timeline-unit-btn):not(.cn-selection-menu-btn):not(.cn-float-tb-btn):not(.cn-float-tb-chip):not(.cn-side-rail-btn):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 25px rgba(0, 255, 213, 0.1);
+}
+
+/* ===========================
+   TIPOGRAFÍA PREMIUM
+=========================== */
+
+.cn-immersive-root h1 {
+  letter-spacing: -0.06em;
+  font-weight: 800;
+}
+
+.cn-immersive-root h2 {
+  letter-spacing: -0.04em;
+  font-weight: 700;
+}
+
+.cn-immersive-root h3 {
+  letter-spacing: -0.03em;
+  font-weight: 700;
+}
+
+/* ===========================
+   SCROLL MODERNO
+=========================== */
+
+.cn-immersive-root ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.cn-immersive-root ::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(0, 255, 213, 0.5), rgba(0, 153, 255, 0.4));
+}
+
+.cn-immersive-root ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ===========================
+   PROFUNDIDAD GLOBAL
+=========================== */
+
+.cn-page-timeline,
+.cn-ai-sidebar,
+.cn-block-inspector,
+.cn-float-toolbar {
+  will-change: transform;
+}
+
+/* ===========================
+   MICROINTERACCIONES
+=========================== */
+
+.cn-page-timeline-unit,
+.cn-immersive-root .cn-paper,
+.cn-ai-sidebar,
+.cn-block-inspector {
+  transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cn-page-timeline-unit:hover,
+  .cn-immersive-root .cn-paper:hover,
+  .cn-immersive-paper-shell:not(:focus-within):hover .cn-paper,
+  .cn-immersive-root button:not(:disabled):hover {
+    transform: none;
+  }
+}
+
+/* ==========================================================
+   MEMORIASTUDY NOTEBOOK 2026
+   PHASE 2
+   ARC + LINEAR + APPLE
+========================================================== */
+
+/* ==========================================
+   ILUMINACIÓN AMBIENTAL VIVA
+   (workspace::after — root::after ya lo usa ambient-bg)
+========================================== */
+
+.cn-immersive-workspace::after {
+  content: "";
+  position: fixed;
+  inset: -30%;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(0, 255, 213, 0.08), transparent 25%),
+    radial-gradient(circle at 80% 10%, rgba(0, 153, 255, 0.08), transparent 30%),
+    radial-gradient(circle at 50% 100%, rgba(139, 92, 246, 0.08), transparent 35%);
+  filter: blur(120px);
+  animation: msAmbientFloat 18s ease-in-out infinite;
+}
+
+@keyframes msAmbientFloat {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(0, -2%, 0) scale(1.05);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+/* ==========================================
+   EFECTO APPLE GLASS
+========================================== */
+
+.cn-page-timeline,
+.cn-ai-sidebar,
+.cn-block-inspector,
+.cn-float-toolbar,
+.cn-immersive-header {
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+}
+
+/* ==========================================
+   HOJA FLOTANDO
+========================================== */
+
+.cn-immersive-root .cn-paper {
+  transform-style: preserve-3d;
+  position: relative;
+  overflow: visible;
+}
+
+.cn-immersive-root .cn-paper::before {
+  content: "";
+  position: absolute;
+  inset: -20px;
+  border-radius: inherit;
+  background: radial-gradient(circle, rgba(0, 255, 213, 0.08), transparent 70%);
+  filter: blur(50px);
+  z-index: -1;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* ==========================================
+   EFECTO GRANOLA
+========================================== */
+
+.cn-paper-stage-wrap {
+  transition: transform 0.35s ease;
+}
+
+.cn-paper-stage-wrap:hover {
+  transform: translateY(-2px) scale(1.002);
+}
+
+/* ==========================================
+   HEADER PREMIUM
+========================================== */
+
+.cn-immersive-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  box-shadow:
+    0 15px 50px rgba(0, 0, 0, 0.15),
+    0 1px 0 rgba(255, 255, 255, 0.04) inset;
+}
+
+/* ==========================================
+   BOTONES LINEAR
+========================================== */
+
+.cn-immersive-root .cn-immersive-header-cta,
+.cn-immersive-root .cn-notebook-gate-cta,
+.cn-immersive-root .cn-ai-tutor-cta,
+.cn-immersive-root .cn-ai-btn-primary,
+.cn-immersive-root .cn-ai-btn-secondary {
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.cn-immersive-root .cn-immersive-header-cta:hover,
+.cn-immersive-root .cn-notebook-gate-cta:hover,
+.cn-immersive-root .cn-ai-tutor-cta:hover,
+.cn-immersive-root .cn-ai-btn-primary:hover:not(:disabled),
+.cn-immersive-root .cn-ai-btn-secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow:
+    0 0 0 1px rgba(0, 255, 213, 0.12),
+    0 15px 30px rgba(0, 0, 0, 0.25);
+}
+
+/* ==========================================
+   TIMELINE PREMIUM
+========================================== */
+
+.cn-page-timeline-pages {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cn-page-timeline-pages > li {
+  border-radius: 18px;
+  transition: transform 0.22s ease, background 0.22s ease;
+}
+
+.cn-page-timeline-pages > li:hover {
+  transform: translateX(4px);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* ==========================================
+   PANEL IA PREMIUM
+========================================== */
+
+.cn-ai-sidebar {
+  overflow: hidden;
+  box-shadow:
+    -20px 0 60px rgba(0, 0, 0, 0.35),
+    inset 0 0 0 1px rgba(0, 255, 213, 0.06);
+}
+
+.cn-ai-sidebar-head::after {
+  content: "";
+  position: absolute;
+  top: -80px;
+  right: -80px;
+  width: 240px;
+  height: 240px;
+  background: radial-gradient(circle, rgba(0, 255, 213, 0.1), transparent 70%);
+  filter: blur(40px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ==========================================
+   INSPECTOR ESTILO FIGMA
+========================================== */
+
+.cn-inspector-section {
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 18px;
+  transition: transform 0.22s ease, background 0.22s ease, box-shadow 0.22s ease;
+}
+
+.cn-inspector-section:hover {
+  background: rgba(255, 255, 255, 0.04);
+  transform: translateY(-2px);
+}
+
+/* ==========================================
+   TOOLBAR PREMIUM
+========================================== */
+
+.cn-float-toolbar {
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.25),
+    0 1px 0 rgba(255, 255, 255, 0.05) inset;
+}
+
+/* ==========================================
+   SCROLL DE LUJO
+========================================== */
+
+.cn-immersive-root ::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(0, 255, 213, 0.55), rgba(0, 153, 255, 0.35));
+  background-clip: padding-box;
+  border: 2px solid transparent;
+}
+
+/* ==========================================
+   EFECTO "ESTO COSTÓ MILLONES"
+========================================== */
+
+.cn-page-timeline,
+.cn-ai-sidebar,
+.cn-block-inspector,
+.cn-float-toolbar,
+.cn-immersive-root .cn-paper {
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cn-immersive-workspace::after {
+    animation: none;
+  }
+
+  .cn-paper-stage-wrap:hover,
+  .cn-page-timeline-pages > li:hover,
+  .cn-inspector-section:hover {
+    transform: none;
+  }
+}
+
+/* ==========================================================
+   MEMORIASTUDY NOTEBOOK 2026
+   PHASE 3 — LUXURY PRODUCT DESIGN
+   Reducir ruido. Sin nuevos efectos.
+========================================================== */
+
+.cn-immersive-root--luxury {
+  --cn-luxury-space: 1.2;
+  --cn-luxury-muted: rgba(245, 247, 250, 0.68);
+  --cn-luxury-panel: rgba(8, 12, 18, 0.62);
+}
+
+/* —— Apagar decoración Phase 1/2 —— */
+
+.cn-immersive-root--luxury .cn-immersive-workspace::before,
+.cn-immersive-root--luxury .cn-immersive-workspace::after,
+.cn-immersive-root--luxury .cn-paper::before,
+.cn-immersive-root--luxury .cn-ai-sidebar::before,
+.cn-immersive-root--luxury .cn-ai-sidebar-head::after,
+.cn-immersive-root--luxury.ms-notebook-shell .cn-ai-sidebar::after,
+.cn-immersive-root--luxury .cn-floating-concepts {
+  display: none !important;
+}
+
+.cn-immersive-root--luxury .cn-paper-stage-wrap:hover {
+  transform: none;
+}
+
+.cn-immersive-root--luxury .cn-page-timeline-unit:hover,
+.cn-immersive-root--luxury .cn-inspector-section:hover,
+.cn-immersive-root--luxury .cn-paper:hover,
+.cn-immersive-root--luxury .cn-immersive-paper-shell:not(:focus-within):hover .cn-paper {
+  transform: none;
+}
+
+/* —— Bordes: −60% —— */
+
+.cn-immersive-root--luxury .cn-page-timeline,
+.cn-immersive-root--luxury .cn-ai-sidebar,
+.cn-immersive-root--luxury .cn-block-inspector,
+.cn-immersive-root--luxury .cn-float-toolbar,
+.cn-immersive-root--luxury .cn-immersive-header,
+.cn-immersive-root--luxury .cn-ai-block,
+.cn-immersive-root--luxury .cn-ai-tutor-block,
+.cn-immersive-root--luxury .cn-inspector-section,
+.cn-immersive-root--luxury .cn-ai-answer-card,
+.cn-immersive-root--luxury .cn-ai-input,
+.cn-immersive-root--luxury .cn-ai-action-pill,
+.cn-immersive-root--luxury .cn-ai-tutor-topic,
+.cn-immersive-root--luxury .cn-immersive-header-cta,
+.cn-immersive-root--luxury .cn-side-rail {
+  border: none !important;
+}
+
+/* —— Espaciado +20% —— */
+
+.cn-immersive-root--luxury .cn-immersive-workspace {
+  gap: calc(12px * var(--cn-luxury-space));
+}
+
+.cn-immersive-root--luxury .cn-page-timeline {
+  width: 212px;
+  padding-bottom: calc(16px * var(--cn-luxury-space));
+}
+
+.cn-immersive-root--luxury .cn-page-timeline-head {
+  padding: calc(14px * var(--cn-luxury-space)) calc(12px * var(--cn-luxury-space));
+}
+
+.cn-immersive-root--luxury .cn-page-timeline-tree {
+  padding: calc(8px * var(--cn-luxury-space)) calc(10px * var(--cn-luxury-space)) calc(20px * var(--cn-luxury-space));
+}
+
+.cn-immersive-root--luxury .cn-page-timeline-pages {
+  gap: calc(14px * var(--cn-luxury-space));
+  padding-left: 0;
+  border-left: none !important;
+  margin-left: 0;
+}
+
+.cn-immersive-root--luxury .cn-page-timeline-page {
+  padding: calc(8px * var(--cn-luxury-space)) calc(6px * var(--cn-luxury-space));
+}
+
+.cn-immersive-root--luxury .cn-immersive-paper-shell {
+  padding: calc(2rem * var(--cn-luxury-space));
+}
+
+.cn-immersive-root--luxury .cn-ai-sidebar-scroll {
+  padding: calc(16px * var(--cn-luxury-space)) calc(20px * var(--cn-luxury-space)) calc(28px * var(--cn-luxury-space));
+}
+
+.cn-immersive-root--luxury .cn-ai-sidebar-head {
+  padding: calc(18px * var(--cn-luxury-space)) calc(20px * var(--cn-luxury-space)) calc(12px * var(--cn-luxury-space));
+}
+
+.cn-immersive-root--luxury .cn-block-inspector {
+  padding: calc(16px * var(--cn-luxury-space)) calc(18px * var(--cn-luxury-space));
+}
+
+.cn-immersive-root--luxury .cn-immersive-canvas--studio .cn-canvas-viewport--immersive {
+  padding: calc(24px * var(--cn-luxury-space)) calc(56px * var(--cn-luxury-space)) calc(36px * var(--cn-luxury-space)) calc(28px * var(--cn-luxury-space));
+}
+
+/* —— Paneles secundarios más discretos —— */
+
+.cn-immersive-root--luxury .cn-page-timeline,
+.cn-immersive-root--luxury .cn-block-inspector,
+.cn-immersive-root--luxury .cn-float-toolbar-wrap {
+  opacity: 0.9;
+}
+
+.cn-immersive-root--luxury .cn-page-timeline,
+.cn-immersive-root--luxury .cn-ai-sidebar,
+.cn-immersive-root--luxury .cn-block-inspector,
+.cn-immersive-root--luxury .cn-float-toolbar,
+.cn-immersive-root--luxury .cn-immersive-header {
+  backdrop-filter: blur(18px) saturate(130%);
+  -webkit-backdrop-filter: blur(18px) saturate(130%);
+  background: var(--cn-luxury-panel) !important;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.28);
+}
+
+.cn-immersive-root--luxury .cn-ai-sidebar {
+  box-shadow: -24px 0 56px rgba(0, 0, 0, 0.28);
+}
+
+/* —— Header minimal —— */
+
+.cn-immersive-root--luxury .cn-immersive-header {
+  min-height: 44px;
+  padding: 10px 20px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+}
+
+.cn-immersive-root--luxury .cn-immersive-header-divider,
+.cn-immersive-root--luxury .cn-immersive-header-brand {
+  display: none;
+}
+
+.cn-immersive-root--luxury .cn-immersive-header-course {
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.cn-immersive-root--luxury .cn-immersive-header-status {
+  color: var(--cn-luxury-muted);
+}
+
+.cn-immersive-root--luxury .cn-immersive-header-cta {
+  padding: 8px 14px;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: rgba(245, 247, 250, 0.82);
+}
+
+.cn-immersive-root--luxury .cn-immersive-header-cta:hover,
+.cn-immersive-root--luxury .cn-immersive-header-cta.is-active {
+  background: rgba(255, 255, 255, 0.06) !important;
+  box-shadow: none !important;
+  transform: none;
+  color: #fff;
+}
+
+.cn-immersive-root--luxury .cn-immersive-header-actions--overflow .cn-immersive-header-icon,
+.cn-immersive-root--luxury .cn-immersive-header-stickers {
+  opacity: 0.55;
+}
+
+.cn-immersive-root--luxury .cn-immersive-header-actions--overflow .cn-immersive-header-icon:hover,
+.cn-immersive-root--luxury .cn-immersive-header-stickers:hover {
+  opacity: 1;
+}
+
+/* —— Timeline = índice de estudio —— */
+
+.cn-immersive-root--luxury .cn-page-timeline-line,
+.cn-immersive-root--luxury .cn-page-timeline-dot,
+.cn-immersive-root--luxury .cn-page-timeline-page small {
+  display: none !important;
+}
+
+.cn-immersive-root--luxury .cn-page-timeline-unit {
+  border-radius: 0;
+  background: transparent !important;
+}
+
+.cn-immersive-root--luxury .cn-page-timeline-unit:hover {
+  transform: none;
+  background: transparent !important;
+}
+
+.cn-immersive-root--luxury .cn-page-timeline-unit-btn {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cn-luxury-muted);
+  padding: calc(10px * var(--cn-luxury-space)) calc(4px * var(--cn-luxury-space));
+}
+
+.cn-immersive-root--luxury .cn-page-timeline-unit-marker {
+  display: inline-flex;
+  width: 14px;
+  margin-right: 6px;
+  color: rgba(245, 247, 250, 0.35);
+}
+
+.cn-immersive-root--luxury .cn-page-timeline-page strong {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: rgba(245, 247, 250, 0.78);
+}
+
+.cn-immersive-root--luxury .cn-page-timeline-pages li.is-active .cn-page-timeline-page strong {
+  color: #fff;
+}
+
+.cn-immersive-root--luxury .cn-page-timeline-pages > li {
+  border-radius: 0;
+  background: transparent !important;
+}
+
+.cn-immersive-root--luxury .cn-page-timeline-pages > li:hover {
+  transform: none;
+  background: transparent !important;
+}
+
+.cn-immersive-root--luxury .cn-page-timeline-star {
+  opacity: 0;
+  font-size: 11px;
+  color: rgba(245, 247, 250, 0.35);
+  transition: opacity 0.15s ease;
+}
+
+.cn-immersive-root--luxury .cn-page-timeline-pages li:hover .cn-page-timeline-star,
+.cn-immersive-root--luxury .cn-page-timeline-star.is-on {
+  opacity: 1;
+}
+
+.cn-immersive-root--luxury .cn-page-timeline-star.is-on {
+  color: #fbbf24;
+}
+
+/* —— Hoja protagonista —— */
+
+.cn-immersive-root--luxury .cn-immersive-main {
+  z-index: 2;
+}
+
+.cn-immersive-root--luxury .cn-paper {
+  box-shadow:
+    0 48px 120px rgba(0, 0, 0, 0.52),
+    0 16px 40px rgba(0, 0, 0, 0.34) !important;
+}
+
+.cn-immersive-root--luxury .cn-immersive-paper-shell {
+  filter: none;
+}
+
+/* —— Toolbar compacta —— */
+
+.cn-immersive-root--luxury .cn-float-toolbar-wrap {
+  padding: 6px 16px 8px;
+}
+
+.cn-immersive-root--luxury .cn-float-toolbar {
+  min-height: 36px;
+  padding: 4px 8px;
+  border-radius: 14px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
+}
+
+.cn-immersive-root--luxury .cn-float-tb-btn,
+.cn-immersive-root--luxury .cn-float-tb-chip {
+  min-width: 28px;
+  height: 28px;
+}
+
+.cn-immersive-root--luxury .cn-float-tb-ai {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 0.6875rem;
+  box-shadow: none;
+}
+
+.cn-immersive-root--luxury .cn-float-tb-group[data-group="lists"],
+.cn-immersive-root--luxury .cn-float-tb-group[data-group="format"] .cn-float-tb-btn:nth-child(4),
+.cn-immersive-root--luxury .cn-float-tb-group[data-group="content"] .cn-float-tb-btn:nth-child(-n + 4),
+.cn-immersive-root--luxury .cn-float-tb-group[data-group="content"] .cn-float-tb-btn[title="Sticker"],
+.cn-immersive-root--luxury .cn-float-tb-group[data-group="content"] .cn-float-tb-btn[title="Post-it"],
+.cn-immersive-root--luxury .cn-float-tb-group[data-group="ai"] .cn-float-tb-btn:first-child {
+  display: none !important;
+}
+
+.cn-immersive-root--luxury .cn-float-tb-sep {
+  margin: 0 2px;
+}
+
+.cn-immersive-root--luxury .cn-side-rail-label {
+  display: none;
+}
+
+.cn-immersive-root--luxury .cn-side-rail {
+  opacity: 0.72;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+}
+
+/* —— Panel IA limpio —— */
+
+.cn-immersive-root--luxury .cn-ai-professor-badge {
+  padding: 0;
+  border-radius: 0;
+  background: none !important;
+  color: #fff;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  text-transform: none;
+}
+
+.cn-immersive-root--luxury .cn-ai-close-btn {
+  border: none;
+  background: transparent;
+  color: var(--cn-luxury-muted);
+  padding: 6px;
+  border-radius: 8px;
+}
+
+.cn-immersive-root--luxury .cn-ai-close-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  transform: none;
+  box-shadow: none;
+}
+
+.cn-immersive-root--luxury .cn-ai-block {
+  margin-bottom: calc(24px * var(--cn-luxury-space));
+  padding-bottom: 0;
+  border-bottom: none !important;
+}
+
+.cn-immersive-root--luxury .cn-ai-block--compact {
+  margin-bottom: calc(18px * var(--cn-luxury-space));
+}
+
+.cn-immersive-root--luxury .cn-ai-tutor-block {
+  margin: 0 0 calc(20px * var(--cn-luxury-space));
+  padding: 0;
+  background: none !important;
+}
+
+.cn-immersive-root--luxury .cn-ai-tutor-lead {
+  font-size: 0.8125rem;
+  color: var(--cn-luxury-muted);
+}
+
+.cn-immersive-root--luxury .cn-ai-tutor-topic {
+  border: none !important;
+  background: none !important;
+  padding: 6px 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.cn-immersive-root--luxury .cn-ai-tutor-topic::before {
+  content: none;
+}
+
+.cn-immersive-root--luxury .cn-ai-tutor-link {
+  margin-top: 10px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--cn-course-accent, #00ffd5);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cn-immersive-root--luxury .cn-ai-input {
+  background: rgba(255, 255, 255, 0.04) !important;
+  color: #fff;
+}
+
+.cn-immersive-root--luxury .cn-ai-input--hero {
+  min-height: 112px;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  padding: calc(14px * var(--cn-luxury-space));
+}
+
+.cn-immersive-root--luxury .cn-ai-btn-primary--luxury {
+  margin-top: 12px;
+  width: auto;
+  min-width: 96px;
+  padding: 10px 18px;
+  border: none !important;
+  background: #fff !important;
+  color: #0c0e12 !important;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
+}
+
+.cn-immersive-root--luxury .cn-ai-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cn-immersive-root--luxury .cn-ai-action-pill {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(245, 247, 250, 0.88);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cn-immersive-root--luxury .cn-ai-action-pill--muted {
+  color: var(--cn-luxury-muted);
+}
+
+.cn-immersive-root--luxury .cn-ai-action-pill:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  transform: none;
+  box-shadow: none;
+}
+
+.cn-immersive-root--luxury .cn-ai-more-actions,
+.cn-immersive-root--luxury .cn-ai-generate-details {
+  color: var(--cn-luxury-muted);
+  font-size: 0.8125rem;
+}
+
+.cn-immersive-root--luxury .cn-ai-more-actions summary,
+.cn-immersive-root--luxury .cn-ai-generate-details summary {
+  cursor: pointer;
+  padding: 8px 0;
+  color: rgba(245, 247, 250, 0.55);
+  list-style: none;
+}
+
+.cn-immersive-root--luxury .cn-ai-more-actions summary::-webkit-details-marker,
+.cn-immersive-root--luxury .cn-ai-generate-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.cn-immersive-root--luxury .cn-ai-generate-links {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.cn-immersive-root--luxury .cn-ai-generate-links button {
+  border: none !important;
+  background: none !important;
+  padding: 0;
+  text-align: left;
+  color: rgba(245, 247, 250, 0.72);
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.cn-immersive-root--luxury .cn-ai-generate-links button:hover:not(:disabled) {
+  color: #fff;
+  transform: none;
+  box-shadow: none;
+}
+
+.cn-immersive-root--luxury .cn-ai-answer--luxury .cn-ai-answer-term {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.cn-immersive-root--luxury .cn-ai-answer-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(245, 247, 250, 0.55);
+}
+
+.cn-immersive-root--luxury .cn-ai-answer-body,
+.cn-immersive-root--luxury .cn-ai-muted {
+  font-size: 0.875rem;
+  line-height: 1.65;
+  color: rgba(245, 247, 250, 0.82);
+}
+
+.cn-immersive-root--luxury .cn-ai-answer-card {
+  background: rgba(255, 255, 255, 0.03) !important;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.22) !important;
+}
+
+.cn-immersive-root--luxury .cn-ai-answer-card-body {
+  color: rgba(245, 247, 250, 0.88) !important;
+}
+
+/* —— Inspector contextual —— */
+
+.cn-immersive-root--luxury .cn-block-inspector-head h3 {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(245, 247, 250, 0.55);
+}
+
+.cn-immersive-root--luxury .cn-block-inspector-empty {
+  color: var(--cn-luxury-muted);
+  line-height: 1.6;
+}
+
+.cn-immersive-root--luxury .cn-inspector-section {
+  padding: calc(12px * var(--cn-luxury-space)) 0;
+  background: none !important;
+  box-shadow: none !important;
+}
+
+.cn-immersive-root--luxury .cn-inspector-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(245, 247, 250, 0.5);
+}
+
+.cn-immersive-root--luxury .cn-inspector-field {
+  color: rgba(245, 247, 250, 0.82);
+}
+
+/* —— Tipografía —— */
+
+.cn-immersive-root--luxury,
+.cn-immersive-root--luxury .text-muted-foreground {
+  color: var(--cn-luxury-muted) !important;
+}
+
+.cn-immersive-root--luxury h1,
+.cn-immersive-root--luxury h2,
+.cn-immersive-root--luxury h3,
+.cn-immersive-root--luxury strong {
+  color: #fff;
+}
+
+.cn-immersive-root--luxury button:hover {
+  transform: none;
+}
+
+/* —— Estantería (cuaderno listado) —— */
+
+.cuaderno-premium.ms-notebook-shell.cn-immersive-root--luxury,
+.ms-notebook-shell.cuaderno-premium {
+  --cn-luxury-space: 1.18;
+}
+
+.ms-notebook-shell.cuaderno-premium:not(.cn-immersive-root) .cuaderno-folder-card,
+.ms-notebook-shell.cuaderno-premium:not(.cn-immersive-root) .cn-tab {
+  border: none !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.24);
+}
+
+.ms-notebook-shell.cuaderno-premium:not(.cn-immersive-root) .cn-hero-title,
+.ms-notebook-shell.cuaderno-premium:not(.cn-immersive-root) h1 {
+  color: #fff;
+  letter-spacing: -0.04em;
 }

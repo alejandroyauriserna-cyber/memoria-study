@@ -1,20 +1,10 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import {
-  BookOpen,
-  Brain,
-  FileText,
-  Gavel,
-  GitBranch,
-  HelpCircle,
-  Layers,
-  Scale,
-  Sparkles,
-  X,
-} from "lucide-react";
+import { X } from "lucide-react";
 import { LoadingState } from "@/components/ui/loading-state";
 import { useLoadingProgress } from "@/hooks/use-loading-progress";
+import { CuadernoAiAnswerCards } from "@/components/cuaderno/cuaderno-ai-answer-cards";
 import type { CuadernoAskAction, CuadernoDictionaryResponse } from "@/types/cuaderno";
 
 type AiActionId =
@@ -23,23 +13,19 @@ type AiActionId =
   | "mind_map"
   | "jurisprudence";
 
-const AI_ACTIONS: Array<{
-  id: AiActionId;
-  label: string;
-  icon: typeof Sparkles;
-  prompt: string;
-}> = [
-  { id: "explain", label: "Explicar", icon: HelpCircle, prompt: "Explica en lenguaje claro" },
-  { id: "summarize", label: "Resumir", icon: FileText, prompt: "Resume los puntos esenciales" },
-  { id: "exam_questions", label: "Preguntas", icon: Brain, prompt: "Genera preguntas de examen" },
-  { id: "flashcards", label: "Flashcards", icon: Layers, prompt: "Genera tarjetas pregunta-respuesta" },
-  { id: "mind_map", label: "Mapa mental", icon: GitBranch, prompt: "Estructura un mapa mental" },
-  { id: "relate", label: "Relacionar", icon: Sparkles, prompt: "Relaciona conceptos del curso" },
-  { id: "legislation", label: "Legislación", icon: Scale, prompt: "Legislación peruana aplicable" },
-  { id: "jurisprudence", label: "Jurisprudencia", icon: Gavel, prompt: "Jurisprudencia relacionada" },
+const PRIMARY_ACTIONS: Array<{ id: AiActionId; label: string; prompt: string }> = [
+  { id: "explain", label: "Explicar", prompt: "Explica en lenguaje claro" },
+  { id: "summarize", label: "Resumir", prompt: "Resume los puntos esenciales" },
+  { id: "exam_questions", label: "Examen", prompt: "Genera preguntas de examen" },
+  { id: "flashcards", label: "Flashcards", prompt: "Genera tarjetas pregunta-respuesta" },
 ];
 
-const EXAMPLES = ["Exhorto", "Antijuridicidad", "Negocio jurídico"];
+const MORE_ACTIONS: Array<{ id: AiActionId; label: string; prompt: string }> = [
+  { id: "relate", label: "Relacionar", prompt: "Relaciona conceptos del curso" },
+  { id: "legislation", label: "Legislación", prompt: "Legislación peruana aplicable" },
+  { id: "jurisprudence", label: "Jurisprudencia", prompt: "Jurisprudencia relacionada" },
+  { id: "mind_map", label: "Mapa mental", prompt: "Estructura un mapa mental" },
+];
 
 export function CuadernoAiSidebar({
   open,
@@ -60,6 +46,8 @@ export function CuadernoAiSidebar({
   onGenerateExam,
   genLoading,
   courseAccent = "#00ffd5",
+  detectedConcepts = [],
+  onExplainPage,
 }: {
   open: boolean;
   onClose: () => void;
@@ -79,6 +67,8 @@ export function CuadernoAiSidebar({
   onGenerateExam: () => void;
   genLoading: string | null;
   courseAccent?: string;
+  detectedConcepts?: Array<{ term: string; cite?: string }>;
+  onExplainPage?: () => void;
 }) {
   const genActive = genLoading !== null;
   const genProgress = useLoadingProgress(genActive, "aiGenerate");
@@ -93,7 +83,7 @@ export function CuadernoAiSidebar({
       <AnimatePresence>
         {open ? (
           <motion.aside
-            className="cn-ai-sidebar cn-ai-sidebar--open"
+            className="cn-ai-sidebar cn-ai-sidebar--open cn-ai-sidebar--professor cn-ai-sidebar--luxury"
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
@@ -102,147 +92,145 @@ export function CuadernoAiSidebar({
           >
             <div className="cn-ai-sidebar-head">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#00FFD5]">
-                  IA Jurídica
-                </p>
-                <p className="mt-1 text-sm text-muted-foreground">Sin salir del cuaderno</p>
+                <p className="cn-ai-professor-badge">Profesor IA</p>
               </div>
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-lg p-2 text-muted-foreground hover:bg-white/5 hover:text-white"
+                className="cn-ai-close-btn"
                 aria-label="Cerrar panel IA"
               >
-                <X size={18} />
+                <X size={16} />
               </button>
             </div>
 
             <div className="cn-ai-sidebar-scroll">
+              {detectedConcepts.length > 0 ? (
+                <section className="cn-ai-tutor-block">
+                  <p className="cn-ai-tutor-lead">Esta página trata sobre</p>
+                  <ul className="cn-ai-tutor-topics">
+                    {detectedConcepts.map((concept) => (
+                      <li key={concept.term}>
+                        <button
+                          type="button"
+                          onClick={() => onLookup(concept.term)}
+                          className="cn-ai-tutor-topic"
+                        >
+                          {concept.term}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                  <button
+                    type="button"
+                    className="cn-ai-tutor-link"
+                    disabled={askLoading}
+                    onClick={onExplainPage}
+                  >
+                    Explicar estos temas
+                  </button>
+                </section>
+              ) : null}
+
               <section className="cn-ai-block">
-                <h3 className="cn-ai-section-title">Acciones rápidas</h3>
-                <div className="cn-ai-action-grid">
-                  {AI_ACTIONS.map((item) => {
-                    const Icon = item.icon;
-                    return (
+                <textarea
+                  value={customPrompt}
+                  onChange={(e) => onCustomPromptChange(e.target.value)}
+                  placeholder="Pregunta sobre tus apuntes…"
+                  rows={4}
+                  className="cn-ai-input cn-ai-input--hero resize-none"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      onAskCustom();
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  disabled={askLoading || !customPrompt.trim()}
+                  onClick={onAskCustom}
+                  className="cn-ai-btn-primary cn-ai-btn-primary--luxury"
+                >
+                  {askLoading ? "Pensando…" : "Enviar"}
+                </button>
+                {askLoading ? (
+                  <LoadingState active preset="aiGenerate" variant="inline" className="mt-3" />
+                ) : null}
+                {askAnswer ? (
+                  <div className="mt-5">
+                    <CuadernoAiAnswerCards answer={askAnswer} accent={courseAccent} />
+                  </div>
+                ) : null}
+              </section>
+
+              <section className="cn-ai-block cn-ai-block--compact">
+                <div className="cn-ai-action-row">
+                  {PRIMARY_ACTIONS.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      disabled={askLoading}
+                      className="cn-ai-action-pill"
+                      onClick={() => onAction(item.id, item.prompt)}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+                <details className="cn-ai-more-actions">
+                  <summary>Más acciones</summary>
+                  <div className="cn-ai-action-row mt-2">
+                    {MORE_ACTIONS.map((item) => (
                       <button
                         key={item.id}
                         type="button"
                         disabled={askLoading}
-                        className="cn-ai-action-tile"
+                        className="cn-ai-action-pill cn-ai-action-pill--muted"
                         onClick={() => onAction(item.id, item.prompt)}
                       >
-                        <Icon size={18} className="cn-ai-action-icon" />
-                        <span>{item.label}</span>
+                        {item.label}
                       </button>
-                    );
-                  })}
-                </div>
+                    ))}
+                  </div>
+                </details>
               </section>
 
-              <section className="cn-ai-block">
-                <h3 className="flex items-center gap-2 text-sm font-bold text-[#F5F7FA]">
-                  <BookOpen size={15} style={{ color: courseAccent }} />
-                  Diccionario
-                </h3>
+              <section className="cn-ai-block cn-ai-block--compact">
                 <input
                   value={dictTerm}
                   onChange={(e) => onDictTermChange(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && onLookup(dictTerm)}
-                  placeholder="¿Qué significa?"
-                  className="cn-ai-input mt-3"
+                  placeholder="Buscar término jurídico…"
+                  className="cn-ai-input"
                 />
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {EXAMPLES.map((s) => (
-                    <button
-                      key={s}
-                      type="button"
-                      onClick={() => onLookup(s)}
-                      className="rounded-md border border-white/10 px-2 py-1 text-[10px] text-muted-foreground hover:text-[#00FFD5]"
-                    >
-                      {s}
-                    </button>
-                  ))}
-                </div>
-                <button
-                  type="button"
-                  disabled={dictLoading}
-                  onClick={() => onLookup(dictTerm)}
-                  className="cn-ai-btn-secondary mt-3 w-full"
-                >
-                  {dictLoading ? "Consultando…" : "Consultar término"}
-                </button>
+                {dictLoading ? <p className="cn-ai-muted mt-2">Consultando…</p> : null}
                 {dictEntry ? (
-                  <div className="cn-ai-answer mt-4">
-                    <p className="font-bold" style={{ color: courseAccent }}>
-                      {dictEntry.term}
-                    </p>
+                  <div className="cn-ai-answer cn-ai-answer--luxury mt-4">
+                    <p className="cn-ai-answer-term">{dictEntry.term}</p>
                     {dictEntry.sections.map((s) => (
-                      <div key={s.id} className="mt-2">
-                        <p className="text-[11px] font-semibold text-white/90">{s.title}</p>
-                        <p className="text-xs text-muted-foreground">{s.content}</p>
+                      <div key={s.id} className="mt-3">
+                        <p className="cn-ai-answer-label">{s.title}</p>
+                        <p className="cn-ai-answer-body">{s.content}</p>
                       </div>
                     ))}
                   </div>
                 ) : null}
               </section>
 
-              <section className="cn-ai-block">
-                <h3 className="text-sm font-bold text-[#F5F7FA]">Pregunta libre</h3>
-                <textarea
-                  value={customPrompt}
-                  onChange={(e) => onCustomPromptChange(e.target.value)}
-                  placeholder="Escribe tu pregunta sobre los apuntes…"
-                  rows={3}
-                  className="cn-ai-input mt-3 resize-none"
-                />
-                <button
-                  type="button"
-                  disabled={askLoading || !customPrompt.trim()}
-                  onClick={onAskCustom}
-                  className="cn-ai-btn-primary mt-2 w-full"
-                >
-                {askLoading ? "Pensando…" : "Preguntar"}
-              </button>
-              {askLoading ? (
-                <LoadingState active preset="aiGenerate" variant="inline" className="mt-3" />
-              ) : null}
-              {askAnswer ? (
-                  <div className="cn-ai-answer mt-4 whitespace-pre-wrap">{askAnswer}</div>
-                ) : null}
-              </section>
-
-              <section className="cn-ai-block">
-                <h3 className="text-sm font-bold text-[#F5F7FA]">Generar material</h3>
-                <div className="mt-3 grid gap-2">
-                  <button
-                    type="button"
-                    disabled={!!genLoading}
-                    onClick={onGenerateOrganizer}
-                    className="cn-ai-chip"
-                  >
+              <details className="cn-ai-block cn-ai-block--compact cn-ai-generate-details">
+                <summary>Generar material</summary>
+                <div className="cn-ai-generate-links">
+                  <button type="button" disabled={!!genLoading} onClick={onGenerateOrganizer}>
                     {genLoading === "organizer"
-                      ? `Generando… ${genProgress.percent}%`
-                      : "Organizador / mapa"}
+                      ? `Organizador… ${genProgress.percent}%`
+                      : "Organizador"}
                   </button>
-                  <button
-                    type="button"
-                    disabled={!!genLoading}
-                    onClick={onGenerateDeck}
-                    className="cn-ai-chip"
-                  >
-                    {genLoading === "deck"
-                      ? `Generando… ${genProgress.percent}%`
-                      : "Flashcards → mazo"}
+                  <button type="button" disabled={!!genLoading} onClick={onGenerateDeck}>
+                    {genLoading === "deck" ? `Mazo… ${genProgress.percent}%` : "Mazo flashcards"}
                   </button>
-                  <button
-                    type="button"
-                    disabled={!!genLoading}
-                    onClick={onGenerateExam}
-                    className="cn-ai-chip"
-                  >
-                    {genLoading === "exam"
-                      ? `Generando… ${genProgress.percent}%`
-                      : "Simulacro → Exámenes"}
+                  <button type="button" disabled={!!genLoading} onClick={onGenerateExam}>
+                    {genLoading === "exam" ? `Examen… ${genProgress.percent}%` : "Simulacro"}
                   </button>
                 </div>
                 {genActive ? (
@@ -256,7 +244,7 @@ export function CuadernoAiSidebar({
                     className="mt-3"
                   />
                 ) : null}
-              </section>
+              </details>
             </div>
           </motion.aside>
         ) : null}

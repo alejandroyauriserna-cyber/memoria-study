@@ -24,7 +24,10 @@ import {
   shouldSeedDemoDecorations,
 } from "@/lib/cuaderno/demo-decorations";
 import { useEditorChromeState } from "@/components/cuaderno/cuaderno-editor-chrome";
-import { CuadernoPageSidebar } from "@/components/cuaderno/cuaderno-page-sidebar";
+import { CuadernoPageTimeline } from "@/components/cuaderno/cuaderno-page-timeline";
+import { CuadernoNotebookGate } from "@/components/cuaderno/cuaderno-notebook-gate";
+import { CuadernoFloatingConcepts } from "@/components/cuaderno/cuaderno-floating-concepts";
+import { extractLegalConcepts } from "@/lib/cuaderno/page-content-utils";
 import { CuadernoBlockInspector } from "@/components/cuaderno/cuaderno-block-inspector";
 import {
   CuadernoPageSettingsPanel,
@@ -34,11 +37,8 @@ import { CuadernoTemplatePicker } from "@/components/cuaderno/cuaderno-template-
 import { getSelectedBlock } from "@/lib/cuaderno/cuaderno-block-utils";
 import {
   addPage,
-  duplicatePage,
   getActivePage,
-  movePage,
   parseCuadernoDocument,
-  removePage,
   serializeCuadernoDocument,
   setActivePageBody,
   switchActivePage,
@@ -73,7 +73,9 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
   const [title, setTitle] = useState(initialClass.title);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
   const [favorite, setFavorite] = useState(false);
+  const [notebookGateOpen, setNotebookGateOpen] = useState(true);
   const [aiOpen, setAiOpen] = useState(false);
+  const [studyMode, setStudyMode] = useState(false);
   const [favoritePulse, setFavoritePulse] = useState(false);
 
   const [dictTerm, setDictTerm] = useState("");
@@ -110,6 +112,14 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
   const doc = useMemo(() => parseCuadernoDocument(notes), [notes]);
   const activePage = getActivePage(doc);
   const meta = doc.meta;
+  const activePageIndex = doc.pages.findIndex((p) => p.id === doc.activePageId);
+  const pageNumber = activePageIndex >= 0 ? activePageIndex + 1 : 1;
+  const progressPercent =
+    doc.pages.length > 0 ? Math.round((pageNumber / doc.pages.length) * 100) : 0;
+  const detectedConcepts = useMemo(
+    () => extractLegalConcepts(activePage.body),
+    [activePage.body, doc.activePageId],
+  );
 
   const prefs = getCourseVisualPrefs(cuadernoClass.courseId);
   const coverArt = getCourseCoverArt(cuadernoClass.courseId, prefs);
@@ -117,6 +127,13 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
   useEffect(() => {
     setFavorite(sync?.isFavorite(cuadernoClass.id) ?? isCachedFavorite(cuadernoClass.id));
   }, [cuadernoClass.id, sync]);
+
+  useEffect(() => {
+    setNotebookGateOpen(true);
+    setAiOpen(false);
+    setStudyMode(false);
+    setFocusMode(false);
+  }, [cuadernoClass.id]);
 
   const persist = useCallback(
     async (patch: Record<string, unknown>) => {
@@ -221,7 +238,7 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
   }
 
   async function handleAsk(
-    action: CuadernoAskAction | "legislation" | "mind_map" | "jurisprudence",
+    action: CuadernoAskAction | "legislation" | "mind_map" | "jurisprudence" | "simplify",
     promptText?: string,
     saveAs?: "summary" | "exam",
   ) {
@@ -241,13 +258,26 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
     } else if (action === "mind_map") {
       apiAction = "relate";
       custom = `Estructura de mapa mental: «${promptText ?? ""}»`;
+    } else if (action === "simplify" || promptText?.startsWith("Explica de forma simple")) {
+      apiAction = "explain";
+      custom =
+        promptText?.startsWith("Explica de forma simple")
+          ? promptText
+          : `Explica de forma simple y breve: «${promptText ?? ""}»`;
     } else if (promptText) {
       apiAction =
         action === "summarize"
           ? "summarize"
           : action === "exam_questions"
             ? "exam_questions"
-            : action;
+            : action === "flashcards"
+              ? "flashcards"
+              : action === "explain" ||
+                  action === "examples" ||
+                  action === "relate" ||
+                  action === "key_concepts"
+                ? action
+                : "explain";
       custom = promptText;
     }
 
@@ -327,9 +357,28 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
     }
   }
 
+  function openPageFromGate() {
+    setNotebookGateOpen(false);
+    setAiOpen(true);
+  }
+
+  function toggleStudyMode() {
+    setStudyMode((current) => {
+      const next = !current;
+      setFocusMode(next);
+      if (next) {
+        setStickerPanelOpen(false);
+        setPostitPanelOpen(false);
+        setFormatPanelOpen(false);
+        setAiOpen(true);
+      }
+      return next;
+    });
+  }
+
   return (
     <motion.div
-      className={`cn-immersive-root cn-immersive-root--studio ${aiOpen ? "cn-immersive-root--ai-open" : ""}${stickerPanelOpen ? " cn-immersive-root--side-open" : ""}${focusMode ? " cn-immersive-root--focus" : ""}`}
+      className={`cn-immersive-root cn-immersive-root--studio cn-immersive-root--luxury cn-ambient-bg ms-notebook-shell cuaderno-shell ${aiOpen ? "cn-immersive-root--ai-open" : ""}${stickerPanelOpen ? " cn-immersive-root--side-open" : ""}${focusMode || studyMode ? " cn-immersive-root--focus cn-immersive-root--study" : ""}${notebookGateOpen ? " cn-immersive-root--gate" : ""}`}
       data-layout={chrome.layoutMode}
       data-focus={focusMode ? "true" : "false"}
       style={
@@ -349,7 +398,12 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
         favorite={favorite}
         favoritePulse={favoritePulse}
         aiOpen={aiOpen}
+        studyMode={studyMode}
         compact={chrome.layoutMode === "fullscreen"}
+        onToggleStudy={toggleStudyMode}
+        onGenerateExam={() =>
+          void handleAsk("exam_questions", "Genera un simulacro de examen con mis apuntes", "exam")
+        }
         onToggleFavorite={() => {
           void toggleFavoriteClassAsync(cuadernoClass.id).then((next) => {
             setFavorite(next);
@@ -432,25 +486,29 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
           if (!t.closest(".cn-paper, .cn-rich-editor, .cn-prosemirror")) setFocusMode(false);
         }}
       >
-        <CuadernoPageSidebar
-          pages={doc.pages}
-          activePageId={doc.activePageId}
-          onSelect={(id) => applyDoc(switchActivePage(doc, id))}
-          onAdd={handleNewPage}
-          onDuplicate={(id) => applyDoc(duplicatePage(doc, id))}
-          onRemove={(id) => applyDoc(removePage(doc, id))}
-          onMove={(id, dir) => applyDoc(movePage(doc, id, dir))}
-          onRename={(id, title) => applyDoc(updatePage(doc, id, { title }))}
-          onToggleFavorite={(id) => applyDoc(togglePageFavorite(doc, id))}
-          onOpenSettings={(id) => {
-            applyDoc(switchActivePage(doc, id));
-            setPageSettingsOpen(true);
-          }}
-          onChangeTemplate={(id) => openTemplateGalleryFor(id)}
-        />
+        {!studyMode ? (
+          <CuadernoPageTimeline
+            pages={doc.pages}
+            activePageId={doc.activePageId}
+            onSelect={(id) => applyDoc(switchActivePage(doc, id))}
+            onAdd={handleNewPage}
+            onToggleFavorite={(id) => applyDoc(togglePageFavorite(doc, id))}
+          />
+        ) : null}
 
         <div className="cn-immersive-editor-column">
       <main className="cn-immersive-main">
+        {notebookGateOpen ? (
+          <CuadernoNotebookGate
+            title={title}
+            courseName={cuadernoClass.courseName}
+            pageLabel={activePage.title || `Página ${pageNumber}`}
+            pageNumber={pageNumber}
+            progressPercent={progressPercent}
+            coverArt={coverArt}
+            onOpenPage={openPageFromGate}
+          />
+        ) : (
         <motion.div
           className="cn-immersive-paper-shell"
           key={doc.activePageId}
@@ -458,6 +516,15 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
         >
+          {!studyMode ? (
+            <CuadernoFloatingConcepts
+              concepts={detectedConcepts}
+              onExpand={(term) => {
+                setAiOpen(true);
+                void handleAsk("explain", `Explica el concepto «${term}» con base en mis apuntes`);
+              }}
+            />
+          ) : null}
           <CuadernoCanvasEditor
             immersive
             externalToolbar
@@ -481,7 +548,7 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
               setWritingMode(mode);
               if (mode === "ink") setFocusMode(true);
             }}
-            focusMode={focusMode}
+            focusMode={focusMode || studyMode}
             onPaperFocus={() => setFocusMode(true)}
             onOpenFormatPanel={() => setFormatPanelOpen(true)}
             onOpenStickers={() => {
@@ -555,16 +622,21 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
                 void handleAsk("jurisprudence", text);
               } else if (action === "mind_map") {
                 void handleAsk("mind_map", text);
+              } else if (action === "flashcards") {
+                void handleAsk("flashcards", `Crea flashcards sobre: «${text}»`);
+              } else if (text.startsWith("Explica de forma simple")) {
+                void handleAsk("explain", text);
               } else {
                 void handleAsk(action, `Sobre: «${text}»`);
               }
             }}
           />
         </motion.div>
+        )}
       </main>
         </div>
 
-        {!focusMode && chrome.layoutMode !== "fullscreen" ? (
+        {!focusMode && !studyMode && chrome.layoutMode !== "fullscreen" ? (
           <CuadernoBlockInspector
             editor={tiptapEditor}
             open={inspectorOpen}
@@ -609,6 +681,16 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
         }
         genLoading={genLoading}
         courseAccent={coverArt.accent}
+        detectedConcepts={detectedConcepts}
+        onExplainPage={() => {
+          const topics = detectedConcepts.map((c) => c.term).join(", ");
+          void handleAsk(
+            "explain",
+            topics
+              ? `Explica estos temas de la página actual: ${topics}`
+              : "Explica los conceptos principales de esta página",
+          );
+        }}
       />
 
       {error ? <p className="cn-immersive-error">{error}</p> : null}

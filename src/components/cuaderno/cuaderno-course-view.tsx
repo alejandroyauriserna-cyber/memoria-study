@@ -106,7 +106,7 @@ function CuadernoCourseViewInner({
 
   return (
     <motion.div
-      className="cuaderno-premium mx-auto max-w-6xl space-y-8 px-4 py-8 sm:px-6"
+      className="cuaderno-premium ms-notebook-shell cuaderno-shell cn-immersive-root--luxury mx-auto max-w-6xl space-y-8 px-4 py-8 sm:px-6"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.35 }}
@@ -126,16 +126,17 @@ function CuadernoCourseViewInner({
       </Link>
 
       <motion.div
-        className="cn-course-hero-panel flex flex-col gap-6 lg:flex-row lg:items-start"
+        className="cn-course-hero-panel cn-course-hero-panel--netflix"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.08, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
       >
-        <div className="mx-auto w-full max-w-[220px] shrink-0 space-y-3">
+        <div className="cn-course-hero-cover">
           <CuadernoNotebookCover
             href={`/cuaderno/curso/${courseId}`}
             title={courseName}
             coverArt={coverArt}
+            hero
             stats={
               folder
                 ? {
@@ -152,16 +153,39 @@ function CuadernoCourseViewInner({
             courseName={courseName}
             cycleLabel={cycleLabel}
             onGenerated={(cover) => setCover(courseId, cover)}
-            className="flex justify-center"
+            className="cn-course-hero-cover-gen"
           />
         </div>
-        <div className="flex-1">
+
+        <div className="cn-course-hero-meta">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#00FFD5]">{cycleLabel}</p>
+          <h2 className="cn-course-hero-title">{courseName}</h2>
+          {folder ? (
+            <div className="cn-course-hero-preview">
+              <p>
+                <strong>{folder.classCount}</strong> clases · <strong>{folder.pageCount}</strong> páginas
+              </p>
+              <p className="cn-course-hero-edited">
+                Última edición {folder.lastEditedAt ? new Date(folder.lastEditedAt).toLocaleDateString("es-PE") : "—"}
+              </p>
+            </div>
+          ) : null}
+          {typeof folder?.progress === "number" ? (
+            <div className="cn-course-hero-progress">
+              <div className="cn-course-hero-progress-head">
+                <span>Progreso del curso</span>
+                <strong>{folder.progress}%</strong>
+              </div>
+              <div className="cuaderno-progress cn-notebook-progress">
+                <span style={{ width: `${folder.progress}%` }} />
+              </div>
+            </div>
+          ) : null}
           <button
             type="button"
             disabled={creating}
             onClick={() => setPickerOpen(true)}
-            className="tron-btn-primary mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3.5 text-sm font-bold sm:w-auto"
+            className="tron-btn-primary mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3.5 text-sm font-bold sm:w-auto"
           >
             {creating ? (
               `Creando… ${createProgress.percent}%`
@@ -180,7 +204,7 @@ function CuadernoCourseViewInner({
       <div className="cn-shelf-label mt-4">
         <span>Hojas del curso</span>
       </div>
-      <div className="cn-course-sheets">
+      <div className="cn-course-sheets cn-course-sheets--netflix">
         {classes.length === 0 ? (
           <div className="col-span-full rounded-2xl border border-dashed border-white/15 py-16 text-center">
             <p className="text-[#F5F7FA]">Aún no hay hojas en este curso</p>

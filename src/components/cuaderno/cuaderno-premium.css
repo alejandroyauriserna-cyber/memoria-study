@@ -2311,6 +2311,7 @@
 
 /* Modo enfoque + pantalla completa */
 .cn-immersive-root--focus .cn-page-sidebar,
+.cn-immersive-root--focus .cn-page-timeline,
 .cn-immersive-root--focus .cn-paper-stage-chrome,
 .cn-immersive-root--focus .cn-immersive-zoom {
   opacity: 0;
@@ -2319,6 +2320,7 @@
 }
 
 .cn-immersive-root[data-layout="fullscreen"] .cn-page-sidebar,
+.cn-immersive-root[data-layout="fullscreen"] .cn-page-timeline,
 .cn-immersive-root[data-layout="fullscreen"] .cn-block-inspector,
 .cn-immersive-root[data-layout="fullscreen"] .cn-paper-stage-chrome {
   display: none;
@@ -2338,4 +2340,945 @@
 
 .cn-immersive-root .cn-editor-chrome {
   display: none;
+}
+
+/* —— Cuaderno premium UX (gate · timeline · Netflix · IA) —— */
+
+.cn-notebook-wrap--hero .cn-notebook-cover {
+  min-height: 420px;
+  max-width: 280px;
+  width: 100%;
+}
+
+.cn-notebook-wrap--hero .cn-notebook-icon {
+  font-size: 3rem;
+}
+
+.cn-notebook-wrap--hero .cn-notebook-title {
+  font-size: 1rem;
+  margin-top: 16px;
+}
+
+.cn-course-hero-panel--netflix {
+  display: grid;
+  gap: 28px;
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .cn-course-hero-panel--netflix {
+    grid-template-columns: minmax(220px, 280px) 1fr;
+  }
+}
+
+.cn-course-hero-cover {
+  position: relative;
+}
+
+.cn-course-hero-cover-gen {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.cn-course-hero-cover:hover .cn-course-hero-cover-gen,
+.cn-course-hero-cover-gen:focus-within {
+  opacity: 1;
+}
+
+.cn-course-hero-title {
+  margin-top: 8px;
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #f5f7fa;
+}
+
+.cn-course-hero-preview {
+  margin-top: 16px;
+  font-size: 0.9375rem;
+  color: rgba(245, 247, 250, 0.72);
+}
+
+.cn-course-hero-preview strong {
+  color: #fff;
+}
+
+.cn-course-hero-edited {
+  margin-top: 6px;
+  font-size: 0.8125rem;
+  color: rgba(245, 247, 250, 0.45);
+}
+
+.cn-course-hero-progress {
+  margin-top: 20px;
+  max-width: 360px;
+}
+
+.cn-course-hero-progress-head {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 0.75rem;
+  color: rgba(245, 247, 250, 0.55);
+}
+
+.cn-course-hero-progress-head strong {
+  color: var(--cn-course-accent, #00e5c3);
+}
+
+.cn-course-sheets--netflix {
+  display: flex;
+  gap: 18px;
+  overflow-x: auto;
+  padding-bottom: 12px;
+  scroll-snap-type: x mandatory;
+}
+
+.cn-course-sheets--netflix .cn-sheet-wrap {
+  flex: 0 0 min(200px, 42vw);
+  scroll-snap-align: start;
+}
+
+.cn-shelf-row--courses {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 16px;
+}
+
+.cn-shelf-row--courses .cn-notebook-wrap {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+}
+
+.cn-shelf-row--courses .cn-notebook-wrap--compact .cn-notebook-cover {
+  min-height: 260px;
+  max-width: 180px;
+}
+
+/* Notebook gate — cuaderno físico */
+.cn-immersive-root--gate .cn-immersive-main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.cn-notebook-gate {
+  display: grid;
+  gap: 0;
+  width: min(520px, 100%);
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 40px 100px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.cn-notebook-gate-cover {
+  position: relative;
+  min-height: 220px;
+  padding: 32px 28px 28px 36px;
+}
+
+.cn-notebook-gate-motifs {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 24px 20px 20px 32px;
+  opacity: 0.12;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #fff;
+}
+
+.cn-notebook-gate-icon {
+  font-size: 2.5rem;
+}
+
+.cn-notebook-gate-kicker {
+  margin-top: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.cn-notebook-gate-title {
+  margin-top: 6px;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.cn-notebook-gate-spine {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 12px;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.45), rgba(255, 255, 255, 0.06));
+}
+
+.cn-notebook-gate-body {
+  padding: 24px 28px 28px;
+  background: rgba(16, 20, 28, 0.92);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.cn-notebook-gate-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(0, 255, 213, 0.85);
+}
+
+.cn-notebook-gate-topic {
+  margin-top: 10px;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #f5f7fa;
+}
+
+.cn-notebook-gate-meta {
+  margin-top: 6px;
+  font-size: 0.8125rem;
+  color: rgba(245, 247, 250, 0.45);
+}
+
+.cn-notebook-gate-progress {
+  margin-top: 14px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.cn-notebook-gate-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--notebook-accent, #00e5c3), #2dd4bf);
+}
+
+.cn-notebook-gate-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  margin-top: 18px;
+  padding: 14px 18px;
+  border: none;
+  border-radius: 14px;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #0c0e12;
+  background: linear-gradient(135deg, #00ffd5, #2dd4bf);
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.cn-notebook-gate-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 32px rgba(0, 255, 213, 0.25);
+}
+
+/* Timeline académico */
+.cn-page-timeline {
+  width: 196px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--cn-border);
+  background: rgba(14, 18, 24, 0.72);
+  display: flex;
+  flex-direction: column;
+}
+
+.cn-page-timeline-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.cn-page-timeline-tree {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 8px 16px;
+}
+
+.cn-page-timeline-unit-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 6px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: rgba(245, 247, 250, 0.82);
+  cursor: pointer;
+  text-align: left;
+}
+
+.cn-page-timeline-unit-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.cn-page-timeline-pages {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 8px 10px;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  margin-left: 12px;
+  overflow: hidden;
+}
+
+.cn-page-timeline-pages li {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+}
+
+.cn-page-timeline-pages li.is-active .cn-page-timeline-page strong {
+  color: var(--cn-course-accent, #00e5c3);
+}
+
+.cn-page-timeline-page {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  padding: 6px 4px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.cn-page-timeline-page strong {
+  display: block;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: rgba(245, 247, 250, 0.88);
+}
+
+.cn-page-timeline-page small {
+  display: block;
+  margin-top: 2px;
+  font-size: 9px;
+  color: rgba(245, 247, 250, 0.38);
+}
+
+.cn-page-timeline-dot {
+  width: 7px;
+  height: 7px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+}
+
+.cn-page-timeline-pages li.is-active .cn-page-timeline-dot {
+  background: var(--cn-course-accent, #00e5c3);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--cn-course-accent, #00e5c3) 60%, transparent);
+}
+
+.cn-page-timeline-star {
+  display: inline-flex;
+  padding: 4px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+}
+
+.cn-page-timeline-star.is-on {
+  color: #fbbf24;
+}
+
+/* Conceptos flotantes */
+.cn-floating-concepts {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 12;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: min(240px, 40vw);
+  pointer-events: none;
+}
+
+.cn-floating-concept-card {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(12, 16, 22, 0.82);
+  backdrop-filter: blur(20px) saturate(1.4);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  text-align: left;
+  transition: transform 0.15s, border-color 0.15s;
+}
+
+.cn-floating-concept-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(0, 255, 213, 0.35);
+}
+
+.cn-floating-concept-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  background: rgba(0, 255, 213, 0.12);
+  color: #2dd4bf;
+  flex-shrink: 0;
+}
+
+.cn-floating-concept-card strong {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #f5f7fa;
+}
+
+.cn-floating-concept-card em {
+  display: block;
+  margin-top: 2px;
+  font-size: 10px;
+  font-style: normal;
+  color: rgba(245, 247, 250, 0.45);
+}
+
+.cn-floating-concept-expand {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(0, 255, 213, 0.75);
+  flex-shrink: 0;
+}
+
+.cn-immersive-paper-shell {
+  position: relative;
+}
+
+/* Menú selección Perplexity */
+.cn-selection-menu--perplexity {
+  flex-wrap: nowrap;
+  max-width: min(96vw, 640px);
+  overflow-x: auto;
+  padding: 8px;
+  border-radius: 999px;
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(8, 12, 18, 0.94);
+}
+
+.cn-selection-menu-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(245, 247, 250, 0.88);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.14s, color 0.14s;
+}
+
+.cn-selection-menu-btn:hover:not(:disabled) {
+  background: rgba(0, 255, 213, 0.14);
+  color: #00ffd5;
+}
+
+.cn-selection-menu-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Respuestas IA en tarjetas */
+.cn-ai-answer-cards {
+  display: grid;
+  gap: 12px;
+}
+
+.cn-ai-answer-card {
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.cn-ai-answer-card-title {
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.cn-ai-answer-card-divider {
+  height: 1px;
+  margin: 10px 0;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.12), transparent);
+}
+
+.cn-ai-answer-card-body {
+  font-size: 0.8125rem;
+  line-height: 1.65;
+  color: rgba(245, 247, 250, 0.78);
+  white-space: pre-wrap;
+}
+
+.cn-ai-professor-badge {
+  display: inline-flex;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #0c0e12;
+  background: linear-gradient(135deg, #00ffd5, #2dd4bf);
+}
+
+.cn-ai-tutor-block {
+  margin: 0 16px 16px;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(0, 255, 213, 0.18);
+  background: linear-gradient(145deg, rgba(0, 255, 213, 0.08), rgba(255, 255, 255, 0.02));
+}
+
+.cn-ai-tutor-lead {
+  font-size: 0.8125rem;
+  color: rgba(245, 247, 250, 0.72);
+}
+
+.cn-ai-tutor-topics {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+
+.cn-ai-tutor-topic {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #f5f7fa;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cn-ai-tutor-topic::before {
+  content: "• ";
+  color: var(--cn-course-accent, #00ffd5);
+}
+
+.cn-ai-tutor-cta {
+  width: 100%;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #0c0e12;
+  background: linear-gradient(135deg, #00ffd5, #14b8a6);
+  cursor: pointer;
+}
+
+/* Header limpio */
+.cn-immersive-header--clean {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto auto;
+  align-items: center;
+  gap: 12px;
+  height: auto;
+  min-height: 56px;
+  max-height: none;
+  padding: 10px 16px;
+}
+
+.cn-immersive-header-brand {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(0, 255, 213, 0.75);
+}
+
+.cn-immersive-header-status--dot {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  font-size: 0.6875rem;
+  color: rgba(245, 247, 250, 0.45);
+}
+
+.cn-immersive-header-status--dot span:first-child {
+  color: #34d399;
+  font-size: 8px;
+}
+
+.cn-immersive-header-divider {
+  width: 1px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.cn-immersive-header-primary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cn-immersive-header-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: rgba(245, 247, 250, 0.88);
+  cursor: pointer;
+  transition: background 0.14s, border-color 0.14s, color 0.14s;
+}
+
+.cn-immersive-header-cta:hover,
+.cn-immersive-header-cta.is-active {
+  border-color: rgba(0, 255, 213, 0.35);
+  background: rgba(0, 255, 213, 0.1);
+  color: #00ffd5;
+}
+
+.cn-immersive-header-cta--ai.is-active {
+  color: #00ffd5;
+}
+
+.cn-immersive-header-actions--overflow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cn-immersive-header--study .cn-immersive-header-actions--overflow,
+.cn-immersive-header--study .cn-immersive-header-divider {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+/* Modo estudio */
+.cn-immersive-root--study .cn-page-timeline,
+.cn-immersive-root--study .cn-float-toolbar-wrap,
+.cn-immersive-root--study .cn-side-rail,
+.cn-immersive-root--study .cn-immersive-zoom,
+.cn-immersive-root--study .cn-floating-concepts {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.cn-immersive-root--study .cn-immersive-header-primary .cn-immersive-header-cta:first-child {
+  border-color: rgba(0, 255, 213, 0.45);
+  background: rgba(0, 255, 213, 0.14);
+  color: #00ffd5;
+}
+
+@media (max-width: 860px) {
+  .cn-immersive-header--clean {
+    grid-template-columns: auto 1fr auto;
+    grid-template-rows: auto auto;
+  }
+
+  .cn-immersive-header-divider,
+  .cn-immersive-header-primary {
+    grid-column: 1 / -1;
+  }
+
+  .cn-immersive-header-divider {
+    display: none;
+  }
+
+  .cn-immersive-header-primary {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+}
+
+/* =====================================================
+   MEMORIASTUDY NOTEBOOK 2026 PREMIUM DESIGN SYSTEM
+   Scoped to cuaderno shells — no global bleed
+   ===================================================== */
+
+.cuaderno-premium.ms-notebook-shell,
+.ms-notebook-shell.cuaderno-shell:not(.cn-immersive-root) {
+  position: relative;
+  isolation: isolate;
+}
+
+/* ---------- Fondo cinematográfico (estantería / curso) ---------- */
+
+.cuaderno-premium.ms-notebook-shell::before,
+.ms-notebook-shell.cuaderno-shell:not(.cn-immersive-root)::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(circle at 10% 10%, rgba(0, 255, 213, 0.08), transparent 30%),
+    radial-gradient(circle at 90% 15%, rgba(0, 153, 255, 0.08), transparent 35%),
+    radial-gradient(circle at 50% 100%, rgba(139, 92, 246, 0.06), transparent 45%);
+}
+
+.cuaderno-premium.ms-notebook-shell > *,
+.ms-notebook-shell.cuaderno-shell:not(.cn-immersive-root) > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---------- Hoja premium ---------- */
+
+.ms-notebook-shell .cn-paper,
+.ms-notebook-shell .cn-immersive-paper-shell .cn-paper,
+.cuaderno-shell .notebook-page,
+.cuaderno-shell .page-canvas,
+.cuaderno-shell .editor-page,
+.cuaderno-shell .study-page {
+  position: relative;
+  border: none !important;
+  box-shadow:
+    0 80px 160px rgba(0, 0, 0, 0.55),
+    0 25px 60px rgba(0, 0, 0, 0.35),
+    0 0 60px rgba(0, 255, 213, 0.05);
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.ms-notebook-shell .cn-immersive-paper-shell:hover .cn-paper,
+.ms-notebook-shell .cn-paper:hover,
+.cuaderno-shell .notebook-page:hover,
+.cuaderno-shell .page-canvas:hover,
+.cuaderno-shell .editor-page:hover,
+.cuaderno-shell .study-page:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 90px 180px rgba(0, 0, 0, 0.6),
+    0 30px 70px rgba(0, 0, 0, 0.4),
+    0 0 80px rgba(0, 255, 213, 0.08);
+}
+
+/* ---------- Glass premium ---------- */
+
+.ms-notebook-shell .cn-page-sidebar,
+.ms-notebook-shell .cn-page-timeline,
+.ms-notebook-shell .cn-block-inspector,
+.ms-notebook-shell .cn-ai-sidebar,
+.ms-notebook-shell .cn-float-toolbar,
+.ms-notebook-shell .cn-immersive-header--studio,
+.cuaderno-shell .sidebar,
+.cuaderno-shell .inspector,
+.cuaderno-shell .ai-panel,
+.cuaderno-shell .notebook-toolbar,
+.cuaderno-shell .notebook-sidebar {
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  background:
+    linear-gradient(180deg, rgba(17, 24, 39, 0.72), rgba(8, 12, 18, 0.82)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.04) !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+}
+
+/* ---------- Glow IA ---------- */
+
+.ms-notebook-shell .cn-ai-sidebar,
+.cuaderno-shell .ai-panel {
+  position: relative;
+  overflow: visible;
+}
+
+.ms-notebook-shell .cn-ai-sidebar::after,
+.cuaderno-shell .ai-panel::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(0, 255, 213, 0.15),
+      rgba(0, 153, 255, 0.08),
+      rgba(139, 92, 246, 0.08)
+    );
+  opacity: 0.8;
+  pointer-events: none;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  z-index: 0;
+}
+
+.ms-notebook-shell .cn-ai-sidebar-head,
+.ms-notebook-shell .cn-ai-sidebar-scroll {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---------- Botones estilo Linear (scoped) ---------- */
+
+.ms-notebook-shell button:not(:disabled):not(.cn-immersive-header-icon):not(.cn-page-timeline-star):not(.cn-page-timeline-page):not(.cn-page-timeline-unit-btn):not(.cn-selection-menu-btn):not(.cn-float-tb-btn):not(.cn-float-tb-chip):not(.cn-float-tb-ai) {
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease;
+}
+
+.ms-notebook-shell button:not(:disabled):not(.cn-immersive-header-icon):not(.cn-page-timeline-star):not(.cn-page-timeline-page):not(.cn-page-timeline-unit-btn):not(.cn-selection-menu-btn):not(.cn-float-tb-btn):not(.cn-float-tb-chip):not(.cn-float-tb-ai):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 25px rgba(0, 255, 213, 0.12);
+}
+
+/* ---------- Tarjetas modernas ---------- */
+
+.ms-notebook-shell .cn-ai-answer-card,
+.ms-notebook-shell .cn-ai-block,
+.ms-notebook-shell .cn-notebook-gate,
+.ms-notebook-shell .cn-floating-concept-card,
+.ms-notebook-shell .cn-template-tile,
+.ms-notebook-shell .cuaderno-folder-card,
+.ms-notebook-shell .cuaderno-sheet-card,
+.cuaderno-shell .card,
+.cuaderno-shell .panel,
+.cuaderno-shell .widget {
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
+}
+
+/* ---------- Tipografía premium ---------- */
+
+.ms-notebook-shell h1 {
+  letter-spacing: -0.05em;
+}
+
+.ms-notebook-shell h2 {
+  letter-spacing: -0.04em;
+}
+
+.ms-notebook-shell h3 {
+  letter-spacing: -0.03em;
+}
+
+.ms-notebook-shell h1,
+.ms-notebook-shell h2,
+.ms-notebook-shell h3 {
+  font-weight: 800;
+}
+
+/* ---------- Scroll premium ---------- */
+
+.ms-notebook-shell ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.ms-notebook-shell ::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(0, 255, 213, 0.6), rgba(0, 153, 255, 0.4));
+}
+
+.ms-notebook-shell ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ---------- Profundidad visual ---------- */
+
+.ms-notebook-shell .cn-page-sidebar,
+.ms-notebook-shell .cn-page-timeline,
+.ms-notebook-shell .cn-ai-sidebar,
+.ms-notebook-shell .cn-block-inspector,
+.cuaderno-shell .notebook-sidebar,
+.cuaderno-shell .ai-panel,
+.cuaderno-shell .inspector {
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* ---------- Hover tarjetas ---------- */
+
+.ms-notebook-shell .cn-ai-answer-card:hover,
+.ms-notebook-shell .cn-floating-concept-card:hover,
+.ms-notebook-shell .cuaderno-folder-card:hover,
+.cuaderno-shell .card:hover,
+.cuaderno-shell .panel:hover,
+.cuaderno-shell .widget:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ms-notebook-shell .cn-paper,
+  .ms-notebook-shell .cn-immersive-paper-shell .cn-paper,
+  .ms-notebook-shell button:not(:disabled):hover,
+  .ms-notebook-shell .cn-ai-answer-card:hover,
+  .ms-notebook-shell .cn-floating-concept-card:hover,
+  .ms-notebook-shell .cuaderno-folder-card:hover {
+    transform: none;
+  }
 }

@@ -55,7 +55,7 @@ function CuadernoCollectionViewInner({
         : summaryItems.length;
 
   return (
-    <div className="cuaderno-premium mx-auto max-w-4xl px-4 py-8 sm:px-6">
+    <div className="cuaderno-premium ms-notebook-shell cuaderno-shell mx-auto max-w-4xl px-4 py-8 sm:px-6">
       <Link href="/cuaderno" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-[#00FFD5]">
         <ArrowLeft size={16} />
         Mis apuntes

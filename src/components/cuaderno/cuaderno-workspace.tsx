@@ -16,7 +16,7 @@ export function CuadernoWorkspace({ initialClasses }: { initialClasses: Cuaderno
 
   return (
     <CuadernoSyncProvider>
-    <div className="cuaderno-premium mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="cuaderno-premium ms-notebook-shell cuaderno-shell cn-immersive-root--luxury mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <header className="mb-10 text-center md:text-left">
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#00FFD5]">
           Cuaderno IA

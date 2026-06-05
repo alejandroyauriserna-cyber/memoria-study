@@ -11,7 +11,6 @@ import {
   MoreHorizontal,
   PanelRight,
   Settings2,
-  Sparkles,
   Star,
 } from "lucide-react";
 import { useLoadingProgress } from "@/hooks/use-loading-progress";
@@ -32,8 +31,11 @@ export function CuadernoImmersiveHeader({
   favorite,
   favoritePulse,
   aiOpen,
+  studyMode,
   onToggleFavorite,
   onToggleAi,
+  onToggleStudy,
+  onGenerateExam,
   layoutMode,
   onLayoutChange,
   pageSizeMode,
@@ -50,8 +52,11 @@ export function CuadernoImmersiveHeader({
   favorite: boolean;
   favoritePulse?: boolean;
   aiOpen: boolean;
+  studyMode?: boolean;
   onToggleFavorite: () => void;
   onToggleAi: () => void;
+  onToggleStudy?: () => void;
+  onGenerateExam?: () => void;
   layoutMode: CuadernoLayoutMode;
   onLayoutChange: (mode: CuadernoLayoutMode) => void;
   pageSizeMode: CuadernoPageSizeMode;
@@ -70,18 +75,16 @@ export function CuadernoImmersiveHeader({
   const viewRef = useRef<HTMLButtonElement>(null);
   const saveProgress = useLoadingProgress(saveState === "saving", "save");
 
-  const status =
-    saveState === "saving" ? (
-      <span className="cn-immersive-header-status">
-        Guardando {saveProgress.percent}%
-      </span>
-    ) : saveState === "saved" ? (
-      <span className="cn-immersive-header-status">Guardado</span>
-    ) : null;
+  const statusLabel =
+    saveState === "saving"
+      ? `Guardando ${saveProgress.percent}%`
+      : saveState === "saved"
+        ? "Guardado"
+        : "Listo";
 
   return (
     <header
-      className={`cn-immersive-header cn-immersive-header--studio${compact ? " cn-immersive-header--compact" : ""}`}
+      className={`cn-immersive-header cn-immersive-header--studio cn-immersive-header--clean${compact ? " cn-immersive-header--compact" : ""}${studyMode ? " cn-immersive-header--study" : ""}`}
     >
       <Link
         href={`/cuaderno/curso/${courseId}`}
@@ -92,11 +95,36 @@ export function CuadernoImmersiveHeader({
       </Link>
 
       <div className="cn-immersive-header-title-block">
+        <p className="cn-immersive-header-brand">MemoriaStudy</p>
         <h1 className="cn-immersive-header-course">{courseName}</h1>
-        {!compact && status}
+        <span className="cn-immersive-header-status cn-immersive-header-status--dot">
+          <span aria-hidden>●</span> {statusLabel}
+        </span>
       </div>
 
-      <div className="cn-immersive-header-actions">
+      <div className="cn-immersive-header-divider" aria-hidden />
+
+      <div className="cn-immersive-header-primary">
+        <button
+          type="button"
+          className={`cn-immersive-header-cta${studyMode ? " is-active" : ""}`}
+          onClick={onToggleStudy}
+        >
+          Estudiar
+        </button>
+        <button
+          type="button"
+          className={`cn-immersive-header-cta cn-immersive-header-cta--ai${aiOpen ? " is-active" : ""}`}
+          onClick={onToggleAi}
+        >
+          Preguntar IA
+        </button>
+        <button type="button" className="cn-immersive-header-cta" onClick={onGenerateExam}>
+          Examen
+        </button>
+      </div>
+
+      <div className="cn-immersive-header-actions cn-immersive-header-actions--overflow">
         <button
           type="button"
           className={`cn-immersive-header-stickers${stickersOpen ? " is-open" : ""}`}
@@ -104,17 +132,7 @@ export function CuadernoImmersiveHeader({
           title="Stickers, post-its y decoración"
         >
           <span aria-hidden>✨</span>
-          <span>Stickers</span>
         </button>
-        <button
-          type="button"
-          className={`cn-immersive-header-ai${aiOpen ? " is-open" : ""}`}
-          onClick={onToggleAi}
-        >
-          <Sparkles size={15} />
-          <span>IA Jurídica</span>
-        </button>
-
         <button
           type="button"
           className={`cn-immersive-header-icon${favorite ? " is-active" : ""}`}
@@ -130,15 +148,15 @@ export function CuadernoImmersiveHeader({
             <button
               ref={sheetRef}
               type="button"
-              className="cn-immersive-header-pill"
+              className="cn-immersive-header-icon"
+              title="Formato de hoja"
               onClick={() => {
                 setSheetMenuOpen((v) => !v);
                 setViewMenuOpen(false);
                 setMenuOpen(false);
               }}
             >
-              <FileText size={14} />
-              Formato de hoja
+              <FileText size={16} />
             </button>
             <CuadernoFloatingMenu
               open={sheetMenuOpen}
@@ -165,15 +183,15 @@ export function CuadernoImmersiveHeader({
             <button
               ref={viewRef}
               type="button"
-              className="cn-immersive-header-pill"
+              className="cn-immersive-header-icon"
+              title="Vista"
               onClick={() => {
                 setViewMenuOpen((v) => !v);
                 setSheetMenuOpen(false);
                 setMenuOpen(false);
               }}
             >
-              <LayoutGrid size={14} />
-              Vista
+              <LayoutGrid size={16} />
             </button>
             <CuadernoFloatingMenu
               open={viewMenuOpen}
@@ -254,15 +272,30 @@ export function CuadernoImmersiveHeader({
               ))}
             </>
           ) : null}
-          <FloatingMenuItem onClick={() => { onOpenStickers(); setMenuOpen(false); }}>
+          <FloatingMenuItem
+            onClick={() => {
+              onOpenStickers();
+              setMenuOpen(false);
+            }}
+          >
             <span className="inline mr-2">✨</span>
             Stickers y post-its
           </FloatingMenuItem>
-          <FloatingMenuItem onClick={() => { onOpenFormatPanel(); setMenuOpen(false); }}>
+          <FloatingMenuItem
+            onClick={() => {
+              onOpenFormatPanel();
+              setMenuOpen(false);
+            }}
+          >
             <PanelRight size={14} className="inline mr-2 opacity-70" />
             Panel de formato
           </FloatingMenuItem>
-          <FloatingMenuItem onClick={() => { onOpenPageSettings(); setMenuOpen(false); }}>
+          <FloatingMenuItem
+            onClick={() => {
+              onOpenPageSettings();
+              setMenuOpen(false);
+            }}
+          >
             <Settings2 size={14} className="inline mr-2 opacity-70" />
             Configuración de página
           </FloatingMenuItem>

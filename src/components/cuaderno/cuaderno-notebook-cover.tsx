@@ -19,18 +19,26 @@ export function CuadernoNotebookCover({
   coverArt,
   stats,
   compact = false,
+  hero = false,
 }: {
   href: string;
   title: string;
   coverArt: CourseCoverArt;
   stats?: NotebookCoverStats;
   compact?: boolean;
+  hero?: boolean;
 }) {
+  const wrapClass = hero
+    ? "cn-notebook-wrap cn-notebook-wrap--hero"
+    : compact
+      ? "cn-notebook-wrap cn-notebook-wrap--compact"
+      : "cn-notebook-wrap";
+
   return (
     <motion.div
       whileHover={{ y: -6, scale: 1.02 }}
       transition={{ type: "spring", stiffness: 320, damping: 24 }}
-      className={compact ? "cn-notebook-wrap cn-notebook-wrap--compact" : "cn-notebook-wrap"}
+      className={wrapClass}
     >
       <Link
         href={href}
