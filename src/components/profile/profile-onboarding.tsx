@@ -34,10 +34,37 @@ const STEPS = [
   },
 ];
 
-export function ProfileOnboarding() {
+export function ProfileOnboarding({ compact = false }: { compact?: boolean }) {
+  if (compact) {
+    return (
+      <div>
+        <p className="text-sm font-semibold text-foreground">Primera sesión</p>
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          Cuatro pasos para activar tu espacio de estudio.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {STEPS.map((step) => {
+            const Icon = step.icon;
+            return (
+              <Link
+                key={step.href}
+                href={step.href}
+                className="premium-dash__pill"
+              >
+                <Icon size={12} />
+                {step.label}
+                <ArrowRight size={11} />
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <section className="rounded-2xl border border-dashed border-[rgba(0,255,213,0.2)] bg-[rgba(0,255,213,0.04)] p-5">
-      <p className="text-sm font-semibold text-[#F5F7FA]">Empieza tu ruta en MemoriaStudy</p>
+    <section className="rounded-2xl border border-dashed border-[var(--pd-border-accent,var(--border))] bg-[var(--accent-soft)] p-5">
+      <p className="text-sm font-semibold text-foreground">Empieza tu ruta en MemoriaStudy</p>
       <p className="mt-1 text-xs text-muted-foreground">
         Completa estos pasos para desbloquear estadísticas, logros y recomendaciones personalizadas.
       </p>
@@ -48,13 +75,13 @@ export function ProfileOnboarding() {
             <Link
               key={step.href}
               href={step.href}
-              className="group flex items-start gap-3 rounded-xl border border-[rgba(0,255,213,0.12)] bg-[rgba(7,19,26,0.5)] p-4 transition hover:border-[rgba(0,255,213,0.28)]"
+              className="group flex items-start gap-3 rounded-xl border border-[var(--border)] bg-[color-mix(in_srgb,var(--background)_50%,transparent)] p-4 transition hover:border-[var(--pd-border-accent,var(--border))]"
             >
-              <Icon size={18} className="mt-0.5 shrink-0 text-[#00FFD5]" />
+              <Icon size={18} className="mt-0.5 shrink-0 text-[var(--accent)]" />
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-[#F5F7FA]">{step.title}</p>
+                <p className="text-sm font-semibold text-foreground">{step.title}</p>
                 <p className="mt-0.5 text-xs leading-5 text-muted-foreground">{step.description}</p>
-                <p className="mt-2 flex items-center gap-1 text-[11px] font-semibold text-[#00FFD5]">
+                <p className="mt-2 flex items-center gap-1 text-[11px] font-semibold text-[var(--accent)]">
                   {step.label}
                   <ArrowRight size={12} className="transition group-hover:translate-x-0.5" />
                 </p>

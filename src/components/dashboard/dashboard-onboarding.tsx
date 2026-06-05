@@ -15,19 +15,19 @@ export function DashboardOnboarding({ show }: { show: boolean }) {
   if (!show || dismissed) return null;
 
   return (
-    <div className="relative">
+    <div className="relative pr-8">
       <button
         type="button"
         onClick={() => {
           window.localStorage.setItem(DISMISS_KEY, "1");
           setDismissed(true);
         }}
-        className="absolute right-3 top-3 z-10 rounded-lg p-1 text-muted-foreground transition hover:text-[#F5F7FA]"
+        className="absolute right-0 top-0 rounded-lg p-1 text-muted-foreground transition hover:text-foreground"
         aria-label="Ocultar guía de inicio"
       >
         <X size={16} />
       </button>
-      <ProfileOnboarding />
+      <ProfileOnboarding compact />
     </div>
   );
 }

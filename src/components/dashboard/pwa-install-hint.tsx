@@ -34,9 +34,9 @@ export function PwaInstallHint() {
   if (isStandalone || dismissed || !deferredPrompt) return null;
 
   return (
-    <section className="ms-home-glass flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+    <section className="premium-dash__glass premium-dash__banner col-span-full flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <p className="text-sm font-semibold text-[#F5F7FA]">Instala MemoriaStudy en tu celular</p>
+        <p className="text-sm font-semibold text-foreground">Instala MemoriaStudy en tu celular</p>
         <p className="mt-1 text-xs text-muted-foreground">
           Acceso rápido desde la pantalla de inicio, como una app.
         </p>
@@ -48,7 +48,7 @@ export function PwaInstallHint() {
             await deferredPrompt.prompt();
             setDeferredPrompt(null);
           }}
-          className="tron-btn-primary inline-flex h-9 items-center gap-2 rounded-lg px-3 text-xs font-semibold"
+          className="premium-dash__cta-primary h-9 px-3 text-xs"
         >
           <Download size={14} />
           Instalar
@@ -59,7 +59,7 @@ export function PwaInstallHint() {
             window.localStorage.setItem(DISMISS_KEY, "1");
             setDismissed(true);
           }}
-          className="inline-flex h-9 items-center rounded-lg px-2 text-muted-foreground"
+          className="inline-flex h-9 items-center rounded-lg px-2 text-muted-foreground hover:text-foreground"
           aria-label="Ocultar aviso de instalación"
         >
           <X size={16} />
