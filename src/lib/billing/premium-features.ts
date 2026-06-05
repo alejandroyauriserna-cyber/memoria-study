@@ -1,7 +1,6 @@
 export type PremiumFeatureId =
   | "gemini-infographic"
   | "gemini-visual-map"
-  | "visual-atlas-prompt"
   | "gemini-ocr-scanned"
   | "ai-sticker-packs";
 
@@ -24,12 +23,6 @@ export const PREMIUM_FEATURES: Record<PremiumFeatureId, PremiumFeature> = {
     id: "gemini-visual-map",
     title: "Mapa mental con imágenes IA",
     description: "Nodos visuales generados por imagen para cada concepto del organizador.",
-    badge: "Pro",
-  },
-  "visual-atlas-prompt": {
-    id: "visual-atlas-prompt",
-    title: "Atlas jurídico premium",
-    description: "Prompts avanzados, rúbrica académica y personalización para infografías de maestría.",
     badge: "Pro",
   },
   "gemini-ocr-scanned": {

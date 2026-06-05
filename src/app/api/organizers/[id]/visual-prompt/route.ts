@@ -6,7 +6,6 @@ import type { VisualAcademicLevel, VisualCreativityLevel, VisualPromptMode } fro
 import { VISUAL_PROMPT_MODES } from "@/lib/organizers/visual-prompt-types";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { requirePremiumFeature } from "@/lib/billing/require-premium-api";
 import { env } from "@/lib/env";
 
 export const runtime = "nodejs";
@@ -49,9 +48,6 @@ function parseMode(value: FormDataEntryValue | null): VisualPromptMode {
 
 export async function POST(request: Request, context: RouteContext) {
   try {
-    const premiumBlock = requirePremiumFeature("visual-atlas-prompt");
-    if (premiumBlock) return premiumBlock;
-
     const { id } = await context.params;
 
     if (!env.supabaseUrl || !env.supabaseAnonKey) {
