@@ -10,7 +10,7 @@ import {
   Layers,
   Library,
 } from "lucide-react";
-import { getTimeGreeting } from "@/lib/home/greeting";
+import { useTimeGreeting } from "@/lib/home/use-time-greeting";
 
 type PersonalDashboardStripProps = {
   profileName: string;
@@ -33,7 +33,7 @@ export function PersonalDashboardStrip({
   studyStreakDays,
   pagesUnderstood,
 }: PersonalDashboardStripProps) {
-  const greeting = getTimeGreeting();
+  const greeting = useTimeGreeting();
   const firstName = profileName.split(/\s+/)[0] ?? profileName;
 
   const stats = [

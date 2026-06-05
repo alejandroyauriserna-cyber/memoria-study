@@ -5,6 +5,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { recordToCuadernoClass } from "@/lib/cuaderno/mapper";
 import { hasSupabaseEnv } from "@/lib/env";
+import { formatStudyHours } from "@/lib/profile/aggregate-learning-stats";
+import { estimateStudyMinutesFromServer } from "@/lib/profile/estimate-study-minutes";
+import { fetchServerLearningStats } from "@/lib/profile/server-learning-stats";
 import type { CuadernoClassRecord } from "@/types/cuaderno";
 
 export default async function CuadernoPage() {
@@ -38,17 +41,28 @@ export default async function CuadernoPage() {
   }
 
   const admin = createAdminClient();
-  const { data } = await admin
-    .from("cuaderno_classes")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("updated_at", { ascending: false });
+  const [{ data: profileData }, { data }, learningStats] = await Promise.all([
+    admin.from("user_profiles").select("full_name").eq("user_id", user.id).maybeSingle(),
+    admin
+      .from("cuaderno_classes")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("updated_at", { ascending: false }),
+    fetchServerLearningStats(user.id),
+  ]);
 
   const classes = (data ?? []).map((row) => recordToCuadernoClass(row as CuadernoClassRecord));
+  const profileName =
+    profileData?.full_name ?? (user.user_metadata?.full_name as string | undefined) ?? "Estudiante";
+  const studyHoursLabel = formatStudyHours(estimateStudyMinutesFromServer(learningStats));
 
   return (
     <AppShell>
-      <CuadernoWorkspace initialClasses={classes} />
+      <CuadernoWorkspace
+        initialClasses={classes}
+        profileName={profileName}
+        studyHoursLabel={studyHoursLabel}
+      />
     </AppShell>
   );
 }

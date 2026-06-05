@@ -555,6 +555,14 @@ textarea.ms-input {
   opacity: 0.28;
 }
 
+.shell--cuaderno .tron-bg-grid {
+  opacity: 0.6;
+}
+
+.shell--cuaderno .tron-bg-orb {
+  opacity: 0.72;
+}
+
 .shell--home .tron-bg-orb {
   opacity: 0.5;
 }

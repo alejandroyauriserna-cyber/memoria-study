@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { DashboardOnboarding } from "@/components/dashboard/dashboard-onboarding";
 import { PwaInstallHint } from "@/components/dashboard/pwa-install-hint";
-import { getTimeGreeting } from "@/lib/home/greeting";
+import { useTimeGreeting } from "@/lib/home/use-time-greeting";
 import { UNT_DERECHO } from "@/lib/academic/unt-derecho";
 import type {
   MemoriaDashboardProps,
@@ -71,7 +71,7 @@ export function PremiumDashboard({
   recentItems,
   suggestions,
 }: MemoriaDashboardProps) {
-  const greeting = getTimeGreeting();
+  const greeting = useTimeGreeting();
   const firstName = profileName.split(/\s+/)[0] ?? profileName;
   const focal = recentItems[0] ?? null;
   const insight = suggestions[0] ?? null;

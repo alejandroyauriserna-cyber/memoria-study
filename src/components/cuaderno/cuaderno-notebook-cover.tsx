@@ -18,28 +18,52 @@ export function CuadernoNotebookCover({
   title,
   coverArt,
   stats,
-  compact = false,
-  hero = false,
+  courseLabel,
+  pinned = false,
+  variant = "default",
+  compact,
+  hero,
 }: {
   href: string;
   title: string;
   coverArt: CourseCoverArt;
   stats?: NotebookCoverStats;
+  courseLabel?: string;
+  pinned?: boolean;
+  variant?: "default" | "compact" | "hero" | "shelf";
+  /** @deprecated use variant="compact" */
   compact?: boolean;
+  /** @deprecated use variant="hero" */
   hero?: boolean;
 }) {
-  const wrapClass = hero
-    ? "cn-notebook-wrap cn-notebook-wrap--hero"
-    : compact
-      ? "cn-notebook-wrap cn-notebook-wrap--compact"
-      : "cn-notebook-wrap";
+  const resolvedVariant = hero ? "hero" : compact ? "compact" : variant;
+  const wrapClass =
+    resolvedVariant === "hero"
+      ? "cn-notebook-wrap cn-notebook-wrap--hero"
+      : resolvedVariant === "compact"
+        ? "cn-notebook-wrap cn-notebook-wrap--compact"
+        : resolvedVariant === "shelf"
+          ? "cn-notebook-wrap cn-notebook-wrap--shelf"
+          : "cn-notebook-wrap";
+
+  const hoverProps =
+    resolvedVariant === "shelf"
+      ? {
+          whileHover: {
+            y: -14,
+            rotateY: -8,
+            rotateX: 2,
+            scale: 1.02,
+            transition: { type: "spring" as const, stiffness: 280, damping: 22 },
+          },
+        }
+      : {
+          whileHover: { y: -6, scale: 1.02 },
+          transition: { type: "spring" as const, stiffness: 320, damping: 24 },
+        };
 
   return (
-    <motion.div
-      whileHover={{ y: -6, scale: 1.02 }}
-      transition={{ type: "spring", stiffness: 320, damping: 24 }}
-      className={wrapClass}
-    >
+    <motion.div {...hoverProps} className={wrapClass} style={{ transformStyle: "preserve-3d" }}>
       <Link
         href={href}
         className="cn-notebook-cover block"
@@ -50,8 +74,10 @@ export function CuadernoNotebookCover({
           } as React.CSSProperties
         }
       >
+        {pinned ? <span className="cn-notebook-pin" aria-label="Con favoritos" /> : null}
+
         <div className="cn-notebook-motifs" aria-hidden>
-          {coverArt.motifs.map((word) => (
+          {coverArt.motifs.slice(0, 3).map((word) => (
             <span key={word}>{word}</span>
           ))}
         </div>
@@ -59,11 +85,28 @@ export function CuadernoNotebookCover({
         <div className="cn-notebook-body">
           <span className="cn-notebook-icon">{coverArt.icon}</span>
           <h3 className="cn-notebook-title">{title}</h3>
-          {coverArt.subtitle ? (
+          {resolvedVariant !== "shelf" && coverArt.subtitle ? (
             <p className="cn-notebook-subtitle">{coverArt.subtitle}</p>
           ) : null}
+          {resolvedVariant === "shelf" && courseLabel ? (
+            <p className="cn-notebook-course">{courseLabel}</p>
+          ) : null}
 
-          {stats ? (
+          {stats && resolvedVariant === "shelf" ? (
+            <div className="cn-notebook-meta-shelf">
+              <div className="cn-notebook-progress-row">
+                <span>{typeof stats.progress === "number" ? stats.progress : 0}%</span>
+                <div className="cuaderno-progress cn-notebook-progress">
+                  <span style={{ width: `${stats.progress ?? 0}%` }} />
+                </div>
+              </div>
+              <p className="cn-notebook-edited-shelf">
+                {formatCuadernoRelativeTime(stats.lastEditedAt)}
+              </p>
+            </div>
+          ) : null}
+
+          {stats && resolvedVariant !== "shelf" ? (
             <div className="cn-notebook-stats">
               <p>
                 <strong>{stats.classCount}</strong> clases
@@ -84,6 +127,7 @@ export function CuadernoNotebookCover({
           ) : null}
         </div>
 
+        {resolvedVariant === "shelf" ? <div className="cn-notebook-edge" aria-hidden /> : null}
         <div className="cn-notebook-spine" aria-hidden />
       </Link>
     </motion.div>

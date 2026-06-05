@@ -27,10 +27,11 @@ function navIsActive(pathname: string, href: string): boolean {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isHome = pathname === "/";
+  const isCuaderno = pathname === "/cuaderno" || pathname.startsWith("/cuaderno/");
 
   return (
     <div
-      className={`relative flex min-h-[100dvh] flex-col text-foreground${isHome ? " shell--home" : ""}`}
+      className={`relative flex min-h-[100dvh] flex-col text-foreground${isHome ? " shell--home" : ""}${isCuaderno ? " shell--cuaderno" : ""}`}
     >
       <AppThemeProvider />
       <a

@@ -15,7 +15,7 @@ import {
 import { AppShell } from "@/components/ui/shell";
 import { DashboardOnboarding } from "@/components/dashboard/dashboard-onboarding";
 import { LegalAiHero } from "@/components/home/legal-ai-hero";
-import { getTimeGreeting } from "@/lib/home/greeting";
+import { TimeGreetingText } from "@/components/home/time-greeting-text";
 import { loadMemoriaDashboardProps } from "@/lib/home/load-dashboard-props";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/env";
@@ -64,7 +64,6 @@ export default async function Home() {
 
   const isAuthenticated = Boolean(dashboardProps);
   const firstName = dashboardProps?.profileName.split(/\s+/)[0] ?? "Estudiante";
-  const greeting = getTimeGreeting();
   const focal = dashboardProps?.recentItems[0] ?? null;
   const sessionTitle = focal?.title ?? "Derecho Constitucional";
   const sessionSubtitle = focal?.subtitle ?? "Tu proxima sesion de estudio";
@@ -86,9 +85,14 @@ export default async function Home() {
           <div className="ms-home-landing-copy">
             <p className="ms-home-kicker">
               <Sparkles size={14} />
-              {isAuthenticated
-                ? `${greeting}, ${firstName} · ${dashboardProps?.currentCycle ?? UNT_DERECHO.career}`
-                : `${UNT_DERECHO.university} / ${UNT_DERECHO.career}`}
+              {isAuthenticated ? (
+                <TimeGreetingText
+                  name={firstName}
+                  suffix={dashboardProps?.currentCycle ?? UNT_DERECHO.career}
+                />
+              ) : (
+                `${UNT_DERECHO.university} / ${UNT_DERECHO.career}`
+              )}
             </p>
             <h1>Tu estudio juridico, convertido en un sistema inteligente.</h1>
             <p className="ms-home-lead">
