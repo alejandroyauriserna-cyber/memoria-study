@@ -5,9 +5,10 @@ import { fetchServerLearningStats } from "@/lib/profile/server-learning-stats";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/env";
-import type {
-  ProfileStudySettings,
-  ProfileTheme,
+import {
+  isValidProfileTheme,
+  type ProfileStudySettings,
+  type ProfileTheme,
 } from "@/lib/profile/study-preferences-storage";
 
 function aggregateCourseCounts(
@@ -99,10 +100,9 @@ export default async function ProfilePage() {
               typeof academicContext.studyPreferences === "object"
                 ? (academicContext.studyPreferences as ProfileStudySettings["preferences"])
                 : undefined,
-            theme:
-              typeof academicContext.theme === "string"
-                ? (academicContext.theme as ProfileTheme)
-                : undefined,
+            theme: isValidProfileTheme(academicContext.theme)
+              ? academicContext.theme
+              : undefined,
           }}
         />
       </section>

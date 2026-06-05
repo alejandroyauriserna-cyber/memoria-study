@@ -2,15 +2,24 @@
 
 import { Moon, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
-import { applyDarkMode, readDarkModePreference } from "@/lib/theme/app-theme";
+import {
+  APP_THEME_CHANGE_EVENT,
+  applyDarkMode,
+  readDarkModePreference,
+} from "@/lib/theme/app-theme";
 
 export function ThemeToggle() {
   const [dark, setDark] = useState(true);
 
   useEffect(() => {
-    const preferred = readDarkModePreference();
-    setDark(preferred);
-    applyDarkMode(preferred);
+    setDark(readDarkModePreference());
+
+    function onThemeChange() {
+      setDark(readDarkModePreference());
+    }
+
+    window.addEventListener(APP_THEME_CHANGE_EVENT, onThemeChange);
+    return () => window.removeEventListener(APP_THEME_CHANGE_EVENT, onThemeChange);
   }, []);
 
   function toggleTheme() {

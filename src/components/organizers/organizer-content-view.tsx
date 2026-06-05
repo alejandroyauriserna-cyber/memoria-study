@@ -114,6 +114,10 @@ export function OrganizerContentView({
 
   const mapKey = `${analyticsKey}-concept-map`;
 
+  const handlePanelSelect = useCallback((id: StudioPanelId) => {
+    setActivePanel((current) => (current === id ? null : id));
+  }, []);
+
   if (studio && hasConceptMap) {
     return (
       <div className="relative flex h-full min-h-0 flex-1 flex-col">
@@ -126,7 +130,7 @@ export function OrganizerContentView({
           onConceptStudied={handleConceptStudied}
         />
 
-        <OrganizerStudioDock active={activePanel} onSelect={setActivePanel} />
+        <OrganizerStudioDock active={activePanel} onSelect={handlePanelSelect} />
 
         <OrganizerFloatSheet
           open={activePanel === "summary"}

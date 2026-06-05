@@ -6,6 +6,14 @@ import { Sparkles, X } from "lucide-react";
 import { LoadingState } from "@/components/ui/loading-state";
 import { useLoadingProgress } from "@/hooks/use-loading-progress";
 import { generateGeminiText } from "@/lib/ai/gemini-text";
+import {
+  getPremiumFeature,
+  isPremiumFeatureAvailable,
+} from "@/lib/billing/premium-features";
+import { PremiumGateCard } from "@/components/ui/premium-gate-card";
+import { PremiumGateDismissed } from "@/components/ui/premium-gate-dismissed";
+
+const STICKER_FEATURE = getPremiumFeature("ai-sticker-packs");
 
 const SUGGESTIONS = [
   "Un sticker kawaii de una balanza de justicia",
@@ -31,10 +39,13 @@ export function CuadernoStickerDesigner({
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState<{ src: string; label: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [gateDismissed, setGateDismissed] = useState(false);
   const stickerProgress = useLoadingProgress(loading, "sticker");
+  const stickerProAvailable = isPremiumFeatureAvailable("ai-sticker-packs");
 
   useEffect(() => {
     if (open && initialPrompt) setPrompt(initialPrompt);
+    if (open) setGateDismissed(false);
   }, [open, initialPrompt]);
 
   async function generateImage(userPrompt: string) {
@@ -115,6 +126,23 @@ Responde en 2 frases: 1) idea visual del sticker 2) prompt corto en inglés para
               </button>
             </header>
 
+            {!stickerProAvailable ? (
+              <div className="p-4">
+                {gateDismissed ? (
+                  <PremiumGateDismissed
+                    featureTitle={STICKER_FEATURE.title}
+                    onShowAgain={() => setGateDismissed(false)}
+                  />
+                ) : (
+                  <PremiumGateCard
+                    feature={STICKER_FEATURE}
+                    compact
+                    onDismiss={() => setGateDismissed(true)}
+                  />
+                )}
+              </div>
+            ) : (
+              <>
             <div className="cn-sticker-designer-chat">
               {chat.length === 0 ? (
                 <p className="cn-sticker-designer-hint">
@@ -188,6 +216,8 @@ Responde en 2 frases: 1) idea visual del sticker 2) prompt corto en inglés para
                 )}
               </button>
             </footer>
+              </>
+            )}
           </motion.div>
         </>
       ) : null}

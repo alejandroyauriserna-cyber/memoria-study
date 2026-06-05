@@ -1,6 +1,16 @@
 export type StudyPreferenceKey = "conceptMaps" | "flashcards" | "exams" | "practicalCases";
 
-export type ProfileTheme = "cyan" | "ocean" | "amber" | "violet";
+export type ProfileTheme =
+  | "cyan"
+  | "ocean"
+  | "amber"
+  | "violet"
+  | "emerald"
+  | "rose"
+  | "mint"
+  | "coral"
+  | "indigo"
+  | "lime";
 
 export type StudyPreferences = Record<StudyPreferenceKey, boolean>;
 
@@ -54,7 +64,47 @@ export const PROFILE_THEMES: Record<
     glow: "rgba(167,139,250,0.35)",
     gradient: "from-[#A78BFA] to-[#6366F1]",
   },
+  emerald: {
+    label: "Esmeralda",
+    accent: "#34D399",
+    glow: "rgba(52,211,153,0.35)",
+    gradient: "from-[#34D399] to-[#10B981]",
+  },
+  rose: {
+    label: "Rosa",
+    accent: "#FB7185",
+    glow: "rgba(251,113,133,0.35)",
+    gradient: "from-[#FB7185] to-[#F43F5E]",
+  },
+  mint: {
+    label: "Menta",
+    accent: "#5EEAD4",
+    glow: "rgba(94,234,212,0.35)",
+    gradient: "from-[#5EEAD4] to-[#2DD4BF]",
+  },
+  coral: {
+    label: "Coral",
+    accent: "#FF7F6E",
+    glow: "rgba(255,127,110,0.35)",
+    gradient: "from-[#FF7F6E] to-[#FF5C5C]",
+  },
+  indigo: {
+    label: "Índigo",
+    accent: "#818CF8",
+    glow: "rgba(129,140,248,0.35)",
+    gradient: "from-[#818CF8] to-[#6366F1]",
+  },
+  lime: {
+    label: "Lima",
+    accent: "#A3E635",
+    glow: "rgba(163,230,53,0.35)",
+    gradient: "from-[#A3E635] to-[#84CC16]",
+  },
 };
+
+export function isValidProfileTheme(value: unknown): value is ProfileTheme {
+  return typeof value === "string" && value in PROFILE_THEMES;
+}
 
 export function loadProfileStudySettings(): ProfileStudySettings {
   if (typeof window === "undefined") {
@@ -68,7 +118,7 @@ export function loadProfileStudySettings(): ProfileStudySettings {
     const parsed = JSON.parse(raw) as Partial<ProfileStudySettings>;
     return {
       preferences: { ...DEFAULT_PREFERENCES, ...parsed.preferences },
-      theme: parsed.theme ?? "cyan",
+      theme: isValidProfileTheme(parsed.theme) ? parsed.theme : "cyan",
       goals: parsed.goals ?? [],
     };
   } catch {

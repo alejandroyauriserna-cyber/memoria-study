@@ -18,10 +18,115 @@
   --glow: rgba(0, 255, 213, 0.35);
   --glow-strong: rgba(0, 255, 213, 0.55);
   --shadow: 0 0 40px rgba(0, 255, 213, 0.08), 0 24px 80px rgba(0, 0, 0, 0.45);
+  --shell-header-bg: rgba(7, 19, 26, 0.85);
+  --shell-card-bg: rgba(16, 39, 48, 0.5);
+  --shell-dock-bg: rgba(16, 39, 48, 0.92);
   --radius: 16px;
   --radius-sm: 10px;
   --font-sans: "Segoe UI", Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
   color-scheme: dark;
+}
+
+html:not(.dark) {
+  --background: #eef4f8;
+  --surface: #ffffff;
+  --surface-strong: #e8f0f5;
+  --foreground: #0f172a;
+  --muted: #e2e8f0;
+  --muted-foreground: rgba(15, 23, 42, 0.62);
+  --border: color-mix(in srgb, var(--accent) 24%, transparent);
+  --card: #ffffff;
+  --accent-foreground: #ffffff;
+  --accent-soft: color-mix(in srgb, var(--accent) 12%, transparent);
+  --glow: color-mix(in srgb, var(--accent) 28%, transparent);
+  --glow-strong: color-mix(in srgb, var(--accent) 42%, transparent);
+  --shadow: 0 8px 32px rgba(15, 23, 42, 0.08), 0 2px 8px rgba(15, 23, 42, 0.04);
+  --shell-header-bg: rgba(255, 255, 255, 0.9);
+  --shell-card-bg: rgba(255, 255, 255, 0.75);
+  --shell-dock-bg: rgba(255, 255, 255, 0.94);
+  color-scheme: light;
+}
+
+html[data-profile-theme="ocean"] {
+  --accent: #00bfff;
+  --accent-secondary: #6366f1;
+  --border: rgba(0, 191, 255, 0.15);
+  --accent-soft: rgba(0, 191, 255, 0.1);
+  --glow: rgba(0, 191, 255, 0.35);
+  --glow-strong: rgba(0, 191, 255, 0.55);
+}
+
+html[data-profile-theme="amber"] {
+  --accent: #ff8a00;
+  --accent-secondary: #ff5c00;
+  --border: rgba(255, 138, 0, 0.18);
+  --accent-soft: rgba(255, 138, 0, 0.1);
+  --glow: rgba(255, 138, 0, 0.35);
+  --glow-strong: rgba(255, 138, 0, 0.55);
+}
+
+html[data-profile-theme="violet"] {
+  --accent: #a78bfa;
+  --accent-secondary: #6366f1;
+  --border: rgba(167, 139, 250, 0.18);
+  --accent-soft: rgba(167, 139, 250, 0.1);
+  --glow: rgba(167, 139, 250, 0.35);
+  --glow-strong: rgba(167, 139, 250, 0.55);
+}
+
+html[data-profile-theme="emerald"] {
+  --accent: #34d399;
+  --accent-secondary: #10b981;
+  --border: rgba(52, 211, 153, 0.18);
+  --accent-soft: rgba(52, 211, 153, 0.1);
+  --glow: rgba(52, 211, 153, 0.35);
+  --glow-strong: rgba(52, 211, 153, 0.55);
+}
+
+html[data-profile-theme="rose"] {
+  --accent: #fb7185;
+  --accent-secondary: #f43f5e;
+  --border: rgba(251, 113, 133, 0.18);
+  --accent-soft: rgba(251, 113, 133, 0.1);
+  --glow: rgba(251, 113, 133, 0.35);
+  --glow-strong: rgba(251, 113, 133, 0.55);
+}
+
+html[data-profile-theme="mint"] {
+  --accent: #5eead4;
+  --accent-secondary: #2dd4bf;
+  --border: rgba(94, 234, 212, 0.18);
+  --accent-soft: rgba(94, 234, 212, 0.1);
+  --glow: rgba(94, 234, 212, 0.35);
+  --glow-strong: rgba(94, 234, 212, 0.55);
+}
+
+html[data-profile-theme="coral"] {
+  --accent: #ff7f6e;
+  --accent-secondary: #ff5c5c;
+  --border: rgba(255, 127, 110, 0.18);
+  --accent-soft: rgba(255, 127, 110, 0.1);
+  --glow: rgba(255, 127, 110, 0.35);
+  --glow-strong: rgba(255, 127, 110, 0.55);
+}
+
+html[data-profile-theme="indigo"] {
+  --accent: #818cf8;
+  --accent-secondary: #6366f1;
+  --border: rgba(129, 140, 248, 0.18);
+  --accent-soft: rgba(129, 140, 248, 0.1);
+  --glow: rgba(129, 140, 248, 0.35);
+  --glow-strong: rgba(129, 140, 248, 0.55);
+}
+
+html[data-profile-theme="lime"] {
+  --accent: #a3e635;
+  --accent-secondary: #84cc16;
+  --accent-foreground: #1a2e05;
+  --border: rgba(163, 230, 53, 0.22);
+  --accent-soft: rgba(163, 230, 53, 0.12);
+  --glow: rgba(163, 230, 53, 0.35);
+  --glow-strong: rgba(163, 230, 53, 0.55);
 }
 
 @theme inline {
@@ -38,9 +143,16 @@
 }
 
 html {
-  color-scheme: dark;
   overflow-y: scroll;
   scroll-behavior: smooth;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+html:not(.dark) {
+  color-scheme: light;
 }
 
 body {
@@ -78,10 +190,31 @@ select {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse 90% 60% at 15% -5%, rgba(0, 255, 213, 0.14), transparent 55%),
-    radial-gradient(ellipse 70% 50% at 85% 10%, rgba(0, 191, 255, 0.12), transparent 50%),
+    radial-gradient(ellipse 90% 60% at 15% -5%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 55%),
+    radial-gradient(ellipse 70% 50% at 85% 10%, color-mix(in srgb, var(--accent-secondary) 12%, transparent), transparent 50%),
     radial-gradient(ellipse 60% 45% at 50% 100%, rgba(255, 138, 0, 0.06), transparent 55%),
-    linear-gradient(180deg, #07131a 0%, #0a1820 50%, #07131a 100%);
+    linear-gradient(180deg, var(--background) 0%, var(--surface) 50%, var(--background) 100%);
+}
+
+html:not(.dark) .tron-bg-mesh {
+  background:
+    radial-gradient(ellipse 90% 60% at 15% -5%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 55%),
+    radial-gradient(ellipse 70% 50% at 85% 10%, color-mix(in srgb, var(--accent-secondary) 12%, transparent), transparent 50%),
+    linear-gradient(180deg, var(--background) 0%, #f8fbfd 50%, var(--background) 100%);
+}
+
+html:not(.dark) .tron-bg-grid {
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--accent) 8%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--accent) 8%, transparent) 1px, transparent 1px);
+}
+
+html:not(.dark) .tron-bg-orb-a {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+html:not(.dark) .tron-bg-orb-b {
+  background: color-mix(in srgb, var(--accent-secondary) 8%, transparent);
 }
 
 .tron-bg-grid {
@@ -162,16 +295,28 @@ select {
 .organizer-glass {
   position: relative;
   border-radius: var(--radius);
-  background: rgba(16, 39, 48, 0.72);
+  background: color-mix(in srgb, var(--card) 72%, transparent);
   border: 1px solid var(--border);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28);
+  box-shadow: var(--shadow);
   backdrop-filter: blur(12px);
+}
+
+html:not(.dark) .ms-panel,
+html:not(.dark) .tron-panel,
+html:not(.dark) .glass-card,
+html:not(.dark) .organizer-glass {
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 8px 32px rgba(15, 23, 42, 0.08);
 }
 
 .ms-stat-card {
   border-radius: var(--radius-sm);
-  background: rgba(7, 19, 26, 0.55);
-  border: 1px solid rgba(0, 255, 213, 0.1);
+  background: color-mix(in srgb, var(--background) 55%, transparent);
+  border: 1px solid var(--border);
+}
+
+html:not(.dark) .ms-stat-card {
+  background: rgba(255, 255, 255, 0.7);
 }
 
 .ms-input {
@@ -179,8 +324,8 @@ select {
   width: 100%;
   height: 2.75rem;
   border-radius: var(--radius-sm);
-  border: 1px solid rgba(0, 255, 213, 0.18);
-  background: rgba(7, 19, 26, 0.65);
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--background) 65%, transparent);
   padding: 0 0.875rem;
   font-size: 0.875rem;
   color: var(--foreground);
@@ -189,8 +334,8 @@ select {
 }
 
 .ms-input:focus {
-  border-color: rgba(0, 255, 213, 0.4);
-  box-shadow: 0 0 0 3px rgba(0, 255, 213, 0.08);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
 textarea.ms-input {
@@ -202,8 +347,8 @@ textarea.ms-input {
 
 .tron-capsule {
   position: relative;
-  background: linear-gradient(160deg, rgba(16, 39, 48, 0.95), rgba(7, 19, 26, 0.9));
-  border: 1px solid rgba(0, 255, 213, 0.2);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--card) 95%, transparent), color-mix(in srgb, var(--background) 90%, transparent));
+  border: 1px solid var(--border);
   box-shadow:
     0 0 0 1px rgba(0, 255, 213, 0.05),
     0 16px 48px rgba(0, 0, 0, 0.4),
@@ -244,12 +389,12 @@ textarea.ms-input {
 .tron-nav-link:hover,
 .tron-nav-link[data-active="true"] {
   color: var(--accent);
-  background: rgba(0, 255, 213, 0.08);
+  background: var(--accent-soft);
 }
 
 /* ——— Buttons ——— */
 .tron-btn-primary {
-  background: linear-gradient(135deg, rgba(0, 255, 213, 0.95), rgba(0, 191, 255, 0.85));
+  background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
   color: var(--accent-foreground);
   border: 1px solid rgba(0, 255, 213, 0.5);
   box-shadow: 0 0 24px var(--glow), inset 0 1px 0 rgba(255, 255, 255, 0.25);
@@ -262,7 +407,7 @@ textarea.ms-input {
 }
 
 .tron-btn-secondary {
-  background: rgba(16, 39, 48, 0.8);
+  background: color-mix(in srgb, var(--card) 80%, transparent);
   color: var(--foreground);
   border: 1px solid var(--border);
   box-shadow: inset 0 0 20px rgba(0, 255, 213, 0.04);
@@ -283,7 +428,7 @@ textarea.ms-input {
 
 .tron-btn-ghost:hover:not(:disabled) {
   color: var(--accent);
-  background: rgba(0, 255, 213, 0.06);
+  background: var(--accent-soft);
 }
 
 /* ——— Organizers / study map ——— */

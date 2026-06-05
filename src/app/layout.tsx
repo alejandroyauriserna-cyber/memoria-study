@@ -46,14 +46,21 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
+const themeBootstrapScript = `(function(){try{var t=localStorage.getItem("memoria-theme");var d=t==="light"?false:t==="dark"?true:window.matchMedia("(prefers-color-scheme: dark)").matches;document.documentElement.classList.toggle("dark",d);var s=localStorage.getItem("memoria-profile-study-settings");if(s){var p=JSON.parse(s);if(p&&p.theme)document.documentElement.dataset.profileTheme=p.theme;}}catch(e){}})();`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className="h-full antialiased dark">
-      <body className="flex min-h-full flex-col bg-background text-foreground">{children}</body>
+    <html lang="es" className="h-full antialiased dark" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
+      </head>
+      <body className="flex min-h-full flex-col bg-background text-foreground">
+        {children}
+      </body>
     </html>
   );
 }

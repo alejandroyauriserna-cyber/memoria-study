@@ -50,7 +50,7 @@ import {
   type StudyPreferenceKey,
 } from "@/lib/profile/study-preferences-storage";
 import type { ServerLearningStats } from "@/lib/profile/server-learning-stats";
-import { applyDarkMode, readDarkModePreference } from "@/lib/theme/app-theme";
+import { applyProfileTheme } from "@/lib/theme/app-theme";
 
 type CourseStudyCount = { courseName: string; count: number };
 
@@ -125,12 +125,8 @@ export function LearningHub({
   }, [organizersCount, serverStats]);
 
   useEffect(() => {
-    applyDarkMode(readDarkModePreference());
-  }, []);
-
-  useEffect(() => {
     saveProfileStudySettings(settings);
-    document.documentElement.dataset.profileTheme = settings.theme;
+    applyProfileTheme(settings.theme);
 
     const timer = window.setTimeout(() => {
       fetch("/api/profile", {
@@ -180,6 +176,7 @@ export function LearningHub({
 
   function setTheme(themeKey: ProfileTheme) {
     setSettings((s) => ({ ...s, theme: themeKey }));
+    applyProfileTheme(themeKey);
   }
 
   function addGoal() {
@@ -622,10 +619,7 @@ export function LearningHub({
               <button
                 key={key}
                 type="button"
-                onClick={() => {
-                  setTheme(key);
-                  applyDarkMode(readDarkModePreference());
-                }}
+                onClick={() => setTheme(key)}
                 className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold transition ${
                   selected ? "border-[rgba(0,255,213,0.4)] bg-[rgba(0,255,213,0.1)]" : "border-[rgba(0,255,213,0.12)]"
                 }`}

@@ -40,7 +40,7 @@ export function OrganizerStudioDock({
 }) {
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-4 z-30 flex justify-center px-4">
-      <div className="pointer-events-auto flex flex-wrap items-center justify-center gap-2 rounded-2xl border border-[rgba(0,255,213,0.2)] bg-[rgba(16,39,48,0.92)] p-2 shadow-[0_0_32px_rgba(0,255,213,0.15)] backdrop-blur-xl">
+      <div className="pointer-events-auto flex flex-wrap items-center justify-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--shell-dock-bg)] p-2 shadow-[0_0_32px_var(--glow)] backdrop-blur-xl">
         {items.map((item) => {
           const Icon = item.icon;
           const selected = active === item.id;
@@ -51,8 +51,8 @@ export function OrganizerStudioDock({
               onClick={() => onSelect(selected ? null : item.id)}
               className={`flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition ${
                 selected
-                  ? "bg-[rgba(0,255,213,0.18)] text-[#00FFD5]"
-                  : "text-muted-foreground hover:bg-[rgba(0,255,213,0.08)] hover:text-[#F5F7FA]"
+                  ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                  : "text-muted-foreground hover:bg-[var(--accent-soft)] hover:text-foreground"
               }`}
             >
               <Icon size={14} />

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { generateGeminiImage, quotaHint } from "@/lib/ai/gemini-image-generation";
+import { requirePremiumFeature } from "@/lib/billing/require-premium-api";
 import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: Request) {
@@ -11,6 +12,9 @@ export async function POST(request: Request) {
     if (!user) {
       return NextResponse.json({ error: "No autenticado" }, { status: 401 });
     }
+
+    const premiumBlock = requirePremiumFeature("ai-sticker-packs");
+    if (premiumBlock) return premiumBlock;
 
     const body = await request.json();
     const prompt = typeof body.prompt === "string" ? body.prompt.trim() : "";
