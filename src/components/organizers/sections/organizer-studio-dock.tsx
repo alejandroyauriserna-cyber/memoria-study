@@ -9,6 +9,7 @@ import {
   Sparkles,
   Workflow,
 } from "lucide-react";
+import { PremiumBadge } from "@/components/ui/premium-badge";
 
 export type StudioPanelId =
   | "summary"
@@ -24,8 +25,8 @@ const items = [
   { id: "summary" as const, label: "Resumen", icon: BookOpen },
   { id: "flow" as const, label: "Flujo", icon: Workflow },
   { id: "tree" as const, label: "Ruta", icon: GitBranch },
-  { id: "visualMap" as const, label: "Mapa visual", icon: Sparkles },
-  { id: "visualPrompt" as const, label: "Atlas IA", icon: Palette },
+  { id: "visualMap" as const, label: "Mapa visual", icon: Sparkles, pro: true },
+  { id: "visualPrompt" as const, label: "Atlas IA", icon: Palette, pro: true },
   { id: "flashcards" as const, label: "Estudio", icon: Layers },
   { id: "review" as const, label: "Repaso", icon: HelpCircle },
 ];
@@ -56,6 +57,7 @@ export function OrganizerStudioDock({
             >
               <Icon size={14} />
               {item.label}
+              {"pro" in item && item.pro ? <PremiumBadge /> : null}
             </button>
           );
         })}

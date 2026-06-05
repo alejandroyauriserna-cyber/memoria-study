@@ -11,6 +11,7 @@ import type { AcademicInfographic } from "@/lib/organizers/academic-infographic-
 import { parseOrganizerContent } from "@/lib/organizers/parse-content";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { requirePremiumFeature } from "@/lib/billing/require-premium-api";
 import { env } from "@/lib/env";
 
 export const runtime = "nodejs";
@@ -29,6 +30,9 @@ async function ensureBucket(admin: ReturnType<typeof createAdminClient>) {
 
 export async function POST(_request: Request, context: RouteContext) {
   try {
+    const premiumBlock = requirePremiumFeature("gemini-infographic");
+    if (premiumBlock) return premiumBlock;
+
     const { id } = await context.params;
 
     if (!env.supabaseUrl || !env.supabaseAnonKey) {

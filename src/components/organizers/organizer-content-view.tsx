@@ -19,7 +19,7 @@ import {
 import { EasyExplanationBlock } from "@/components/organizers/sections/organizer-section-shell";
 import { ReviewPremiumModule } from "@/components/organizers/sections/review-premium-module";
 import { TimelineModern } from "@/components/organizers/sections/timeline-modern";
-import { VisualSummaryCard } from "@/components/organizers/sections/visual-summary-card";
+import { PedagogicalOrganizerPoster } from "@/components/organizers/sections/pedagogical-organizer-poster";
 import { VisualMindMapPanel } from "@/components/organizers/sections/visual-mind-map-panel";
 import { VisualPremiumPromptPanel } from "@/components/organizers/sections/visual-premium-prompt-panel";
 import { OrganizerContentSkeleton } from "@/components/organizers/organizer-skeleton";
@@ -135,7 +135,13 @@ export function OrganizerContentView({
           onClose={() => setActivePanel(null)}
         >
           {parsed.summary ? (
-            <VisualSummaryCard summary={parsed.summary} visualSummary={parsed.visualSummary} />
+            <PedagogicalOrganizerPoster
+              title={parsed.conceptMap?.title ?? parsed.hierarchy?.root ?? "Organizador visual"}
+              summary={parsed.summary}
+              visualSummary={parsed.visualSummary}
+              centralConcept={parsed.hierarchy?.root ?? parsed.conceptMap?.title}
+              axiomLabels={parsed.hierarchy?.branches}
+            />
           ) : null}
           {parsed.simplifiedExplanation ? (
             <div className="mt-4">
@@ -252,7 +258,13 @@ export function OrganizerContentView({
       ) : null}
 
       {parsed.summary ? (
-        <VisualSummaryCard summary={parsed.summary} visualSummary={parsed.visualSummary} />
+        <PedagogicalOrganizerPoster
+          title={parsed.conceptMap?.title ?? parsed.hierarchy?.root ?? "Organizador visual"}
+          summary={parsed.summary}
+          visualSummary={parsed.visualSummary}
+          centralConcept={parsed.hierarchy?.root ?? parsed.conceptMap?.title}
+          axiomLabels={parsed.hierarchy?.branches}
+        />
       ) : null}
       {parsed.simplifiedExplanation ? (
         <EasyExplanationBlock explanation={parsed.simplifiedExplanation} />

@@ -47,6 +47,13 @@ import {
   VISUAL_ACADEMIC_LEVELS,
   VISUAL_PROMPT_MODES,
 } from "@/lib/organizers/visual-prompt-types";
+import {
+  getPremiumFeature,
+  isPremiumFeatureAvailable,
+} from "@/lib/billing/premium-features";
+import { PremiumGateCard } from "@/components/ui/premium-gate-card";
+
+const ATLAS_FEATURE = getPremiumFeature("visual-atlas-prompt");
 
 const SECTION_IDS = {
   tipo: "vip-section-tipo",
@@ -270,6 +277,16 @@ export function VisualPremiumPromptPanel({
   const openGemini = useCallback(() => {
     window.open(GEMINI_APP_URL, "_blank", "noopener,noreferrer");
   }, []);
+
+  if (!isPremiumFeatureAvailable("visual-atlas-prompt")) {
+    return (
+      <div className="flex h-full items-center justify-center p-6">
+        <div className="w-full max-w-xl">
+          <PremiumGateCard feature={ATLAS_FEATURE} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-[#060b10]">

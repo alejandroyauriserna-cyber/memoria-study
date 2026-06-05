@@ -7,6 +7,13 @@ import { useLoadingProgress } from "@/hooks/use-loading-progress";
 import { VisualMindMapCanvas } from "@/components/organizers/sections/visual-mind-map-canvas";
 import type { VisualMindMap } from "@/lib/organizers/visual-mind-map-types";
 import { MAX_VISUAL_MIND_MAP_IMAGES } from "@/lib/organizers/visual-mind-map-types";
+import {
+  getPremiumFeature,
+  isPremiumFeatureAvailable,
+} from "@/lib/billing/premium-features";
+import { PremiumGateCard } from "@/components/ui/premium-gate-card";
+
+const VISUAL_MAP_FEATURE = getPremiumFeature("gemini-visual-map");
 
 export function VisualMindMapPanel({
   organizerId,
@@ -53,6 +60,16 @@ export function VisualMindMapPanel({
   }
 
   if (!map) {
+    if (!isPremiumFeatureAvailable("gemini-visual-map")) {
+      return (
+        <div className="flex h-full items-center justify-center p-6">
+          <div className="max-w-xl w-full">
+            <PremiumGateCard feature={VISUAL_MAP_FEATURE} />
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="flex flex-col items-center justify-center gap-5 px-6 py-16 text-center">
         <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[#00FFD5] to-[#00BFFF] text-[#07131A] shadow-[0_0_32px_rgba(0,255,213,0.35)]">

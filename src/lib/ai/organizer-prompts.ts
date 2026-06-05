@@ -33,7 +33,10 @@ Genera un organizador premium basado ÚNICAMENTE en el texto del PDF.
 Requisitos por sección:
 - summary (OBLIGATORIO): síntesis transformada, no copia literal.
 - aiAnalysis: conceptos detectados, relaciones entre conceptos, nivel de dificultad, recomendaciones de estudio.
-- visualSummary: conceptCards (conceptos clave visuales), comparisons (comparaciones jurídicas), legalTables (tablas si aplica).
+- visualSummary: diseño pedagógico tipo infografía universitaria (estilo atlas jurídico Ferrajoli).
+  * conceptCards: 4-8 tarjetas con título corto + definición clara (colores distintos por concepto).
+  * comparisons: 2-4 comparaciones con title + left + right (ej. mera legalidad vs estricta legalidad).
+  * legalTables: tablas con headers y rows cuando el PDF lo permita.
 - flowProcess: mapa de proceso con nodes (id, label, explanation, legalBasis, example, relatedConcepts) y edges conectados. Proceso REAL del documento.
 - reviewBundle: keyConcepts + questions (básico/intermedio/avanzado con answer) + examQuestions (opción múltiple, V/F, casos prácticos).
 - conceptMap, hierarchy, timeline, flashcards: solo si el PDF lo sustenta.

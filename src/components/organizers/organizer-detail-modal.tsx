@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ImageIcon, Map, Sparkles, X } from "lucide-react";
+import { PremiumBadge } from "@/components/ui/premium-badge";
 import { OrganizerContentView } from "@/components/organizers/organizer-content-view";
 import { AcademicInfographicPanel } from "@/components/organizers/sections/academic-infographic-panel";
 import {
@@ -123,6 +124,7 @@ export function OrganizerDetailModal({
               icon={ImageIcon}
               label="Infografía IA"
               accent="#A78BFA"
+              badge={<PremiumBadge />}
             />
           </div>
 
@@ -163,12 +165,14 @@ function StudioTab({
   icon: Icon,
   label,
   accent = "#00FFD5",
+  badge,
 }: {
   active: boolean;
   onClick: () => void;
   icon: typeof Map;
   label: string;
   accent?: string;
+  badge?: ReactNode;
 }) {
   return (
     <button
@@ -183,6 +187,7 @@ function StudioTab({
     >
       <Icon size={15} style={active ? { color: accent } : undefined} />
       {label}
+      {badge}
       {active ? (
         <motion.span
           layoutId="studio-tab-indicator"

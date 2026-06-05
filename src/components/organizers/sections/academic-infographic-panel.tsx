@@ -13,6 +13,14 @@ import {
 import { LoadingState } from "@/components/ui/loading-state";
 import { useLoadingProgress } from "@/hooks/use-loading-progress";
 import type { AcademicInfographic } from "@/lib/organizers/academic-infographic-types";
+import {
+  getPremiumFeature,
+  isPremiumFeatureAvailable,
+} from "@/lib/billing/premium-features";
+import { PremiumBadge } from "@/components/ui/premium-badge";
+import { PremiumGateCard } from "@/components/ui/premium-gate-card";
+
+const INFOGRAPHIC_FEATURE = getPremiumFeature("gemini-infographic");
 
 function slugify(text: string) {
   return text
@@ -216,20 +224,29 @@ export function AcademicInfographicPanel({
   }, [infographic]);
 
   if (!infographic) {
+    if (!isPremiumFeatureAvailable("gemini-infographic")) {
+      return (
+        <div className="flex h-full items-center justify-center p-6">
+          <div className="max-w-xl w-full">
+            <PremiumGateCard feature={INFOGRAPHIC_FEATURE} />
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="flex h-full flex-col items-center justify-center gap-6 px-6 py-16 text-center">
         <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-[#A78BFA] to-[#00BFFF] text-white shadow-[0_0_40px_rgba(167,139,250,0.4)]">
           <Wand2 size={36} />
         </div>
         <div className="max-w-lg space-y-3">
-          <h3 className="text-2xl font-bold text-[#F5F7FA]">Infografía Académica IA</h3>
+          <div className="flex items-center justify-center gap-2">
+            <h3 className="text-2xl font-bold text-[#F5F7FA]">Infografía Académica IA</h3>
+            <PremiumBadge />
+          </div>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            Gemini genera una imagen educativa completa — ilustraciones, iconos, colores por
-            categoría y composición artística 16:9. No es un diagrama técnico: es una infografía
-            lista para estudiar solo mirándola.
-          </p>
-          <p className="text-xs text-muted-foreground/80">
-            Generación opcional · una imagen premium por organizador
+            Gemini Nano Banana genera un póster educativo 16:9 — ilustraciones, iconos y colores
+            por categoría, como un atlas jurídico universitario.
           </p>
         </div>
         <button
