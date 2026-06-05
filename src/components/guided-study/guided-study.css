@@ -266,6 +266,31 @@
   color: #86efac;
 }
 
+.gs-source-tag--pickable {
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, opacity 0.15s;
+}
+
+.gs-source-tag--pickable:hover:not(:disabled) {
+  border-color: rgba(0, 255, 213, 0.35);
+  background: rgba(0, 255, 213, 0.08);
+}
+
+.gs-source-tag--selected {
+  border-color: rgba(0, 255, 213, 0.4);
+  background: rgba(0, 255, 213, 0.12);
+  color: #00ffd5;
+}
+
+.gs-source-tag--active {
+  box-shadow: 0 0 0 1px rgba(134, 239, 172, 0.35);
+}
+
+.gs-source-tag--pickable:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
 .gs-highlight-scroll {
   max-height: 11rem;
   overflow-y: auto;

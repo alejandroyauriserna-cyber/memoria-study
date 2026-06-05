@@ -96,7 +96,7 @@ export function LpUrlEditor({
           const valid = !normalized || validateUrl(normalized);
 
           return (
-            <div key={`${index}-${url.slice(0, 24)}`} className="space-y-1">
+            <div key={index} className="space-y-1">
               <div className="flex gap-1.5">
                 <input
                   type="url"

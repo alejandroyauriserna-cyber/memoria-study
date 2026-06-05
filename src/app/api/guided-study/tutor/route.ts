@@ -52,6 +52,7 @@ export async function POST(request: Request) {
       index?: DocumentStudyIndex;
       examOnly?: boolean;
       sourceSettings?: import("@/types/legal-sources").LegalSourcesSettings;
+      sourceIds?: string[];
     };
 
     if (!body.materialId || !body.pageNumber) {
@@ -64,7 +65,7 @@ export async function POST(request: Request) {
     let action =
       body.action && VALID_ACTIONS.has(body.action) ? body.action : "analyze_page";
 
-    if (body.examOnly && action === "analyze_page") {
+    if (body.examOnly && (action === "analyze_page" || action === "explain_page")) {
       action = "exam_essentials";
     }
 
@@ -72,9 +73,7 @@ export async function POST(request: Request) {
     const totalPages = material.pages.length;
     const pageNumber = Math.min(Math.max(1, body.pageNumber), totalPages);
     const pageText = getPageText(material.pages, pageNumber);
-    const chapterTitle = body.index
-      ? findChapterForPage(body.index, pageNumber)
-      : undefined;
+    const chapter = body.index ? findChapterForPage(body.index, pageNumber) : undefined;
 
     const sourceSettings = await enrichSourceSettings(user.id, body.sourceSettings);
 
@@ -86,15 +85,17 @@ export async function POST(request: Request) {
       pageText,
       documentTitle: material.title,
       courseName: material.courseName,
-      chapterTitle,
+      chapterTitle: chapter?.title,
+      chapterOverview: chapter?.learningOverview,
       sourceSettings,
+      sourceIds: body.sourceIds,
       userId: user.id,
     });
 
     return NextResponse.json({
       action,
       pageNumber,
-      chapterTitle,
+      chapterTitle: chapter?.title,
       pageText,
       ...response,
     });

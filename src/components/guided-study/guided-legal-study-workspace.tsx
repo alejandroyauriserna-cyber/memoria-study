@@ -16,7 +16,11 @@ import { StudyPageNavigator } from "@/components/guided-study/study-page-navigat
 import { LoadingState } from "@/components/ui/loading-state";
 import { useLoadingProgress } from "@/hooks/use-loading-progress";
 import { filterAnalysisForExamMode } from "@/lib/guided-study/legal-tutor";
-import { loadLegalSourcesSettings } from "@/lib/legal-sources/storage";
+import {
+  fetchLegalSourcesSettings,
+  getEnabledSources,
+  loadLegalSourcesSettings,
+} from "@/lib/legal-sources/storage";
 import {
   getStudyProgressPercent,
   loadGuidedStudySession,
@@ -58,6 +62,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
   const [examOnly, setExamOnly] = useState(false);
   const [activeHighlightId, setActiveHighlightId] = useState<string | null>(null);
   const [sourceSettings, setSourceSettings] = useState<LegalSourcesSettings | null>(null);
+  const [selectedSourceIds, setSelectedSourceIds] = useState<string[]>([]);
   const [tutorLoading, setTutorLoading] = useState(false);
   const [tutorState, setTutorState] = useState<TutorState>({
     analysis: null,
@@ -75,7 +80,13 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
       setCurrentPage(session.currentPage);
       setUnderstoodPages(session.understoodPages);
     }
-    setSourceSettings(loadLegalSourcesSettings());
+    const local = loadLegalSourcesSettings();
+    setSourceSettings(local);
+    setSelectedSourceIds(getEnabledSources(local).map((s) => s.id));
+    void fetchLegalSourcesSettings().then((remote) => {
+      setSourceSettings(remote);
+      setSelectedSourceIds(getEnabledSources(remote).map((s) => s.id));
+    });
   }, [materialId]);
 
   useEffect(() => {
@@ -141,6 +152,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
             index,
             examOnly,
             sourceSettings: settings,
+            sourceIds: selectedSourceIds.length ? selectedSourceIds : undefined,
           }),
         });
 
@@ -165,20 +177,47 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
         setTutorLoading(false);
       }
     },
-    [material, materialId, currentPage, index, examOnly, sourceSettings],
+    [material, materialId, currentPage, index, examOnly, sourceSettings, selectedSourceIds],
   );
+
+  const availableSources = useMemo(
+    () => (sourceSettings ? getEnabledSources(sourceSettings) : []),
+    [sourceSettings],
+  );
+
+  function toggleSourceSelection(sourceId: string) {
+    setSelectedSourceIds((prev) => {
+      if (prev.includes(sourceId)) {
+        const next = prev.filter((id) => id !== sourceId);
+        return next.length ? next : availableSources.map((s) => s.id);
+      }
+      return [...prev, sourceId];
+    });
+  }
+
+  function selectAllSources() {
+    setSelectedSourceIds(availableSources.map((s) => s.id));
+  }
+
+  const defaultTutorAction = examOnly ? "exam_essentials" : "explain_page";
 
   useEffect(() => {
     if (phase !== "ready" || !material || initialAnalysisDone.current) return;
     initialAnalysisDone.current = true;
-    void askTutor(examOnly ? "exam_essentials" : "analyze_page");
+    void askTutor(defaultTutorAction);
   }, [phase, material?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!initialAnalysisDone.current || phase !== "ready" || !material) return;
     if (analyzedPage !== currentPage) return;
-    void askTutor(examOnly ? "exam_essentials" : "analyze_page");
+    void askTutor(defaultTutorAction);
   }, [examOnly]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!initialAnalysisDone.current || phase !== "ready" || !material) return;
+    if (analyzedPage !== currentPage) return;
+    void askTutor(defaultTutorAction);
+  }, [selectedSourceIds]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const displayAnalysis = useMemo(() => {
     if (!tutorState.analysis) return null;
@@ -195,7 +234,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
   }
 
   function handleGeneratePage() {
-    void askTutor(examOnly ? "exam_essentials" : "analyze_page");
+    void askTutor(defaultTutorAction);
   }
 
   function handleMarkUnderstood() {
@@ -301,6 +340,10 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
             customReply={tutorState.customReply}
             examOnly={examOnly}
             activeSources={tutorState.activeSources}
+            availableSources={availableSources}
+            selectedSourceIds={selectedSourceIds}
+            onToggleSource={toggleSourceSelection}
+            onSelectAllSources={selectAllSources}
             needsGeneration={analyzedPage !== currentPage}
             onExamOnlyChange={setExamOnly}
             activeHighlightId={activeHighlightId}
@@ -336,6 +379,11 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
                   </button>
                 </div>
                 <div className="min-h-0 flex-1 overflow-y-auto p-3">
+                  {index.summary ? (
+                    <p className="mb-3 rounded-lg border border-[rgba(0,255,213,0.1)] bg-[rgba(0,0,0,0.2)] px-2.5 py-2 text-xs leading-5 text-muted-foreground">
+                      {index.summary}
+                    </p>
+                  ) : null}
                   <div className="space-y-1.5">
                     {index.chapters.map((ch) => (
                       <button
@@ -345,14 +393,21 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
                           handlePageChange(ch.startPage);
                           setShowIndex(false);
                         }}
-                        className={`flex w-full items-start gap-2 rounded-lg border px-2.5 py-2 text-left text-sm ${
+                        className={`flex w-full flex-col gap-1 rounded-lg border px-2.5 py-2 text-left text-sm ${
                           currentChapter?.id === ch.id
                             ? "border-[rgba(0,255,213,0.35)] bg-[rgba(0,255,213,0.08)]"
                             : "border-[rgba(0,255,213,0.08)]"
                         }`}
                       >
-                        <ChevronRight size={13} className="mt-0.5 shrink-0 text-[#00FFD5]" />
-                        <span className="text-[#F5F7FA]">{ch.title}</span>
+                        <span className="flex items-start gap-2">
+                          <ChevronRight size={13} className="mt-0.5 shrink-0 text-[#00FFD5]" />
+                          <span className="font-medium text-[#F5F7FA]">{ch.title}</span>
+                        </span>
+                        {ch.learningOverview ? (
+                          <span className="pl-5 text-[11px] leading-4 text-muted-foreground">
+                            {ch.learningOverview}
+                          </span>
+                        ) : null}
                       </button>
                     ))}
                   </div>

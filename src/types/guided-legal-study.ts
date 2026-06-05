@@ -79,6 +79,7 @@ export type DocumentChapter = {
   startPage: number;
   endPage: number;
   subtopics?: string[];
+  learningOverview?: string;
 };
 
 export type DocumentStudyIndex = {

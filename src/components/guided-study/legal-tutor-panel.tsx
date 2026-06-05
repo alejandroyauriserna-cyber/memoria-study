@@ -26,7 +26,8 @@ import type {
   GuidedStudyTutorAction,
   PageProfessorAnalysis,
 } from "@/types/guided-legal-study";
-import type { LegalSourceAttribution } from "@/types/legal-sources";
+import { LEGAL_SOURCE_CATEGORY_LABELS } from "@/types/legal-sources";
+import type { LegalSourceAttribution, LegalSourceRecord } from "@/types/legal-sources";
 import "./guided-study.css";
 
 const PROFESSOR_ACTIONS: Array<{
@@ -44,21 +45,62 @@ const PROFESSOR_ACTIONS: Array<{
   { id: "civil_code", label: "Código Civil", icon: BookOpen, accent: "#93C5FD" },
 ];
 
-function SourcesBanner({ sources }: { sources: LegalSourceAttribution[] }) {
-  if (!sources.length) return null;
+function SourcePicker({
+  availableSources,
+  selectedSourceIds,
+  activeSources,
+  disabled,
+  onToggle,
+  onSelectAll,
+}: {
+  availableSources: LegalSourceRecord[];
+  selectedSourceIds: string[];
+  activeSources?: LegalSourceAttribution[];
+  disabled?: boolean;
+  onToggle: (sourceId: string) => void;
+  onSelectAll: () => void;
+}) {
+  if (!availableSources.length) return null;
+
+  const allSelected = selectedSourceIds.length >= availableSources.length;
 
   return (
     <div className="gs-sources-banner">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-[#86EFAC]">
-        Explicación basada en
-      </p>
-      <div className="mt-1.5 flex flex-wrap gap-1">
-        {sources.map((s) => (
-          <span key={s.sourceId} className="gs-source-tag">
-            {s.title}
-          </span>
-        ))}
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-[#86EFAC]">
+          Fuentes para esta explicación
+        </p>
+        <button
+          type="button"
+          disabled={disabled || allSelected}
+          onClick={onSelectAll}
+          className="text-[9px] font-semibold text-[#00FFD5] hover:underline disabled:opacity-40"
+        >
+          Todas
+        </button>
       </div>
+      <div className="mt-1.5 flex flex-wrap gap-1">
+        {availableSources.map((s) => {
+          const selected = selectedSourceIds.includes(s.id);
+          const usedNow = activeSources?.some((a) => a.sourceId === s.id);
+          return (
+            <button
+              key={s.id}
+              type="button"
+              disabled={disabled}
+              onClick={() => onToggle(s.id)}
+              title={LEGAL_SOURCE_CATEGORY_LABELS[s.category]}
+              className={`gs-source-tag gs-source-tag--pickable ${selected ? "gs-source-tag--selected" : ""} ${usedNow ? "gs-source-tag--active" : ""}`}
+            >
+              {selected ? "✓ " : ""}
+              {s.title}
+            </button>
+          );
+        })}
+      </div>
+      <p className="mt-1.5 text-[9px] text-muted-foreground">
+        Elige qué fuentes autorizadas usa el profesor. Solo las marcadas con ✓ se envían al tutor.
+      </p>
     </div>
   );
 }
@@ -72,6 +114,10 @@ export function LegalTutorPanel({
   customReply,
   examOnly,
   activeSources,
+  availableSources,
+  selectedSourceIds,
+  onToggleSource,
+  onSelectAllSources,
   needsGeneration,
   onExamOnlyChange,
   activeHighlightId,
@@ -90,6 +136,10 @@ export function LegalTutorPanel({
   customReply?: string | null;
   examOnly: boolean;
   activeSources?: LegalSourceAttribution[];
+  availableSources?: LegalSourceRecord[];
+  selectedSourceIds?: string[];
+  onToggleSource?: (sourceId: string) => void;
+  onSelectAllSources?: () => void;
   needsGeneration?: boolean;
   onExamOnlyChange: (value: boolean) => void;
   activeHighlightId?: string | null;
@@ -183,7 +233,29 @@ export function LegalTutorPanel({
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
-        {activeSources?.length ? <SourcesBanner sources={activeSources} /> : null}
+        {availableSources?.length && onToggleSource && onSelectAllSources && selectedSourceIds ? (
+          <SourcePicker
+            availableSources={availableSources}
+            selectedSourceIds={selectedSourceIds}
+            activeSources={activeSources}
+            disabled={loading}
+            onToggle={onToggleSource}
+            onSelectAll={onSelectAllSources}
+          />
+        ) : activeSources?.length ? (
+          <div className="gs-sources-banner">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-[#86EFAC]">
+              Explicación basada en
+            </p>
+            <div className="mt-1.5 flex flex-wrap gap-1">
+              {activeSources.map((s) => (
+                <span key={s.sourceId} className="gs-source-tag">
+                  {s.title}
+                </span>
+              ))}
+            </div>
+          </div>
+        ) : null}
 
         {loading ? (
           <LoadingState

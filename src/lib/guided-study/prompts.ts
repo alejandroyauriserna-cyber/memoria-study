@@ -8,6 +8,15 @@ PRIORIDAD ABSOLUTA — ENSEÑAR DERECHO:
 - Conceptos jurídicos, teorías, principios, definiciones, clasificaciones, diferencias doctrinales.
 - Aplicaciones prácticas y posibles preguntas de examen.
 - Relación con el ordenamiento peruano cuando corresponda.
+- Cada explicación debe CAPACITAR al estudiante: que entienda el instituto, lo distinga de otros similares y pueda aplicarlo en un caso.
+
+ESTRUCTURA DIDÁCTICA OBLIGATORIA (por conceptCard):
+1) Definición clara en lenguaje jurídico accesible.
+2) Elementos, requisitos o presupuestos del instituto.
+3) Efectos jurídicos principales.
+4) Distinción con conceptos vecinos (si aplica).
+5) Aplicación práctica o mini-caso peruano.
+6) Por qué es relevante para examen.
 
 IGNORAR O MINIMIZAR (salvo que sea indispensable para entender un concepto):
 - Datos biográficos extensos de autores.
@@ -21,7 +30,8 @@ REGLA SOBRE AUTORES Y PERSONAS:
 - Luego pasa de inmediato al contenido jurídico relevante.
 
 PROHIBIDO (RIESGO ACADÉMICO):
-- Resumir la página en un párrafo genérico.
+- Resumir la página en un párrafo genérico o superficial.
+- Explicaciones de una sola línea en conceptCards (mínimo 4 oraciones sustantivas por explanation).
 - Usar markdown (**negritas**, ### títulos, listas con guiones).
 - Explicar elementos secundarios con la misma profundidad que conceptos jurídicos.
 - Inventar, inferir o completar números de artículo.
@@ -33,6 +43,7 @@ REGLA NORMATIVA OBLIGATORIA:
 - Si no hay artículo verificable, NO pongas número de artículo en citations ni en peruLaw.
 - En peruLaw puedes describir relación conceptual sin citar número si no hay base verificada.
 - El texto citado debe ser literal de la base indexada, no parafraseado libremente.
+- Puedes enseñar doctrina y conceptos del PDF aunque citations quede vacío.
 
 Audiencia: ${UNT_DERECHO_AUDIENCE}
 `.trim();
@@ -40,7 +51,7 @@ Audiencia: ${UNT_DERECHO_AUDIENCE}
 export const STRUCTURED_PAGE_JSON_SCHEMA = `
 Responde ÚNICAMENTE JSON válido (sin markdown) con esta forma:
 {
-  "pageFocus": "Una oración: qué debe aprender el estudiante en esta página",
+  "pageFocus": "2-3 oraciones: objetivo de aprendizaje de esta página, qué institutos domina el estudiante al terminar y cómo se conecta con el capítulo",
   "secondaryMentions": [
     {"mention": "Nombre o dato secundario", "briefNote": "Una línea máximo, ej: Autor doctrinario peruano citado."}
   ],
@@ -54,20 +65,20 @@ Responde ÚNICAMENTE JSON válido (sin markdown) con esta forma:
     {
       "id": "cc1",
       "concept": "Nombre del concepto jurídico",
-      "explanation": "Explicación sencilla y rigurosa",
-      "example": "Caso práctico peruano",
-      "examImportance": "Por qué podría caer en examen",
-      "peruLaw": "Relación con CC, CPP u otra norma peruana",
+      "explanation": "Explicación didáctica de 4-8 oraciones: definición, elementos/requisitos, efectos, distinciones y fundamento en el texto de la página",
+      "example": "Caso práctico o hipótesis peruana concreta que ilustre el concepto",
+      "examImportance": "Por qué cae en examen y qué debe demostrar el estudiante al responder",
+      "peruLaw": "Relación con CC, CPP, Constitución u otra norma peruana (sin inventar artículos)",
       "highlightId": "h1",
       "essential": true
     }
   ],
   "examMode": {
-    "oral": ["pregunta oral probable"],
-    "desarrollo": ["pregunta de desarrollo"],
+    "oral": ["pregunta oral probable con criterio de calificación"],
+    "desarrollo": ["pregunta de desarrollo con puntos que debe cubrir la respuesta modelo"],
     "test": [{"question": "...", "options": ["A","B","C","D"], "answerIndex": 0, "explanation": "..."}],
     "memorableConcepts": ["frase corta para memorizar"],
-    "commonErrors": ["error frecuente del estudiante"]
+    "commonErrors": ["error frecuente del estudiante y cómo evitarlo"]
   },
   "citations": [{"norm":"...","article":"...","text":"...","updatedAt":"...","sourceId":"...","sourceTitle":"...","page":"...","author":"...","fragment":"..."}],
   "comprehensionQuestion": "¿Entendiste X?"
@@ -78,7 +89,7 @@ NO envuelvas dentro de una clave "analysis" salvo que también incluyas customRe
 Reglas del JSON:
 - highlights.phrase debe ser un fragmento recuperable del texto de la página.
 - Marca essential:true solo en el ~20% más importante para examen (regla 80/20).
-- conceptCards: uno por idea jurídica principal (máximo 6 por página).
+- conceptCards: uno por idea jurídica principal (máximo 8 por página). Prioriza profundidad sobre cantidad.
 - secondaryMentions: solo lo secundario detectado; máximo 3 entradas breves.
 - conceptCards = conceptos doctrinarios/jurídicos. citations = SOLO normas verificables de BASE JURÍDICA INDEXADA.
 - citations: incluye únicamente artículos presentes en BASE JURÍDICA INDEXADA con texto literal. Si no hay certeza, citations debe ser [].
@@ -87,36 +98,37 @@ Reglas del JSON:
 
 const ACTION_DIRECTIVES: Record<GuidedStudyTutorAction, string> = {
   analyze_page:
-    "Analiza la página como profesor. Detecta ideas jurídicas principales, genera tarjetas de enseñanza, resaltados, ideas clave y modo examen completo.",
+    "Analiza la página como profesor de cátedra. Detecta TODAS las ideas jurídicas relevantes, genera tarjetas de enseñanza profundas (definición, elementos, efectos, distinción, aplicación), resaltados precisos, ideas clave y modo examen completo.",
   exam_essentials:
-    "Filtra al 20% esencial para examen (regla 80/20). Solo keyLearning, highlights y conceptCards con essential:true. Reduce secondaryMentions al mínimo.",
+    "Filtra al 20% esencial para examen (regla 80/20). Solo keyLearning, highlights y conceptCards con essential:true. Reduce secondaryMentions al mínimo. Mantén explanation sustantiva aunque sea concisa.",
   exam_mode:
     "Genera modo examen ampliado: oral, desarrollo, test, conceptos memorables y errores frecuentes. Mantén conceptCards solo si son indispensables para responder.",
   explain_page:
-    "Enseña la página completa priorizando aprendizaje jurídico. Mismo formato estructurado que analyze_page.",
+    "ENSEÑA la página completa como clase magistral: prioriza aprendizaje jurídico profundo. Cada conceptCard debe tener explanation de 4-8 oraciones con definición, requisitos, efectos, distinciones y aplicación. Conecta con el capítulo indicado.",
   examples:
-    "Amplía los conceptCards con ejemplos más claros. Mantén el resto del JSON.",
+    "Amplía los conceptCards con ejemplos más claros y variados. Mantén el resto del JSON con profundidad didáctica.",
   peru_law:
-    "Enfatiza peruLaw en cada conceptCard y citations del ordenamiento peruano.",
+    "Enfatiza peruLaw en cada conceptCard y citations del ordenamiento peruano verificable.",
   detect_concepts:
-    "Prioriza highlights y keyLearning. conceptCards breves.",
+    "Prioriza highlights y keyLearning. conceptCards con explanation didáctica (mínimo 3 oraciones cada una).",
   exam_questions:
-    "Prioriza examMode completo.",
+    "Prioriza examMode completo con preguntas exigentes y criterios de evaluación.",
   verify_comprehension:
-    "Genera comprehensionQuestion clara y un conceptCard de repaso del concepto central.",
+    "Genera comprehensionQuestion clara y un conceptCard de repaso del concepto central con explanation completa.",
   simpler:
-    "Simplifica explanation de cada conceptCard sin perder rigor jurídico.",
+    "Simplifica el lenguaje de cada conceptCard sin perder rigor jurídico ni omitir elementos esenciales.",
   first_cycle:
-    "Explica como primer ciclo: explanation y example más didácticos.",
+    "Explica como primer ciclo: vocabulary accesible pero contenido completo (definición, ejemplo, examen).",
   another_example:
-    "Cambia example de cada conceptCard por uno nuevo y distinto.",
+    "Cambia example de cada conceptCard por uno nuevo y distinto, manteniendo profundidad en explanation.",
   real_case:
-    "Enfoca example en casos reales o hipotéticos verosímiles peruanos.",
+    "Enfoca example en casos reales o hipotéticos verosímiles peruanos con desenlace jurídico.",
   jurisprudence:
     "Enriquece peruLaw con líneas jurisprudenciales cuando proceda; si no hay base, indícalo en examImportance.",
   civil_code:
-    "Enriquece peruLaw y citations con Código Civil peruano de la base oficial.",
-  custom: "Responde la consulta del estudiante en customReply (texto plano breve, sin markdown). Mantén analysis si aporta contexto.",
+    "Enriquece peruLaw y citations con Código Civil peruano de la base oficial indexada.",
+  custom:
+    "Responde la consulta del estudiante en customReply (texto plano claro, 3-6 oraciones mínimo si es conceptual). Mantén analysis si aporta contexto didáctico.",
 };
 
 export function buildTutorUserPrompt(input: {
@@ -128,6 +140,7 @@ export function buildTutorUserPrompt(input: {
   documentTitle: string;
   courseName?: string;
   chapterTitle?: string;
+  chapterOverview?: string;
   legalBaseBlock: string;
   sourcesBlock?: string;
   strictNormativeMode?: boolean;
@@ -142,6 +155,9 @@ export function buildTutorUserPrompt(input: {
     `DOCUMENTO: ${input.documentTitle}`,
     input.courseName ? `CURSO: ${input.courseName}` : null,
     input.chapterTitle ? `CAPÍTULO: ${input.chapterTitle}` : null,
+    input.chapterOverview
+      ? `PANORAMA DEL CAPÍTULO (contexto para ubicar esta página): ${input.chapterOverview}`
+      : null,
     `PÁGINA: ${input.pageNumber} de ${input.totalPages}`,
     "",
     "TEXTO DE LA PÁGINA (fuente para highlights.phrase):",
@@ -152,7 +168,7 @@ export function buildTutorUserPrompt(input: {
     "BASE JURÍDICA INDEXADA (ÚNICA fuente permitida para números de artículo):",
     input.legalBaseBlock,
     input.strictNormativeMode
-      ? "MODO ESTRICTO NORMATIVO: citations debe quedar vacío si no hay artículo verificable en la base indexada. NO inventes artículos."
+      ? "MODO ESTRICTO NORMATIVO: citations debe quedar vacío si no hay artículo verificable en la base indexada. NO inventes artículos. Sigue enseñando doctrina del PDF."
       : "",
     "",
     `INSTRUCCIÓN: ${directive}`,
@@ -162,7 +178,7 @@ export function buildTutorUserPrompt(input: {
     if (input.action === "custom") {
       contextParts.push(`
 Responde JSON:
-{"customReply": "respuesta breve en texto plano", "analysis": null}
+{"customReply": "respuesta didáctica en texto plano", "analysis": null}
 O si conviene enseñar con tarjetas: incluye analysis con el schema completo y customReply vacío.
 ${STRUCTURED_PAGE_JSON_SCHEMA}`);
     } else {
@@ -185,6 +201,7 @@ export function buildAnalyzeDocumentPrompt(input: {
   return `
 Analiza este documento jurídico para crear un índice de estudio progresivo.
 Prioriza temas jurídicos sobre datos biográficos o contexto editorial.
+Cada capítulo debe tener un panorama didáctico que oriente al estudiante.
 
 DOCUMENTO: ${input.title}
 TOTAL DE PÁGINAS: ${input.totalPages}
@@ -196,9 +213,18 @@ JSON exacto:
 {
   "title": "string",
   "totalPages": ${input.totalPages},
-  "summary": "2 oraciones sobre el contenido jurídico del documento",
+  "summary": "3-4 oraciones: qué aprende el estudiante en el documento, institutos centrales y utilidad para examen",
   "topics": ["tema jurídico 1"],
-  "chapters": [{"id":"ch1","title":"string","startPage":1,"endPage":10,"subtopics":["subtema"]}]
+  "chapters": [
+    {
+      "id":"ch1",
+      "title":"string",
+      "startPage":1,
+      "endPage":10,
+      "subtopics":["subtema jurídico"],
+      "learningOverview":"3-4 oraciones: objetivos de aprendizaje del capítulo, conceptos clave y qué debe dominar el estudiante"
+    }
+  ]
 }
 `.trim();
 }

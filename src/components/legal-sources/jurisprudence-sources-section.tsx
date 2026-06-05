@@ -79,14 +79,14 @@ export function JurisprudenceSourcesSection({
                 <LpUrlEditor
                   urls={urls}
                   catalogUrl={template.exampleUrl}
-                  disabled={Boolean(syncingWebTemplateId)}
+                  disabled={syncingWebTemplateId === template.id}
                   compact
                   allowedHostsHint="LP · TC · PJ · SUNAT · SPIJ"
                   onChange={(next) => onTemplateUrlsChange(template.id, next)}
                 />
                 <button
                   type="button"
-                  disabled={Boolean(syncingWebTemplateId)}
+                  disabled={syncingWebTemplateId === template.id}
                   onClick={() => onSyncWebUrl(template.id, urls)}
                   className="tron-btn-secondary mt-2 inline-flex h-9 items-center gap-2 rounded-lg px-3 text-xs font-semibold disabled:opacity-50"
                 >

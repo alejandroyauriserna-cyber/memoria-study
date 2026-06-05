@@ -33,6 +33,7 @@ const DocumentIndexSchema = z.object({
       startPage: z.number(),
       endPage: z.number(),
       subtopics: z.array(z.string()).optional(),
+      learningOverview: z.string().optional(),
     }),
   ),
 });
@@ -140,22 +141,27 @@ export async function askLegalStudyTutor(input: {
   documentTitle: string;
   courseName?: string;
   chapterTitle?: string;
+  chapterOverview?: string;
   sourceSettings?: LegalSourcesSettings;
+  sourceIds?: string[];
   userId?: string;
 }): Promise<TutorResponse> {
-  const enabledSources = getEnabledSourcesFromSettings(input.sourceSettings);
-  const strictMode = input.sourceSettings?.strictMode ?? false;
-  const strictNormativeMode = input.sourceSettings?.strictNormativeMode !== false;
+  const filteredSettings = applySourceIdFilter(input.sourceSettings, input.sourceIds);
+  const enabledSources = getEnabledSourcesFromSettings(filteredSettings);
+  const strictMode = filteredSettings?.strictMode ?? false;
+  const strictNormativeMode = filteredSettings?.strictNormativeMode !== false;
   const sourcesBlock = buildLegalSourcesPromptBlock(enabledSources, strictMode);
-  const normativeIndex = await buildNormativeIndexForUser(input.userId, input.sourceSettings);
+  const normativeIndex = await buildNormativeIndexForUser(input.userId, filteredSettings);
 
   const relevantArticles = searchLegalBase(
-    `${input.pageText} ${input.chapterTitle ?? ""} ${input.customPrompt ?? ""}`,
-    8,
+    `${input.pageText} ${input.chapterTitle ?? ""} ${input.chapterOverview ?? ""} ${input.customPrompt ?? ""}`,
+    12,
     normativeIndex,
   );
   const indexedNormativeBlock = formatLegalBaseForPrompt(relevantArticles);
   const structured = usesStructuredResponse(input.action) || input.action === "custom";
+  const teachingActions: GuidedStudyTutorAction[] = ["analyze_page", "explain_page", "first_cycle"];
+  const temperature = input.action === "exam_mode" ? 0.45 : teachingActions.includes(input.action) ? 0.38 : 0.32;
 
   const raw = await generateGeminiText({
     prompt: `${GUIDED_STUDY_SYSTEM_ROLE}\n\n${buildTutorUserPrompt({
@@ -165,7 +171,7 @@ export async function askLegalStudyTutor(input: {
       strictNormativeMode,
       structured,
     })}`,
-    temperature: input.action === "exam_mode" ? 0.45 : 0.3,
+    temperature,
     json: true,
   });
 
@@ -240,14 +246,30 @@ function getEnabledSourcesFromSettings(settings?: LegalSourcesSettings) {
   return settings.sources.filter((s) => s.enabled).sort((a, b) => a.priority - b.priority);
 }
 
+function applySourceIdFilter(
+  settings?: LegalSourcesSettings,
+  sourceIds?: string[],
+): LegalSourcesSettings | undefined {
+  if (!settings || !sourceIds?.length) return settings;
+  const allowed = new Set(sourceIds);
+  return {
+    ...settings,
+    sources: settings.sources.map((s) => ({
+      ...s,
+      enabled: s.enabled && allowed.has(s.id),
+    })),
+  };
+}
+
 export function findChapterForPage(
   index: DocumentStudyIndex,
   pageNumber: number,
-): string | undefined {
+): DocumentStudyIndex["chapters"][number] | undefined {
   return index.chapters.find(
     (ch) => pageNumber >= ch.startPage && pageNumber <= ch.endPage,
-  )?.title;
+  );
 }
+
 
 export function filterAnalysisForExamMode(
   analysis: PageProfessorAnalysis,

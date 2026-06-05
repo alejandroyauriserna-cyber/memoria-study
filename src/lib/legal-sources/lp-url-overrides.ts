@@ -33,12 +33,12 @@ export function resolvePresetSyncUrls(
   presetId: string,
   catalogUrl: string,
 ): string[] {
-  const custom = sanitizeLpUrlList(settings.lpPresetUrls?.[presetId] ?? []);
-  if (custom.length) return custom;
+  const custom = settings.lpPresetUrls?.[presetId];
+  if (custom?.length) return custom;
 
   const synced = settings.sources.find((s) => s.lpPresetId === presetId);
-  if (synced?.syncUrls?.length) return sanitizeLpUrlList(synced.syncUrls);
-  if (synced?.sourceUrl) return sanitizeLpUrlList([synced.sourceUrl]);
+  if (synced?.syncUrls?.length) return synced.syncUrls;
+  if (synced?.sourceUrl) return [synced.sourceUrl];
 
   return [catalogUrl];
 }
@@ -48,11 +48,11 @@ export function setPresetSyncUrls(
   presetId: string,
   urls: string[],
 ): LegalSourcesSettings {
-  const cleaned = sanitizeLpUrlList(urls);
   const next = { ...(settings.lpPresetUrls ?? {}) };
+  const hasDraft = urls.some((u) => u.trim()) || urls.length > 1;
 
-  if (cleaned.length) {
-    next[presetId] = cleaned;
+  if (hasDraft) {
+    next[presetId] = urls;
   } else {
     delete next[presetId];
   }

@@ -307,11 +307,11 @@ export function LegalSourcesWorkspace() {
 
   function updatePresetUrls(presetId: string, catalogUrl: string, urls: string[]) {
     if (!settings) return;
-    persist(setPresetSyncUrls(settings, presetId, sanitizeLpUrlList(urls.length ? urls : [catalogUrl])));
+    persist(setPresetSyncUrls(settings, presetId, urls.length ? urls : [catalogUrl]));
   }
 
   function updateJurisTemplateUrls(templateId: string, urls: string[]) {
-    setJurisTemplateUrls((prev) => ({ ...prev, [templateId]: sanitizeWebUrlList(urls) }));
+    setJurisTemplateUrls((prev) => ({ ...prev, [templateId]: urls }));
   }
 
   async function handleSyncWebDocument(templateId: string, urlsOverride?: string[]) {
@@ -686,7 +686,7 @@ export function LegalSourcesWorkspace() {
                 <LpUrlEditor
                   urls={presetUrls}
                   catalogUrl={preset.url}
-                  disabled={Boolean(syncingPresetId)}
+                  disabled={syncingPresetId === preset.id}
                   onChange={(urls) => updatePresetUrls(preset.id, preset.url, urls)}
                 />
                 {synced ? (
@@ -704,7 +704,7 @@ export function LegalSourcesWorkspace() {
                 )}
                 <button
                   type="button"
-                  disabled={Boolean(syncingPresetId)}
+                  disabled={syncingPresetId === preset.id}
                   onClick={() => void handleSyncPreset(preset.id, presetUrls)}
                   className="tron-btn-secondary inline-flex h-9 items-center justify-center gap-2 rounded-lg px-3 text-xs font-semibold disabled:opacity-50"
                 >
