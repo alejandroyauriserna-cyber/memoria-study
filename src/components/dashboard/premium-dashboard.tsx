@@ -4,11 +4,14 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
+  ArrowUpRight,
   BookMarked,
   BookOpen,
   Brain,
+  Clock,
   Gavel,
-  Library,
+  Layers3,
+  LibraryBig,
   PenLine,
   Sparkles,
   Upload,
@@ -16,20 +19,13 @@ import {
 import { DashboardOnboarding } from "@/components/dashboard/dashboard-onboarding";
 import { PwaInstallHint } from "@/components/dashboard/pwa-install-hint";
 import { getTimeGreeting } from "@/lib/home/greeting";
+import { UNT_DERECHO } from "@/lib/academic/unt-derecho";
 import type {
-  AiSuggestion,
   MemoriaDashboardProps,
   RecentContinueItem,
   RecentItemKind,
 } from "@/lib/home/dashboard-types";
 import "@/components/dashboard/premium-dashboard.css";
-
-const DOCK = [
-  { href: "/library", label: "Biblioteca", icon: Library },
-  { href: "/organizers", label: "Organizadores", icon: Brain },
-  { href: "/fuentes-juridicas", label: "Fuentes", icon: Gavel },
-  { href: "/upload-material", label: "Subir PDF", icon: Upload },
-] as const;
 
 const KIND_ICON: Record<RecentItemKind, typeof BookOpen> = {
   pdf: BookOpen,
@@ -38,6 +34,12 @@ const KIND_ICON: Record<RecentItemKind, typeof BookOpen> = {
   exam: Gavel,
   chat: Sparkles,
 };
+
+const QUICK_LINKS = [
+  { href: "/organizers", label: "Organizadores", icon: Brain },
+  { href: "/fuentes-juridicas", label: "Fuentes", icon: Gavel },
+  { href: "/upload-material", label: "Subir PDF", icon: Upload },
+] as const;
 
 function formatRelative(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -50,9 +52,9 @@ function formatRelative(iso: string): string {
 
 function fade(index: number) {
   return {
-    initial: { opacity: 0, y: 10 },
+    initial: { opacity: 0, y: 12 },
     animate: { opacity: 1, y: 0 },
-    transition: { delay: index * 0.04, duration: 0.4, ease: [0.25, 0.1, 0.25, 1] as const },
+    transition: { delay: index * 0.05, duration: 0.45, ease: [0.22, 1, 0.36, 1] as const },
   };
 }
 
@@ -62,6 +64,7 @@ export function PremiumDashboard({
   materialsThisWeek,
   studyHoursLabel,
   totalOrganizers,
+  totalShared,
   studyStreakDays,
   pagesUnderstood,
   showOnboarding,
@@ -72,105 +75,133 @@ export function PremiumDashboard({
   const firstName = profileName.split(/\s+/)[0] ?? profileName;
   const focal = recentItems[0] ?? null;
   const insight = suggestions[0] ?? null;
-  const recentTail = recentItems.slice(focal ? 1 : 0, 5);
+  const recentTail = recentItems.slice(focal ? 1 : 0, 4);
 
   return (
-    <div className="home-app">
-      <motion.div className="home-app__top" {...fade(0)}>
-        <h1 className="home-app__greeting">
-          {greeting}, {firstName}
-          <em> — {currentCycle}</em>
-        </h1>
-        <div className="home-app__meta">
+    <div className="dash-home ms-home">
+      <motion.header className="dash-home__head" {...fade(0)}>
+        <div>
+          <p className="dash-home__kicker">
+            <Sparkles size={13} />
+            {UNT_DERECHO.university} / {currentCycle}
+          </p>
+          <h1 className="dash-home__greeting">
+            {greeting}, {firstName}
+          </h1>
+        </div>
+        <div className="dash-home__metrics-inline" aria-label="Métricas secundarias">
           <span>
             <strong>{studyStreakDays}</strong> d racha
           </span>
           <span>
-            <strong>{totalOrganizers}</strong> organizadores
+            <strong>{materialsThisWeek}</strong> nuevos
+          </span>
+          <span>
+            <strong>{pagesUnderstood}</strong> págs.
+          </span>
+          <span>
+            <strong>{totalOrganizers}</strong> org.
+          </span>
+          <span>
+            <strong>{totalShared}</strong> docs
           </span>
         </div>
-      </motion.div>
+      </motion.header>
 
       {showOnboarding ? (
-        <motion.div className="home-app__notice" {...fade(1)}>
+        <motion.div className="dash-home__notice" {...fade(1)}>
           <DashboardOnboarding show />
         </motion.div>
       ) : null}
 
-      <motion.section className="home-app__command" {...fade(2)} aria-label="Continuar estudiando">
-        <div className="home-app__command-grid">
-          <div className="home-app__command-main">
-            <div>
-              <p className="home-app__command-label">Continuar estudiando</p>
-              {focal ? (
-                <>
-                  <h2 className="home-app__command-title">{focal.title}</h2>
-                  <p className="home-app__command-desc">
-                    {focal.subtitle}
-                    <span className="home-app__command-time"> · {formatRelative(focal.at)}</span>
-                  </p>
-                </>
-              ) : (
-                <>
-                  <h2 className="home-app__command-title">Abre un material o sube un PDF</h2>
-                  <p className="home-app__command-desc">
-                    El tutor jurídico y los organizadores se activan desde tu biblioteca.
-                  </p>
-                </>
-              )}
-            </div>
-
-            <div className="home-app__actions">
-              {focal ? (
-                <Link href={focal.href} className="home-app__btn-primary">
-                  Continuar
-                  <ArrowRight size={15} />
-                </Link>
-              ) : (
-                <Link href="/library" className="home-app__btn-primary">
-                  Ir a biblioteca
-                  <ArrowRight size={15} />
-                </Link>
-              )}
-              <Link href="/cuaderno" className="home-app__btn-cuaderno">
-                <PenLine size={15} />
-                Cuaderno IA
-              </Link>
-              <Link href="/upload-material" className="home-app__btn-ghost">
-                Subir PDF
-              </Link>
-            </div>
+      {/* 1. Hero — continuar estudiando */}
+      <motion.section className="dash-home__hero" {...fade(2)} aria-label="Continuar estudiando">
+        <div className="dash-home__hero-inner">
+          <div>
+            <p className="dash-home__hero-label">Sesión activa</p>
+            {focal ? (
+              <>
+                <h2 className="dash-home__hero-title">{focal.title}</h2>
+                <p className="dash-home__hero-topic">
+                  Último tema: {focal.subtitle} · {formatRelative(focal.at)}
+                </p>
+              </>
+            ) : (
+              <>
+                <h2 className="dash-home__hero-title">Continúa tu estudio jurídico</h2>
+                <p className="dash-home__hero-topic">
+                  Abre un material de tu biblioteca o sube un PDF para activar el tutor y los
+                  organizadores.
+                </p>
+              </>
+            )}
+            <p className="dash-home__hero-time-badge">
+              <Clock size={13} />
+              Tiempo estimado: <strong>{studyHoursLabel}</strong>
+            </p>
           </div>
-
-          <aside className="home-app__stats-rail" aria-label="Actividad">
-            <div className="home-app__stat">
-              <p className="home-app__stat-value">{studyHoursLabel}</p>
-              <p className="home-app__stat-label">Tiempo estimado</p>
-            </div>
-            <div className="home-app__stat">
-              <p className="home-app__stat-value">{materialsThisWeek}</p>
-              <p className="home-app__stat-label">Nuevos esta semana</p>
-            </div>
-            <div className="home-app__stat">
-              <p className="home-app__stat-value">{pagesUnderstood}</p>
-              <p className="home-app__stat-label">Páginas guiadas</p>
-            </div>
-          </aside>
+          <div className="dash-home__hero-actions">
+            {focal ? (
+              <Link href={focal.href} className="dash-home__btn-primary">
+                Continuar estudiando
+                <ArrowRight size={16} />
+              </Link>
+            ) : (
+              <Link href="/library" className="dash-home__btn-primary">
+                Ir a biblioteca
+                <ArrowRight size={16} />
+              </Link>
+            )}
+            <Link href="/upload-material" className="dash-home__btn-ghost">
+              Subir PDF
+            </Link>
+          </div>
         </div>
       </motion.section>
 
-      <div className="home-app__bento">
-        <motion.section className="home-app__panel" {...fade(3)} aria-label="Sugerencia IA">
-          <div className="home-app__panel-head">
-            <p className="home-app__panel-title">Sugerencia IA</p>
-          </div>
+      <div className="dash-home__bento">
+        {/* 2. Cuaderno IA — protagonista */}
+        <motion.div {...fade(3)}>
+          <Link href="/cuaderno" className="dash-home__glass dash-home__cuaderno">
+            <div>
+              <span className="dash-home__cuaderno-badge">
+                <Layers3 size={11} />
+                Función principal
+              </span>
+              <h3 className="dash-home__cuaderno-title">Cuaderno IA</h3>
+              <p className="dash-home__cuaderno-copy">
+                Apuntes vivos conectados con tus PDFs, fuentes jurídicas y sesiones de estudio. Sin
+                depender de un documento para empezar.
+              </p>
+            </div>
+            <span className="dash-home__cuaderno-cta">
+              Abrir cuaderno
+              <ArrowUpRight size={15} />
+            </span>
+          </Link>
+        </motion.div>
+
+        {/* 3. Biblioteca jurídica — destacada */}
+        <motion.div {...fade(4)}>
+          <Link href="/library" className="dash-home__glass dash-home__library">
+            <LibraryBig size={22} className="dash-home__library-icon" strokeWidth={1.5} />
+            <h3 className="dash-home__library-title">Biblioteca jurídica</h3>
+            <p className="dash-home__library-copy">
+              Materiales por ciclo y curso con progreso real de estudio guiado.
+            </p>
+          </Link>
+        </motion.div>
+
+        {/* IA proactiva — compacta */}
+        <motion.section className="dash-home__glass dash-home__insight" {...fade(5)} aria-label="Sugerencia IA">
+          <p className="dash-home__panel-label">Sugerencia IA</p>
           {insight ? (
             <>
-              <p className="home-app__insight-text">{insight.sourceTitle}</p>
-              <p className="home-app__insight-context">{insight.context}</p>
-              <div className="home-app__chips">
+              <p className="dash-home__insight-text">{insight.sourceTitle}</p>
+              <p className="dash-home__insight-context">{insight.context}</p>
+              <div className="dash-home__chips">
                 {insight.actions.map((action) => (
-                  <Link key={action.id} href={action.href} className="home-app__chip">
+                  <Link key={action.id} href={action.href} className="dash-home__chip">
                     {action.label}
                     <ArrowRight size={11} />
                   </Link>
@@ -179,27 +210,28 @@ export function PremiumDashboard({
             </>
           ) : (
             <>
-              <p className="home-app__insight-text">
-                Sube material o abre el cuaderno para recibir el siguiente paso de estudio.
+              <p className="dash-home__insight-text">
+                La IA propondrá tu siguiente paso cuando subas material o abras el cuaderno.
               </p>
-              <div className="home-app__chips">
-                <Link href="/cuaderno" className="home-app__chip">
-                  Abrir Cuaderno IA
-                  <ArrowRight size={11} />
+              <div className="dash-home__chips">
+                <Link href="/cuaderno" className="dash-home__chip">
+                  <PenLine size={12} />
+                  Cuaderno IA
                 </Link>
               </div>
             </>
           )}
         </motion.section>
 
-        <motion.section className="home-app__panel" {...fade(4)} aria-label="Recientes">
-          <div className="home-app__panel-head">
-            <p className="home-app__panel-title">Recientes</p>
-            <Link href="/library" className="home-app__panel-link">
-              Ver todo
+        {/* 4. Actividad reciente — timeline estilo landing */}
+        <motion.section className="dash-home__glass dash-home__recent" {...fade(6)} aria-label="Actividad reciente">
+          <div className="dash-home__recent-head">
+            <p className="dash-home__panel-label">Actividad reciente</p>
+            <Link href="/library" className="dash-home__recent-link">
+              Ver biblioteca
             </Link>
           </div>
-          <div className="home-app__list">
+          <div className="dash-home__timeline">
             {recentTail.length ? (
               recentTail.map((item) => {
                 const Icon = KIND_ICON[item.kind];
@@ -207,27 +239,32 @@ export function PremiumDashboard({
                   <Link
                     key={`${item.kind}-${item.id}`}
                     href={item.href}
-                    className="home-app__list-item"
+                    className="dash-home__timeline-row"
                   >
-                    <span className="home-app__list-icon">
-                      <Icon size={12} />
+                    <span className="dash-home__timeline-icon">
+                      <Icon size={15} />
                     </span>
-                    <span className="home-app__list-label">{item.title}</span>
-                    <span className="home-app__list-time">{formatRelative(item.at)}</span>
+                    <span className="min-w-0">
+                      <span className="dash-home__timeline-title">{item.title}</span>
+                      <span className="dash-home__timeline-sub">{item.subtitle}</span>
+                    </span>
+                    <span className="dash-home__timeline-time">{formatRelative(item.at)}</span>
                   </Link>
                 );
               })
             ) : (
-              <p className="home-app__empty">Tu actividad reciente aparecerá aquí.</p>
+              <p className="dash-home__empty">
+                Tu historial aparecerá aquí en cuanto retomes un material o organizador.
+              </p>
             )}
           </div>
         </motion.section>
       </div>
 
-      <motion.nav className="home-app__dock" {...fade(5)} aria-label="Herramientas">
-        {DOCK.map((item) => (
-          <Link key={item.href} href={item.href} className="home-app__dock-item">
-            <item.icon size={13} strokeWidth={1.75} />
+      <motion.nav className="dash-home__chips" {...fade(7)} aria-label="Accesos rápidos">
+        {QUICK_LINKS.map((item) => (
+          <Link key={item.href} href={item.href} className="dash-home__chip">
+            <item.icon size={12} />
             {item.label}
           </Link>
         ))}
