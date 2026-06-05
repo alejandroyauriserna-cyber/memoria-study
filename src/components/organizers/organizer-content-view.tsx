@@ -52,6 +52,10 @@ export function OrganizerContentView({
     [recordConcept],
   );
 
+  const handlePanelSelect = useCallback((id: StudioPanelId) => {
+    setActivePanel(id);
+  }, []);
+
   const parsed = parseOrganizerContent(content);
   const reviewBundle = mergeReviewContent(parsed);
 
@@ -113,10 +117,6 @@ export function OrganizerContentView({
   };
 
   const mapKey = `${analyticsKey}-concept-map`;
-
-  const handlePanelSelect = useCallback((id: StudioPanelId) => {
-    setActivePanel((current) => (current === id ? null : id));
-  }, []);
 
   if (studio && hasConceptMap) {
     return (
