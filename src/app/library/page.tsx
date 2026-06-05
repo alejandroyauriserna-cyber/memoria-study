@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BookOpen, Layers3, LibraryBig, Search, Sparkles } from "lucide-react";
 import { AppShell } from "@/components/ui/shell";
 import { LibraryPremiumWorkspace } from "@/components/library/library-premium-workspace";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -25,13 +26,17 @@ export default async function LibraryHomePage() {
   if (!hasSupabaseEnv()) {
     return (
       <AppShell>
-        <section className="mx-auto flex min-h-[calc(100vh-9rem)] max-w-3xl flex-col items-center justify-center px-4 text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-accent">Biblioteca</p>
-          <h1 className="mt-4 text-4xl font-semibold tracking-tight">Biblioteca no disponible</h1>
+        <div className="ms-home mx-auto flex min-h-[calc(100vh-9rem)] w-full max-w-3xl flex-col items-center justify-center px-4 text-center sm:px-6">
+          <p className="ms-home-kicker">
+            <Sparkles size={14} /> Biblioteca
+          </p>
+          <h1 className="mt-4 text-4xl font-semibold tracking-tight text-[#F5F7FA]">
+            Biblioteca no disponible
+          </h1>
           <Link href="/" className="tron-btn-primary mt-8 inline-flex h-12 items-center justify-center rounded-xl px-6 text-sm font-semibold">
             Volver al inicio
           </Link>
-        </section>
+        </div>
       </AppShell>
     );
   }
@@ -102,21 +107,58 @@ export default async function LibraryHomePage() {
 
   return (
     <AppShell>
-      <section className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8">
-        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#00FFD5]">
-              Biblioteca académica premium
+      <div className="ms-home library-page mx-auto w-full max-w-7xl px-4 pb-12 pt-6 sm:px-6 lg:px-8">
+        <header className="library-page-hero">
+          <div className="library-page-hero-copy">
+            <p className="ms-home-kicker">
+              <Sparkles size={14} /> Biblioteca academica inteligente
             </p>
-            <h1 className="mt-1 text-3xl font-bold tracking-tight text-[#F5F7FA] md:text-4xl">
-              Ciclo → Curso → Material
-            </h1>
-            <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
-              Materiales públicos de la malla curricular de Derecho UNT (2021). Solo se listan apuntes
-              clasificados en un curso oficial del plan.
+            <h1>Todo tu conocimiento juridico, perfectamente organizado.</h1>
+            <p className="ms-home-lead">
+              Explora la malla oficial por ciclo y curso, encuentra materiales al instante y abre cada
+              recurso en un espacio de estudio enfocado.
             </p>
           </div>
-        </div>
+
+          <div className="library-page-stats" aria-label="Resumen de la biblioteca">
+            <div className="library-page-stat">
+              <span className="library-page-stat-icon">
+                <LibraryBig size={18} />
+              </span>
+              <span>
+                <strong>{materials.length}</strong>
+                <em>Materiales</em>
+              </span>
+            </div>
+            <div className="library-page-stat">
+              <span className="library-page-stat-icon">
+                <Layers3 size={18} />
+              </span>
+              <span>
+                <strong>10</strong>
+                <em>Ciclos UNT</em>
+              </span>
+            </div>
+            <div className="library-page-stat">
+              <span className="library-page-stat-icon">
+                <Search size={18} />
+              </span>
+              <span>
+                <strong>Instantanea</strong>
+                <em>Busqueda</em>
+              </span>
+            </div>
+            <div className="library-page-stat">
+              <span className="library-page-stat-icon">
+                <BookOpen size={18} />
+              </span>
+              <span>
+                <strong>2021</strong>
+                <em>Malla oficial</em>
+              </span>
+            </div>
+          </div>
+        </header>
 
         <LibraryPremiumWorkspace
           materials={materials}
@@ -124,7 +166,7 @@ export default async function LibraryHomePage() {
           initialFavoriteIds={favoriteIds}
           isLoggedIn={Boolean(user)}
         />
-      </section>
+      </div>
     </AppShell>
   );
 }

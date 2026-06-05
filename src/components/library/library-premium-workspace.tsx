@@ -156,27 +156,27 @@ export function LibraryPremiumWorkspace({
   const hasActiveSearch = Boolean(query.trim()) || activeFilterCount > 0;
 
   return (
-    <div className="library-premium flex min-h-[calc(100vh-10rem)] flex-col overflow-hidden rounded-[24px] border border-[rgba(0,255,213,0.15)] bg-[rgba(7,19,26,0.65)] shadow-[0_0_48px_rgba(0,255,213,0.06)] backdrop-blur-xl lg:min-h-[calc(100vh-8rem)] lg:flex-row">
+    <div className="library-premium library-workspace flex min-h-[calc(100vh-10rem)] flex-col overflow-hidden lg:min-h-[calc(100vh-8rem)] lg:flex-row">
       {/* Sidebar — Notion / VSCode explorer */}
-      <aside className="flex w-full shrink-0 flex-col border-b border-[rgba(0,255,213,0.1)] lg:w-[min(380px,38vw)] lg:border-b-0 lg:border-r">
-        <div className="border-b border-[rgba(0,255,213,0.08)] px-4 py-4">
+      <aside className="library-sidebar flex w-full shrink-0 flex-col lg:w-[min(400px,38vw)]">
+        <div className="library-sidebar-toolbar px-4 py-4">
           <div className="flex items-center justify-between gap-2">
             <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#00FFD5]">
               <GraduationCap size={13} />
               Explorador académico
             </p>
-            <span className="rounded-full bg-[rgba(0,255,213,0.08)] px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+            <span className="library-count-badge">
               {matchCount} materiales
             </span>
           </div>
 
-          <label className="relative mt-3 block">
+          <label className="library-search-field relative mt-3 block">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#00FFD5]" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Buscar en toda la biblioteca…"
-              className="h-10 w-full rounded-xl border border-[rgba(0,255,213,0.15)] bg-[rgba(7,19,26,0.55)] pl-10 pr-9 text-sm text-[#F5F7FA] outline-none focus:border-[rgba(0,255,213,0.35)]"
+              className="h-11 w-full pl-10 pr-9 text-sm outline-none"
             />
             {query ? (
               <button
@@ -190,14 +190,12 @@ export function LibraryPremiumWorkspace({
             ) : null}
           </label>
 
-          <div className="mt-2 flex items-center gap-2">
+          <div className="library-filter-row mt-2 flex items-center gap-2">
             <button
               type="button"
               onClick={() => setShowFilters((v) => !v)}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold transition ${
-                showFilters || activeFilterCount
-                  ? "bg-[rgba(0,255,213,0.12)] text-[#00FFD5]"
-                  : "text-muted-foreground hover:bg-[rgba(0,255,213,0.06)] hover:text-[#F5F7FA]"
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-semibold transition ${
+                showFilters || activeFilterCount ? "is-active" : "text-muted-foreground"
               }`}
             >
               <Filter size={12} />
@@ -213,10 +211,8 @@ export function LibraryPremiumWorkspace({
               onClick={() =>
                 setFilters((f) => ({ ...f, favoritesOnly: !f.favoritesOnly }))
               }
-              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold transition ${
-                filters.favoritesOnly
-                  ? "bg-[rgba(0,255,213,0.12)] text-[#00FFD5]"
-                  : "text-muted-foreground hover:bg-[rgba(0,255,213,0.06)]"
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-semibold transition ${
+                filters.favoritesOnly ? "is-active" : "text-muted-foreground"
               }`}
             >
               <Star size={12} className={filters.favoritesOnly ? "fill-current" : undefined} />
@@ -276,7 +272,7 @@ export function LibraryPremiumWorkspace({
           </AnimatePresence>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-2 py-2">
+        <div className="library-tree-scroll flex-1 overflow-y-auto px-2 py-2">
           {isLoggedIn && studyHistory.length ? (
             <SidebarSection icon={PlayCircle} title="Continuar estudiando" defaultOpen>
               {studyHistory.slice(0, 4).map((material) => (
@@ -357,7 +353,7 @@ export function LibraryPremiumWorkspace({
       </aside>
 
       {/* Main panel */}
-      <main className="flex min-h-[320px] flex-1 flex-col overflow-hidden">
+      <main className="library-main-panel flex min-h-[320px] flex-1 flex-col overflow-hidden">
         {selected ? (
           <MaterialPreviewPanel
             material={{ ...selected, isFavorite: favoriteIds.has(selected.id ?? "") }}
@@ -391,10 +387,8 @@ function FilterChip({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-full px-2.5 py-1 text-[10px] font-semibold transition ${
-        active
-          ? "bg-[rgba(0,255,213,0.15)] text-[#00FFD5]"
-          : "bg-[rgba(0,255,213,0.04)] text-muted-foreground hover:text-[#F5F7FA]"
+      className={`library-filter-chip ms-home-chip rounded-full px-2.5 py-1 text-[10px] font-semibold ${
+        active ? "is-active" : "text-muted-foreground"
       }`}
     >
       {label}
@@ -416,7 +410,7 @@ function SidebarSection({
   const [open, setOpen] = useState(defaultOpen);
 
   return (
-    <div className="mb-2 px-1">
+    <div className="library-sidebar-section mb-2 px-1">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -461,7 +455,7 @@ function QuickMaterialRow({
     <button
       type="button"
       onClick={() => onSelect(material)}
-      className={`flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left text-xs transition ${
+      className={`library-quick-row flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left text-xs transition ${
         selected
           ? "bg-[rgba(0,255,213,0.12)] text-[#F5F7FA]"
           : "text-[#F5F7FA]/80 hover:bg-[rgba(0,255,213,0.06)]"
@@ -496,7 +490,7 @@ function CycleBranch({
   const cycleOpen = expanded.has(cycle.id) || Boolean(query.trim());
 
   return (
-    <div className="select-none px-1">
+    <div className="library-cycle-branch select-none px-1">
       <button
         type="button"
         onClick={() => onToggle(cycle.id)}
@@ -590,7 +584,7 @@ function MaterialPreviewPanel({
 }) {
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      <div className="flex items-center justify-between border-b border-[rgba(0,255,213,0.1)] px-5 py-3">
+      <div className="library-preview-header flex items-center justify-between px-5 py-4">
         <div className="min-w-0">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-[#00FFD5]">
             {material.courseName}
@@ -606,7 +600,7 @@ function MaterialPreviewPanel({
           <X size={18} />
         </button>
       </div>
-      <div className="flex-1 overflow-y-auto p-5">
+      <div className="library-preview-body flex-1 overflow-y-auto p-5">
         <MaterialCard material={material} />
       </div>
     </div>
@@ -629,11 +623,11 @@ function LibraryWelcomePanel({
   isLoggedIn: boolean;
 }) {
   return (
-    <div className="flex h-full flex-col items-center justify-center px-6 py-12 text-center">
-      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[#00FFD5] to-[#00BFFF] text-[#07131A] shadow-[0_0_32px_rgba(0,255,213,0.3)]">
+    <div className="library-welcome flex h-full flex-col items-center justify-center px-6 py-12 text-center">
+      <div className="library-welcome-icon flex h-16 w-16 items-center justify-center text-[#07131A]">
         <BookOpen size={28} />
       </div>
-      <h2 className="mt-6 text-2xl font-bold text-[#F5F7FA]">
+      <h2 className="mt-6 text-2xl font-bold tracking-tight text-[#F5F7FA]">
         {hasActiveSearch ? `${matchCount} materiales encontrados` : "Biblioteca académica UNT"}
       </h2>
       <p className="mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
@@ -642,7 +636,7 @@ function LibraryWelcomePanel({
           : "Navega por ciclos y cursos como carpetas. Expande cada curso para ver sus materiales — sin listas infinitas de PDFs."}
       </p>
 
-      <div className="mt-8 grid grid-cols-3 gap-4">
+      <div className="library-stat-grid mt-8 grid grid-cols-3 gap-4">
         <StatPill label="Materiales" value={String(matchCount)} />
         <StatPill label="Ciclos" value={String(cycleCount)} />
         <StatPill label="Favoritos" value={isLoggedIn ? String(favoritesCount) : "—"} />
@@ -679,7 +673,7 @@ function LibraryWelcomePanel({
 
 function StatPill({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-[rgba(0,255,213,0.12)] bg-[rgba(0,255,213,0.04)] px-4 py-3">
+    <div className="library-stat-pill px-4 py-3">
       <p className="text-xl font-bold tabular-nums text-[#00FFD5]">{value}</p>
       <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
         {label}

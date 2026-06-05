@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import "./home-2026.css";
+import "./library-modern.css";
 import { env } from "@/lib/env";
 
 const appUrl = env.appUrl.replace(/\/$/, "");

@@ -1,0 +1,316 @@
+/* Biblioteca — mismo lenguaje visual que ms-home-2026 */
+
+.ms-home.library-page {
+  gap: 1.15rem;
+}
+
+.library-page-hero {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.12fr) minmax(260px, 0.88fr);
+  align-items: end;
+  gap: clamp(1.25rem, 3vw, 2rem);
+  overflow: hidden;
+  border-radius: 1.5rem;
+  border: 1px solid rgba(0, 255, 213, 0.12);
+  background:
+    linear-gradient(140deg, rgba(255, 138, 0, 0.08), transparent 28%),
+    radial-gradient(ellipse 80% 60% at 92% 12%, rgba(0, 191, 255, 0.14), transparent 58%),
+    radial-gradient(ellipse 70% 60% at 4% 18%, rgba(0, 255, 213, 0.12), transparent 54%),
+    linear-gradient(160deg, rgba(16, 39, 48, 0.72), rgba(7, 19, 26, 0.92));
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.03),
+    0 28px 90px rgba(0, 0, 0, 0.42);
+  padding: clamp(1.25rem, 3vw, 2.25rem);
+  isolation: isolate;
+}
+
+.library-page-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-image:
+    linear-gradient(rgba(0, 255, 213, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 213, 0.05) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: linear-gradient(110deg, black, transparent 72%);
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.library-page-hero-copy,
+.library-page-stats {
+  position: relative;
+  z-index: 1;
+}
+
+.library-page-hero-copy h1 {
+  margin-top: 0.85rem;
+  max-width: 16ch;
+  color: #f8fafc;
+  font-size: clamp(2rem, 3.8vw, 3.25rem);
+  font-weight: 760;
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.library-page-hero-copy .ms-home-lead {
+  margin-top: 0.85rem;
+  max-width: 38rem;
+}
+
+.library-page-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.library-page-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-height: 4rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(0, 255, 213, 0.12);
+  background: rgba(7, 19, 26, 0.62);
+  padding: 0.85rem 0.95rem;
+  backdrop-filter: blur(14px);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.22);
+}
+
+.library-page-stat-icon {
+  display: grid;
+  height: 2.35rem;
+  width: 2.35rem;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 0.8rem;
+  background: rgba(0, 255, 213, 0.1);
+  color: #00ffd5;
+}
+
+.library-page-stat span {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.library-page-stat strong {
+  color: #f5f7fa;
+  font-size: 0.92rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.library-page-stat em {
+  color: rgba(245, 247, 250, 0.52);
+  font-size: 0.68rem;
+  font-style: normal;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ——— Workspace explorer ——— */
+.library-workspace {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.25rem;
+  border: 1px solid rgba(0, 255, 213, 0.18);
+  background:
+    linear-gradient(160deg, rgba(8, 14, 17, 0.94), rgba(16, 39, 48, 0.84)),
+    radial-gradient(ellipse 70% 55% at 0% 0%, rgba(0, 255, 213, 0.1), transparent 58%);
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.46),
+    0 0 70px rgba(0, 255, 213, 0.08);
+}
+
+.library-sidebar {
+  border-bottom: 1px solid rgba(0, 255, 213, 0.1);
+  background: rgba(7, 19, 26, 0.55);
+  backdrop-filter: blur(16px);
+}
+
+.library-sidebar-toolbar,
+.library-preview-header {
+  border-bottom: 1px solid rgba(0, 255, 213, 0.1);
+  background: rgba(16, 39, 48, 0.45);
+}
+
+.library-count-badge {
+  border: 1px solid rgba(0, 255, 213, 0.16);
+  border-radius: 999px;
+  background: rgba(0, 255, 213, 0.07);
+  padding: 0.32rem 0.6rem;
+  color: rgba(245, 247, 250, 0.72);
+  font-size: 0.65rem;
+  font-weight: 600;
+}
+
+.library-search-field input {
+  height: 2.75rem;
+  width: 100%;
+  border-radius: 1rem;
+  border: 1px solid rgba(0, 255, 213, 0.22);
+  background: rgba(7, 19, 26, 0.75);
+  padding-left: 2.5rem;
+  padding-right: 2.25rem;
+  color: #f5f7fa;
+  font-size: 0.875rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  transition:
+    border-color 220ms ease,
+    box-shadow 220ms ease,
+    background 220ms ease;
+}
+
+.library-search-field input::placeholder {
+  color: rgba(148, 163, 184, 0.75);
+}
+
+.library-search-field input:focus {
+  outline: none;
+  border-color: rgba(0, 255, 213, 0.45);
+  background: rgba(7, 19, 26, 0.88);
+  box-shadow:
+    0 0 0 3px rgba(0, 255, 213, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.library-filter-row > button {
+  border-radius: 999px;
+  border: 1px solid rgba(0, 255, 213, 0.12);
+  background: rgba(7, 19, 26, 0.55);
+  transition:
+    border-color 200ms ease,
+    background 200ms ease,
+    transform 200ms ease;
+}
+
+.library-filter-row > button:hover {
+  border-color: rgba(0, 255, 213, 0.28);
+  background: rgba(0, 255, 213, 0.06);
+}
+
+.library-filter-row > button.is-active {
+  border-color: rgba(0, 255, 213, 0.35);
+  background: rgba(0, 255, 213, 0.12);
+  color: #00ffd5;
+}
+
+.library-filter-chip.is-active {
+  border-color: rgba(0, 255, 213, 0.35);
+  background: rgba(0, 255, 213, 0.12);
+  color: #00ffd5;
+}
+
+.library-tree-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 255, 213, 0.25) transparent;
+}
+
+.library-sidebar-section {
+  border-radius: 0.9rem;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.library-quick-row {
+  min-height: 2.15rem;
+  border-radius: 0.75rem;
+}
+
+.library-cycle-branch > button {
+  min-height: 2.45rem;
+  border: 1px solid transparent;
+  border-radius: 0.75rem;
+}
+
+.library-cycle-branch > button:hover {
+  border-color: rgba(0, 255, 213, 0.12);
+  background: rgba(0, 255, 213, 0.05);
+}
+
+.library-main-panel {
+  position: relative;
+  background:
+    linear-gradient(rgba(0, 255, 213, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 213, 0.03) 1px, transparent 1px),
+    rgba(7, 19, 26, 0.42);
+  background-size: 40px 40px;
+}
+
+.library-preview-body {
+  scrollbar-width: thin;
+}
+
+.library-welcome {
+  background: radial-gradient(ellipse 55% 45% at 50% 45%, rgba(0, 255, 213, 0.1), transparent 72%);
+}
+
+.library-welcome-icon {
+  display: grid;
+  height: 4rem;
+  width: 4rem;
+  place-items: center;
+  border-radius: 1rem;
+  border: 1px solid rgba(0, 255, 213, 0.18);
+  background: rgba(0, 255, 213, 0.1);
+  color: #00ffd5;
+  box-shadow: 0 16px 42px rgba(0, 255, 213, 0.12);
+}
+
+.library-stat-pill {
+  min-width: 7.5rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(0, 255, 213, 0.12);
+  background: rgba(16, 39, 48, 0.52);
+  backdrop-filter: blur(14px);
+}
+
+@media (min-width: 1024px) {
+  .library-sidebar {
+    border-right: 1px solid rgba(0, 255, 213, 0.1);
+    border-bottom: 0;
+  }
+}
+
+@media (max-width: 900px) {
+  .library-page-hero {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .library-page-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .library-page-hero {
+    border-radius: 1.1rem;
+    padding: 1.15rem;
+  }
+
+  .library-page-hero-copy h1 {
+    font-size: clamp(1.85rem, 9vw, 2.45rem);
+  }
+
+  .library-stat-grid {
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .library-stat-pill {
+    min-width: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .library-filter-row > button,
+  .library-search-field input {
+    transition: none;
+  }
+}
