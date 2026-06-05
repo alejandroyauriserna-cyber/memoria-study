@@ -2600,6 +2600,46 @@
   box-shadow: 0 12px 32px rgba(0, 255, 213, 0.25);
 }
 
+/* Gate dentro del editor: proteger portada y CTA de overrides globales */
+.cn-immersive-root .cn-notebook-gate {
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow:
+    0 40px 100px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+
+.cn-immersive-root .cn-notebook-gate-cover {
+  background-color: transparent;
+}
+
+.cn-immersive-root .cn-notebook-gate-body {
+  background: rgba(16, 20, 28, 0.96);
+}
+
+.cn-immersive-root .cn-notebook-gate-cta {
+  border: none !important;
+  background: linear-gradient(135deg, #00ffd5, #2dd4bf) !important;
+  color: #0c0e12 !important;
+  box-shadow: 0 10px 28px rgba(0, 255, 213, 0.22);
+}
+
+.cn-immersive-root .cn-notebook-gate-cta:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, #00ffd5, #2dd4bf) !important;
+  color: #0c0e12 !important;
+  box-shadow: 0 14px 36px rgba(0, 255, 213, 0.32);
+}
+
+.cn-immersive-root--luxury .cn-notebook-gate-cta {
+  border: none !important;
+  background: linear-gradient(135deg, #00ffd5, #2dd4bf) !important;
+  color: #0c0e12 !important;
+}
+
 /* Timeline académico */
 .cn-page-timeline {
   width: 196px;
@@ -3180,14 +3220,14 @@
 
 /* ---------- Botones estilo Linear (scoped) ---------- */
 
-.ms-notebook-shell button:not(:disabled):not(.cn-immersive-header-icon):not(.cn-page-timeline-star):not(.cn-page-timeline-page):not(.cn-page-timeline-unit-btn):not(.cn-selection-menu-btn):not(.cn-float-tb-btn):not(.cn-float-tb-chip):not(.cn-float-tb-ai) {
+.ms-notebook-shell button:not(:disabled):not(.cn-immersive-header-icon):not(.cn-page-timeline-star):not(.cn-page-timeline-page):not(.cn-page-timeline-unit-btn):not(.cn-selection-menu-btn):not(.cn-float-tb-btn):not(.cn-float-tb-chip):not(.cn-float-tb-ai):not(.cn-notebook-gate-cta):not(.cn-ai-btn-primary):not(.cn-ai-btn-primary--luxury) {
   transition:
     transform 0.18s ease,
     box-shadow 0.18s ease,
     background 0.18s ease;
 }
 
-.ms-notebook-shell button:not(:disabled):not(.cn-immersive-header-icon):not(.cn-page-timeline-star):not(.cn-page-timeline-page):not(.cn-page-timeline-unit-btn):not(.cn-selection-menu-btn):not(.cn-float-tb-btn):not(.cn-float-tb-chip):not(.cn-float-tb-ai):hover {
+.ms-notebook-shell button:not(:disabled):not(.cn-immersive-header-icon):not(.cn-page-timeline-star):not(.cn-page-timeline-page):not(.cn-page-timeline-unit-btn):not(.cn-selection-menu-btn):not(.cn-float-tb-btn):not(.cn-float-tb-chip):not(.cn-float-tb-ai):not(.cn-notebook-gate-cta):not(.cn-ai-btn-primary):not(.cn-ai-btn-primary--luxury):hover {
   transform: translateY(-2px);
   box-shadow: 0 12px 25px rgba(0, 255, 213, 0.12);
 }
@@ -3196,7 +3236,6 @@
 
 .ms-notebook-shell .cn-ai-answer-card,
 .ms-notebook-shell .cn-ai-block,
-.ms-notebook-shell .cn-notebook-gate,
 .ms-notebook-shell .cn-floating-concept-card,
 .ms-notebook-shell .cn-template-tile,
 .ms-notebook-shell .cuaderno-folder-card,
@@ -3281,4 +3320,46 @@
   .ms-notebook-shell .cuaderno-folder-card:hover {
     transform: none;
   }
+}
+
+/* —— Tema claro (estantería / vistas cuaderno, no editor inmersivo) —— */
+
+html:not(.dark) .cuaderno-premium.ms-notebook-shell:not(.cn-immersive-root),
+html:not(.dark) .ms-notebook-shell.cuaderno-shell:not(.cn-immersive-root) {
+  --cn-bg: #eef4f8;
+  --cn-surface: #ffffff;
+  --cn-surface-raised: #f8fafc;
+  --cn-border: color-mix(in srgb, var(--accent) 18%, transparent);
+  --cn-text: #0f172a;
+  --cn-text-secondary: rgba(15, 23, 42, 0.62);
+  --cn-muted: rgba(15, 23, 42, 0.58);
+  color: var(--cn-text);
+}
+
+html:not(.dark) .cuaderno-premium.ms-notebook-shell:not(.cn-immersive-root)::before,
+html:not(.dark) .ms-notebook-shell.cuaderno-shell:not(.cn-immersive-root)::before {
+  opacity: 0.45;
+}
+
+html:not(.dark) .ms-notebook-shell.cuaderno-shell:not(.cn-immersive-root) .cn-tab {
+  color: var(--muted-foreground);
+}
+
+html:not(.dark) .ms-notebook-shell.cuaderno-shell:not(.cn-immersive-root) .cn-tab[data-active="true"] {
+  color: var(--foreground);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent),
+    0 8px 20px rgba(15, 23, 42, 0.06);
+}
+
+html:not(.dark) .ms-notebook-shell .cn-ai-answer-card,
+html:not(.dark) .ms-notebook-shell .cn-ai-block,
+html:not(.dark) .ms-notebook-shell .cn-floating-concept-card,
+html:not(.dark) .ms-notebook-shell .cn-template-tile,
+html:not(.dark) .ms-notebook-shell .cuaderno-folder-card,
+html:not(.dark) .ms-notebook-shell .cuaderno-sheet-card {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: color-mix(in srgb, var(--border) 80%, transparent);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.06);
 }

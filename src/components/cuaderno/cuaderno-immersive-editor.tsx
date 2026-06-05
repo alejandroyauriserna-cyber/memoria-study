@@ -359,7 +359,6 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
 
   function openPageFromGate() {
     setNotebookGateOpen(false);
-    setAiOpen(true);
   }
 
   function toggleStudyMode() {
@@ -378,7 +377,7 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
 
   return (
     <motion.div
-      className={`cn-immersive-root cn-immersive-root--studio cn-immersive-root--luxury cn-ambient-bg ms-notebook-shell cuaderno-shell ${aiOpen ? "cn-immersive-root--ai-open" : ""}${stickerPanelOpen ? " cn-immersive-root--side-open" : ""}${focusMode || studyMode ? " cn-immersive-root--focus cn-immersive-root--study" : ""}${notebookGateOpen ? " cn-immersive-root--gate" : ""}`}
+      className={`cn-immersive-root cn-immersive-root--studio cn-immersive-root--luxury cn-ambient-bg cuaderno-shell ${aiOpen ? "cn-immersive-root--ai-open" : ""}${stickerPanelOpen ? " cn-immersive-root--side-open" : ""}${focusMode || studyMode ? " cn-immersive-root--focus cn-immersive-root--study" : ""}${notebookGateOpen ? " cn-immersive-root--gate" : ""}`}
       data-layout={chrome.layoutMode}
       data-focus={focusMode ? "true" : "false"}
       style={

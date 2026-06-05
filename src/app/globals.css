@@ -177,6 +177,11 @@ select {
   color: #fff;
 }
 
+html:not(.dark) ::selection {
+  background: color-mix(in srgb, var(--accent) 28%, transparent);
+  color: var(--foreground);
+}
+
 /* ——— Ambient background ——— */
 .tron-bg-root {
   pointer-events: none;
@@ -544,42 +549,61 @@ textarea.ms-input {
 }
 
 /* ——— Dashboard autenticado: alineado con landing ms-home ——— */
-.shell--home .tron-bg-mesh {
+html.dark .shell--home .tron-bg-mesh {
   background:
     radial-gradient(ellipse 70% 50% at 15% 0%, rgba(0, 255, 213, 0.1), transparent 55%),
     radial-gradient(ellipse 55% 40% at 85% 10%, rgba(0, 191, 255, 0.08), transparent 50%),
     linear-gradient(180deg, #07131a 0%, #0a1820 50%, #07131a 100%);
 }
 
-.shell--home .tron-bg-grid {
+html.dark .shell--home .tron-bg-grid {
   opacity: 0.28;
 }
 
-.shell--cuaderno .tron-bg-grid {
+html:not(.dark) .shell--home .tron-bg-grid {
+  opacity: 0.35;
+}
+
+html:not(.dark) .shell--cuaderno .tron-bg-grid {
+  opacity: 0.42;
+}
+
+html.dark .shell--cuaderno .tron-bg-grid {
   opacity: 0.6;
 }
 
+html.dark .shell--cuaderno .tron-bg-orb,
 .shell--cuaderno .tron-bg-orb {
   opacity: 0.72;
 }
 
-.shell--home .tron-bg-orb {
+html.dark .shell--home .tron-bg-orb {
   opacity: 0.5;
 }
 
-.shell--home .tron-nav-link {
+html.dark .shell--home .tron-nav-link {
   font-size: 0.8125rem;
   font-weight: 500;
   padding: 0.4rem 0.75rem;
   color: rgba(244, 244, 245, 0.45);
 }
 
-.shell--home .tron-nav-link:hover,
-.shell--home .tron-nav-link[data-active="true"] {
+html.dark .shell--home .tron-nav-link:hover,
+html.dark .shell--home .tron-nav-link[data-active="true"] {
   color: #f4f4f5;
   background: rgba(255, 255, 255, 0.05);
 }
 
-.shell--home .tron-nav-link[data-active="true"] {
+html.dark .shell--home .tron-nav-link[data-active="true"] {
   color: var(--accent);
+}
+
+html:not(.dark) .shell--home .tron-nav-link {
+  color: var(--muted-foreground);
+}
+
+html:not(.dark) .shell--home .tron-nav-link:hover,
+html:not(.dark) .shell--home .tron-nav-link[data-active="true"] {
+  color: var(--foreground);
+  background: var(--accent-soft);
 }

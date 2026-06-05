@@ -602,3 +602,76 @@
 .ms-home-feature-card p {
   color: rgba(255, 255, 255, 0.68);
 }
+
+/* ——— Tema claro ——— */
+
+html:not(.dark) .ms-home-landing {
+  border-color: color-mix(in srgb, var(--accent) 20%, transparent);
+  background:
+    linear-gradient(140deg, color-mix(in srgb, var(--accent) 8%, #fff), transparent 30%),
+    radial-gradient(ellipse 80% 60% at 88% 12%, color-mix(in srgb, var(--accent-secondary) 10%, #fff), transparent 58%),
+    linear-gradient(160deg, #f8fbfd 0%, #eef4f8 55%, #f5f9fc 100%);
+  box-shadow:
+    0 0 0 1px rgba(15, 23, 42, 0.04),
+    0 24px 64px rgba(15, 23, 42, 0.08);
+}
+
+html:not(.dark) .ms-home-landing::before {
+  opacity: 0.2;
+}
+
+html:not(.dark) .ms-home-landing h1 {
+  background: linear-gradient(180deg, #0f172a, #334155);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+html:not(.dark) .ms-home-lead,
+html:not(.dark) .ms-home-trust {
+  color: var(--muted-foreground);
+}
+
+html:not(.dark) .ms-home-kicker {
+  border-color: color-mix(in srgb, var(--accent) 24%, transparent);
+  background: color-mix(in srgb, var(--accent) 8%, #fff);
+  color: color-mix(in srgb, var(--accent) 78%, #0f172a);
+}
+
+html:not(.dark) .ms-home-feature-card,
+html:not(.dark) .ms-home-glass,
+html:not(.dark) .ms-home-hero,
+html:not(.dark) .ms-home-product-shot,
+html:not(.dark) .ms-home-product-panel {
+  border-color: color-mix(in srgb, var(--accent) 16%, transparent);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.07);
+}
+
+html:not(.dark) .ms-home-feature-card h2,
+html:not(.dark) .ms-home-product-main h2,
+html:not(.dark) .ms-home-step-row strong {
+  color: var(--foreground);
+}
+
+html:not(.dark) .ms-home-feature-card p,
+html:not(.dark) .ms-home-step-row small,
+html:not(.dark) .ms-home-mini-title {
+  color: var(--muted-foreground);
+}
+
+html:not(.dark) .ms-home-chip {
+  border-color: color-mix(in srgb, var(--accent) 20%, transparent);
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--foreground);
+}
+
+html:not(.dark) .ms-home-answer {
+  border-color: color-mix(in srgb, var(--accent) 14%, transparent);
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--foreground);
+}
+
+html:not(.dark) .ms-home-section-title {
+  color: var(--muted-foreground);
+}

@@ -93,6 +93,7 @@
   width: 2.35rem;
   flex-shrink: 0;
   place-items: center;
+  align-self: center;
   border-radius: 0.8rem;
   background: rgba(0, 255, 213, 0.1);
   color: #00ffd5;
@@ -108,25 +109,31 @@
   color: #00bfff;
 }
 
-.fuentes-page-stat span {
+.fuentes-page-stat > span:not(.fuentes-page-stat-icon) {
   display: flex;
   flex-direction: column;
-  gap: 0.1rem;
+  justify-content: center;
+  gap: 0.2rem;
   min-width: 0;
 }
 
 .fuentes-page-stat strong {
+  display: block;
   color: #f5f7fa;
-  font-size: 0.92rem;
-  font-weight: 700;
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
 }
 
 .fuentes-page-stat em {
+  display: block;
   color: rgba(245, 247, 250, 0.52);
   font-size: 0.68rem;
   font-style: normal;
   font-weight: 600;
+  line-height: 1.25;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -543,4 +550,107 @@
 .fuentes-toggle-btn,
 .ms-home-chip {
   backdrop-filter: blur(16px);
+}
+
+/* ——— Tema claro ——— */
+
+html:not(.dark) .fuentes-page-hero {
+  border-color: color-mix(in srgb, var(--accent) 22%, transparent);
+  background:
+    linear-gradient(140deg, color-mix(in srgb, var(--accent) 10%, #fff), transparent 32%),
+    radial-gradient(ellipse 80% 60% at 92% 12%, color-mix(in srgb, var(--accent-secondary) 12%, #fff), transparent 58%),
+    linear-gradient(160deg, #f8fbfd 0%, #eef4f8 52%, #f5f9fc 100%);
+  box-shadow:
+    0 0 0 1px rgba(15, 23, 42, 0.04),
+    0 20px 48px rgba(15, 23, 42, 0.08);
+}
+
+html:not(.dark) .fuentes-page-hero::before {
+  opacity: 0.22;
+}
+
+html:not(.dark) .fuentes-page-hero-copy h1 {
+  background: linear-gradient(180deg, #0f172a, #334155);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+html:not(.dark) .fuentes-page-hero-copy .ms-home-lead {
+  color: var(--muted-foreground);
+}
+
+html:not(.dark) .fuentes-page-stat {
+  border-color: color-mix(in srgb, var(--accent) 18%, transparent);
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+}
+
+html:not(.dark) .fuentes-page-stat strong {
+  color: var(--foreground);
+}
+
+html:not(.dark) .fuentes-page-stat em {
+  color: var(--muted-foreground);
+}
+
+html:not(.dark) .fuentes-panel,
+html:not(.dark) .fuentes-wizard-panel,
+html:not(.dark) .fuentes-preset-card {
+  border-color: color-mix(in srgb, var(--accent) 16%, transparent);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.07);
+}
+
+html:not(.dark) .fuentes-panel-title,
+html:not(.dark) .fuentes-wizard-panel h2,
+html:not(.dark) .fuentes-preset-card .text-\[\#F5F7FA\] {
+  color: var(--foreground) !important;
+}
+
+html:not(.dark) .fuentes-panel-copy,
+html:not(.dark) .fuentes-section-label,
+html:not(.dark) .fuentes-footer-note {
+  color: var(--muted-foreground);
+}
+
+html:not(.dark) .fuentes-toggle-btn,
+html:not(.dark) .fuentes-source-row,
+html:not(.dark) .fuentes-input,
+html:not(.dark) .fuentes-select,
+html:not(.dark) .fuentes-upload-zone,
+html:not(.dark) .fuentes-wizard-option {
+  border-color: color-mix(in srgb, var(--accent) 16%, transparent);
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--foreground);
+}
+
+html:not(.dark) .fuentes-source-row.is-disabled {
+  background: rgba(241, 245, 249, 0.9);
+  opacity: 0.85;
+}
+
+html:not(.dark) .fuentes-source-toggle {
+  border-color: color-mix(in srgb, var(--border) 80%, transparent);
+  color: var(--muted-foreground);
+}
+
+html:not(.dark) .fuentes-input::placeholder {
+  color: color-mix(in srgb, var(--muted-foreground) 80%, transparent);
+}
+
+html:not(.dark) .fuentes-page-content .text-\[\#F5F7FA\] {
+  color: var(--foreground) !important;
+}
+
+html:not(.dark) .fuentes-page-content .text-\[\#F5F7FA\]\/80 {
+  color: color-mix(in srgb, var(--foreground) 80%, transparent) !important;
+}
+
+html:not(.dark) .fuentes-page-content .text-\[\#F5F7FA\]\/90 {
+  color: color-mix(in srgb, var(--foreground) 90%, transparent) !important;
+}
+
+html:not(.dark) .fuentes-page-content .bg-\[rgba\(0\,0\,0\,0\.25\)\] {
+  background: rgba(255, 255, 255, 0.92) !important;
 }

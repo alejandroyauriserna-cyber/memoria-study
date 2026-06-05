@@ -667,11 +667,11 @@
    BOTONES ESTILO LINEAR
 =========================== */
 
-.cn-immersive-root button:not(:disabled):not(.cn-immersive-header-icon):not(.cn-page-timeline-star):not(.cn-page-timeline-page):not(.cn-page-timeline-unit-btn):not(.cn-selection-menu-btn):not(.cn-float-tb-btn):not(.cn-float-tb-chip):not(.cn-side-rail-btn) {
+.cn-immersive-root button:not(:disabled):not(.cn-immersive-header-icon):not(.cn-page-timeline-star):not(.cn-page-timeline-page):not(.cn-page-timeline-unit-btn):not(.cn-selection-menu-btn):not(.cn-float-tb-btn):not(.cn-float-tb-chip):not(.cn-side-rail-btn):not(.cn-notebook-gate-cta):not(.cn-ai-btn-primary):not(.cn-ai-btn-primary--luxury) {
   transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
 }
 
-.cn-immersive-root button:not(:disabled):not(.cn-immersive-header-icon):not(.cn-page-timeline-star):not(.cn-page-timeline-page):not(.cn-page-timeline-unit-btn):not(.cn-selection-menu-btn):not(.cn-float-tb-btn):not(.cn-float-tb-chip):not(.cn-side-rail-btn):hover {
+.cn-immersive-root button:not(:disabled):not(.cn-immersive-header-icon):not(.cn-page-timeline-star):not(.cn-page-timeline-page):not(.cn-page-timeline-unit-btn):not(.cn-selection-menu-btn):not(.cn-float-tb-btn):not(.cn-float-tb-chip):not(.cn-side-rail-btn):not(.cn-notebook-gate-cta):not(.cn-ai-btn-primary):not(.cn-ai-btn-primary--luxury):hover {
   transform: translateY(-2px);
   box-shadow: 0 12px 25px rgba(0, 255, 213, 0.1);
 }
@@ -844,18 +844,14 @@
 ========================================== */
 
 .cn-immersive-root .cn-immersive-header-cta,
-.cn-immersive-root .cn-notebook-gate-cta,
 .cn-immersive-root .cn-ai-tutor-cta,
-.cn-immersive-root .cn-ai-btn-primary,
 .cn-immersive-root .cn-ai-btn-secondary {
   border: 1px solid rgba(255, 255, 255, 0.04);
   background: rgba(255, 255, 255, 0.02);
 }
 
 .cn-immersive-root .cn-immersive-header-cta:hover,
-.cn-immersive-root .cn-notebook-gate-cta:hover,
 .cn-immersive-root .cn-ai-tutor-cta:hover,
-.cn-immersive-root .cn-ai-btn-primary:hover:not(:disabled),
 .cn-immersive-root .cn-ai-btn-secondary:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.05);
   box-shadow:
