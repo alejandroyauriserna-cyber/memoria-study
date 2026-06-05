@@ -1,0 +1,13 @@
+/** URLs permitidas en Supabase: /auth y /dashboard */
+export function authPageUrl(mode?: string): string {
+  const origin =
+    typeof window !== "undefined"
+      ? window.location.origin
+      : (process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
+
+  const url = new URL("/auth", origin);
+  if (mode) {
+    url.searchParams.set("mode", mode);
+  }
+  return url.toString();
+}

@@ -32,11 +32,11 @@ export function ProfileAccountSection({
 
         <div className="flex flex-wrap gap-2">
           <Link
-            href="/auth"
+            href={email ? `/auth?mode=recovery&email=${encodeURIComponent(email)}` : "/auth?mode=recovery"}
             className="inline-flex items-center gap-2 rounded-xl border border-[rgba(0,255,213,0.15)] bg-[rgba(16,39,48,0.5)] px-3 py-2 text-xs font-semibold text-[#F5F7FA] transition hover:border-[rgba(0,255,213,0.3)]"
           >
             <KeyRound size={14} className="text-[#00FFD5]" />
-            Cambiar contraseña
+            Recuperar contraseña
           </Link>
           <button
             type="button"

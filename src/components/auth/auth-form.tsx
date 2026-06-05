@@ -1,28 +1,41 @@
 "use client";
 
-import { Eye, EyeOff, LogIn, UserPlus } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { Eye, EyeOff, LogIn, Mail, UserPlus } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { LoadingState } from "@/components/ui/loading-state";
 import { useLoadingProgress } from "@/hooks/use-loading-progress";
-import { AcademicNavigator } from "@/components/study/academic-navigator";
 import { CycleSelector } from "@/components/auth/cycle-selector";
-import { saveAcademicSelection } from "@/lib/academic/storage";
+import { authPageUrl } from "@/lib/auth/redirect-urls";
 import { createClient } from "@/lib/supabase/browser";
 import { UNT_DERECHO } from "@/lib/academic/unt-derecho";
-import type { AcademicSelection } from "@/types/academic";
+
+type AuthMode = "signin" | "signup" | "recovery";
 
 type CurrentCycle = {
   cycleNumber: number;
   cycleLabel: string;
 };
 
+function safeRedirectPath(next: string | null): string {
+  if (!next || !next.startsWith("/") || next.startsWith("//")) {
+    return "/dashboard";
+  }
+  return next;
+}
+
 export function AuthForm() {
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
-  const [email, setEmail] = useState("");
+  const searchParams = useSearchParams();
+  const initialMode = (searchParams.get("mode") as AuthMode | null) ?? "signin";
+  const redirectTo = safeRedirectPath(searchParams.get("next"));
+
+  const [mode, setMode] = useState<AuthMode>(
+    initialMode === "recovery" ? "recovery" : initialMode === "signup" ? "signup" : "signin",
+  );
+  const [email, setEmail] = useState(searchParams.get("email") ?? "");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [academic, setAcademic] = useState<AcademicSelection | null>(null);
   const [currentCycle, setCurrentCycle] = useState<CurrentCycle>({
     cycleNumber: UNT_DERECHO.years[0].cycles[0].number,
     cycleLabel: UNT_DERECHO.years[0].cycles[0].label,
@@ -31,16 +44,19 @@ export function AuthForm() {
   const [message, setMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const actionLabel = useMemo(
-    () => (mode === "signup" ? "Registrarse" : "Ingresar"),
-    [mode],
-  );
-  const authProgress = useLoadingProgress(status === "loading", "auth");
+  useEffect(() => {
+    if (searchParams.get("mode") === "recovery") {
+      setMode("recovery");
+    }
+  }, [searchParams]);
 
-  const handleAcademicChange = useCallback((selection: AcademicSelection) => {
-    setAcademic(selection);
-    saveAcademicSelection(selection);
-  }, []);
+  const actionLabel = useMemo(() => {
+    if (mode === "signup") return "Registrarse";
+    if (mode === "recovery") return "Enviar enlace";
+    return "Ingresar";
+  }, [mode]);
+
+  const authProgress = useLoadingProgress(status === "loading", "auth");
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -50,18 +66,34 @@ export function AuthForm() {
     try {
       const supabase = createClient();
 
-      if (mode === "signup") {
-        if (!fullName.trim() || !password.trim()) {
-          throw new Error("Completa nombre, correo, contraseña y ciclo actual.");
+      if (mode === "recovery") {
+        if (!email.trim()) {
+          throw new Error("Ingresa el correo de tu cuenta.");
         }
 
-        const callbackUrl = `${window.location.origin}/auth/callback`;
+        const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+          redirectTo: authPageUrl("reset-password"),
+        });
+
+        if (error) throw error;
+
+        setStatus("sent");
+        setMessage(
+          "Te enviamos un enlace para restablecer tu contraseña. Revisa tu bandeja y la carpeta de spam.",
+        );
+        return;
+      }
+
+      if (mode === "signup") {
+        if (!fullName.trim() || !password.trim()) {
+          throw new Error("Completa nombre, correo y contraseña.");
+        }
 
         const { error } = await supabase.auth.signUp({
-          email,
+          email: email.trim(),
           password,
           options: {
-            emailRedirectTo: callbackUrl,
+            emailRedirectTo: authPageUrl(),
             data: {
               full_name: fullName.trim(),
               current_cycle_number: currentCycle.cycleNumber,
@@ -74,53 +106,34 @@ export function AuthForm() {
 
         setStatus("sent");
         setMessage(
-          "Revisa tu correo. Completa el registro y luego accede con tu contraseña o enlace mágico.",
+          "Revisa tu correo para confirmar la cuenta. Luego ingresa con tu correo y contraseña.",
         );
         return;
       }
 
-      if (!academic) {
-        throw new Error(
-          "Debes elegir año, ciclo, curso y semana donde guardarás tus flashcards.",
-        );
+      if (!password.trim()) {
+        throw new Error("Ingresa tu contraseña para acceder a tu cuenta.");
       }
 
-      const callbackUrl = `${window.location.origin}/auth/callback`;
-      const result = password
-        ? await supabase.auth.signInWithPassword({ email, password })
-        : await supabase.auth.signInWithOtp({
-            email,
-            options: {
-              emailRedirectTo: callbackUrl,
-              data: {
-                academic_context: academic,
-              },
-            },
-          });
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
 
-      if (result.error) throw result.error;
+      if (error) throw error;
 
-      if (result.data?.session) {
-        window.location.href = "/dashboard";
+      if (data.session) {
+        window.location.href = redirectTo;
         return;
       }
 
-      await fetch("/api/profile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ academic, email }),
-      }).catch(() => undefined);
-
-      setStatus("sent");
-      setMessage(
-        "Revisa tu correo. Al ingresar, tus mazos se guardarán en la ubicación académica elegida.",
-      );
+      throw new Error("No se pudo iniciar sesión. Intenta de nuevo.");
     } catch (caught) {
       setStatus("error");
       setMessage(
         caught instanceof Error
           ? caught.message
-          : "Configura las variables de Supabase en .env.local para habilitar el registro.",
+          : "Configura las variables de Supabase en .env.local para habilitar el acceso.",
       );
     }
   }
@@ -130,30 +143,47 @@ export function AuthForm() {
 
   return (
     <div className="space-y-5">
-      <div className="flex gap-2 rounded-xl border border-[rgba(0,255,213,0.15)] bg-[rgba(7,19,26,0.5)] p-1">
-        <button
-          type="button"
-          onClick={() => setMode("signin")}
-          className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold transition ${
-            mode === "signin"
-              ? "bg-gradient-to-r from-[#00FFD5] to-[#00BFFF] text-[#07131A] shadow-[0_0_16px_rgba(0,255,213,0.3)]"
-              : "text-muted-foreground hover:text-[#00FFD5]"
-          }`}
-        >
-          Ingresar
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode("signup")}
-          className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold transition ${
-            mode === "signup"
-              ? "bg-gradient-to-r from-[#00FFD5] to-[#00BFFF] text-[#07131A] shadow-[0_0_16px_rgba(0,255,213,0.3)]"
-              : "text-muted-foreground hover:text-[#00FFD5]"
-          }`}
-        >
-          Registrarse
-        </button>
-      </div>
+      {mode !== "recovery" ? (
+        <div className="flex gap-2 rounded-xl border border-[rgba(0,255,213,0.15)] bg-[rgba(7,19,26,0.5)] p-1">
+          <button
+            type="button"
+            onClick={() => {
+              setMode("signin");
+              setMessage("");
+              setStatus("idle");
+            }}
+            className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold transition ${
+              mode === "signin"
+                ? "bg-gradient-to-r from-[#00FFD5] to-[#00BFFF] text-[#07131A] shadow-[0_0_16px_rgba(0,255,213,0.3)]"
+                : "text-muted-foreground hover:text-[#00FFD5]"
+            }`}
+          >
+            Ingresar
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMode("signup");
+              setMessage("");
+              setStatus("idle");
+            }}
+            className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold transition ${
+              mode === "signup"
+                ? "bg-gradient-to-r from-[#00FFD5] to-[#00BFFF] text-[#07131A] shadow-[0_0_16px_rgba(0,255,213,0.3)]"
+                : "text-muted-foreground hover:text-[#00FFD5]"
+            }`}
+          >
+            Registrarse
+          </button>
+        </div>
+      ) : (
+        <div className="rounded-xl border border-[rgba(0,255,213,0.15)] bg-[rgba(0,255,213,0.06)] px-4 py-3">
+          <p className="text-sm font-semibold text-[#F5F7FA]">Recuperar contraseña</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Te enviaremos un enlace al correo de tu cuenta.
+          </p>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {mode === "signup" ? (
@@ -169,6 +199,50 @@ export function AuthForm() {
                 required
               />
             </label>
+            <CycleSelector value={currentCycle} onChange={setCurrentCycle} />
+            <p className="text-[11px] text-muted-foreground">
+              Año, curso y semana los configuras después en tu perfil o al generar mazos.
+            </p>
+          </div>
+        ) : null}
+
+        <div className="rounded-xl border border-[rgba(0,255,213,0.12)] bg-[rgba(7,19,26,0.4)] p-5 space-y-4">
+          <label className="block">
+            <span className="text-sm font-semibold text-[#F5F7FA]">Correo</span>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="tu.correo@ejemplo.com"
+              className={inputClass}
+              required
+            />
+          </label>
+
+          {mode === "signin" ? (
+            <label className="block relative">
+              <span className="text-sm font-semibold text-[#F5F7FA]">Contraseña</span>
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="Tu contraseña"
+                className={`${inputClass} pr-11`}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((current) => !current)}
+                className="absolute bottom-2.5 right-3 text-muted-foreground"
+                aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </label>
+          ) : null}
+
+          {mode === "signup" ? (
             <label className="block relative">
               <span className="text-sm font-semibold text-[#F5F7FA]">Contraseña</span>
               <input
@@ -178,67 +252,59 @@ export function AuthForm() {
                 placeholder="Al menos 8 caracteres"
                 className={`${inputClass} pr-11`}
                 required
+                minLength={8}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((current) => !current)}
-                className="absolute inset-y-0 right-3 grid place-items-center text-muted-foreground"
+                className="absolute bottom-2.5 right-3 text-muted-foreground"
                 aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </label>
-            <CycleSelector value={currentCycle} onChange={setCurrentCycle} />
-          </div>
-        ) : (
-          <AcademicNavigator value={academic} onChange={handleAcademicChange} />
-        )}
-
-        <div className="rounded-xl border border-[rgba(0,255,213,0.12)] bg-[rgba(7,19,26,0.4)] p-5 space-y-4">
-          <label className="text-sm font-semibold text-[#F5F7FA]" htmlFor="email">
-            Correo institucional o personal
-          </label>
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            placeholder="tu.correo@ejemplo.com"
-            className={inputClass}
-            required
-          />
-
-          {mode === "signin" && (
-            <label className="block relative">
-              <span className="text-sm font-semibold text-[#F5F7FA]">Contraseña (opcional)</span>
-              <input
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                placeholder="Ingresa si ya tienes contraseña"
-                className={`${inputClass} pr-11`}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((current) => !current)}
-                className="absolute inset-y-0 right-3 grid place-items-center text-muted-foreground"
-                aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </label>
-          )}
+          ) : null}
 
           <Button className="w-full" disabled={status === "loading"}>
-            {status !== "loading" ? (mode === "signup" ? <UserPlus size={16} /> : <LogIn size={16} />) : null}
-            {status === "loading"
-              ? `${actionLabel}… ${authProgress.percent}%`
-              : mode === "signup"
-                ? "Registrarse"
-                : password
-                  ? "Ingresar"
-                  : "Enviar enlace mágico"}
+            {status !== "loading" ? (
+              mode === "recovery" ? (
+                <Mail size={16} />
+              ) : mode === "signup" ? (
+                <UserPlus size={16} />
+              ) : (
+                <LogIn size={16} />
+              )
+            ) : null}
+            {status === "loading" ? `${actionLabel}… ${authProgress.percent}%` : actionLabel}
           </Button>
+
+          {mode === "signin" ? (
+            <button
+              type="button"
+              onClick={() => {
+                setMode("recovery");
+                setMessage("");
+                setStatus("idle");
+              }}
+              className="w-full text-center text-xs font-semibold text-[#00FFD5] hover:underline"
+            >
+              ¿Olvidaste tu contraseña?
+            </button>
+          ) : null}
+
+          {mode === "recovery" ? (
+            <button
+              type="button"
+              onClick={() => {
+                setMode("signin");
+                setMessage("");
+                setStatus("idle");
+              }}
+              className="w-full text-center text-xs font-semibold text-muted-foreground hover:text-[#00FFD5]"
+            >
+              Volver a ingresar
+            </button>
+          ) : null}
 
           {status === "loading" ? (
             <LoadingState
@@ -252,12 +318,18 @@ export function AuthForm() {
           ) : null}
 
           {message ? (
-            <p className={`mt-3 text-sm ${status === "error" ? "text-red-500" : "text-accent"}`}>
+            <p className={`text-sm ${status === "error" ? "text-red-500" : "text-accent"}`}>
               {message}
             </p>
           ) : null}
         </div>
       </form>
+
+      {mode === "signin" ? (
+        <p className="text-center text-[11px] text-muted-foreground">
+          Tu ciclo, curso y semana ya están en tu perfil. Solo necesitas correo y contraseña.
+        </p>
+      ) : null}
     </div>
   );
 }
