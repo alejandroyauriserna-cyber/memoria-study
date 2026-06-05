@@ -19,6 +19,7 @@ import {
 } from "@/lib/billing/premium-features";
 import { PremiumBadge } from "@/components/ui/premium-badge";
 import { PremiumGateCard } from "@/components/ui/premium-gate-card";
+import { PremiumGateDismissed } from "@/components/ui/premium-gate-dismissed";
 
 const INFOGRAPHIC_FEATURE = getPremiumFeature("gemini-infographic");
 
@@ -84,6 +85,7 @@ export function AcademicInfographicPanel({
   academicInfographic?: AcademicInfographic | null;
   onGenerated?: (content: unknown) => void;
 }) {
+  const [gateDismissed, setGateDismissed] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [exporting, setExporting] = useState<"png" | "pdf" | "share" | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -225,10 +227,22 @@ export function AcademicInfographicPanel({
 
   if (!infographic) {
     if (!isPremiumFeatureAvailable("gemini-infographic")) {
+      if (gateDismissed) {
+        return (
+          <PremiumGateDismissed
+            featureTitle={INFOGRAPHIC_FEATURE.title}
+            onShowAgain={() => setGateDismissed(false)}
+          />
+        );
+      }
+
       return (
         <div className="flex h-full items-center justify-center p-6">
-          <div className="max-w-xl w-full">
-            <PremiumGateCard feature={INFOGRAPHIC_FEATURE} />
+          <div className="w-full max-w-xl">
+            <PremiumGateCard
+              feature={INFOGRAPHIC_FEATURE}
+              onDismiss={() => setGateDismissed(true)}
+            />
           </div>
         </div>
       );

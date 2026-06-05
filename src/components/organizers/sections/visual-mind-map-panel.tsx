@@ -12,6 +12,7 @@ import {
   isPremiumFeatureAvailable,
 } from "@/lib/billing/premium-features";
 import { PremiumGateCard } from "@/components/ui/premium-gate-card";
+import { PremiumGateDismissed } from "@/components/ui/premium-gate-dismissed";
 
 const VISUAL_MAP_FEATURE = getPremiumFeature("gemini-visual-map");
 
@@ -26,6 +27,7 @@ export function VisualMindMapPanel({
 }) {
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [gateDismissed, setGateDismissed] = useState(false);
   const [localMap, setLocalMap] = useState<VisualMindMap | null>(visualMindMap ?? null);
   const generateProgress = useLoadingProgress(generating, "mindMap");
 
@@ -61,10 +63,22 @@ export function VisualMindMapPanel({
 
   if (!map) {
     if (!isPremiumFeatureAvailable("gemini-visual-map")) {
+      if (gateDismissed) {
+        return (
+          <PremiumGateDismissed
+            featureTitle={VISUAL_MAP_FEATURE.title}
+            onShowAgain={() => setGateDismissed(false)}
+          />
+        );
+      }
+
       return (
         <div className="flex h-full items-center justify-center p-6">
-          <div className="max-w-xl w-full">
-            <PremiumGateCard feature={VISUAL_MAP_FEATURE} />
+          <div className="w-full max-w-xl">
+            <PremiumGateCard
+              feature={VISUAL_MAP_FEATURE}
+              onDismiss={() => setGateDismissed(true)}
+            />
           </div>
         </div>
       );
