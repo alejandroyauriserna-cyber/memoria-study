@@ -48,6 +48,12 @@ export function buildLearningProfile(
   if (stats.organizersCreated >= 3) {
     strengths.push("Generación frecuente de organizadores visuales");
   }
+  if (stats.pagesUnderstood >= 5) {
+    strengths.push(`Estudio guiado activo (${stats.pagesUnderstood} páginas comprendidas)`);
+  }
+  if (stats.studyStreakDays >= 3) {
+    strengths.push(`Racha de estudio de ${stats.studyStreakDays} días`);
+  }
   if (topCourses.length >= 2) {
     strengths.push(`Interés distribuido en ${topCourses.slice(0, 2).join(" y ")}`);
   }
@@ -171,6 +177,22 @@ export function buildLearningAchievements(stats: AggregatedLearningStats): Learn
       earned: stats.averageMastery >= 50,
       progress: stats.averageMastery,
     },
+    {
+      id: "guided-5",
+      label: "Lector jurídico",
+      description: "Marcaste 5 páginas como comprendidas en estudio guiado.",
+      emoji: "📖",
+      earned: stats.pagesUnderstood >= 5,
+      progress: Math.min(100, Math.round((stats.pagesUnderstood / 5) * 100)),
+    },
+    {
+      id: "streak-3",
+      label: "Constancia",
+      description: "Estudiaste 3 días seguidos.",
+      emoji: "🔥",
+      earned: stats.studyStreakDays >= 3,
+      progress: Math.min(100, Math.round((stats.studyStreakDays / 3) * 100)),
+    },
   ];
 }
 
@@ -180,6 +202,28 @@ export function buildRecommendations(
   topCourses: string[],
 ): LearningRecommendation[] {
   const items: LearningRecommendation[] = [];
+
+  if (preferences.exams && stats.guidedStudySessions === 0) {
+    items.push({
+      id: "guided-study",
+      title: "Prueba el estudio guiado jurídico",
+      description: "Estudia página por página con el profesor IA y fuentes verificables.",
+      actionLabel: "Abrir biblioteca",
+      href: "/library",
+      priority: "high",
+    });
+  }
+
+  if (!preferences.conceptMaps && stats.organizersCreated === 0) {
+    items.push({
+      id: "enable-maps",
+      title: "Activa mapas conceptuales",
+      description: "Marca la preferencia de mapas para priorizar organizadores visuales.",
+      actionLabel: "Ver preferencias abajo",
+      href: "/profile",
+      priority: "low",
+    });
+  }
 
   if (stats.organizersCreated === 0) {
     items.push({
@@ -256,7 +300,11 @@ export function computeStudyLevel(stats: AggregatedLearningStats) {
     stats.organizersCreated * 15 +
     stats.questionsCorrect * 2 +
     stats.pathNodesCompleted * 5 +
-    Math.floor(stats.studyMinutes / 10);
+    stats.pagesUnderstood * 4 +
+    stats.decksSaved * 6 +
+    stats.studyStreakDays * 8 +
+    Math.floor(stats.studyMinutes / 10) +
+    stats.reputationPoints;
 
   const levels = [
     { name: "Novato", threshold: 0 },

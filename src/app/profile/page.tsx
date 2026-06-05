@@ -1,6 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 import { AppShell } from "@/components/ui/shell";
 import { LearningHub } from "@/components/profile/learning-hub";
+import { fetchServerLearningStats } from "@/lib/profile/server-learning-stats";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/env";
@@ -38,8 +39,9 @@ export default async function ProfilePage() {
   }
 
   const admin = createAdminClient();
-  const [{ data: profileData }, { count: organizersCount }, { data: studyHistory }] =
+  const [serverStats, { data: profileData }, { count: organizersCount }, { data: studyHistory }] =
     await Promise.all([
+      fetchServerLearningStats(user.id),
       admin
         .from("user_profiles")
         .select("full_name, current_cycle_number, current_cycle_label, academic_context")
@@ -83,10 +85,12 @@ export default async function ProfilePage() {
     <AppShell>
       <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
         <LearningHub
+          email={user.email}
           fullName={fullName}
           currentCycleLabel={currentCycleLabel}
           currentCycleNumber={currentCycleNumber}
           organizersCount={organizersCount ?? 0}
+          serverStats={serverStats}
           topCourses={topCourses}
           initialSettings={{
             goals: Array.isArray(academicContext.goals) ? academicContext.goals : undefined,

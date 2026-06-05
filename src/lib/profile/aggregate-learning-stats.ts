@@ -1,4 +1,5 @@
 import type { LearningAnalyticsState } from "@/components/organizers/sections/learning-analytics-panel";
+import type { ServerLearningStats } from "@/lib/profile/server-learning-stats";
 
 const ANALYTICS_PREFIX = "memoria-organizer-analytics:";
 const PATH_PREFIX = "memoria-study-path:";
@@ -14,6 +15,15 @@ export type AggregatedLearningStats = {
   pathNodesCompleted: number;
   flashcardDecksActive: number;
   averageMastery: number;
+  guidedStudySessions: number;
+  pagesUnderstood: number;
+  materialsOpened: number;
+  decksSaved: number;
+  studyStreakDays: number;
+  reputationPoints: number;
+  weeklyPagesUnderstood: number;
+  weeklyMaterialsOpened: number;
+  weeklyOrganizers: number;
 };
 
 export type CourseStudyCount = {
@@ -90,8 +100,32 @@ function aggregateFlashcardMastery(): { decks: number; avgMastery: number; maste
   };
 }
 
+export function mergeServerLearningStats(
+  base: AggregatedLearningStats,
+  cloud?: ServerLearningStats | null,
+): AggregatedLearningStats {
+  if (!cloud) return base;
+
+  return {
+    ...base,
+    organizersCreated: Math.max(base.organizersCreated, cloud.organizersCreated),
+    studyMinutes: base.studyMinutes + cloud.pagesUnderstood * 12,
+    conceptsMastered: base.conceptsMastered + Math.floor(cloud.pagesUnderstood * 0.5),
+    guidedStudySessions: cloud.guidedStudySessions,
+    pagesUnderstood: cloud.pagesUnderstood,
+    materialsOpened: cloud.materialsOpened,
+    decksSaved: cloud.decksSaved,
+    studyStreakDays: cloud.studyStreakDays,
+    reputationPoints: cloud.reputationPoints,
+    weeklyPagesUnderstood: cloud.weeklyPagesUnderstood,
+    weeklyMaterialsOpened: cloud.weeklyMaterialsOpened,
+    weeklyOrganizers: cloud.weeklyOrganizers,
+  };
+}
+
 export function aggregateClientLearningStats(
   serverOrganizersCount: number,
+  cloud?: ServerLearningStats | null,
 ): AggregatedLearningStats {
   const analytics = scanAnalytics();
   const flashcards = aggregateFlashcardMastery();
@@ -133,17 +167,29 @@ export function aggregateClientLearningStats(
         )
       : 0;
 
-  return {
-    studyMinutes,
-    organizersCreated: serverOrganizersCount,
-    questionsAnswered,
-    questionsCorrect,
-    conceptsStudied: conceptSet.size,
-    conceptsMastered,
-    pathNodesCompleted: pathNodes,
-    flashcardDecksActive: flashcards.decks,
-    averageMastery,
-  };
+  return mergeServerLearningStats(
+    {
+      studyMinutes,
+      organizersCreated: serverOrganizersCount,
+      questionsAnswered,
+      questionsCorrect,
+      conceptsStudied: conceptSet.size,
+      conceptsMastered,
+      pathNodesCompleted: pathNodes,
+      flashcardDecksActive: flashcards.decks,
+      averageMastery,
+      guidedStudySessions: 0,
+      pagesUnderstood: 0,
+      materialsOpened: 0,
+      decksSaved: 0,
+      studyStreakDays: 0,
+      reputationPoints: 0,
+      weeklyPagesUnderstood: 0,
+      weeklyMaterialsOpened: 0,
+      weeklyOrganizers: 0,
+    },
+    cloud,
+  );
 }
 
 export function formatStudyHours(minutes: number): string {

@@ -22,7 +22,10 @@ import {
   Trophy,
   Zap,
 } from "lucide-react";
+import { ProfileAccountSection } from "@/components/profile/profile-account-section";
 import { ProfileForm } from "@/components/profile/profile-form";
+import { ProfileLegalPanel } from "@/components/profile/profile-legal-panel";
+import { ProfileOnboarding } from "@/components/profile/profile-onboarding";
 import { LoadingState } from "@/components/ui/loading-state";
 import { useLoadingProgress } from "@/hooks/use-loading-progress";
 import {
@@ -39,24 +42,35 @@ import {
 import {
   createGoal,
   loadProfileStudySettings,
-  PROFILE_THEMES,
   saveProfileStudySettings,
+  PROFILE_THEMES,
   type AcademicGoal,
   type ProfileStudySettings,
   type ProfileTheme,
   type StudyPreferenceKey,
 } from "@/lib/profile/study-preferences-storage";
+import type { ServerLearningStats } from "@/lib/profile/server-learning-stats";
+import { applyDarkMode, readDarkModePreference } from "@/lib/theme/app-theme";
 
 type CourseStudyCount = { courseName: string; count: number };
 
 type Props = {
+  email?: string | null;
   fullName: string;
   currentCycleLabel: string;
   currentCycleNumber?: number | null;
   organizersCount: number;
+  serverStats: ServerLearningStats;
   topCourses: CourseStudyCount[];
   initialSettings?: Partial<ProfileStudySettings>;
 };
+
+const QUICK_GOAL_TEMPLATES = [
+  { label: "Completar 10 páginas en estudio guiado", href: "/library" },
+  { label: "Sincronizar normativa en LP Derecho", href: "/fuentes-juridicas" },
+  { label: "Crear un organizador del curso", href: "/organizers" },
+  { label: "Generar un mazo de flashcards", href: "/upload-material" },
+];
 
 const PREFERENCE_META: Record<
   StudyPreferenceKey,
@@ -85,10 +99,12 @@ const PREFERENCE_META: Record<
 };
 
 export function LearningHub({
+  email,
   fullName,
   currentCycleLabel,
   currentCycleNumber,
   organizersCount,
+  serverStats,
   topCourses,
   initialSettings,
 }: Props) {
@@ -105,8 +121,12 @@ export function LearningHub({
   const [newGoal, setNewGoal] = useState("");
 
   useEffect(() => {
-    setStats(aggregateClientLearningStats(organizersCount));
-  }, [organizersCount]);
+    setStats(aggregateClientLearningStats(organizersCount, serverStats));
+  }, [organizersCount, serverStats]);
+
+  useEffect(() => {
+    applyDarkMode(readDarkModePreference());
+  }, []);
 
   useEffect(() => {
     saveProfileStudySettings(settings);
@@ -180,12 +200,21 @@ export function LearningHub({
     setSettings((s) => ({ ...s, goals: s.goals.filter((g) => g.id !== id) }));
   }
 
+  const isNewUser =
+    stats &&
+    stats.organizersCreated === 0 &&
+    stats.pagesUnderstood === 0 &&
+    stats.materialsOpened === 0 &&
+    stats.questionsAnswered === 0;
+
   const statCards = stats
     ? [
         { label: "Horas estudiadas", value: formatStudyHours(stats.studyMinutes), icon: Clock },
+        { label: "Páginas comprendidas", value: String(stats.pagesUnderstood), icon: BookOpen },
+        { label: "Racha de estudio", value: `${stats.studyStreakDays} días`, icon: Zap },
         { label: "Organizadores", value: String(stats.organizersCreated), icon: Brain },
+        { label: "Mazos guardados", value: String(stats.decksSaved), icon: Layers },
         { label: "Preguntas", value: String(stats.questionsAnswered), icon: FileQuestion },
-        { label: "Conceptos dominados", value: String(stats.conceptsMastered), icon: Target },
       ]
     : [];
 
@@ -226,6 +255,11 @@ export function LearningHub({
                   {level.level} · {level.points} pts
                 </span>
               ) : null}
+              {stats?.reputationPoints ? (
+                <span className="rounded-full border border-[rgba(255,214,0,0.2)] bg-[rgba(255,214,0,0.08)] px-3 py-1 text-xs font-semibold text-[#FDE68A]">
+                  {stats.reputationPoints} reputación
+                </span>
+              ) : null}
               {insight ? (
                 <span className="rounded-full border border-[rgba(0,255,213,0.15)] px-3 py-1 text-xs text-muted-foreground">
                   Estilo: {insight.studyStyle}
@@ -264,9 +298,35 @@ export function LearningHub({
         </div>
       </section>
 
+      {isNewUser ? <ProfileOnboarding /> : null}
+
+      {stats ? (
+        <section className="rounded-2xl border border-[rgba(0,255,213,0.12)] bg-[rgba(7,19,26,0.55)] p-5">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#00FFD5]">
+            Esta semana
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2 text-xs text-[#F5F7FA]/85">
+            <span className="rounded-full border border-[rgba(0,255,213,0.15)] px-3 py-1">
+              {stats.weeklyPagesUnderstood} páginas comprendidas
+            </span>
+            <span className="rounded-full border border-[rgba(0,255,213,0.15)] px-3 py-1">
+              {stats.weeklyMaterialsOpened} materiales abiertos
+            </span>
+            <span className="rounded-full border border-[rgba(0,255,213,0.15)] px-3 py-1">
+              {stats.weeklyOrganizers} organizadores
+            </span>
+          </div>
+        </section>
+      ) : null}
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <ProfileAccountSection email={email} fullName={fullName} />
+        <ProfileLegalPanel />
+      </div>
+
       {/* Stats */}
       {statCards.length ? (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {statCards.map((card, index) => {
             const Icon = card.icon;
             return (
@@ -414,6 +474,23 @@ export function LearningHub({
             <Target size={13} />
             Objetivos académicos
           </p>
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {QUICK_GOAL_TEMPLATES.map((template) => (
+              <button
+                key={template.label}
+                type="button"
+                onClick={() => {
+                  setSettings((s) => ({
+                    ...s,
+                    goals: [...s.goals, createGoal(template.label)],
+                  }));
+                }}
+                className="rounded-full border border-[rgba(0,255,213,0.15)] px-2.5 py-1 text-[10px] font-semibold text-[#00FFD5] hover:bg-[rgba(0,255,213,0.08)]"
+              >
+                + {template.label}
+              </button>
+            ))}
+          </div>
           <div className="mt-4 flex gap-2">
             <input
               type="text"
@@ -434,7 +511,9 @@ export function LearningHub({
           </div>
           <ul className="mt-3 space-y-2">
             {settings.goals.length ? (
-              settings.goals.map((goal) => (
+              settings.goals.map((goal) => {
+                const template = QUICK_GOAL_TEMPLATES.find((t) => t.label === goal.label);
+                return (
                 <li
                   key={goal.id}
                   className="flex items-center gap-2 rounded-xl border border-[rgba(0,255,213,0.1)] bg-[rgba(16,39,48,0.4)] px-3 py-2"
@@ -445,6 +524,14 @@ export function LearningHub({
                   <span className={`flex-1 text-sm ${goal.completed ? "text-muted-foreground line-through" : "text-[#F5F7FA]"}`}>
                     {goal.label}
                   </span>
+                  {template && !goal.completed ? (
+                    <Link
+                      href={template.href}
+                      className="shrink-0 text-[10px] font-semibold text-[#00FFD5] hover:underline"
+                    >
+                      Ir →
+                    </Link>
+                  ) : null}
                   <button
                     type="button"
                     onClick={() => removeGoal(goal.id)}
@@ -453,7 +540,8 @@ export function LearningHub({
                     ✕
                   </button>
                 </li>
-              ))
+              );
+              })
             ) : (
               <li className="text-sm text-muted-foreground">Define metas concretas para tu semestre.</li>
             )}
@@ -472,7 +560,7 @@ export function LearningHub({
             {earnedCount} / {achievements.length}
           </span>
         </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
           {achievements.map((badge) => (
             <div
               key={badge.id}
@@ -534,7 +622,10 @@ export function LearningHub({
               <button
                 key={key}
                 type="button"
-                onClick={() => setTheme(key)}
+                onClick={() => {
+                  setTheme(key);
+                  applyDarkMode(readDarkModePreference());
+                }}
                 className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold transition ${
                   selected ? "border-[rgba(0,255,213,0.4)] bg-[rgba(0,255,213,0.1)]" : "border-[rgba(0,255,213,0.12)]"
                 }`}

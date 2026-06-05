@@ -2,16 +2,19 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Bookmark, ChevronDown, FileText, Menu, UserCircle2 } from "lucide-react";
+import { Bookmark, ChevronDown, FileText, LogOut, UserCircle2 } from "lucide-react";
+import { signOutUser } from "@/lib/auth/sign-out";
 
 type ProfilePayload = {
   full_name?: string | null;
   current_cycle_label?: string | null;
   current_cycle_number?: number | null;
+  email?: string | null;
 };
 
 export function UserMenu() {
   const [profile, setProfile] = useState<ProfilePayload | null>(null);
+  const [signedIn, setSignedIn] = useState(true);
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -20,8 +23,15 @@ export function UserMenu() {
       try {
         const response = await fetch("/api/profile");
         const payload = await response.json();
-        setProfile(payload.profile ?? null);
+        if (!payload.profile) {
+          setSignedIn(false);
+          setProfile(null);
+          return;
+        }
+        setSignedIn(true);
+        setProfile(payload.profile);
       } catch {
+        setSignedIn(false);
         setProfile(null);
       }
     }
@@ -48,6 +58,18 @@ export function UserMenu() {
       : name.slice(0, 2).toUpperCase();
   }, [profile]);
 
+  if (!signedIn) {
+    return (
+      <Link
+        href="/auth"
+        className="inline-flex items-center gap-2 rounded-3xl border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground transition hover:border-accent"
+      >
+        <UserCircle2 size={18} />
+        Ingresar
+      </Link>
+    );
+  }
+
   return (
     <div ref={menuRef} className="relative">
       <button
@@ -72,29 +94,48 @@ export function UserMenu() {
             <p className="mt-2 text-sm font-semibold text-foreground">
               {profile?.current_cycle_label ?? "Ciclo V"}
             </p>
-            <p className="mt-1 text-xs text-muted-foreground">Nivel: Estudiante</p>
+            {profile?.email ? (
+              <p className="mt-1 truncate text-[10px] text-muted-foreground">{profile.email}</p>
+            ) : (
+              <p className="mt-1 text-xs text-muted-foreground">Nivel: Estudiante</p>
+            )}
           </div>
 
           <nav className="space-y-2">
             <Link
               href="/profile"
+              onClick={() => setOpen(false)}
               className="flex items-center gap-3 rounded-2xl px-3 py-2 text-sm text-foreground transition hover:bg-muted"
             >
               <UserCircle2 className="h-4 w-4 text-accent" /> Perfil
             </Link>
             <Link
               href="/favorites"
+              onClick={() => setOpen(false)}
               className="flex items-center gap-3 rounded-2xl px-3 py-2 text-sm text-foreground transition hover:bg-muted"
             >
               <Bookmark className="h-4 w-4 text-accent" /> Favoritos
             </Link>
             <Link
               href="/organizers"
+              onClick={() => setOpen(false)}
               className="flex items-center gap-3 rounded-2xl px-3 py-2 text-sm text-foreground transition hover:bg-muted"
             >
               <FileText className="h-4 w-4 text-accent" /> Organizadores
             </Link>
           </nav>
+
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              void signOutUser("/auth");
+            }}
+            className="mt-3 flex w-full items-center gap-3 rounded-2xl border border-[rgba(248,113,113,0.2)] bg-[rgba(248,113,113,0.06)] px-3 py-2.5 text-sm font-semibold text-[#FCA5A5] transition hover:bg-[rgba(248,113,113,0.12)]"
+          >
+            <LogOut className="h-4 w-4" />
+            Cerrar sesión
+          </button>
         </div>
       ) : null}
     </div>

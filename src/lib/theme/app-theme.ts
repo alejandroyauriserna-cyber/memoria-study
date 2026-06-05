@@ -1,0 +1,15 @@
+export const APP_THEME_STORAGE_KEY = "memoria-theme";
+
+export function readDarkModePreference(): boolean {
+  if (typeof window === "undefined") return true;
+  const saved = window.localStorage.getItem(APP_THEME_STORAGE_KEY);
+  if (saved === "light") return false;
+  if (saved === "dark") return true;
+  return window.matchMedia("(prefers-color-scheme: dark)").matches;
+}
+
+export function applyDarkMode(dark: boolean) {
+  if (typeof document === "undefined") return;
+  document.documentElement.classList.toggle("dark", dark);
+  window.localStorage.setItem(APP_THEME_STORAGE_KEY, dark ? "dark" : "light");
+}
