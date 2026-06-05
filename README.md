@@ -35,8 +35,6 @@ copy .env.example .env.local
 > **Nota:** `.env.example` es la plantilla (texto ficticio). `.env.local` es tu copia privada con las APIs reales. No hace falta otro archivo `.env`.
 
 ```bash
-
-```bash
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
@@ -51,7 +49,9 @@ XAI_MODEL=grok-4-fast-reasoning
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
-4. Run the SQL in `supabase/schema.sql` inside the Supabase SQL editor.
+4. Apply database schema in order:
+   - Run `supabase/schema.sql` in the Supabase SQL editor (base schema).
+   - Then run every file in `supabase/migrations/` sorted by filename (e.g. `20260529_…` through `20260611_platform_improvements.sql`).
 
 5. Start the app:
 
@@ -67,6 +67,7 @@ Open [http://localhost:3000](http://localhost:3000).
 npm run dev
 npm run lint
 npm run typecheck
+npm test
 npm run build
 ```
 

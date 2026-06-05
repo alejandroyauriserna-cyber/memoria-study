@@ -27,7 +27,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Falta materialId." }, { status: 400 });
     }
 
-    const material = await loadMaterialForGuidedStudy(body.materialId);
+    const material = await loadMaterialForGuidedStudy(body.materialId, user.id);
     const index = await analyzeDocumentForStudy({
       title: material.title,
       pages: material.pages,

@@ -1,5 +1,8 @@
+import { requireAuth } from "@/lib/api/require-auth";
+import { MAX_FILE_SIZE } from "@/lib/pdf/constants";
 import { extractPdfFromBuffer, prepareTextForGeneration } from "@/lib/pdf/extract";
 import type { PdfExtractStreamEvent } from "@/types/pdf-progress";
+import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -9,6 +12,9 @@ function streamLine(event: PdfExtractStreamEvent) {
 }
 
 export async function POST(request: Request) {
+  const auth = await requireAuth(request, { rateLimit: { limit: 15, windowMs: 60_000 } });
+  if (auth instanceof NextResponse) return auth;
+
   const encoder = new TextEncoder();
   let fileName = "desconocido";
 
@@ -28,6 +34,16 @@ export async function POST(request: Request) {
             stage: "error",
             percent: 0,
             message: "Debes subir un PDF.",
+          });
+          controller.close();
+          return;
+        }
+
+        if (file.size > MAX_FILE_SIZE) {
+          send({
+            stage: "error",
+            percent: 0,
+            message: "El PDF supera el límite de 150 MB.",
           });
           controller.close();
           return;

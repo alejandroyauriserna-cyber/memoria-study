@@ -342,6 +342,24 @@
   padding: 0.5rem 0.625rem;
 }
 
+.gs-pdf-text-hit {
+  border-radius: 0.5rem;
+  border: 1px solid rgba(0, 255, 213, 0.25);
+  background: rgba(0, 255, 213, 0.08);
+  padding: 0.375rem 0.5rem;
+  font-size: 10px;
+  color: #00ffd5;
+}
+
+.gs-pdf-text-miss {
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.375rem 0.5rem;
+  font-size: 10px;
+  color: rgba(245, 247, 250, 0.55);
+}
+
 .gs-compact-concepts {
   border-radius: 0.75rem;
   border: 1px solid rgba(0, 255, 213, 0.1);

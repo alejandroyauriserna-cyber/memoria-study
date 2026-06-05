@@ -401,6 +401,25 @@ export function OrganizersWorkspace({
     }
   }
 
+  async function handleShare(organizer: OrganizerRecord) {
+    try {
+      const response = await fetch(`/api/organizers/${organizer.id}/share`, {
+        method: "POST",
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.error ?? "No se pudo generar el enlace.");
+      }
+      await navigator.clipboard.writeText(payload.shareUrl);
+      toast("Enlace de compartir copiado al portapapeles.", "success");
+    } catch (error) {
+      toast(
+        error instanceof Error ? error.message : "Error al compartir el organizador.",
+        "error",
+      );
+    }
+  }
+
   async function handleDelete() {
     if (!deleteTarget) return;
 
@@ -544,7 +563,7 @@ export function OrganizersWorkspace({
                   onView={() => setSelected(organizer)}
                   onRegenerate={() => handleRegenerate(organizer)}
                   onDelete={() => setDeleteTarget(organizer)}
-                  onShare={() => toast("Compartir estará disponible próximamente.", "info")}
+                  onShare={() => void handleShare(organizer)}
                 />
               ))}
             </div>

@@ -45,8 +45,6 @@ export default async function CourseLibraryPage({
     .eq("is_public", true)
     .order("created_at", { ascending: false });
 
-  console.log("materials", data);
-  console.log("error", error);
 
   let favoriteIds = new Set<string>();
 

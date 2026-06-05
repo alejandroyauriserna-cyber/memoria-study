@@ -167,6 +167,7 @@ export type GuidedStudySession = {
   materialId: string;
   currentPage: number;
   understoodPages: number[];
+  analysisVersion?: number;
   lastUpdated: string;
 };
 

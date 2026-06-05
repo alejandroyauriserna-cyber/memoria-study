@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/env";
 import { normalizeAcademicForWrite } from "@/lib/academic/helpers";
+import { MAX_FILE_SIZE } from "@/lib/pdf/constants";
 import { materialInsertPayload, recordToMaterial } from "@/lib/materials/mapper";
 import type { MaterialRecord } from "@/types/material";
 
@@ -70,6 +71,13 @@ export async function POST(request: Request) {
     if (!(file instanceof File) || file.size === 0) {
       return NextResponse.json(
         { fieldErrors: { file: "Debes seleccionar un archivo PDF." } },
+        { status: 400 },
+      );
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { fieldErrors: { file: "El PDF no puede superar 150 MB." } },
         { status: 400 },
       );
     }

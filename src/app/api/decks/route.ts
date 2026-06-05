@@ -42,10 +42,14 @@ export async function POST(request: Request) {
       data: { user },
     } = await supabase.auth.getUser();
 
+    if (!user) {
+      return NextResponse.json({ error: "Debes iniciar sesión para guardar mazos." }, { status: 401 });
+    }
+
     const admin = createAdminClient();
     const { data, error } = await admin
       .from("decks")
-      .insert(deckToInsert(body.deck, user?.id ?? null))
+      .insert(deckToInsert(body.deck, user.id))
       .select()
       .single();
 

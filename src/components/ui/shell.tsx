@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, Zap } from "lucide-react";
 import { TronBackground } from "@/components/ui/tron-background";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { UserMenu } from "@/components/ui/user-menu";
 
 const NAV = [
@@ -51,6 +52,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </nav>
 
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <UserMenu />
           </div>
 

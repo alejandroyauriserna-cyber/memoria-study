@@ -15,6 +15,20 @@ export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
     const materialId = url.searchParams.get("materialId");
+    const organizerType = url.searchParams.get("type") ?? "resumen";
+    const allowedTypes = new Set([
+      "resumen",
+      "flashcards",
+      "preguntas",
+      "mapa-conceptual",
+      "cuadro-sinoptico",
+      "cuadro-comparativo",
+      "jerarquico",
+      "flujo",
+      "linea-del-tiempo",
+      "explicacion",
+    ]);
+    const resolvedType = allowedTypes.has(organizerType) ? organizerType : "resumen";
 
     if (!materialId) {
       return NextResponse.json({ error: "MaterialId requerido." }, { status: 400 });
@@ -86,7 +100,7 @@ export async function GET(request: Request) {
         course_name: academic.courseName,
         cycle_number: academic.cycleNumber,
         cycle_label: academic.cycleLabel,
-        organizer_type: "resumen",
+        organizer_type: resolvedType,
         content: generated.content,
       })
       .select("id")

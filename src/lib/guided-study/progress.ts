@@ -1,3 +1,5 @@
+import { GUIDED_STUDY_ANALYSIS_VERSION } from "@/lib/guided-study/analysis-version";
+import { persistGuidedStudySession } from "@/lib/guided-study/progress-sync";
 import type { GuidedStudySession } from "@/types/guided-legal-study";
 
 const PREFIX = "memoria-guided-legal-study:";
@@ -25,6 +27,7 @@ export function markPageUnderstood(materialId: string, pageNumber: number) {
     materialId,
     currentPage: pageNumber,
     understoodPages: [],
+    analysisVersion: GUIDED_STUDY_ANALYSIS_VERSION,
     lastUpdated: new Date().toISOString(),
   };
 
@@ -34,8 +37,9 @@ export function markPageUnderstood(materialId: string, pageNumber: number) {
   }
 
   session.currentPage = pageNumber;
+  session.analysisVersion = session.analysisVersion ?? GUIDED_STUDY_ANALYSIS_VERSION;
   session.lastUpdated = new Date().toISOString();
-  saveGuidedStudySession(session);
+  void persistGuidedStudySession(session);
   return session;
 }
 
@@ -45,12 +49,14 @@ export function updateCurrentPage(materialId: string, pageNumber: number) {
     materialId,
     currentPage: pageNumber,
     understoodPages: [],
+    analysisVersion: GUIDED_STUDY_ANALYSIS_VERSION,
     lastUpdated: new Date().toISOString(),
   };
 
   session.currentPage = pageNumber;
+  session.analysisVersion = session.analysisVersion ?? GUIDED_STUDY_ANALYSIS_VERSION;
   session.lastUpdated = new Date().toISOString();
-  saveGuidedStudySession(session);
+  void persistGuidedStudySession(session);
   return session;
 }
 

@@ -73,7 +73,7 @@ export async function POST(request: Request) {
       action = "exam_essentials";
     }
 
-    const material = await loadMaterialForGuidedStudy(body.materialId);
+    const material = await loadMaterialForGuidedStudy(body.materialId, user.id);
     const totalPages = material.pages.length;
     const pageNumber = Math.min(Math.max(1, body.pageNumber), totalPages);
 

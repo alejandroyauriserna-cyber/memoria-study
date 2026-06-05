@@ -10,6 +10,7 @@ import {
   ZoomIn,
   ZoomOut,
 } from "lucide-react";
+import { PdfJsViewer } from "@/components/guided-study/pdf-js-viewer";
 
 export function PdfViewerPanel({
   fileUrl,
@@ -28,8 +29,6 @@ export function PdfViewerPanel({
   const [searchQuery, setSearchQuery] = useState("");
   const [fullscreen, setFullscreen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  const pdfUrl = `${fileUrl}#page=${pageNumber}&zoom=${zoom}`;
 
   const goPrev = useCallback(() => {
     if (pageNumber > 1) onPageChange(pageNumber - 1);
@@ -127,7 +126,7 @@ export function PdfViewerPanel({
           <input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Ctrl+F en el PDF"
+            placeholder="Buscar en la página"
             className="h-8 w-full rounded-lg border border-[rgba(0,255,213,0.12)] bg-[rgba(0,0,0,0.25)] pl-8 pr-3 text-xs text-[#F5F7FA] placeholder:text-muted-foreground"
           />
         </div>
@@ -151,20 +150,14 @@ export function PdfViewerPanel({
             <p className="mt-0.5 line-clamp-2 text-xs leading-5 text-[#F5F7FA]">
               {highlightPhrase.trim()}
             </p>
-            <p className="mt-1 text-[9px] text-muted-foreground">
-              Usa Ctrl+F en el visor del PDF para ubicar el texto resaltado.
-            </p>
           </div>
         ) : null}
-        <iframe
-          key={`${pdfUrl}-${pageNumber}`}
-          src={pdfUrl}
-          title="Visor PDF"
-          className="absolute inset-0 h-full w-full border-0"
-          style={{
-            transform: `scale(${zoom / 100})`,
-            transformOrigin: "top center",
-          }}
+        <PdfJsViewer
+          fileUrl={fileUrl}
+          pageNumber={pageNumber}
+          zoom={zoom}
+          searchQuery={searchQuery}
+          highlightPhrase={highlightPhrase}
         />
       </div>
     </div>

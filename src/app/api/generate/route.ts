@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
+import { requireAuth } from "@/lib/api/require-auth";
 import { generateStudyDeck } from "@/lib/ai/generate-study-deck";
 import { parseGenerationCounts } from "@/lib/ai/generation-counts";
 import { UNT_DERECHO_AUDIENCE } from "@/lib/ai/prompts";
+import { MAX_FILE_SIZE } from "@/lib/pdf/constants";
 import { extractPdfText, prepareTextForGeneration } from "@/lib/pdf/extract";
 import type { AcademicSelection } from "@/types/academic";
 
@@ -31,6 +33,9 @@ type GenerateJsonBody = {
 
 export async function POST(request: Request) {
   try {
+    const auth = await requireAuth(request, { rateLimit: { limit: 20, windowMs: 60_000 } });
+    if (auth instanceof NextResponse) return auth;
+
     const contentType = request.headers.get("content-type") ?? "";
 
     if (contentType.includes("application/json")) {
@@ -81,6 +86,13 @@ export async function POST(request: Request) {
     if (!(file instanceof File)) {
       return NextResponse.json(
         { error: "Debes subir un PDF." },
+        { status: 400 },
+      );
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { error: "El PDF supera el límite de 150 MB." },
         { status: 400 },
       );
     }

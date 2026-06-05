@@ -33,11 +33,19 @@ import {
   updateSourceInSettings,
 } from "@/lib/legal-sources/storage";
 import {
+  GUIDED_STUDY_ANALYSIS_VERSION,
+  isAnalysisStale,
+} from "@/lib/guided-study/analysis-version";
+import {
   getStudyProgressPercent,
   loadGuidedStudySession,
   markPageUnderstood,
   updateCurrentPage,
 } from "@/lib/guided-study/progress";
+import {
+  fetchCloudGuidedStudySession,
+  mergeGuidedStudySessions,
+} from "@/lib/guided-study/progress-sync";
 import type {
   DocumentStudyIndex,
   GuidedStudyTutorAction,
@@ -73,6 +81,8 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
   const [showIndex, setShowIndex] = useState(false);
   const [examOnly, setExamOnly] = useState(false);
   const [practiceExam, setPracticeExam] = useState(false);
+  const [mobilePanel, setMobilePanel] = useState<"pdf" | "tutor">("pdf");
+  const [analysisVersion, setAnalysisVersion] = useState(GUIDED_STUDY_ANALYSIS_VERSION);
   const [activeHighlightId, setActiveHighlightId] = useState<string | null>(null);
   const [sourceSettings, setSourceSettings] = useState<LegalSourcesSettings | null>(null);
   const [tutorLoading, setTutorLoading] = useState(false);
@@ -89,11 +99,20 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
   const tutorProgress = useLoadingProgress(tutorLoading, "aiAnalyze");
 
   useEffect(() => {
-    const session = loadGuidedStudySession(materialId);
-    if (session) {
+    const local = loadGuidedStudySession(materialId);
+    void fetchCloudGuidedStudySession(materialId).then((remote) => {
+      const session = mergeGuidedStudySessions(local, remote);
+      if (!session) return;
       setCurrentPage(session.currentPage);
       setTutorScope({ type: "page", pageNumber: session.currentPage });
       setUnderstoodPages(session.understoodPages);
+      setAnalysisVersion(session.analysisVersion ?? 1);
+    });
+    if (local) {
+      setCurrentPage(local.currentPage);
+      setTutorScope({ type: "page", pageNumber: local.currentPage });
+      setUnderstoodPages(local.understoodPages);
+      setAnalysisVersion(local.analysisVersion ?? 1);
     }
     setSourceSettings(loadLegalSourcesSettings());
     void fetchLegalSourcesSettings().then(setSourceSettings);
@@ -502,16 +521,56 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
         pageUnderstood={understoodPages.includes(currentPage)}
       />
 
+      {isAnalysisStale(analysisVersion) ? (
+        <div className="gs-stale-analysis-banner mx-2 mb-2 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[rgba(255,138,0,0.25)] bg-[rgba(255,138,0,0.08)] px-3 py-2">
+          <p className="text-xs text-[#F5F7FA]">
+            Este material fue analizado con una versión anterior del profesor IA.
+          </p>
+          <button
+            type="button"
+            disabled={tutorLoading}
+            onClick={() => {
+              setAnalysisVersion(GUIDED_STUDY_ANALYSIS_VERSION);
+              void askTutor(defaultTutorAction, { scope: tutorScope, skipCache: true });
+            }}
+            className="gs-refresh-explanation-btn"
+          >
+            <Sparkles size={12} />
+            Re-analizar página
+          </button>
+        </div>
+      ) : null}
+
+      <div className="flex gap-1 px-2 lg:hidden">
+        <button
+          type="button"
+          onClick={() => setMobilePanel("pdf")}
+          className={`flex-1 rounded-lg px-3 py-2 text-xs font-semibold ${mobilePanel === "pdf" ? "bg-[rgba(0,255,213,0.15)] text-[#00FFD5]" : "bg-[rgba(0,0,0,0.25)] text-muted-foreground"}`}
+        >
+          PDF
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobilePanel("tutor")}
+          className={`flex-1 rounded-lg px-3 py-2 text-xs font-semibold ${mobilePanel === "tutor" ? "bg-[rgba(0,255,213,0.15)] text-[#00FFD5]" : "bg-[rgba(0,0,0,0.25)] text-muted-foreground"}`}
+        >
+          Profesor IA
+        </button>
+      </div>
+
       <div className="relative min-h-0 flex-1">
         <div className="grid h-full gap-2 lg:grid-cols-[7fr_3fr]">
-          <PdfViewerPanel
-            fileUrl={material.fileUrl}
-            pageNumber={currentPage}
-            totalPages={material.totalPages}
-            highlightPhrase={highlightPhrase}
-            onPageChange={handlePageChange}
-          />
+          <div className={`min-h-0 ${mobilePanel === "tutor" ? "hidden lg:block" : ""}`}>
+            <PdfViewerPanel
+              fileUrl={material.fileUrl}
+              pageNumber={currentPage}
+              totalPages={material.totalPages}
+              highlightPhrase={highlightPhrase}
+              onPageChange={handlePageChange}
+            />
+          </div>
 
+          <div className={`min-h-0 ${mobilePanel === "pdf" ? "hidden lg:block" : ""}`}>
           <LegalTutorPanel
             loading={tutorLoading}
             loadingPercent={tutorProgress.percent}
@@ -556,6 +615,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
             onGeneratePage={handleGeneratePage}
             pageUnderstood={understoodPages.includes(currentPage)}
           />
+          </div>
         </div>
 
         <AnimatePresence>

@@ -1,10 +1,14 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
+import { requireAuth } from "@/lib/api/require-auth";
 import { env } from "@/lib/env";
 import { SYSTEM_PROMPT_UNT_DERECHO, UNT_DERECHO_AUDIENCE } from "@/lib/ai/prompts";
 
 export async function POST(request: Request) {
   try {
+    const auth = await requireAuth(request, { rateLimit: { limit: 40, windowMs: 60_000 } });
+    if (auth instanceof NextResponse) return auth;
+
     if (!env.geminiApiKey) {
       return NextResponse.json(
         { error: "El asistente jurídico no está configurado." },
