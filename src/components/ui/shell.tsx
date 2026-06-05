@@ -21,9 +21,12 @@ const NAV = [
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const isHome = pathname === "/dashboard" || pathname === "/";
 
   return (
-    <div className="relative flex min-h-[100dvh] flex-col text-foreground">
+    <div
+      className={`relative flex min-h-[100dvh] flex-col text-foreground${isHome ? " shell--home" : ""}`}
+    >
       <AppThemeProvider />
       <a
         href="#main-content"
@@ -34,18 +37,42 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <TronBackground />
       <OfflineSyncBanner />
 
-      <header className="sticky top-0 z-40 shrink-0 border-b border-[var(--border)] bg-[var(--shell-header-bg)] backdrop-blur-xl">
-        <div className="relative mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+      <header
+        className={`sticky top-0 z-40 shrink-0 backdrop-blur-xl ${
+          isHome
+            ? "border-b border-[rgba(255,255,255,0.06)] bg-[rgba(8,10,12,0.72)]"
+            : "border-b border-[var(--border)] bg-[var(--shell-header-bg)]"
+        }`}
+      >
+        <div
+          className={`relative mx-auto flex items-center justify-between gap-4 px-4 sm:px-6 lg:px-8 ${
+            isHome ? "max-w-[1080px] py-2.5" : "max-w-7xl py-3"
+          }`}
+        >
           <Link
-            href="/"
-            className="group flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--shell-card-bg)] px-3 py-2 transition hover:border-[color-mix(in_srgb,var(--accent)_35%,transparent)]"
+            href={isHome ? "/dashboard" : "/"}
+            className={`group flex items-center gap-2.5 transition ${
+              isHome
+                ? "rounded-lg px-1 py-1 hover:opacity-80"
+                : "rounded-xl border border-[var(--border)] bg-[var(--shell-card-bg)] px-3 py-2 hover:border-[color-mix(in_srgb,var(--accent)_35%,transparent)]"
+            }`}
           >
-            <span className="grid h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-[var(--accent)] to-[var(--accent-secondary)] text-[var(--accent-foreground)]">
-              <Zap size={18} />
+            <span
+              className={`grid items-center justify-center text-[var(--accent-foreground)] ${
+                isHome
+                  ? "h-8 w-8 rounded-lg bg-[var(--accent)]"
+                  : "h-10 w-10 rounded-lg bg-gradient-to-br from-[var(--accent)] to-[var(--accent-secondary)]"
+              }`}
+            >
+              <Zap size={isHome ? 15 : 18} />
             </span>
             <div className="hidden sm:block text-left">
-              <p className="text-sm font-semibold tracking-tight text-foreground">MemoriaStudy</p>
-              <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Derecho UNT</p>
+              <p className={`tracking-tight text-foreground ${isHome ? "text-[13px] font-medium" : "text-sm font-semibold"}`}>
+                MemoriaStudy
+              </p>
+              {!isHome ? (
+                <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Derecho UNT</p>
+              ) : null}
             </div>
           </Link>
 
@@ -90,9 +117,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {children}
       </main>
 
-      <footer className="relative z-[1] shrink-0 border-t border-[var(--border)] px-4 py-5 text-center text-xs text-muted-foreground">
-        MemoriaStudy · Plataforma inteligente para el estudio jurídico
-      </footer>
+      {!isHome ? (
+        <footer className="relative z-[1] shrink-0 border-t border-[var(--border)] px-4 py-5 text-center text-xs text-muted-foreground">
+          MemoriaStudy · Plataforma inteligente para el estudio jurídico
+        </footer>
+      ) : null}
     </div>
   );
 }

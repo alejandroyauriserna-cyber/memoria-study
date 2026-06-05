@@ -542,3 +542,33 @@ textarea.ms-input {
 .summary-menu {
   list-style: none;
 }
+
+/* ——— Home / dashboard: calmer canvas (Linear-style) ——— */
+.shell--home .tron-bg-mesh {
+  background: linear-gradient(180deg, #080a0c 0%, #0a0d10 50%, #080a0c 100%);
+}
+
+.shell--home .tron-bg-grid {
+  opacity: 0.18;
+}
+
+.shell--home .tron-bg-orb {
+  opacity: 0.35;
+}
+
+.shell--home .tron-nav-link {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  padding: 0.4rem 0.75rem;
+  color: rgba(244, 244, 245, 0.45);
+}
+
+.shell--home .tron-nav-link:hover,
+.shell--home .tron-nav-link[data-active="true"] {
+  color: #f4f4f5;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.shell--home .tron-nav-link[data-active="true"] {
+  color: var(--accent);
+}
