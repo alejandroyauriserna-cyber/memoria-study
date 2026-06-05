@@ -17,6 +17,13 @@ import { LoadingState } from "@/components/ui/loading-state";
 import { useLoadingProgress } from "@/hooks/use-loading-progress";
 import { filterAnalysisForExamMode } from "@/lib/guided-study/legal-tutor";
 import {
+  buildSourceFingerprint,
+  loadTutorCache,
+  saveTutorCache,
+  type TutorCacheScope,
+} from "@/lib/guided-study/tutor-cache";
+import { getLibrarySetupStatus } from "@/lib/legal-sources/library-setup";
+import {
   fetchLegalSourcesSettings,
   getEnabledSources,
   getManageableSources,
@@ -35,6 +42,7 @@ import type {
   DocumentStudyIndex,
   GuidedStudyTutorAction,
   PageProfessorAnalysis,
+  TutorResponse,
 } from "@/types/guided-legal-study";
 import type { LegalSourceAttribution, LegalSourcesSettings } from "@/types/legal-sources";
 import "./guided-study.css";
@@ -72,7 +80,8 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
     customReply: null,
     activeSources: [],
   });
-  const [analyzedPage, setAnalyzedPage] = useState<number | null>(null);
+  const [analyzedScope, setAnalyzedScope] = useState<TutorCacheScope | null>(null);
+  const [tutorScope, setTutorScope] = useState<TutorCacheScope>({ type: "page", pageNumber: 1 });
   const [sourcesStale, setSourcesStale] = useState(false);
   const initialAnalysisDone = useRef(false);
   const initProgress = useLoadingProgress(phase === "loading", "guidedStudyInit");
@@ -82,6 +91,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
     const session = loadGuidedStudySession(materialId);
     if (session) {
       setCurrentPage(session.currentPage);
+      setTutorScope({ type: "page", pageNumber: session.currentPage });
       setUnderstoodPages(session.understoodPages);
     }
     setSourceSettings(loadLegalSourcesSettings());
@@ -131,17 +141,97 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
     };
   }, [materialId]);
 
+  const applyTutorResult = useCallback(
+    (
+      scope: TutorCacheScope,
+      payload: {
+        analysis?: PageProfessorAnalysis | null;
+        customReply?: string | null;
+        activeSources?: LegalSourceAttribution[];
+      },
+      settings: LegalSourcesSettings,
+    ) => {
+      const result: Pick<TutorResponse, "analysis" | "customReply" | "activeSources"> = {
+        analysis: payload.analysis ?? undefined,
+        customReply: payload.customReply ?? undefined,
+        activeSources: payload.activeSources,
+      };
+      setTutorState({
+        analysis: result.analysis ?? null,
+        customReply: result.customReply ?? null,
+        activeSources: result.activeSources ?? [],
+      });
+      setAnalyzedScope(scope);
+      setTutorScope(scope);
+      setSourcesStale(false);
+      saveTutorCache(materialId, scope, examOnly, buildSourceFingerprint(settings), result);
+    },
+    [materialId, examOnly],
+  );
+
+  const tryLoadCachedTutor = useCallback(
+    (scope: TutorCacheScope, settings: LegalSourcesSettings) => {
+      const cached = loadTutorCache(
+        materialId,
+        scope,
+        examOnly,
+        buildSourceFingerprint(settings),
+      );
+      if (!cached) return false;
+      setTutorState({
+        analysis: cached.analysis ?? null,
+        customReply: cached.customReply ?? null,
+        activeSources: cached.activeSources ?? [],
+      });
+      setAnalyzedScope(scope);
+      setSourcesStale(false);
+      return true;
+    },
+    [materialId, examOnly],
+  );
+
   const askTutor = useCallback(
     async (
       action: GuidedStudyTutorAction,
-      customPrompt?: string,
-      settingsOverride?: LegalSourcesSettings,
+      options?: {
+        customPrompt?: string;
+        settingsOverride?: LegalSourcesSettings;
+        scope?: TutorCacheScope;
+        chapterId?: string;
+        skipCache?: boolean;
+      },
     ) => {
       if (!material) return;
 
+      const settings = options?.settingsOverride ?? sourceSettings ?? loadLegalSourcesSettings();
+      const scope =
+        options?.scope ??
+        (options?.chapterId
+          ? { type: "chapter" as const, chapterId: options.chapterId }
+          : { type: "page" as const, pageNumber: currentPage });
+
+      if (!options?.skipCache) {
+        const cached = loadTutorCache(
+          materialId,
+          scope,
+          examOnly,
+          buildSourceFingerprint(settings),
+        );
+        if (cached) {
+          setTutorState({
+            analysis: cached.analysis ?? null,
+            customReply: cached.customReply ?? null,
+            activeSources: cached.activeSources ?? [],
+          });
+          setAnalyzedScope(scope);
+          setTutorScope(scope);
+          setSourcesStale(false);
+          return;
+        }
+      }
+
       setTutorLoading(true);
       setActiveHighlightId(null);
-      const settings = settingsOverride ?? sourceSettings ?? loadLegalSourcesSettings();
 
       try {
         const response = await fetch("/api/guided-study/tutor", {
@@ -149,12 +239,13 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             materialId,
-            pageNumber: currentPage,
+            pageNumber: scope.type === "page" ? scope.pageNumber : currentPage,
             action,
-            customPrompt,
+            customPrompt: options?.customPrompt,
             index,
             examOnly,
             sourceSettings: settings,
+            chapterId: options?.chapterId ?? (scope.type === "chapter" ? scope.chapterId : undefined),
           }),
         });
 
@@ -163,13 +254,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
           throw new Error(payload.error ?? "Error del tutor.");
         }
 
-        setTutorState({
-          analysis: payload.analysis ?? null,
-          customReply: payload.customReply ?? null,
-          activeSources: payload.activeSources ?? [],
-        });
-        setAnalyzedPage(currentPage);
-        setSourcesStale(false);
+        applyTutorResult(scope, payload, settings);
       } catch (caught) {
         setTutorState({
           analysis: null,
@@ -180,7 +265,15 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
         setTutorLoading(false);
       }
     },
-    [material, materialId, currentPage, index, examOnly, sourceSettings],
+    [
+      material,
+      materialId,
+      currentPage,
+      index,
+      examOnly,
+      sourceSettings,
+      applyTutorResult,
+    ],
   );
 
   const manageableSources = useMemo(
@@ -193,6 +286,31 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
     [sourceSettings],
   );
 
+  const librarySetup = useMemo(
+    () => getLibrarySetupStatus(sourceSettings),
+    [sourceSettings],
+  );
+
+  const scopesMatch = useCallback((a: TutorCacheScope | null, b: TutorCacheScope) => {
+    if (!a) return false;
+    if (a.type !== b.type) return false;
+    return a.type === "page"
+      ? b.type === "page" && a.pageNumber === b.pageNumber
+      : b.type === "chapter" && a.chapterId === b.chapterId;
+  }, []);
+
+  const needsGeneration = !scopesMatch(analyzedScope, tutorScope);
+
+  const chapterMode =
+    tutorScope.type === "chapter" && scopesMatch(analyzedScope, tutorScope);
+
+  const highlightPhrase = useMemo(() => {
+    if (!activeHighlightId || !tutorState.analysis) return null;
+    return (
+      tutorState.analysis.highlights.find((h) => h.id === activeHighlightId)?.phrase ?? null
+    );
+  }, [activeHighlightId, tutorState.analysis]);
+
   function persistSourceEnabled(sourceId: string) {
     const current = sourceSettings ?? loadLegalSourcesSettings();
     const source = current.sources.find((s) => s.id === sourceId);
@@ -203,7 +321,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
     saveLegalSourcesSettings(next);
     void syncLegalSourcesSettings(next);
 
-    if (analyzedPage === currentPage) {
+    if (scopesMatch(analyzedScope, tutorScope)) {
       setSourcesStale(true);
     }
   }
@@ -222,7 +340,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
     saveLegalSourcesSettings(next);
     void syncLegalSourcesSettings(next);
 
-    if (analyzedPage === currentPage) {
+    if (scopesMatch(analyzedScope, tutorScope)) {
       setSourcesStale(true);
     }
   }
@@ -230,19 +348,29 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
   const defaultTutorAction = examOnly ? "exam_essentials" : "explain_page";
 
   function handleRefreshExplanation() {
-    void askTutor(defaultTutorAction);
+    void askTutor(
+      tutorScope.type === "chapter" ? "explain_chapter" : defaultTutorAction,
+      {
+        scope: tutorScope,
+        chapterId: tutorScope.type === "chapter" ? tutorScope.chapterId : undefined,
+        skipCache: true,
+      },
+    );
   }
 
   useEffect(() => {
     if (phase !== "ready" || !material || initialAnalysisDone.current) return;
     initialAnalysisDone.current = true;
-    void askTutor(defaultTutorAction);
+    const scope = { type: "page" as const, pageNumber: currentPage };
+    setTutorScope(scope);
+    void askTutor(defaultTutorAction, { scope });
   }, [phase, material?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!initialAnalysisDone.current || phase !== "ready" || !material) return;
-    if (analyzedPage !== currentPage) return;
-    void askTutor(defaultTutorAction);
+    if (tutorScope.type !== "page" || tutorScope.pageNumber !== currentPage) return;
+    if (!scopesMatch(analyzedScope, tutorScope)) return;
+    void askTutor(defaultTutorAction, { scope: tutorScope, skipCache: true });
   }, [examOnly]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const displayAnalysis = useMemo(() => {
@@ -251,17 +379,37 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
   }, [tutorState.analysis, examOnly]);
 
   function handlePageChange(page: number) {
+    const scope = { type: "page" as const, pageNumber: page };
     setCurrentPage(page);
+    setTutorScope(scope);
     updateCurrentPage(materialId, page);
     setActiveHighlightId(null);
-    if (page !== analyzedPage) {
+    setSourcesStale(false);
+
+    const settings = sourceSettings ?? loadLegalSourcesSettings();
+    if (!tryLoadCachedTutor(scope, settings)) {
       setTutorState({ analysis: null, customReply: null, activeSources: [] });
-      setSourcesStale(false);
+      setAnalyzedScope(null);
     }
   }
 
   function handleGeneratePage() {
-    void askTutor(defaultTutorAction);
+    const scope = { type: "page" as const, pageNumber: currentPage };
+    setTutorScope(scope);
+    void askTutor(defaultTutorAction, { scope, skipCache: true });
+  }
+
+  function handleExplainChapter(chapterId?: string) {
+    const chapter = chapterId
+      ? index?.chapters.find((ch) => ch.id === chapterId)
+      : currentChapter;
+    if (!chapter) return;
+
+    const scope = { type: "chapter" as const, chapterId: chapter.id };
+    setTutorScope(scope);
+    setCurrentPage(chapter.startPage);
+    updateCurrentPage(materialId, chapter.startPage);
+    void askTutor("explain_chapter", { scope, chapterId: chapter.id, skipCache: true });
   }
 
   function handleMarkUnderstood() {
@@ -346,6 +494,8 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
         loadingPercent={tutorProgress.percent}
         onPageChange={handlePageChange}
         onGenerate={handleGeneratePage}
+        onExplainChapter={() => handleExplainChapter()}
+        showExplainChapter={Boolean(currentChapter)}
         pageUnderstood={understoodPages.includes(currentPage)}
       />
 
@@ -355,6 +505,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
             fileUrl={material.fileUrl}
             pageNumber={currentPage}
             totalPages={material.totalPages}
+            highlightPhrase={highlightPhrase}
             onPageChange={handlePageChange}
           />
 
@@ -373,12 +524,28 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
             hasEnabledSources={enabledSources.length > 0}
             sourcesStale={sourcesStale}
             onRefreshExplanation={handleRefreshExplanation}
-            needsGeneration={analyzedPage !== currentPage}
+            setupSteps={librarySetup.steps}
+            needsSetup={librarySetup.needsSetup}
+            chapterMode={chapterMode}
+            needsGeneration={needsGeneration}
             onExamOnlyChange={setExamOnly}
             activeHighlightId={activeHighlightId}
             onHighlightFocus={setActiveHighlightId}
-            onAction={(action) => void askTutor(action)}
-            onCustomAsk={(prompt) => void askTutor("custom", prompt)}
+            onAction={(action) =>
+              void askTutor(action, {
+                scope: tutorScope,
+                chapterId: tutorScope.type === "chapter" ? tutorScope.chapterId : undefined,
+                skipCache: true,
+              })
+            }
+            onCustomAsk={(prompt) =>
+              void askTutor("custom", {
+                customPrompt: prompt,
+                scope: tutorScope,
+                chapterId: tutorScope.type === "chapter" ? tutorScope.chapterId : undefined,
+                skipCache: true,
+              })
+            }
             onMarkUnderstood={handleMarkUnderstood}
             onGeneratePage={handleGeneratePage}
             pageUnderstood={understoodPages.includes(currentPage)}
@@ -415,29 +582,45 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
                   ) : null}
                   <div className="space-y-1.5">
                     {index.chapters.map((ch) => (
-                      <button
+                      <div
                         key={ch.id}
-                        type="button"
-                        onClick={() => {
-                          handlePageChange(ch.startPage);
-                          setShowIndex(false);
-                        }}
-                        className={`flex w-full flex-col gap-1 rounded-lg border px-2.5 py-2 text-left text-sm ${
+                        className={`rounded-lg border px-2.5 py-2 ${
                           currentChapter?.id === ch.id
                             ? "border-[rgba(0,255,213,0.35)] bg-[rgba(0,255,213,0.08)]"
                             : "border-[rgba(0,255,213,0.08)]"
                         }`}
                       >
-                        <span className="flex items-start gap-2">
-                          <ChevronRight size={13} className="mt-0.5 shrink-0 text-[#00FFD5]" />
-                          <span className="font-medium text-[#F5F7FA]">{ch.title}</span>
-                        </span>
-                        {ch.learningOverview ? (
-                          <span className="pl-5 text-[11px] leading-4 text-muted-foreground">
-                            {ch.learningOverview}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handlePageChange(ch.startPage);
+                            setShowIndex(false);
+                          }}
+                          className="flex w-full flex-col gap-1 text-left text-sm"
+                        >
+                          <span className="flex items-start gap-2">
+                            <ChevronRight size={13} className="mt-0.5 shrink-0 text-[#00FFD5]" />
+                            <span className="font-medium text-[#F5F7FA]">{ch.title}</span>
                           </span>
-                        ) : null}
-                      </button>
+                          {ch.learningOverview ? (
+                            <span className="pl-5 text-[11px] leading-4 text-muted-foreground">
+                              {ch.learningOverview}
+                            </span>
+                          ) : null}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={tutorLoading}
+                          onClick={() => {
+                            handleExplainChapter(ch.id);
+                            setShowIndex(false);
+                          }}
+                          className="gs-index-chapter-btn mt-2 w-full"
+                        >
+                          <Sparkles size={12} />
+                          Explicar capítulo
+                        </button>
+                      </div>
                     ))}
                   </div>
                 </div>

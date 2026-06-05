@@ -115,3 +115,26 @@ export function getPageText(pages: PdfPageContent[], pageNumber: number): string
   const page = pages.find((p) => p.pageNumber === pageNumber);
   return page?.text ?? "";
 }
+
+export function getChapterText(
+  pages: PdfPageContent[],
+  startPage: number,
+  endPage: number,
+  maxChars = 14_000,
+): string {
+  const chunks: string[] = [];
+  let total = 0;
+
+  for (let pageNumber = startPage; pageNumber <= endPage; pageNumber++) {
+    const text = getPageText(pages, pageNumber);
+    const chunk = `--- Página ${pageNumber} ---\n${text || "(sin texto extraíble)"}`;
+    if (total + chunk.length > maxChars) {
+      chunks.push(`--- (texto del capítulo truncado por límite) ---`);
+      break;
+    }
+    chunks.push(chunk);
+    total += chunk.length;
+  }
+
+  return chunks.join("\n\n");
+}

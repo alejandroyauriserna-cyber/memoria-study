@@ -10,6 +10,8 @@ export function StudyPageNavigator({
   loadingPercent,
   onPageChange,
   onGenerate,
+  onExplainChapter,
+  showExplainChapter,
   pageUnderstood,
 }: {
   currentPage: number;
@@ -18,6 +20,8 @@ export function StudyPageNavigator({
   loadingPercent?: number;
   onPageChange: (page: number) => void;
   onGenerate: () => void;
+  onExplainChapter?: () => void;
+  showExplainChapter?: boolean;
   pageUnderstood?: boolean;
 }) {
   const [pageInput, setPageInput] = useState(String(currentPage));
@@ -100,24 +104,37 @@ export function StudyPageNavigator({
           </button>
         </div>
 
-        <button
-          type="button"
-          onClick={onGenerate}
-          disabled={loading}
-          className="gs-page-nav-generate"
-        >
-          {loading ? (
-            <>
-              <Loader2 size={15} className="animate-spin" />
-              Explicar página {loadingPercent != null ? `${loadingPercent}%` : ""}
-            </>
-          ) : (
-            <>
-              <Sparkles size={15} />
-              Explicar página
-            </>
-          )}
-        </button>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <button
+            type="button"
+            onClick={onGenerate}
+            disabled={loading}
+            className="gs-page-nav-generate"
+          >
+            {loading ? (
+              <>
+                <Loader2 size={15} className="animate-spin" />
+                Explicando {loadingPercent != null ? `${loadingPercent}%` : ""}
+              </>
+            ) : (
+              <>
+                <Sparkles size={15} />
+                Explicar página
+              </>
+            )}
+          </button>
+          {showExplainChapter && onExplainChapter ? (
+            <button
+              type="button"
+              onClick={onExplainChapter}
+              disabled={loading}
+              className="gs-page-nav-chapter"
+            >
+              <Sparkles size={14} />
+              Explicar capítulo
+            </button>
+          ) : null}
+        </div>
       </div>
     </div>
   );

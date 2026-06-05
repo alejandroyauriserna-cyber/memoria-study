@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Check, ChevronRight, Sparkles } from "lucide-react";
+import { COURSE_SOURCE_PRESETS } from "@/lib/legal-sources/course-presets";
 import {
   DEFAULT_STUDY_CATEGORIES,
   STUDY_CATEGORY_OPTIONS,
@@ -23,8 +24,17 @@ export function LegalSourcesWizard({ settings, onComplete, onDismiss }: LegalSou
   const [selected, setSelected] = useState<Set<LegalSourceCategory>>(
     () => new Set(settings.studyCategories?.length ? settings.studyCategories : DEFAULT_STUDY_CATEGORIES),
   );
+  const [activePresetId, setActivePresetId] = useState<string | null>(null);
+
+  function applyPreset(presetId: string) {
+    const preset = COURSE_SOURCE_PRESETS.find((p) => p.id === presetId);
+    if (!preset) return;
+    setActivePresetId(presetId);
+    setSelected(new Set(preset.studyCategories));
+  }
 
   function toggleCategory(id: LegalSourceCategory) {
+    setActivePresetId(null);
     setSelected((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -55,9 +65,31 @@ export function LegalSourcesWizard({ settings, onComplete, onDismiss }: LegalSou
       {step === 1 ? (
         <>
           <p className="mt-2 text-sm text-muted-foreground">
-            ¿Qué tipos de fuentes usarás en este curso? Solo verás las secciones que elijas.
+            Elige un curso UNT o personaliza las categorías de fuentes que verás.
           </p>
-          <div className="mt-4 grid gap-2 sm:grid-cols-2">
+          <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {COURSE_SOURCE_PRESETS.map((preset) => (
+              <button
+                key={preset.id}
+                type="button"
+                onClick={() => applyPreset(preset.id)}
+                className={`rounded-xl border p-3 text-left transition ${
+                  activePresetId === preset.id
+                    ? "border-[rgba(0,255,213,0.35)] bg-[rgba(0,255,213,0.08)]"
+                    : "border-[rgba(255,255,255,0.08)] bg-[rgba(0,0,0,0.2)]"
+                }`}
+              >
+                <span className="block text-sm font-semibold text-[#F5F7FA]">{preset.label}</span>
+                <span className="mt-0.5 block text-[10px] text-muted-foreground">
+                  {preset.description}
+                </span>
+              </button>
+            ))}
+          </div>
+          <p className="mt-4 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            O elige categorías manualmente
+          </p>
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
             {STUDY_CATEGORY_OPTIONS.map((option) => {
               const active = selected.has(option.id);
               return (

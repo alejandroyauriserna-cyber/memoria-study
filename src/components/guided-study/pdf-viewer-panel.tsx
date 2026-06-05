@@ -15,11 +15,13 @@ export function PdfViewerPanel({
   fileUrl,
   pageNumber,
   totalPages,
+  highlightPhrase,
   onPageChange,
 }: {
   fileUrl: string;
   pageNumber: number;
   totalPages: number;
+  highlightPhrase?: string | null;
   onPageChange: (page: number) => void;
 }) {
   const [zoom, setZoom] = useState(100);
@@ -36,6 +38,13 @@ export function PdfViewerPanel({
   const goNext = useCallback(() => {
     if (pageNumber < totalPages) onPageChange(pageNumber + 1);
   }, [pageNumber, totalPages, onPageChange]);
+
+  useEffect(() => {
+    if (highlightPhrase?.trim()) {
+      const snippet = highlightPhrase.trim().slice(0, 80);
+      setSearchQuery(snippet);
+    }
+  }, [highlightPhrase]);
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -134,6 +143,19 @@ export function PdfViewerPanel({
       </div>
 
       <div className="relative min-h-0 flex-1 bg-[#0a1419]">
+        {highlightPhrase?.trim() ? (
+          <div className="gs-pdf-highlight-bar">
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-[#00FFD5]">
+              Fragmento del concepto
+            </span>
+            <p className="mt-0.5 line-clamp-2 text-xs leading-5 text-[#F5F7FA]">
+              {highlightPhrase.trim()}
+            </p>
+            <p className="mt-1 text-[9px] text-muted-foreground">
+              Usa Ctrl+F en el visor del PDF para ubicar el texto resaltado.
+            </p>
+          </div>
+        ) : null}
         <iframe
           key={`${pdfUrl}-${pageNumber}`}
           src={pdfUrl}

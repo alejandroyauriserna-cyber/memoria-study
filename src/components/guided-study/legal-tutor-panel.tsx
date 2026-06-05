@@ -27,6 +27,9 @@ import type {
   GuidedStudyTutorAction,
   PageProfessorAnalysis,
 } from "@/types/guided-legal-study";
+import { LibrarySetupChecklist } from "@/components/guided-study/library-setup-checklist";
+import { formatSourceSyncLabel } from "@/lib/legal-sources/source-meta";
+import type { LibrarySetupStep } from "@/lib/legal-sources/library-setup";
 import { LEGAL_SOURCE_CATEGORY_LABELS } from "@/types/legal-sources";
 import type { LegalSourceAttribution, LegalSourceRecord } from "@/types/legal-sources";
 import "./guided-study.css";
@@ -88,10 +91,17 @@ function SourcePicker({
               disabled={disabled}
               onClick={() => onToggle(s.id)}
               title={`${LEGAL_SOURCE_CATEGORY_LABELS[s.category]} — ${s.enabled ? "Activa" : "Desactivada"}`}
-              className={`gs-source-tag gs-source-tag--pickable ${s.enabled ? "gs-source-tag--selected" : ""} ${usedNow ? "gs-source-tag--active" : ""}`}
+              className={`gs-source-tag gs-source-tag--pickable flex flex-col items-start gap-0.5 ${s.enabled ? "gs-source-tag--selected" : ""} ${usedNow ? "gs-source-tag--active" : ""}`}
             >
-              {s.enabled ? "✓ " : ""}
-              {s.title}
+              <span>
+                {s.enabled ? "✓ " : ""}
+                {s.title}
+              </span>
+              {formatSourceSyncLabel(s) ? (
+                <span className="text-[8px] font-normal opacity-75">
+                  {formatSourceSyncLabel(s)}
+                </span>
+              ) : null}
             </button>
           );
         })}
@@ -165,6 +175,9 @@ export function LegalTutorPanel({
   hasEnabledSources,
   sourcesStale,
   onRefreshExplanation,
+  setupSteps,
+  needsSetup,
+  chapterMode,
   needsGeneration,
   onExamOnlyChange,
   activeHighlightId,
@@ -189,6 +202,9 @@ export function LegalTutorPanel({
   hasEnabledSources?: boolean;
   sourcesStale?: boolean;
   onRefreshExplanation?: () => void;
+  setupSteps?: LibrarySetupStep[];
+  needsSetup?: boolean;
+  chapterMode?: boolean;
   needsGeneration?: boolean;
   onExamOnlyChange: (value: boolean) => void;
   activeHighlightId?: string | null;
@@ -282,7 +298,15 @@ export function LegalTutorPanel({
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
+        {needsSetup && setupSteps?.length ? (
+          <LibrarySetupChecklist steps={setupSteps} />
+        ) : null}
+
         {hasEnabledSources === false ? <NoSourcesBanner /> : null}
+
+        {chapterMode ? (
+          <p className="gs-chapter-mode-badge">Explicación del capítulo completo</p>
+        ) : null}
 
         {manageableSources?.length && onToggleSource && onEnableAllSources ? (
           <SourcePicker

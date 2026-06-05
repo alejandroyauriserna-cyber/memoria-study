@@ -105,6 +105,8 @@ const ACTION_DIRECTIVES: Record<GuidedStudyTutorAction, string> = {
     "Genera modo examen ampliado: oral, desarrollo, test, conceptos memorables y errores frecuentes. Mantén conceptCards solo si son indispensables para responder.",
   explain_page:
     "ENSEÑA la página completa como clase magistral: prioriza aprendizaje jurídico profundo. Cada conceptCard debe tener explanation de 4-8 oraciones con definición, requisitos, efectos, distinciones y aplicación. Conecta con el capítulo indicado.",
+  explain_chapter:
+    "ENSEÑA el CAPÍTULO COMPLETO como clase magistral integrada: sintetiza el hilo conductor del capítulo, los institutos que lo atraviesan y cómo se relacionan entre páginas. Genera conceptCards por cada instituto jurídico central del capítulo (no por cada párrafo). El pageFocus debe resumir el objetivo del capítulo entero. Prioriza profundidad y visión panorámica para estudiar.",
   examples:
     "Amplía los conceptCards con ejemplos más claros y variados. Mantén el resto del JSON con profundidad didáctica.",
   peru_law:
@@ -141,6 +143,7 @@ export function buildTutorUserPrompt(input: {
   courseName?: string;
   chapterTitle?: string;
   chapterOverview?: string;
+  chapterMode?: boolean;
   legalBaseBlock: string;
   sourcesBlock?: string;
   strictNormativeMode?: boolean;
@@ -158,7 +161,9 @@ export function buildTutorUserPrompt(input: {
     input.chapterOverview
       ? `PANORAMA DEL CAPÍTULO (contexto para ubicar esta página): ${input.chapterOverview}`
       : null,
-    `PÁGINA: ${input.pageNumber} de ${input.totalPages}`,
+    input.chapterMode
+      ? `ALCANCE: Capítulo completo (págs. ${input.pageNumber} en adelante del rango indicado en el texto)`
+      : `PÁGINA: ${input.pageNumber} de ${input.totalPages}`,
     "",
     "TEXTO DE LA PÁGINA (fuente para highlights.phrase):",
     input.pageText || "(Sin texto extraíble — indica al estudiante que revise el PDF visualmente.)",

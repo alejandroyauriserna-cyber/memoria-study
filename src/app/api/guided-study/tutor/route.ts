@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { askLegalStudyTutor, findChapterForPage } from "@/lib/guided-study/legal-tutor";
-import { getPageText } from "@/lib/guided-study/extract-pages";
+import { getChapterText, getPageText } from "@/lib/guided-study/extract-pages";
 import { loadMaterialForGuidedStudy } from "@/lib/guided-study/load-material";
 import { enrichSourceSettings } from "@/lib/legal-sources/server";
 import { createClient } from "@/lib/supabase/server";
@@ -15,6 +15,7 @@ const VALID_ACTIONS = new Set<GuidedStudyTutorAction>([
   "exam_essentials",
   "exam_mode",
   "explain_page",
+  "explain_chapter",
   "examples",
   "peru_law",
   "detect_concepts",
@@ -52,6 +53,7 @@ export async function POST(request: Request) {
       index?: DocumentStudyIndex;
       examOnly?: boolean;
       sourceSettings?: import("@/types/legal-sources").LegalSourcesSettings;
+      chapterId?: string;
     };
 
     if (!body.materialId || !body.pageNumber) {
@@ -64,15 +66,31 @@ export async function POST(request: Request) {
     let action =
       body.action && VALID_ACTIONS.has(body.action) ? body.action : "analyze_page";
 
-    if (body.examOnly && (action === "analyze_page" || action === "explain_page")) {
+    if (
+      body.examOnly &&
+      (action === "analyze_page" || action === "explain_page" || action === "explain_chapter")
+    ) {
       action = "exam_essentials";
     }
 
     const material = await loadMaterialForGuidedStudy(body.materialId);
     const totalPages = material.pages.length;
     const pageNumber = Math.min(Math.max(1, body.pageNumber), totalPages);
-    const pageText = getPageText(material.pages, pageNumber);
-    const chapter = body.index ? findChapterForPage(body.index, pageNumber) : undefined;
+
+    const chapterById =
+      body.chapterId && body.index
+        ? body.index.chapters.find((ch) => ch.id === body.chapterId)
+        : undefined;
+    const chapter = chapterById ?? (body.index ? findChapterForPage(body.index, pageNumber) : undefined);
+
+    const chapterMode = Boolean(chapterById) || action === "explain_chapter";
+    const pageText = chapterById
+      ? getChapterText(material.pages, chapterById.startPage, chapterById.endPage)
+      : getPageText(material.pages, pageNumber);
+
+    if (chapterMode && action === "analyze_page") {
+      action = "explain_chapter";
+    }
 
     const sourceSettings = await enrichSourceSettings(user.id, body.sourceSettings);
 
@@ -86,6 +104,7 @@ export async function POST(request: Request) {
       courseName: material.courseName,
       chapterTitle: chapter?.title,
       chapterOverview: chapter?.learningOverview,
+      chapterMode,
       sourceSettings,
       userId: user.id,
     });
@@ -94,6 +113,8 @@ export async function POST(request: Request) {
       action,
       pageNumber,
       chapterTitle: chapter?.title,
+      chapterId: chapterById?.id,
+      chapterMode,
       pageText,
       ...response,
     });

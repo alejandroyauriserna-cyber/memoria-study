@@ -143,6 +143,7 @@ export async function askLegalStudyTutor(input: {
   courseName?: string;
   chapterTitle?: string;
   chapterOverview?: string;
+  chapterMode?: boolean;
   sourceSettings?: LegalSourcesSettings;
   userId?: string;
 }): Promise<TutorResponse> {
@@ -161,7 +162,12 @@ export async function askLegalStudyTutor(input: {
   );
   const indexedNormativeBlock = formatLegalBaseForPrompt(relevantArticles);
   const structured = usesStructuredResponse(input.action) || input.action === "custom";
-  const teachingActions: GuidedStudyTutorAction[] = ["analyze_page", "explain_page", "first_cycle"];
+  const teachingActions: GuidedStudyTutorAction[] = [
+    "analyze_page",
+    "explain_page",
+    "explain_chapter",
+    "first_cycle",
+  ];
   const temperature = input.action === "exam_mode" ? 0.45 : teachingActions.includes(input.action) ? 0.38 : 0.32;
 
   const raw = await generateGeminiText({

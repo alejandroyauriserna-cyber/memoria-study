@@ -1,8 +1,11 @@
+import type { LegalSourceAttribution } from "@/types/legal-sources";
+
 export type GuidedStudyTutorAction =
   | "analyze_page"
   | "exam_essentials"
   | "exam_mode"
   | "explain_page"
+  | "explain_chapter"
   | "examples"
   | "peru_law"
   | "detect_concepts"
@@ -147,7 +150,7 @@ export type PageProfessorAnalysis = {
 export type TutorResponse = {
   analysis?: PageProfessorAnalysis;
   customReply?: string;
-  activeSources?: Array<{ sourceId: string; title: string; category: string }>;
+  activeSources?: LegalSourceAttribution[];
   /** @deprecated — solo fallback si falla el JSON */
   answer?: string;
 };
