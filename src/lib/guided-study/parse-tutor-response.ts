@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { normalizeExamStructuredList } from "@/lib/guided-study/normalize-exam-questions";
 import type { PageProfessorAnalysis, TutorResponse } from "@/types/guided-legal-study";
 
 const HighlightCategorySchema = z.enum([
@@ -53,8 +54,8 @@ export const PageAnalysisSchema = z.object({
     .default([]),
   examMode: z
     .object({
-      oral: z.array(z.string()).default([]),
-      desarrollo: z.array(z.string()).default([]),
+      oral: z.array(z.union([z.string(), z.record(z.string(), z.unknown())])).default([]),
+      desarrollo: z.array(z.union([z.string(), z.record(z.string(), z.unknown())])).default([]),
       test: z
         .array(
           z.object({
@@ -199,13 +200,33 @@ function coercePageAnalysis(raw: Record<string, unknown>): PageProfessorAnalysis
       })
     : [];
 
+  const examModeRaw = (raw.examMode ?? {}) as Record<string, unknown>;
+  const normalizedExamMode = {
+    oral: normalizeExamStructuredList(examModeRaw.oral),
+    desarrollo: normalizeExamStructuredList(examModeRaw.desarrollo),
+    test: Array.isArray(examModeRaw.test) ? examModeRaw.test : [],
+    memorableConcepts: Array.isArray(examModeRaw.memorableConcepts)
+      ? examModeRaw.memorableConcepts
+      : [],
+    commonErrors: Array.isArray(examModeRaw.commonErrors) ? examModeRaw.commonErrors : [],
+  };
+
   const parsed = PageAnalysisSchema.parse({
     ...raw,
     highlights,
     conceptCards,
+    examMode: normalizedExamMode,
   });
 
-  return parsed;
+  return {
+    ...parsed,
+    examMode: {
+      ...normalizedExamMode,
+      test: parsed.examMode.test,
+      memorableConcepts: parsed.examMode.memorableConcepts,
+      commonErrors: parsed.examMode.commonErrors,
+    },
+  };
 }
 
 export function parseTutorResponse(raw: string): TutorResponse {

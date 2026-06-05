@@ -5,14 +5,15 @@ import { motion } from "framer-motion";
 import {
   AlertTriangle,
   ArrowRight,
-  BookOpen,
   Brain,
   Briefcase,
   Check,
+  ChevronDown,
   Filter,
   Gavel,
   GraduationCap,
   Lightbulb,
+  Lock,
   RefreshCw,
   Scale,
   Send,
@@ -29,12 +30,20 @@ import type {
 } from "@/types/guided-legal-study";
 import { LibrarySetupChecklist } from "@/components/guided-study/library-setup-checklist";
 import { formatSourceSyncLabel } from "@/lib/legal-sources/source-meta";
+import {
+  gateJurisprudenceAction,
+  gateNormativeAction,
+} from "@/lib/legal-sources/tutor-action-gates";
 import type { LibrarySetupStep } from "@/lib/legal-sources/library-setup";
 import { LEGAL_SOURCE_CATEGORY_LABELS } from "@/types/legal-sources";
-import type { LegalSourceAttribution, LegalSourceRecord } from "@/types/legal-sources";
+import type {
+  LegalSourceAttribution,
+  LegalSourceRecord,
+  LegalSourcesSettings,
+} from "@/types/legal-sources";
 import "./guided-study.css";
 
-const PROFESSOR_ACTIONS: Array<{
+const PEDAGOGY_ACTIONS: Array<{
   id: GuidedStudyTutorAction;
   label: string;
   icon: typeof Lightbulb;
@@ -43,11 +52,48 @@ const PROFESSOR_ACTIONS: Array<{
   { id: "simpler", label: "Más fácil", icon: Lightbulb, accent: "#00BFFF" },
   { id: "first_cycle", label: "Primer ciclo", icon: GraduationCap, accent: "#00FFD5" },
   { id: "another_example", label: "Otro ejemplo", icon: RefreshCw, accent: "#5EEAD4" },
-  { id: "real_case", label: "Caso real", icon: Briefcase, accent: "#FF8A00" },
-  { id: "peru_law", label: "Derecho peruano", icon: Scale, accent: "#86EFAC" },
-  { id: "jurisprudence", label: "Jurisprudencia", icon: Gavel, accent: "#C084FC" },
-  { id: "civil_code", label: "Código Civil", icon: BookOpen, accent: "#93C5FD" },
 ];
+
+const MORE_ACTIONS: Array<{
+  id: GuidedStudyTutorAction;
+  label: string;
+  icon: typeof Lightbulb;
+  accent: string;
+}> = [{ id: "real_case", label: "Caso real", icon: Briefcase, accent: "#FF8A00" }];
+
+function ActionTile({
+  label,
+  icon: Icon,
+  accent,
+  disabled,
+  locked,
+  title,
+  onClick,
+  className,
+}: {
+  label: string;
+  icon: typeof Lightbulb;
+  accent: string;
+  disabled?: boolean;
+  locked?: boolean;
+  title?: string;
+  onClick: () => void;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      title={title}
+      onClick={onClick}
+      className={`gs-action-tile ${locked ? "gs-action-tile--locked" : ""} ${className ?? ""}`}
+      style={{ "--gs-accent": accent } as React.CSSProperties}
+    >
+      {locked ? <Lock size={12} style={{ color: accent }} /> : <Icon size={14} style={{ color: accent }} />}
+      <span>{label}</span>
+    </button>
+  );
+}
 
 function SourcePicker({
   manageableSources,
@@ -168,6 +214,8 @@ export function LegalTutorPanel({
   analysis,
   customReply,
   examOnly,
+  practiceExam,
+  sourceSettings,
   activeSources,
   manageableSources,
   onToggleSource,
@@ -195,6 +243,8 @@ export function LegalTutorPanel({
   analysis: PageProfessorAnalysis | null;
   customReply?: string | null;
   examOnly: boolean;
+  practiceExam?: boolean;
+  sourceSettings?: LegalSourcesSettings | null;
   activeSources?: LegalSourceAttribution[];
   manageableSources?: LegalSourceRecord[];
   onToggleSource?: (sourceId: string) => void;
@@ -216,6 +266,17 @@ export function LegalTutorPanel({
   pageUnderstood: boolean;
 }) {
   const [customPrompt, setCustomPrompt] = useState("");
+  const [showMoreActions, setShowMoreActions] = useState(false);
+
+  const manageable = manageableSources ?? [];
+  const normativeGate = gateNormativeAction(sourceSettings ?? null, manageable);
+  const jurisGate = gateJurisprudenceAction(sourceSettings ?? null, manageable);
+
+  const hasExamContent = Boolean(
+    analysis?.examMode.oral.length ||
+      analysis?.examMode.desarrollo.length ||
+      analysis?.examMode.test.length,
+  );
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-[rgba(0,255,213,0.15)] bg-[rgba(7,19,26,0.6)]">
@@ -230,37 +291,82 @@ export function LegalTutorPanel({
             className={`gs-exam-toggle shrink-0 text-[10px] ${examOnly ? "gs-exam-toggle--active" : ""}`}
           >
             <Filter size={10} className="mr-1 inline" />
-            Solo examen
+            Solo esencial (80/20)
           </button>
         </div>
 
-        <div className="mt-2 grid grid-cols-2 gap-1.5">
-          {PROFESSOR_ACTIONS.map((item) => {
-            const Icon = item.icon;
-            return (
-              <button
+        <p className="mt-2 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Pedagogía
+        </p>
+        <div className="mt-1 grid grid-cols-3 gap-1.5">
+          {PEDAGOGY_ACTIONS.map((item) => (
+            <ActionTile
+              key={item.id}
+              label={item.label}
+              icon={item.icon}
+              accent={item.accent}
+              disabled={loading}
+              onClick={() => onAction(item.id)}
+            />
+          ))}
+        </div>
+
+        <p className="mt-2 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Fuentes verificadas
+        </p>
+        <div className="mt-1 grid grid-cols-2 gap-1.5">
+          <ActionTile
+            label="Norma peruana"
+            icon={Scale}
+            accent="#86EFAC"
+            disabled={loading || !normativeGate.allowed}
+            locked={!normativeGate.allowed}
+            title={normativeGate.reason}
+            onClick={() => onAction("peru_law")}
+          />
+          <ActionTile
+            label="Jurisprudencia"
+            icon={Gavel}
+            accent="#C084FC"
+            disabled={loading || !jurisGate.allowed}
+            locked={!jurisGate.allowed}
+            title={jurisGate.reason}
+            onClick={() => onAction("jurisprudence")}
+          />
+        </div>
+
+        <button
+          type="button"
+          disabled={loading}
+          onClick={() => onAction("exam_mode")}
+          className="gs-action-tile gs-action-tile--exam mt-2 w-full justify-center"
+        >
+          <Brain size={14} />
+          <span>Practicar examen</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setShowMoreActions((v) => !v)}
+          className="mt-1.5 flex w-full items-center justify-center gap-1 text-[9px] font-semibold text-muted-foreground hover:text-[#00FFD5]"
+        >
+          Más opciones
+          <ChevronDown size={12} className={`transition ${showMoreActions ? "rotate-180" : ""}`} />
+        </button>
+        {showMoreActions ? (
+          <div className="mt-1 grid grid-cols-2 gap-1.5">
+            {MORE_ACTIONS.map((item) => (
+              <ActionTile
                 key={item.id}
-                type="button"
+                label={item.label}
+                icon={item.icon}
+                accent={item.accent}
                 disabled={loading}
                 onClick={() => onAction(item.id)}
-                className="gs-action-tile"
-                style={{ "--gs-accent": item.accent } as React.CSSProperties}
-              >
-                <Icon size={14} style={{ color: item.accent }} />
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
-          <button
-            type="button"
-            disabled={loading}
-            onClick={() => onAction("exam_mode")}
-            className="gs-action-tile gs-action-tile--exam"
-          >
-            <Brain size={14} />
-            <span>Modo examen</span>
-          </button>
-        </div>
+              />
+            ))}
+          </div>
+        ) : null}
 
         <div className="mt-2 flex gap-1.5">
           <input
@@ -371,22 +477,34 @@ export function LegalTutorPanel({
             ) : null}
             {analysis ? (
               <>
-                <CompactConceptChips
-                  keyLearning={analysis.keyLearning}
-                  highlights={analysis.highlights}
-                  examOnly={examOnly}
-                  activeHighlightId={activeHighlightId}
-                  onSelect={onHighlightFocus}
-                />
-                <ProfessorLessonView
-                  analysis={analysis}
-                  examOnly={examOnly}
-                  activeHighlightId={activeHighlightId}
-                  onConceptClick={onHighlightFocus}
-                  customReply={customReply}
-                  hideKeyLearning
-                />
-                {!examOnly ? <ExamModePanel examMode={analysis.examMode} /> : null}
+                {practiceExam ? (
+                  hasExamContent ? (
+                    <ExamModePanel examMode={analysis.examMode} prominent />
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      Generando preguntas de práctica para esta página…
+                    </p>
+                  )
+                ) : (
+                  <>
+                    <CompactConceptChips
+                      keyLearning={analysis.keyLearning}
+                      highlights={analysis.highlights}
+                      examOnly={examOnly}
+                      activeHighlightId={activeHighlightId}
+                      onSelect={onHighlightFocus}
+                    />
+                    <ProfessorLessonView
+                      analysis={analysis}
+                      examOnly={examOnly}
+                      activeHighlightId={activeHighlightId}
+                      onConceptClick={onHighlightFocus}
+                      customReply={customReply}
+                      hideKeyLearning
+                    />
+                    {hasExamContent ? <ExamModePanel examMode={analysis.examMode} /> : null}
+                  </>
+                )}
               </>
             ) : null}
           </motion.div>

@@ -74,9 +74,9 @@ Responde ÚNICAMENTE JSON válido (sin markdown) con esta forma:
     }
   ],
   "examMode": {
-    "oral": ["pregunta oral probable con criterio de calificación"],
-    "desarrollo": ["pregunta de desarrollo con puntos que debe cubrir la respuesta modelo"],
-    "test": [{"question": "...", "options": ["A","B","C","D"], "answerIndex": 0, "explanation": "..."}],
+    "oral": [{"question": "¿Pregunta oral directa al estudiante?", "gradingPoints": ["punto que debe mencionar para aprobar"], "modelAnswer": "respuesta modelo breve (NO incluir en question)"}],
+    "desarrollo": [{"question": "Planteamiento del caso o tema a desarrollar", "gradingPoints": ["criterio 1", "criterio 2"], "modelAnswer": "esquema de respuesta modelo"}],
+    "test": [{"question": "...", "options": ["A","B","C","D"], "answerIndex": 0, "explanation": "por qué es correcta y por qué fallan las demás"}],
     "memorableConcepts": ["frase corta para memorizar"],
     "commonErrors": ["error frecuente del estudiante y cómo evitarlo"]
   },
@@ -94,6 +94,8 @@ Reglas del JSON:
 - conceptCards = conceptos doctrinarios/jurídicos. citations = SOLO normas verificables de BASE JURÍDICA INDEXADA.
 - citations: incluye únicamente artículos presentes en BASE JURÍDICA INDEXADA con texto literal. Si no hay certeza, citations debe ser [].
 - NO mezcles conceptos doctrinarios dentro de citations.
+- examMode.oral y examMode.desarrollo: objetos con question (solo la pregunta), gradingPoints (array) y modelAnswer (respuesta modelo separada). NO pongas la respuesta dentro de question.
+- examMode.test: no reveles la respuesta correcta en el enunciado; usa answerIndex y explanation solo para corrección.
 `.trim();
 
 const ACTION_DIRECTIVES: Record<GuidedStudyTutorAction, string> = {
@@ -110,7 +112,7 @@ const ACTION_DIRECTIVES: Record<GuidedStudyTutorAction, string> = {
   examples:
     "Amplía los conceptCards con ejemplos más claros y variados. Mantén el resto del JSON con profundidad didáctica.",
   peru_law:
-    "Enfatiza peruLaw en cada conceptCard y citations del ordenamiento peruano verificable.",
+    "Conecta cada conceptCard con norma peruana verificable (Código Civil, CPP, Constitución u otras de BASE JURÍDICA INDEXADA). Enriquece peruLaw y citations; sin artículo verificado, deja citations vacío y explica en examImportance.",
   detect_concepts:
     "Prioriza highlights y keyLearning. conceptCards con explanation didáctica (mínimo 3 oraciones cada una).",
   exam_questions:
@@ -126,7 +128,7 @@ const ACTION_DIRECTIVES: Record<GuidedStudyTutorAction, string> = {
   real_case:
     "Enfoca example en casos reales o hipotéticos verosímiles peruanos con desenlace jurídico.",
   jurisprudence:
-    "Enriquece peruLaw con líneas jurisprudenciales cuando proceda; si no hay base, indícalo en examImportance.",
+    "Cita SOLO jurisprudencia presente en FUENTES AUTORIZADAS. Si no hay fallo verificable, indícalo explícitamente en examImportance sin inventar números de expediente.",
   civil_code:
     "Enriquece peruLaw y citations con Código Civil peruano de la base oficial indexada.",
   custom:

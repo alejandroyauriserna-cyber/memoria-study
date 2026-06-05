@@ -72,6 +72,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
   const [understoodPages, setUnderstoodPages] = useState<number[]>([]);
   const [showIndex, setShowIndex] = useState(false);
   const [examOnly, setExamOnly] = useState(false);
+  const [practiceExam, setPracticeExam] = useState(false);
   const [activeHighlightId, setActiveHighlightId] = useState<string | null>(null);
   const [sourceSettings, setSourceSettings] = useState<LegalSourcesSettings | null>(null);
   const [tutorLoading, setTutorLoading] = useState(false);
@@ -385,6 +386,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
     updateCurrentPage(materialId, page);
     setActiveHighlightId(null);
     setSourcesStale(false);
+    setPracticeExam(false);
 
     const settings = sourceSettings ?? loadLegalSourcesSettings();
     if (!tryLoadCachedTutor(scope, settings)) {
@@ -407,6 +409,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
 
     const scope = { type: "chapter" as const, chapterId: chapter.id };
     setTutorScope(scope);
+    setPracticeExam(false);
     setCurrentPage(chapter.startPage);
     updateCurrentPage(materialId, chapter.startPage);
     void askTutor("explain_chapter", { scope, chapterId: chapter.id, skipCache: true });
@@ -517,6 +520,8 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
             analysis={displayAnalysis}
             customReply={tutorState.customReply}
             examOnly={examOnly}
+            practiceExam={practiceExam}
+            sourceSettings={sourceSettings}
             activeSources={tutorState.activeSources}
             manageableSources={manageableSources}
             onToggleSource={persistSourceEnabled}
@@ -531,13 +536,14 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
             onExamOnlyChange={setExamOnly}
             activeHighlightId={activeHighlightId}
             onHighlightFocus={setActiveHighlightId}
-            onAction={(action) =>
+            onAction={(action) => {
+              if (action === "exam_mode") setPracticeExam(true);
               void askTutor(action, {
                 scope: tutorScope,
                 chapterId: tutorScope.type === "chapter" ? tutorScope.chapterId : undefined,
                 skipCache: true,
-              })
-            }
+              });
+            }}
             onCustomAsk={(prompt) =>
               void askTutor("custom", {
                 customPrompt: prompt,

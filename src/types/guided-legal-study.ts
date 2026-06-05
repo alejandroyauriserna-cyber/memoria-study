@@ -93,21 +93,29 @@ export type DocumentStudyIndex = {
   chapters: DocumentChapter[];
 };
 
+export type ExamTestQuestion = {
+  question: string;
+  options: string[];
+  answerIndex: number;
+  explanation: string;
+};
+
+export type ExamStructuredQuestion = {
+  question: string;
+  gradingPoints: string[];
+  modelAnswer?: string;
+};
+
 export type ExamQuestionSet = {
-  oral: string[];
-  desarrollo: string[];
-  test: Array<{
-    question: string;
-    options: string[];
-    answerIndex: number;
-    explanation: string;
-  }>;
+  oral: ExamStructuredQuestion[];
+  desarrollo: ExamStructuredQuestion[];
+  test: ExamTestQuestion[];
 };
 
 export type ExamModeContent = {
-  oral: string[];
-  desarrollo: string[];
-  test: ExamQuestionSet["test"];
+  oral: ExamStructuredQuestion[];
+  desarrollo: ExamStructuredQuestion[];
+  test: ExamTestQuestion[];
   memorableConcepts: string[];
   commonErrors: string[];
 };
