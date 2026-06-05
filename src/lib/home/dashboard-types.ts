@@ -29,9 +29,12 @@ export type MemoriaDashboardProps = {
   career: string;
   activeCoursesCount: number;
   materialsThisWeek: number;
-  studyHoursEstimate: number;
+  studyHoursLabel: string;
   totalShared: number;
   totalOrganizers: number;
+  studyStreakDays: number;
+  pagesUnderstood: number;
+  showOnboarding: boolean;
   recentItems: RecentContinueItem[];
   suggestions: AiSuggestion[];
 };

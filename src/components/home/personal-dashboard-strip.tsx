@@ -5,6 +5,7 @@ import {
   BookMarked,
   Clock,
   FileStack,
+  Flame,
   Landmark,
   Layers,
   Library,
@@ -16,8 +17,10 @@ type PersonalDashboardStripProps = {
   currentCycle: string;
   activeCoursesCount: number;
   materialsThisWeek: number;
-  studyHoursEstimate: number;
+  studyHoursLabel: string;
   totalShared: number;
+  studyStreakDays: number;
+  pagesUnderstood: number;
 };
 
 export function PersonalDashboardStrip({
@@ -25,8 +28,10 @@ export function PersonalDashboardStrip({
   currentCycle,
   activeCoursesCount,
   materialsThisWeek,
-  studyHoursEstimate,
+  studyHoursLabel,
   totalShared,
+  studyStreakDays,
+  pagesUnderstood,
 }: PersonalDashboardStripProps) {
   const greeting = getTimeGreeting();
   const firstName = profileName.split(/\s+/)[0] ?? profileName;
@@ -39,22 +44,28 @@ export function PersonalDashboardStrip({
       hint: `${activeCoursesCount} cursos en malla`,
     },
     {
-      label: "Cursos activos",
-      value: String(activeCoursesCount),
-      icon: BookMarked,
-      hint: "Malla oficial UNT 2021",
+      label: "Racha de estudio",
+      value: `${studyStreakDays} día${studyStreakDays === 1 ? "" : "s"}`,
+      icon: Flame,
+      hint: "Actividad consecutiva",
     },
     {
       label: "Esta semana",
       value: String(materialsThisWeek),
       icon: FileStack,
-      hint: "Materiales generados",
+      hint: "Materiales nuevos",
     },
     {
-      label: "Horas de estudio",
-      value: `~${studyHoursEstimate}h`,
+      label: "Tiempo estimado",
+      value: studyHoursLabel,
       icon: Clock,
-      hint: "Estimado por actividad",
+      hint: "Según tu actividad real",
+    },
+    {
+      label: "Páginas comprendidas",
+      value: String(pagesUnderstood),
+      icon: BookMarked,
+      hint: "Estudio guiado",
     },
     {
       label: "Documentos",
@@ -85,7 +96,7 @@ export function PersonalDashboardStrip({
         </Link>
       </div>
 
-      <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {stats.map((stat) => (
           <div
             key={stat.label}

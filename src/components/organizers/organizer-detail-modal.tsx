@@ -17,11 +17,13 @@ export type OrganizerStudioTab = "interactive" | "infographic";
 export function OrganizerDetailModal({
   organizer,
   loading,
+  readOnly = false,
   onClose,
   onContentUpdate,
 }: {
   organizer: OrganizerRecord | null;
   loading?: boolean;
+  readOnly?: boolean;
   onClose: () => void;
   onContentUpdate?: (organizerId: string, content: unknown) => void;
 }) {
@@ -124,6 +126,12 @@ export function OrganizerDetailModal({
             />
           </div>
 
+          {readOnly ? (
+            <p className="shrink-0 border-b border-[rgba(0,255,213,0.1)] bg-[rgba(0,255,213,0.06)] px-4 py-2 text-center text-xs text-[#00FFD5] sm:px-6">
+              Vista compartida — solo lectura
+            </p>
+          ) : null}
+
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
             {activeTab === "interactive" ? (
               <OrganizerContentView
@@ -132,14 +140,14 @@ export function OrganizerDetailModal({
                 studio
                 deckKey={organizer.id}
                 organizerId={organizer.id}
-                onContentUpdate={handleContentUpdate}
+                onContentUpdate={readOnly ? undefined : handleContentUpdate}
               />
             ) : (
               <AcademicInfographicPanel
                 organizerId={organizer.id}
                 organizerTitle={organizer.title}
                 academicInfographic={parsed.academicInfographic}
-                onGenerated={handleContentUpdate}
+                onGenerated={readOnly ? undefined : handleContentUpdate}
               />
             )}
           </div>

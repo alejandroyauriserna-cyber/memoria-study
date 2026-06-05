@@ -5,21 +5,25 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { AuthForm } from "@/components/auth/auth-form";
 import { ResetPasswordForm } from "@/components/auth/reset-password-form";
 import { createClient } from "@/lib/supabase/browser";
+import {
+  buildAuthConfirmUrl,
+  hasImplicitSessionHash,
+  hasRecoverySignal,
+  needsServerAuthConfirm,
+  parseAuthUrl,
+} from "@/lib/auth/parse-auth-params";
 
 type EntryView = "loading" | "reset-password" | "form";
 
-function hasRecoverySignal(search: URLSearchParams, hash: URLSearchParams): boolean {
-  const type = search.get("type") ?? hash.get("type");
-  return type === "recovery" || search.get("mode") === "reset-password";
-}
-
-function hasAuthCallbackSignal(search: URLSearchParams, hash: URLSearchParams): boolean {
-  return Boolean(
-    search.get("code") ||
-      search.get("token") ||
-      hash.get("access_token") ||
-      hash.get("refresh_token"),
-  );
+async function waitForSession(maxAttempts = 12): Promise<boolean> {
+  const supabase = createClient();
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) throw error;
+    if (data.session) return true;
+    await new Promise((resolve) => window.setTimeout(resolve, 250));
+  }
+  return false;
 }
 
 export function AuthEntry() {
@@ -30,57 +34,68 @@ export function AuthEntry() {
 
   useEffect(() => {
     async function resolveEntry() {
-      const search = new URLSearchParams(window.location.search);
-      const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+      const params = parseAuthUrl();
 
-      if (!hasAuthCallbackSignal(search, hash)) {
-        setView(hasRecoverySignal(search, hash) ? "reset-password" : "form");
+      if (params.authError) {
+        setCallbackError(params.authError);
+        setView("form");
+        window.history.replaceState({}, "", "/auth");
         return;
       }
 
-      try {
-        const supabase = createClient();
-        const type = search.get("type") ?? hash.get("type");
-        const token = search.get("token");
-        const code = search.get("code");
-        const email = search.get("email");
+      if (needsServerAuthConfirm(params)) {
+        window.location.replace(buildAuthConfirmUrl(params));
+        return;
+      }
 
-        let response;
+      if (hasImplicitSessionHash(params)) {
+        try {
+          const hasSession = await waitForSession();
+          if (!hasSession) {
+            throw new Error("El enlace de acceso no es válido o expiró.");
+          }
 
-        if (token && type) {
-          response = await supabase.auth.verifyOtp({
-            type: type as "signup" | "recovery" | "email" | "magiclink",
-            token,
-            email: email ?? "",
-          });
-        } else if (code) {
-          response = await supabase.auth.exchangeCodeForSession(code);
-        } else if (hash.get("access_token")) {
-          const { data, error } = await supabase.auth.getSession();
-          response = { data, error };
-        } else {
-          throw new Error("Enlace de acceso inválido o expirado.");
-        }
+          if (hasRecoverySignal(params)) {
+            window.history.replaceState({}, "", "/auth?mode=reset-password");
+            setView("reset-password");
+            return;
+          }
 
-        if (response.error) {
-          throw response.error;
-        }
-
-        if (hasRecoverySignal(search, hash)) {
-          window.history.replaceState({}, "", "/auth?mode=reset-password");
-          setView("reset-password");
+          router.replace("/dashboard");
+          return;
+        } catch (error) {
+          setCallbackError(
+            error instanceof Error
+              ? error.message
+              : "No se pudo completar la autenticación.",
+          );
+          setView("form");
           return;
         }
-
-        router.replace("/dashboard");
-      } catch (error) {
-        setCallbackError(
-          error instanceof Error
-            ? error.message
-            : "No se pudo completar la autenticación.",
-        );
-        setView("form");
       }
+
+      if (params.search.get("mode") === "reset-password") {
+        try {
+          const hasSession = await waitForSession(4);
+          setView(hasSession ? "reset-password" : "form");
+          if (!hasSession) {
+            setCallbackError(
+              "Abre el enlace del correo en el mismo navegador donde pediste recuperar la contraseña, o solicita un enlace nuevo.",
+            );
+          }
+          return;
+        } catch (error) {
+          setCallbackError(
+            error instanceof Error
+              ? error.message
+              : "No se pudo validar la sesión de recuperación.",
+          );
+          setView("form");
+          return;
+        }
+      }
+
+      setView(hasRecoverySignal(params) ? "reset-password" : "form");
     }
 
     void resolveEntry();

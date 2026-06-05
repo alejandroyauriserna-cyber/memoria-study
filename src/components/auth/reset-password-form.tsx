@@ -8,6 +8,17 @@ import { LoadingState } from "@/components/ui/loading-state";
 import { useLoadingProgress } from "@/hooks/use-loading-progress";
 import { createClient } from "@/lib/supabase/browser";
 
+async function waitForSession(maxAttempts = 8): Promise<boolean> {
+  const supabase = createClient();
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) throw error;
+    if (data.session) return true;
+    await new Promise((resolve) => window.setTimeout(resolve, 200));
+  }
+  return false;
+}
+
 export function ResetPasswordForm() {
   const router = useRouter();
   const [password, setPassword] = useState("");
@@ -22,38 +33,14 @@ export function ResetPasswordForm() {
   useEffect(() => {
     async function establishRecoverySession() {
       try {
-        const supabase = createClient();
-        const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
-        const searchParams = new URLSearchParams(window.location.search);
-        const type = searchParams.get("type") ?? hashParams.get("type");
-
-        if (hashParams.get("access_token") || searchParams.get("code")) {
-          const { data, error } = await supabase.auth.getSession();
-          if (error) throw error;
-          if (!data.session) {
-            const exchanged = await supabase.auth.exchangeCodeForSession(
-              searchParams.get("code") ?? "",
-            );
-            if (exchanged.error) throw exchanged.error;
-          }
-        }
-
-        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-        if (sessionError) throw sessionError;
-
-        if (!sessionData.session) {
+        const hasSession = await waitForSession();
+        if (!hasSession) {
           setStatus("error");
           setMessage(
-            "El enlace de recuperación no es válido o expiró. Solicita uno nuevo desde Ingresar.",
+            "El enlace no es válido o expiró. Solicita uno nuevo desde Ingresar → ¿Olvidaste tu contraseña?",
           );
           return;
         }
-
-        if (type === "recovery" || hashParams.get("type") === "recovery") {
-          setStatus("ready");
-          return;
-        }
-
         setStatus("ready");
       } catch (error) {
         setStatus("error");

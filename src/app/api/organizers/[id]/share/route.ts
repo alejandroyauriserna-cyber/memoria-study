@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { randomBytes } from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { hasSupabaseEnv } from "@/lib/env";
+import { env, hasSupabaseEnv } from "@/lib/env";
 
 export async function POST(
   _request: Request,
@@ -45,8 +45,7 @@ export async function POST(
 
     if (updateError) throw updateError;
 
-    const origin = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-    const shareUrl = `${origin}/organizers?share=${shareToken}`;
+    const shareUrl = `${env.appUrl.replace(/\/$/, "")}/organizers?share=${shareToken}`;
 
     return NextResponse.json({ shareUrl, shareToken });
   } catch (error) {

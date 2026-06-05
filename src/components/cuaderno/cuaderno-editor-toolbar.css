@@ -33,6 +33,28 @@
   scrollbar-width: thin;
 }
 
+@media (max-width: 767px) {
+  .cn-editor-toolbar-rail {
+    position: fixed;
+    bottom: 0.75rem;
+    left: 0.75rem;
+    right: 0.75rem;
+    top: auto;
+    z-index: 45;
+    border-radius: 1rem;
+    border: 1px solid rgba(0, 255, 213, 0.15);
+  }
+
+  .cn-editor-toolbar-scroll {
+    padding: 8px 12px;
+    gap: 4px;
+  }
+
+  .cn-tb-group {
+    flex-shrink: 0;
+  }
+}
+
 .cn-editor-toolbar-scroll::-webkit-scrollbar {
   height: 4px;
 }

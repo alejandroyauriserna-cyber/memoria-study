@@ -81,7 +81,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
   const [showIndex, setShowIndex] = useState(false);
   const [examOnly, setExamOnly] = useState(false);
   const [practiceExam, setPracticeExam] = useState(false);
-  const [mobilePanel, setMobilePanel] = useState<"pdf" | "tutor">("pdf");
+  const [mobilePanel, setMobilePanel] = useState<"pdf" | "tutor" | "split">("split");
   const [analysisVersion, setAnalysisVersion] = useState(GUIDED_STUDY_ANALYSIS_VERSION);
   const [activeHighlightId, setActiveHighlightId] = useState<string | null>(null);
   const [sourceSettings, setSourceSettings] = useState<LegalSourcesSettings | null>(null);
@@ -541,26 +541,42 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
         </div>
       ) : null}
 
-      <div className="flex gap-1 px-2 lg:hidden">
-        <button
-          type="button"
-          onClick={() => setMobilePanel("pdf")}
-          className={`flex-1 rounded-lg px-3 py-2 text-xs font-semibold ${mobilePanel === "pdf" ? "bg-[rgba(0,255,213,0.15)] text-[#00FFD5]" : "bg-[rgba(0,0,0,0.25)] text-muted-foreground"}`}
-        >
-          PDF
-        </button>
-        <button
-          type="button"
-          onClick={() => setMobilePanel("tutor")}
-          className={`flex-1 rounded-lg px-3 py-2 text-xs font-semibold ${mobilePanel === "tutor" ? "bg-[rgba(0,255,213,0.15)] text-[#00FFD5]" : "bg-[rgba(0,0,0,0.25)] text-muted-foreground"}`}
-        >
-          Profesor IA
-        </button>
+      <div className="flex gap-1 px-2 lg:hidden" role="tablist" aria-label="Vista de estudio">
+        {(
+          [
+            { id: "split" as const, label: "Ambos" },
+            { id: "pdf" as const, label: "PDF" },
+            { id: "tutor" as const, label: "Profesor IA" },
+          ] as const
+        ).map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={mobilePanel === tab.id}
+            onClick={() => setMobilePanel(tab.id)}
+            className={`flex-1 rounded-lg px-3 py-2 text-xs font-semibold ${mobilePanel === tab.id ? "bg-[rgba(0,255,213,0.15)] text-[#00FFD5]" : "bg-[rgba(0,0,0,0.25)] text-muted-foreground"}`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       <div className="relative min-h-0 flex-1">
-        <div className="grid h-full gap-2 lg:grid-cols-[7fr_3fr]">
-          <div className={`min-h-0 ${mobilePanel === "tutor" ? "hidden lg:block" : ""}`}>
+        <div
+          className={`h-full gap-2 lg:grid lg:grid-cols-[7fr_3fr] ${
+            mobilePanel === "split" ? "flex flex-col" : "grid"
+          }`}
+        >
+          <div
+            className={`min-h-0 ${
+              mobilePanel === "tutor"
+                ? "hidden lg:block"
+                : mobilePanel === "split"
+                  ? "h-36 shrink-0 sm:h-44 lg:h-auto"
+                  : ""
+            }`}
+          >
             <PdfViewerPanel
               fileUrl={material.fileUrl}
               pageNumber={currentPage}
@@ -570,7 +586,11 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
             />
           </div>
 
-          <div className={`min-h-0 ${mobilePanel === "pdf" ? "hidden lg:block" : ""}`}>
+          <div
+            className={`min-h-0 ${
+              mobilePanel === "pdf" ? "hidden lg:block" : mobilePanel === "split" ? "min-h-0 flex-1" : ""
+            }`}
+          >
           <LegalTutorPanel
             loading={tutorLoading}
             loadingPercent={tutorProgress.percent}

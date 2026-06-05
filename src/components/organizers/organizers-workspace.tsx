@@ -311,10 +311,12 @@ export function OrganizersWorkspace({
   initialOrganizers,
   highlightId,
   created,
+  sharedOrganizer,
 }: {
   initialOrganizers: OrganizerRecord[];
   highlightId?: string;
   created?: boolean;
+  sharedOrganizer?: OrganizerRecord | null;
 }) {
   const { toast } = useToast();
   const [organizers, setOrganizers] = useState(initialOrganizers);
@@ -333,6 +335,16 @@ export function OrganizersWorkspace({
     const timer = window.setTimeout(() => setHydrated(true), 80);
     return () => window.clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    if (sharedOrganizer) {
+      setSelected(sharedOrganizer);
+    }
+  }, [sharedOrganizer?.id]);
+
+  const isSharedView =
+    Boolean(selected && sharedOrganizer && selected.id === sharedOrganizer.id) &&
+    !organizers.some((item) => item.id === sharedOrganizer?.id);
 
   const courses = useMemo(
     () => [...new Set(organizers.map((item) => item.course_name))].sort(),
@@ -579,6 +591,7 @@ export function OrganizersWorkspace({
 
       <OrganizerDetailModal
         organizer={selected}
+        readOnly={isSharedView}
         loading={Boolean(selected && regeneratingId === selected.id)}
         onClose={() => setSelected(null)}
         onContentUpdate={(organizerId, content) => {

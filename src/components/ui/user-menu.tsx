@@ -17,6 +17,7 @@ export function UserMenu() {
   const [signedIn, setSignedIn] = useState(true);
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const menuId = "user-menu-panel";
 
   useEffect(() => {
     async function loadProfile() {
@@ -46,8 +47,16 @@ export function UserMenu() {
       }
     }
 
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false);
+    }
+
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
   }, []);
 
   const initials = useMemo(() => {
@@ -70,11 +79,17 @@ export function UserMenu() {
     );
   }
 
+  const menuLabel = profile?.full_name ?? "usuario";
+
   return (
     <div ref={menuRef} className="relative">
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
+        aria-expanded={open}
+        aria-haspopup="menu"
+        aria-controls={menuId}
+        aria-label={`Menú de ${menuLabel}`}
         className="inline-flex items-center gap-3 rounded-3xl border border-border bg-card px-3 py-2 text-sm font-medium text-foreground shadow-sm transition hover:-translate-y-0.5 hover:border-accent"
       >
         <span className="grid h-10 w-10 items-center justify-center rounded-full bg-accent text-sm font-semibold text-accent-foreground shadow-sm">
@@ -88,7 +103,12 @@ export function UserMenu() {
       </button>
 
       {open ? (
-        <div className="absolute right-0 z-50 mt-3 w-64 overflow-hidden rounded-3xl border border-border bg-card p-4 shadow-2xl">
+        <div
+          id={menuId}
+          role="menu"
+          aria-label="Cuenta de usuario"
+          className="absolute right-0 z-50 mt-3 w-64 overflow-hidden rounded-3xl border border-border bg-card p-4 shadow-2xl"
+        >
           <div className="mb-4 rounded-3xl bg-muted p-4">
             <p className="text-xs uppercase tracking-[0.24em] text-accent">Ciclo actual</p>
             <p className="mt-2 text-sm font-semibold text-foreground">
@@ -101,9 +121,10 @@ export function UserMenu() {
             )}
           </div>
 
-          <nav className="space-y-2">
+          <nav className="space-y-2" aria-label="Enlaces de cuenta">
             <Link
               href="/profile"
+              role="menuitem"
               onClick={() => setOpen(false)}
               className="flex items-center gap-3 rounded-2xl px-3 py-2 text-sm text-foreground transition hover:bg-muted"
             >
@@ -111,6 +132,7 @@ export function UserMenu() {
             </Link>
             <Link
               href="/favorites"
+              role="menuitem"
               onClick={() => setOpen(false)}
               className="flex items-center gap-3 rounded-2xl px-3 py-2 text-sm text-foreground transition hover:bg-muted"
             >
@@ -118,6 +140,7 @@ export function UserMenu() {
             </Link>
             <Link
               href="/organizers"
+              role="menuitem"
               onClick={() => setOpen(false)}
               className="flex items-center gap-3 rounded-2xl px-3 py-2 text-sm text-foreground transition hover:bg-muted"
             >
@@ -127,6 +150,7 @@ export function UserMenu() {
 
           <button
             type="button"
+            role="menuitem"
             onClick={() => {
               setOpen(false);
               void signOutUser("/auth");

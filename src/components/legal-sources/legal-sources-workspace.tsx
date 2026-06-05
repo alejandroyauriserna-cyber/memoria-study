@@ -45,6 +45,7 @@ import {
 } from "@/lib/legal-sources/lp-url-overrides";
 import { LP_NORMATIVE_PRESETS } from "@/lib/legal-sources/lp-presets";
 import { LpUrlEditor } from "@/components/legal-sources/lp-url-editor";
+import { hasReadyLegalSources } from "@/lib/legal-sources/has-ready-sources";
 import {
   addCustomSource,
   fetchLegalSourcesSettings,
@@ -81,6 +82,7 @@ export function LegalSourcesWorkspace() {
   const [syncingWebTemplateId, setSyncingWebTemplateId] = useState<string | null>(null);
   const [genericWebUrls, setGenericWebUrls] = useState<string[]>([""]);
   const [showReconfigureWizard, setShowReconfigureWizard] = useState(false);
+  const [wizardDismissError, setWizardDismissError] = useState("");
   const pageLoadProgress = useLoadingProgress(loading, "profile");
   const uploadProgress = useLoadingProgress(
     uploading || Boolean(syncingPresetId) || Boolean(syncingWebTemplateId),
@@ -509,32 +511,41 @@ export function LegalSourcesWorkspace() {
   if (!settings.wizardCompleted || showReconfigureWizard) {
     return (
       <div className="mx-auto max-w-4xl space-y-6 py-6">
+        {wizardDismissError ? (
+          <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+            {wizardDismissError}
+          </p>
+        ) : null}
         <LegalSourcesWizard
           settings={settings}
           onComplete={(next) => {
             persist(next);
             setShowReconfigureWizard(false);
+            setWizardDismissError("");
           }}
-          onDismiss={() => {
-            if (settings.wizardCompleted) {
-              setShowReconfigureWizard(false);
-              return;
-            }
-            persist({
-              ...settings,
-              wizardCompleted: true,
-              studyCategories: settings.studyCategories?.length
-                ? settings.studyCategories
-                : DEFAULT_STUDY_CATEGORIES,
-            });
-          }}
+          onDismiss={
+            settings.wizardCompleted
+              ? () => {
+                  setShowReconfigureWizard(false);
+                  setWizardDismissError("");
+                }
+              : undefined
+          }
         />
       </div>
     );
   }
 
+  const sourcesReady = hasReadyLegalSources(settings);
+
   return (
     <div className="mx-auto max-w-4xl space-y-6">
+      {!sourcesReady ? (
+        <p className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+          Sincroniza al menos una fuente (LP Derecho, PDF o material) para que el tutor pueda citar
+          normativa verificable.
+        </p>
+      ) : null}
       <div className="tron-panel rounded-2xl p-6">
         <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#00FFD5]">
           <Scale size={14} />

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-/** Compatibilidad con enlaces antiguos: el callback vive en /auth. */
+/** Enlaces antiguos: el intercambio del código ocurre en el servidor. */
 export default async function AuthCallbackPage({
   searchParams,
 }: {
@@ -18,5 +18,5 @@ export default async function AuthCallbackPage({
   }
 
   const suffix = query.toString();
-  redirect(suffix ? `/auth?${suffix}` : "/auth");
+  redirect(suffix ? `/api/auth/confirm?${suffix}` : "/auth");
 }

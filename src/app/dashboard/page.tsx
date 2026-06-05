@@ -7,23 +7,15 @@ import { getCoursesForCycle } from "@/lib/academic/helpers";
 import { normalizeAcademicForWrite } from "@/lib/academic/normalize-academic";
 import { UNT_DERECHO } from "@/lib/academic/unt-derecho";
 import { recordToMaterial } from "@/lib/materials/mapper";
+import { formatStudyHours } from "@/lib/profile/aggregate-learning-stats";
+import { estimateStudyMinutesFromServer } from "@/lib/profile/estimate-study-minutes";
+import { isNewUser } from "@/lib/profile/is-new-user";
+import { fetchServerLearningStats } from "@/lib/profile/server-learning-stats";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/env";
 import type { MaterialRecord } from "@/types/material";
 import type { OrganizerRecord } from "@/types/organizer";
-
-function countMaterialsThisWeek(rows: Array<{ created_at?: string }>): number {
-  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-  return rows.filter((row) => {
-    if (!row.created_at) return false;
-    return new Date(row.created_at).getTime() >= weekAgo;
-  }).length;
-}
-
-function estimateStudyHours(historyCount: number, organizersCount: number): number {
-  return Math.min(48, Math.round(historyCount * 0.45 + organizersCount * 0.75 + 2));
-}
 
 export default async function DashboardPage() {
   let profileName = "Estudiante";
@@ -32,7 +24,10 @@ export default async function DashboardPage() {
   let totalShared = 0;
   let totalOrganizers = 0;
   let materialsThisWeek = 0;
-  let studyHoursEstimate = 2;
+  let studyHoursLabel = "0 min";
+  let studyStreakDays = 0;
+  let pagesUnderstood = 0;
+  let showOnboarding = false;
   let activeCoursesCount = getCoursesForCycle(5).length;
   const recentItems: ReturnType<typeof buildRecentContinueItems> = [];
   let suggestions = buildAiSuggestions([]);
@@ -49,17 +44,24 @@ export default async function DashboardPage() {
 
       const [
         { data: profileData },
-        { data: materialsData },
+        { count: materialsCount },
+        { count: weeklyMaterialsCount },
         { data: organizersData },
         { data: historyData },
         { data: recentMaterialsData },
+        learningStats,
       ] = await Promise.all([
         admin
           .from("user_profiles")
           .select("full_name, current_cycle_label, current_cycle_number")
           .eq("user_id", user.id)
           .maybeSingle(),
-        admin.from("materials").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+        admin.from("materials").select("id", { count: "exact", head: true }).eq("user_id", user.id),
+        admin
+          .from("materials")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", user.id)
+          .gte("created_at", weekAgoIso),
         admin
           .from("organizers")
           .select("*")
@@ -76,7 +78,10 @@ export default async function DashboardPage() {
           .from("materials")
           .select("id, title, description, material_type, course_name, created_at")
           .eq("user_id", user.id)
-          .gte("created_at", weekAgoIso),
+          .gte("created_at", weekAgoIso)
+          .order("created_at", { ascending: false })
+          .limit(5),
+        fetchServerLearningStats(user.id),
       ]);
 
       profileName = profileData?.full_name ?? user.user_metadata?.full_name ?? "Estudiante";
@@ -85,18 +90,13 @@ export default async function DashboardPage() {
         profileData?.current_cycle_number ?? parseCycleNumberFromLabel(currentCycle);
       activeCoursesCount = getCoursesForCycle(currentCycleNumber).length;
 
-      const materials = (materialsData ?? []) as Array<{
-        id: string;
-        title: string;
-        description: string;
-        material_type: string;
-        created_at?: string;
-      }>;
-
-      totalShared = materials.length;
-      materialsThisWeek = countMaterialsThisWeek(materials);
-      totalOrganizers = (organizersData ?? []).length;
-      studyHoursEstimate = estimateStudyHours((historyData ?? []).length, totalOrganizers);
+      totalShared = materialsCount ?? 0;
+      materialsThisWeek = weeklyMaterialsCount ?? 0;
+      totalOrganizers = learningStats.organizersCreated;
+      studyStreakDays = learningStats.studyStreakDays;
+      pagesUnderstood = learningStats.pagesUnderstood;
+      studyHoursLabel = formatStudyHours(estimateStudyMinutesFromServer(learningStats));
+      showOnboarding = isNewUser(learningStats);
 
       const studyHistory = (historyData ?? [])
         .map((item) => {
@@ -122,7 +122,14 @@ export default async function DashboardPage() {
         })
         .filter((m): m is NonNullable<typeof m> => m !== null);
 
-      const userMaterials = (materialsData ?? [])
+      const { data: topMaterialsData } = await admin
+        .from("materials")
+        .select("id, title, description, material_type, course_name, created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(3);
+
+      const userMaterials = (topMaterialsData ?? [])
         .map((record) => recordToMaterial(record as MaterialRecord))
         .filter((mat) =>
           normalizeAcademicForWrite({
@@ -141,10 +148,7 @@ export default async function DashboardPage() {
         }),
       );
 
-      const suggestionMaterials = [
-        ...(recentMaterialsData ?? []),
-        ...materials.slice(0, 1),
-      ].map((m) => ({
+      const suggestionMaterials = (recentMaterialsData ?? []).map((m) => ({
         id: m.id as string,
         title: m.title as string,
         description: (m.description as string) ?? "",
@@ -165,9 +169,12 @@ export default async function DashboardPage() {
         career={UNT_DERECHO.career}
         activeCoursesCount={activeCoursesCount}
         materialsThisWeek={materialsThisWeek}
-        studyHoursEstimate={studyHoursEstimate}
+        studyHoursLabel={studyHoursLabel}
         totalShared={totalShared}
         totalOrganizers={totalOrganizers}
+        studyStreakDays={studyStreakDays}
+        pagesUnderstood={pagesUnderstood}
+        showOnboarding={showOnboarding}
         recentItems={recentItems}
         suggestions={suggestions}
       />
