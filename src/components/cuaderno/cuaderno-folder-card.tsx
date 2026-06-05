@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { FolderOpen } from "lucide-react";
-import { COVER_GRADIENTS } from "@/lib/cuaderno/preferences";
+import { cnCoverClass } from "@/lib/cuaderno/preferences";
 import { formatCuadernoRelativeTime } from "@/lib/cuaderno/folders";
 import type { CuadernoFolder } from "@/lib/cuaderno/folders";
 
@@ -16,13 +16,8 @@ export function CuadernoFolderCard({ folder }: { folder: CuadernoFolder }) {
     >
       <Link
         href={`/cuaderno/curso/${folder.courseId}`}
-        className="cuaderno-folder-card block p-5"
-        style={
-          {
-            background: COVER_GRADIENTS[folder.cover],
-            "--folder-accent": folder.accent,
-          } as React.CSSProperties
-        }
+        className={`cuaderno-folder-card block p-5 ${cnCoverClass(folder.cover)}`}
+        style={{ "--folder-accent": folder.accent } as React.CSSProperties}
       >
         <div className="relative z-10 flex items-start justify-between gap-3">
           <span className="text-3xl" aria-hidden>

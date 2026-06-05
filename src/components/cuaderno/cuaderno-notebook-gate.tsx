@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight, BookOpen, Sparkles } from "lucide-react";
 import type { CourseCoverArt } from "@/lib/cuaderno/course-covers";
-import { COVER_GRADIENTS } from "@/lib/cuaderno/preferences";
+import { cnCoverClass } from "@/lib/cuaderno/preferences";
 
 export function CuadernoNotebookGate({
   title,
@@ -30,13 +30,8 @@ export function CuadernoNotebookGate({
       transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
     >
       <div
-        className="cn-notebook-gate-cover"
-        style={
-          {
-            background: COVER_GRADIENTS[coverArt.cover],
-            "--notebook-accent": coverArt.accent,
-          } as React.CSSProperties
-        }
+        className={`cn-notebook-gate-cover ${cnCoverClass(coverArt.cover)}`}
+        style={{ "--notebook-accent": coverArt.accent } as React.CSSProperties}
       >
         <div className="cn-notebook-gate-motifs" aria-hidden>
           {coverArt.motifs.slice(0, 4).map((word) => (

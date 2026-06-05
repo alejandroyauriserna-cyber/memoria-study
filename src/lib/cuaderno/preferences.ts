@@ -67,3 +67,8 @@ export const COVER_GRADIENTS: Record<CourseVisualPrefs["cover"], string> = {
   teal: "linear-gradient(145deg, #134e4a 0%, #042f2e 50%, #0f172a 100%)",
   violet: "linear-gradient(145deg, #4c1d95 0%, #2e1065 50%, #0f172a 100%)",
 };
+
+/** Clases CSS con gradientes oscuro/claro según `html.dark`. */
+export function cnCoverClass(cover: CourseVisualPrefs["cover"]): string {
+  return `cn-cover cn-cover--${cover}`;
+}

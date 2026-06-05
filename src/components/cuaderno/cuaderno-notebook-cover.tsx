@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { COVER_GRADIENTS } from "@/lib/cuaderno/preferences";
+import { cnCoverClass } from "@/lib/cuaderno/preferences";
 import { formatCuadernoRelativeTime } from "@/lib/cuaderno/format";
 import type { CourseCoverArt } from "@/lib/cuaderno/course-covers";
 
@@ -66,13 +66,8 @@ export function CuadernoNotebookCover({
     <motion.div {...hoverProps} className={wrapClass} style={{ transformStyle: "preserve-3d" }}>
       <Link
         href={href}
-        className="cn-notebook-cover block"
-        style={
-          {
-            background: COVER_GRADIENTS[coverArt.cover],
-            "--notebook-accent": coverArt.accent,
-          } as React.CSSProperties
-        }
+        className={`cn-notebook-cover block ${cnCoverClass(coverArt.cover)}`}
+        style={{ "--notebook-accent": coverArt.accent } as React.CSSProperties}
       >
         {pinned ? <span className="cn-notebook-pin" aria-label="Con favoritos" /> : null}
 

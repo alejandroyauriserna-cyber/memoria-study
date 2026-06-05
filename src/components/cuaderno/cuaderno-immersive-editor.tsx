@@ -378,7 +378,7 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
   const decorationPanelOpen = stickerPanelOpen || postitPanelOpen;
 
   return (
-    <motion.div
+    <div
       className={`cn-immersive-root cn-immersive-root--studio cn-immersive-root--luxury cn-ambient-bg cuaderno-shell ${aiOpen ? " cn-immersive-root--ai-open" : ""}${decorationPanelOpen ? " cn-immersive-root--side-open" : ""}${focusMode || studyMode ? " cn-immersive-root--focus cn-immersive-root--study" : ""}${notebookGateOpen ? " cn-immersive-root--gate" : ""}`}
       data-layout={chrome.layoutMode}
       data-focus={focusMode ? "true" : "false"}
@@ -388,9 +388,6 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
           "--cn-course-glow": `${coverArt.accent}22`,
         } as React.CSSProperties
       }
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.4 }}
     >
       <CuadernoImmersiveHeader
         courseId={cuadernoClass.courseId}
@@ -695,6 +692,6 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
       />
 
       {error ? <p className="cn-immersive-error">{error}</p> : null}
-    </motion.div>
+    </div>
   );
 }

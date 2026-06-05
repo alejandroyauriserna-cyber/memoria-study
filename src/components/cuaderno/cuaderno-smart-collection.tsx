@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { COVER_GRADIENTS } from "@/lib/cuaderno/preferences";
+import { cnCoverClass, type CourseVisualPrefs } from "@/lib/cuaderno/preferences";
 
 export function CuadernoSmartCollectionModule({
   href,
@@ -17,19 +17,14 @@ export function CuadernoSmartCollectionModule({
   description: string;
   count: number;
   accent: string;
-  cover: keyof typeof COVER_GRADIENTS;
+  cover: CourseVisualPrefs["cover"];
 }) {
   return (
     <motion.div whileHover={{ y: -4 }} transition={{ type: "spring", stiffness: 340, damping: 28 }}>
       <Link
         href={href}
-        className="cn-smart-module"
-        style={
-          {
-            background: COVER_GRADIENTS[cover],
-            "--smart-accent": accent,
-          } as React.CSSProperties
-        }
+        className={`cn-smart-module ${cnCoverClass(cover)}`}
+        style={{ "--smart-accent": accent } as React.CSSProperties}
       >
         <div className="cn-smart-module-glow" aria-hidden />
         <div className="cn-smart-module-body">

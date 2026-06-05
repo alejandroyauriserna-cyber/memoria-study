@@ -464,45 +464,80 @@
 .cn-perf-fps.is-ok { color: #fbbf24; }
 .cn-perf-fps.is-bad { color: #f87171; }
 
-/* Panel stickers — encaja con studio */
+/* Panel stickers / post-its — dock lateral derecho (no overlay sobre la hoja) */
 .cn-immersive-root--studio {
-  --cn-decoration-panel-w: min(400px, 92vw);
+  --cn-decoration-panel-w: min(380px, 34vw);
   --cn-immersive-header-h: 52px;
 }
 
 .cn-immersive-root--studio .cn-sticker-panel,
 .cn-immersive-root--studio .cn-postit-panel {
+  position: absolute;
   top: var(--cn-immersive-header-h);
+  right: 0;
+  bottom: 0;
+  left: auto;
   width: var(--cn-decoration-panel-w);
+  max-width: 100%;
+  z-index: 45;
   border-radius: 0;
+  border-left: 1px solid var(--cn-studio-border, rgba(255, 255, 255, 0.08));
+  box-shadow: -16px 0 48px rgba(0, 0, 0, 0.28);
 }
 
 .cn-immersive-root--studio .cn-sticker-panel {
-  background: rgba(18, 22, 28, 0.92);
-  border-left-color: var(--cn-studio-border);
+  background: rgba(18, 22, 28, 0.96);
+}
+
+.cn-immersive-root--studio .cn-sticker-panel-backdrop {
+  display: none;
+}
+
+.cn-immersive-root--studio.cn-immersive-root--side-open .cn-immersive-workspace {
+  padding-right: var(--cn-decoration-panel-w);
+  box-sizing: border-box;
+  transition: padding-right 0.32s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .cn-immersive-root--studio.cn-immersive-root--side-open .cn-immersive-main {
-  margin-right: 0;
+  margin-right: 0 !important;
 }
 
-@media (min-width: 900px) {
-  .cn-immersive-root--studio.cn-immersive-root--side-open .cn-immersive-main {
-    margin-right: var(--cn-decoration-panel-w);
-  }
+.cn-immersive-root--studio.cn-immersive-root--side-open .cn-side-rail {
+  right: calc(var(--cn-decoration-panel-w) + 10px);
+  z-index: 46;
+}
 
-  .cn-immersive-root--studio.cn-immersive-root--side-open .cn-side-rail {
-    right: calc(var(--cn-decoration-panel-w) + 10px);
-  }
-
-  .cn-immersive-root--studio.cn-immersive-root--side-open .cn-immersive-canvas--studio .cn-canvas-viewport--immersive {
-    padding-right: 24px;
-  }
+.cn-immersive-root--studio.cn-immersive-root--side-open .cn-immersive-canvas--studio .cn-canvas-viewport--immersive {
+  padding-right: 12px;
 }
 
 @media (max-width: 899px) {
+  .cn-immersive-root--studio {
+    --cn-decoration-panel-w: min(320px, 88vw);
+  }
+
   .cn-immersive-root--studio.cn-immersive-root--side-open .cn-side-rail {
     display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .cn-immersive-root--studio {
+    --cn-decoration-panel-w: 100%;
+  }
+
+  .cn-immersive-root--studio.cn-immersive-root--side-open .cn-immersive-workspace {
+    padding-right: 0;
+  }
+
+  .cn-immersive-root--studio .cn-sticker-panel,
+  .cn-immersive-root--studio .cn-postit-panel {
+    top: auto;
+    height: min(72dvh, 640px);
+    border-left: none;
+    border-top: 1px solid var(--cn-studio-border, rgba(255, 255, 255, 0.08));
+    border-radius: 16px 16px 0 0;
   }
 }
 
@@ -1569,10 +1604,23 @@
 ========================================================== */
 
 .cn-immersive-root.cn-immersive-root--studio {
+  position: fixed;
+  inset: 0;
   display: flex;
   flex-direction: column;
-  min-height: calc(100dvh - 4.5rem);
+  min-height: 0;
   background: var(--cn-studio-bg, #0c0e12);
+  animation: cn-immersive-root-in 0.35s ease;
+}
+
+@keyframes cn-immersive-root-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .cn-immersive-workspace {

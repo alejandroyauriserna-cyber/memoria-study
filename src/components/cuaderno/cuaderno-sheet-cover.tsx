@@ -62,10 +62,12 @@ export function CuadernoSheetCover({
       <Link href={`/cuaderno/${item.id}`} className="cn-sheet-cover block">
         <div
           className="cn-sheet-face"
-          style={{
-            background: `linear-gradient(155deg, ${display.tint} 0%, #141820 65%)`,
-            borderColor: `${courseCover.accent}44`,
-          }}
+          style={
+            {
+              "--cn-sheet-tint": display.tint,
+              borderColor: `${courseCover.accent}44`,
+            } as React.CSSProperties
+          }
         >
           <div
             className={`cn-sheet-pattern-preview ${getTemplatePreviewClass(meta.templateId)} cn-paper-preview-sheet`}

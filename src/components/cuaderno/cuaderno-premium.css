@@ -405,6 +405,7 @@
   justify-content: center;
   padding: 12px 10px;
   overflow: hidden;
+  background: linear-gradient(155deg, var(--cn-sheet-tint, rgba(0, 229, 195, 0.2)) 0%, #141820 65%);
 }
 
 .cn-sheet-fav {
@@ -3334,11 +3335,16 @@ html:not(.dark) .ms-notebook-shell.cuaderno-shell:not(.cn-immersive-root) {
   --cn-text-secondary: rgba(15, 23, 42, 0.62);
   --cn-muted: rgba(15, 23, 42, 0.58);
   color: var(--cn-text);
+  background: var(--cn-bg);
 }
 
 html:not(.dark) .cuaderno-premium.ms-notebook-shell:not(.cn-immersive-root)::before,
 html:not(.dark) .ms-notebook-shell.cuaderno-shell:not(.cn-immersive-root)::before {
   opacity: 0.45;
+  background:
+    radial-gradient(circle at 10% 10%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 30%),
+    radial-gradient(circle at 90% 15%, color-mix(in srgb, var(--accent) 8%, transparent), transparent 35%),
+    radial-gradient(circle at 50% 100%, rgba(139, 92, 246, 0.04), transparent 45%);
 }
 
 html:not(.dark) .ms-notebook-shell.cuaderno-shell:not(.cn-immersive-root) .cn-tab {
@@ -3353,7 +3359,6 @@ html:not(.dark) .ms-notebook-shell.cuaderno-shell:not(.cn-immersive-root) .cn-ta
     0 8px 20px rgba(15, 23, 42, 0.06);
 }
 
-html:not(.dark) .ms-notebook-shell .cuaderno-folder-card,
 html:not(.dark) .ms-notebook-shell .cuaderno-sheet-card {
   background: rgba(255, 255, 255, 0.88);
   border-color: color-mix(in srgb, var(--border) 80%, transparent);
@@ -3667,4 +3672,55 @@ html:not(.dark) .cn-dict-result {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--muted-foreground);
+}
+
+html:not(.dark) .cn-course-hero-panel {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--cn-course-accent, var(--accent)) 10%, #fff), #fff 62%);
+  border-color: color-mix(in srgb, var(--border) 75%, transparent);
+}
+
+html:not(.dark) .cn-course-hero-title,
+html:not(.dark) .cn-course-hero-preview strong {
+  color: var(--foreground) !important;
+}
+
+html:not(.dark) .cn-course-hero-preview,
+html:not(.dark) .cn-course-hero-edited,
+html:not(.dark) .cn-course-hero-progress-head {
+  color: var(--muted-foreground);
+}
+
+html:not(.dark) .cn-course-hero-progress-head strong {
+  color: var(--foreground);
+}
+
+html:not(.dark) .cn-sheet-face {
+  background: linear-gradient(155deg, var(--cn-sheet-tint, rgba(0, 229, 195, 0.14)) 0%, #f8fafc 65%);
+  border-color: color-mix(in srgb, var(--cn-course-accent, var(--accent)) 22%, transparent) !important;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+}
+
+html:not(.dark) .cn-sheet-number,
+html:not(.dark) .cn-sheet-keyword {
+  color: rgba(15, 23, 42, 0.55);
+}
+
+html:not(.dark) .cn-sheet-title {
+  color: var(--foreground);
+}
+
+html:not(.dark) .cn-sheet-topic,
+html:not(.dark) .cn-sheet-meta {
+  color: var(--muted-foreground);
+}
+
+html:not(.dark) .cn-notebook-gate-cover .cn-notebook-gate-kicker,
+html:not(.dark) .cn-notebook-gate-cover .cn-notebook-gate-title,
+html:not(.dark) .cn-notebook-gate-cover .cn-notebook-gate-topic,
+html:not(.dark) .cn-notebook-gate-cover .cn-notebook-gate-meta {
+  color: #0f172a;
+}
+
+html:not(.dark) .cn-notebook-gate-cover .cn-notebook-gate-motifs {
+  color: rgba(15, 23, 42, 0.14);
 }
