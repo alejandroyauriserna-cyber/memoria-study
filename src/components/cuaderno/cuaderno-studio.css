@@ -1538,3 +1538,198 @@
   color: #fff;
   letter-spacing: -0.04em;
 }
+
+/* ==========================================================
+   IMMERSIVE EDITOR — layout fix (Notion / Milanote)
+========================================================== */
+
+.cn-immersive-root.cn-immersive-root--studio {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100dvh - 4.5rem);
+  background: var(--cn-studio-bg, #0c0e12);
+}
+
+.cn-immersive-workspace {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.cn-immersive-editor-column {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+.cn-immersive-main {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.cn-immersive-paper-shell {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.cn-immersive-canvas--studio {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.cn-immersive-canvas--studio .cn-float-toolbar-wrap {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  flex-shrink: 0;
+  padding: 10px 16px 6px;
+  background: linear-gradient(180deg, rgba(8, 12, 18, 0.72), transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.cn-immersive-canvas--studio .cn-canvas-viewport--immersive {
+  flex: 1;
+  min-height: 0;
+  contain: none;
+  display: block;
+  overflow: auto;
+  padding: 8px 20px 120px;
+  background:
+    radial-gradient(ellipse 80% 55% at 50% 0%, rgba(0, 255, 213, 0.07), transparent 58%),
+    radial-gradient(ellipse 55% 45% at 100% 100%, rgba(0, 153, 255, 0.06), transparent 52%),
+    linear-gradient(180deg, #0a1018 0%, #07131a 100%);
+  background-size: 100% 100%, 100% 100%, 100% 100%;
+}
+
+.cn-immersive-canvas--studio .cn-canvas-stage--immersive {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 16px 12px 48px;
+  transform-origin: top center;
+  box-sizing: border-box;
+}
+
+.cn-immersive-root .cn-paper-stage-wrap {
+  width: 100%;
+  max-width: min(1400px, 94vw);
+  margin: 0 auto;
+}
+
+.cn-immersive-root .cn-paper {
+  width: 100%;
+  min-height: min(78dvh, 960px);
+  border-radius: 6px 10px 10px 6px;
+}
+
+.cn-immersive-root .cn-paper-layers {
+  min-height: min(72dvh, 880px);
+}
+
+.cn-immersive-root .cn-paper-editor--rich,
+.cn-immersive-root .cn-paper-editor--rich .cn-prosemirror {
+  min-height: min(68dvh, 820px);
+}
+
+.cn-immersive-root .cn-paper[data-page-size="a4"],
+.cn-immersive-root .cn-paper[data-page-size="letter"] {
+  min-height: clamp(560px, 72dvh, 1100px);
+}
+
+.cn-immersive-root .cn-paper[data-page-size="free"] {
+  min-height: min(78dvh, 960px);
+}
+
+.cn-immersive-root .cn-paper[data-page-size="infinite"] {
+  min-height: 120vh;
+}
+
+/* ==========================================================
+   TEMA CLARO — editor inmersivo + estantería
+========================================================== */
+
+html:not(.dark) .cn-immersive-root.cn-immersive-root--studio {
+  --cn-studio-bg: #eef4f8;
+  background: var(--cn-studio-bg);
+}
+
+html:not(.dark) .cn-immersive-root .cn-immersive-header,
+html:not(.dark) .cn-immersive-root .cn-immersive-header--studio {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-bottom-color: color-mix(in srgb, var(--border) 80%, transparent) !important;
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.06);
+}
+
+html:not(.dark) .cn-immersive-root .cn-immersive-header-course,
+html:not(.dark) .cn-immersive-root .cn-immersive-header-title,
+html:not(.dark) .cn-immersive-root .cn-immersive-header-meta {
+  color: var(--foreground) !important;
+}
+
+html:not(.dark) .cn-immersive-root .cn-page-timeline,
+html:not(.dark) .cn-immersive-root .cn-ai-sidebar,
+html:not(.dark) .cn-immersive-root .cn-block-inspector,
+html:not(.dark) .cn-immersive-root .cn-float-toolbar {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: color-mix(in srgb, var(--border) 80%, transparent) !important;
+  color: var(--foreground);
+}
+
+html:not(.dark) .cn-immersive-root--luxury h1,
+html:not(.dark) .cn-immersive-root--luxury h2,
+html:not(.dark) .cn-immersive-root--luxury h3,
+html:not(.dark) .cn-immersive-root--luxury strong,
+html:not(.dark) .ms-notebook-shell.cuaderno-premium:not(.cn-immersive-root) .cn-hero-title,
+html:not(.dark) .ms-notebook-shell.cuaderno-premium:not(.cn-immersive-root) h1 {
+  color: var(--foreground) !important;
+}
+
+html:not(.dark) .cn-immersive-canvas--studio .cn-canvas-viewport--immersive {
+  background:
+    radial-gradient(ellipse 80% 55% at 50% 0%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 58%),
+    radial-gradient(ellipse 55% 45% at 100% 100%, color-mix(in srgb, var(--accent-secondary) 8%, transparent), transparent 52%),
+    linear-gradient(180deg, #eef4f8 0%, #f5f9fc 100%);
+}
+
+html:not(.dark) .cn-immersive-canvas--studio .cn-float-toolbar-wrap {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), transparent);
+}
+
+html:not(.dark) .cn-immersive-root .cn-paper {
+  box-shadow:
+    0 40px 100px rgba(15, 23, 42, 0.14),
+    0 16px 40px rgba(15, 23, 42, 0.08),
+    0 0 0 1px rgba(15, 23, 42, 0.06) !important;
+}
+
+html:not(.dark) .cn-immersive-root .cn-immersive-zoom {
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  color: var(--foreground);
+}
+
+html:not(.dark) .ms-notebook-shell.cuaderno-premium:not(.cn-immersive-root) .cn-notebook-cover {
+  box-shadow:
+    0 24px 48px rgba(15, 23, 42, 0.16),
+    0 8px 20px rgba(15, 23, 42, 0.08);
+}
+
+html:not(.dark) .cn-course-sheets--netflix .col-span-full {
+  border-color: color-mix(in srgb, var(--border) 70%, transparent) !important;
+}
+
+html:not(.dark) .cn-shelf-label span {
+  color: var(--muted-foreground);
+}

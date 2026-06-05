@@ -163,7 +163,13 @@ export function CuadernoCanvasEditor({
   const decorations = activePage.decorations ?? [];
 
   const fitKey = `${doc.activePageId}-${pageSizeMode}-${layoutMode}-${templateId}`;
-  const { zoom, setZoom } = useCuadernoPaperFit(viewportRef, shellRef, pageSizeMode, fitKey);
+  const { zoom, setZoom } = useCuadernoPaperFit(
+    viewportRef,
+    shellRef,
+    pageSizeMode,
+    fitKey,
+    !immersive,
+  );
   const perfEnabled = isCuadernoPerfEnabled();
   const perfStats = useCuadernoPerf(perfEnabled, viewportRef);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -769,7 +775,7 @@ export function CuadernoCanvasEditor({
           onDragLeave={handleDecorationDragLeave}
           onDrop={handleDecorationDrop}
         >
-          <div className={stageClass} style={{ transform: `scale(${zoom})` }}>
+          <div className={stageClass} style={{ transform: zoom === 1 ? undefined : `scale(${zoom})` }}>
             {paperOnly}
           </div>
         </div>
@@ -849,7 +855,7 @@ export function CuadernoCanvasEditor({
         onDragLeave={handleDecorationDragLeave}
         onDrop={handleDecorationDrop}
       >
-        <div className={stageClass} style={{ transform: `scale(${zoom})` }}>
+        <div className={stageClass} style={{ transform: zoom === 1 ? undefined : `scale(${zoom})` }}>
           {paperOnly}
         </div>
       </div>

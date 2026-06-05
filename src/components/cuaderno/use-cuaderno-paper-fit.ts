@@ -9,17 +9,24 @@ const MAX_ZOOM = 1.35;
 
 /**
  * Ajusta el zoom para que la hoja ocupe ~90% del ancho del viewport (auto-fit al abrir/cambiar página).
+ * Desactivar en editor inmersivo: la hoja debe iniciar al 100% centrada.
  */
 export function useCuadernoPaperFit(
   viewportRef: RefObject<HTMLElement | null>,
   shellRef: RefObject<HTMLElement | null>,
   pageSizeMode: CuadernoPageSizeMode,
   resetKey: string,
+  enabled = true,
 ) {
   const [zoom, setZoom] = useState(1);
   const rafRef = useRef<number | null>(null);
 
   const fitToWidth = useCallback(() => {
+    if (!enabled) {
+      setZoom(1);
+      return;
+    }
+
     const viewport = viewportRef.current;
     const shell = shellRef.current;
     if (!viewport || !shell) return;
@@ -39,9 +46,14 @@ export function useCuadernoPaperFit(
       const next = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, targetWidth / natural));
       setZoom(Number(next.toFixed(3)));
     });
-  }, [viewportRef, shellRef, pageSizeMode]);
+  }, [enabled, viewportRef, shellRef, pageSizeMode]);
 
   useLayoutEffect(() => {
+    if (!enabled) {
+      setZoom(1);
+      return;
+    }
+
     fitToWidth();
     const viewport = viewportRef.current;
     if (!viewport) return;
@@ -58,7 +70,7 @@ export function useCuadernoPaperFit(
       window.removeEventListener("resize", fitToWidth);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [fitToWidth, resetKey, viewportRef]);
+  }, [enabled, fitToWidth, resetKey, viewportRef]);
 
   return { zoom, setZoom, fitToWidth };
 }

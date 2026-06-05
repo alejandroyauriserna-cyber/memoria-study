@@ -119,7 +119,7 @@ function CuadernoCourseViewInner({
     >
       <Link
         href="/cuaderno"
-        className="inline-flex items-center gap-2 text-sm text-muted-foreground transition hover:text-[#00FFD5]"
+        className="inline-flex items-center gap-2 text-sm text-muted-foreground transition hover:text-accent"
       >
         <ArrowLeft size={16} />
         Mis apuntes
@@ -158,7 +158,7 @@ function CuadernoCourseViewInner({
         </div>
 
         <div className="cn-course-hero-meta">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#00FFD5]">{cycleLabel}</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">{cycleLabel}</p>
           <h2 className="cn-course-hero-title">{courseName}</h2>
           {folder ? (
             <div className="cn-course-hero-preview">
@@ -206,8 +206,8 @@ function CuadernoCourseViewInner({
       </div>
       <div className="cn-course-sheets cn-course-sheets--netflix">
         {classes.length === 0 ? (
-          <div className="col-span-full rounded-2xl border border-dashed border-white/15 py-16 text-center">
-            <p className="text-[#F5F7FA]">Aún no hay hojas en este curso</p>
+          <div className="col-span-full rounded-2xl border border-dashed border-border py-16 text-center">
+            <p className="text-foreground">Aún no hay hojas en este curso</p>
             <p className="mt-1 text-sm text-muted-foreground">
               Pulsa «Nueva clase» y elige una plantilla jurídica o en blanco.
             </p>

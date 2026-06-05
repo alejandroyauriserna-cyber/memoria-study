@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import "./home-2026.css";
 import "./library-modern.css";
+import "./favorites-modern.css";
 import "./fuentes-modern.css";
 import { env } from "@/lib/env";
 

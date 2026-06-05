@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Search, SlidersHorizontal } from "lucide-react";
-import { MaterialCard } from "@/components/library/material-card";
+import { FavoriteMaterialCard } from "@/components/library/favorite-material-card";
 import type { Material } from "@/types/material";
 
 export function FavoritesBrowser({ materials }: { materials: Material[] }) {
@@ -38,30 +38,27 @@ export function FavoritesBrowser({ materials }: { materials: Material[] }) {
       });
   }, [courseId, materials, query, sort]);
 
-  const inputClass =
-    "h-12 w-full rounded-xl border border-[rgba(0,255,213,0.2)] bg-[rgba(7,19,26,0.6)] text-sm text-[#F5F7FA] outline-none focus:border-[rgba(0,255,213,0.45)] focus:shadow-[0_0_24px_rgba(0,255,213,0.12)]";
-
   return (
-    <div className="mt-8 space-y-6">
-      <div className="tron-panel grid gap-4 rounded-2xl p-5 lg:grid-cols-[1fr_auto_auto]">
-        <label className="relative block">
+    <div className="favorites-browser mt-6 space-y-4">
+      <div className="favorites-browser-toolbar">
+        <label className="favorites-browser-field">
           <span className="sr-only">Buscar favoritos</span>
-          <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#00FFD5]" />
+          <Search size={16} />
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Buscar en favoritos"
-            className={`${inputClass} px-12`}
+            placeholder="Buscar en tu colección…"
+            className="favorites-browser-input"
           />
         </label>
 
-        <label className="relative block">
+        <label className="favorites-browser-field">
           <span className="sr-only">Filtrar por curso</span>
-          <SlidersHorizontal className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#00FFD5]" />
+          <SlidersHorizontal size={16} />
           <select
             value={courseId}
             onChange={(event) => setCourseId(event.target.value)}
-            className={`${inputClass} min-w-56 px-12`}
+            className="favorites-browser-input min-w-52"
           >
             <option value="all">Todos los cursos</option>
             {courses.map((course) => (
@@ -75,23 +72,25 @@ export function FavoritesBrowser({ materials }: { materials: Material[] }) {
         <select
           value={sort}
           onChange={(event) => setSort(event.target.value)}
-          className={`${inputClass} px-4`}
+          className="favorites-browser-input favorites-browser-select"
         >
           <option value="newest">Más recientes</option>
           <option value="oldest">Más antiguos</option>
         </select>
       </div>
 
-      <p className="text-sm font-semibold text-muted-foreground">{materials.length} materiales guardados</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+        {filtered.length} de {materials.length} guardados
+      </p>
 
       {filtered.length ? (
-        <div className="grid gap-5 sm:grid-cols-2">
+        <div className="favorites-browser-grid">
           {filtered.map((material) => (
-            <MaterialCard key={material.id} material={material} />
+            <FavoriteMaterialCard key={material.id} material={material} />
           ))}
         </div>
       ) : (
-        <div className="rounded-2xl border border-dashed border-[rgba(0,255,213,0.2)] bg-[rgba(7,19,26,0.4)] p-10 text-center text-sm text-muted-foreground">
+        <div className="favorites-filter-empty text-sm text-muted-foreground">
           No hay favoritos que coincidan con los filtros.
         </div>
       )}

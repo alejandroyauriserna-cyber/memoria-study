@@ -63,3 +63,49 @@ export function getMaterialCoverFormat(material: Material): string {
   if (material.materialType === "resumen") return "RES";
   return "PDF";
 }
+
+const LEGAL_AREA: Record<MaterialType, { label: string; accent: string; soft: string }> = {
+  apunte: { label: "Apuntes", accent: "#0ea5e9", soft: "linear-gradient(160deg, #e0f2fe 0%, #bae6fd 55%, #7dd3fc 100%)" },
+  resumen: { label: "Resumen", accent: "#8b5cf6", soft: "linear-gradient(160deg, #ede9fe 0%, #ddd6fe 55%, #c4b5fd 100%)" },
+  pdf: { label: "PDF", accent: "#14b8a6", soft: "linear-gradient(160deg, #ccfbf1 0%, #99f6e4 55%, #5eead4 100%)" },
+  caso: { label: "Caso", accent: "#f43f5e", soft: "linear-gradient(160deg, #ffe4e6 0%, #fecdd3 55%, #fda4af 100%)" },
+  guia: { label: "Guía", accent: "#f59e0b", soft: "linear-gradient(160deg, #fef3c7 0%, #fde68a 55%, #fcd34d 100%)" },
+  otro: { label: "Material", accent: "#64748b", soft: "linear-gradient(160deg, #f1f5f9 0%, #e2e8f0 55%, #cbd5e1 100%)" },
+};
+
+export function getMaterialLegalArea(material: Material) {
+  return LEGAL_AREA[material.materialType] ?? LEGAL_AREA.otro;
+}
+
+export function getMaterialThumbnailUrl(material: Material): string | null {
+  const url = material.fileUrl?.toLowerCase() ?? "";
+  const name = material.fileName?.toLowerCase() ?? "";
+  if (/\.(png|jpe?g|webp|gif)(\?|$)/.test(url) || /\.(png|jpe?g|webp|gif)$/.test(name)) {
+    return material.fileUrl;
+  }
+  return null;
+}
+
+export function getMaterialStudyProgress(material: Material): number | null {
+  const views = material.views ?? 0;
+  if (views < 2) return null;
+  const engagement = views + (material.downloads ?? 0) * 2 + (material.likes ?? 0) * 3;
+  return Math.min(96, Math.max(12, Math.round(engagement * 2.8)));
+}
+
+export function formatMaterialRelativeTime(iso?: string | null): string | null {
+  if (!iso) return null;
+  const diff = Date.now() - new Date(iso).getTime();
+  if (Number.isNaN(diff) || diff < 0) return null;
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `hace ${Math.max(1, mins)} min`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `hace ${hours} h`;
+  const days = Math.floor(hours / 24);
+  if (days < 14) return `hace ${days} d`;
+  return new Date(iso).toLocaleDateString("es-PE", { day: "numeric", month: "short" });
+}
+
+export function getMaterialLastStudiedLabel(material: Material): string | null {
+  return formatMaterialRelativeTime(material.lastOpenedAt ?? material.favoriteCreatedAt ?? material.createdAt);
+}

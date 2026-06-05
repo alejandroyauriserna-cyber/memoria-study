@@ -8,7 +8,6 @@ import { StudyWithAiStatus } from "@/components/organizers/study-with-ai-status"
 import { useStudyWithAi } from "@/hooks/use-study-with-ai";
 import {
   getMaterialCoverFormat,
-  getMaterialCoverGradient,
   getMaterialPagesDisplay,
 } from "@/lib/materials/material-card-visual";
 import type { Material } from "@/types/material";
@@ -39,7 +38,6 @@ function MaterialCardGallery({ material }: { material: Material }) {
   } = useStudyWithAi(material.id);
 
   const actionsDisabled = busy || isGenerating || !material.id;
-  const coverGradient = getMaterialCoverGradient(material.courseId);
   const coverFormat = getMaterialCoverFormat(material);
   const pagesLabel = getMaterialPagesDisplay(material);
 
@@ -68,21 +66,15 @@ function MaterialCardGallery({ material }: { material: Material }) {
   return (
     <article className="lib-material-card group">
       <div className="lib-material-card-frame">
-        <div className="lib-material-card-cover" style={{ background: coverGradient }}>
-          <div className="lib-material-card-cover-shine" aria-hidden />
-          <div className="lib-material-card-cover-grid" aria-hidden />
-
+        <div className="lib-material-card-cover">
           <div className="lib-material-card-doc" aria-hidden>
-            <div className="lib-material-card-doc-page lib-material-card-doc-page--back" />
-            <div className="lib-material-card-doc-page lib-material-card-doc-page--front">
-              <FileText size={32} strokeWidth={1.35} />
-              <span>{coverFormat}</span>
-              <div className="lib-material-card-doc-lines">
-                <i />
-                <i />
-                <i />
-                <i />
-              </div>
+            <FileText size={32} strokeWidth={1.35} />
+            <span>{coverFormat}</span>
+            <div className="lib-material-card-doc-lines">
+              <i />
+              <i />
+              <i />
+              <i />
             </div>
           </div>
 

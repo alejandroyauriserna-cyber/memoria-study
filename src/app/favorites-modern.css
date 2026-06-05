@@ -1,0 +1,482 @@
+/* ——— Favoritos · colección premium 2026 ——— */
+
+.favorites-page {
+  --fav-radius: 1rem;
+}
+
+.favorites-page-hero {
+  border-radius: 1.15rem;
+  border: 1px solid rgba(0, 255, 213, 0.12);
+  background:
+    linear-gradient(135deg, rgba(0, 255, 213, 0.06), transparent 42%),
+    rgba(16, 39, 48, 0.55);
+  padding: 1.35rem 1.5rem;
+  backdrop-filter: blur(14px);
+}
+
+.favorites-page-hero h1 {
+  margin-top: 0.45rem;
+  font-size: clamp(1.65rem, 3vw, 2.15rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #f8fafc;
+}
+
+.favorites-page-kicker {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #00ffd5;
+}
+
+.favorites-page-stat {
+  align-self: flex-start;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 255, 213, 0.18);
+  background: rgba(0, 255, 213, 0.08);
+  padding: 0.45rem 0.85rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #00ffd5;
+  white-space: nowrap;
+}
+
+.favorites-browser-toolbar {
+  display: grid;
+  gap: 0.65rem;
+  border-radius: var(--fav-radius);
+  border: 1px solid rgba(0, 255, 213, 0.1);
+  background: rgba(16, 39, 48, 0.45);
+  padding: 0.85rem;
+}
+
+@media (min-width: 1024px) {
+  .favorites-browser-toolbar {
+    grid-template-columns: 1fr auto auto;
+  }
+}
+
+.favorites-browser-field {
+  position: relative;
+}
+
+.favorites-browser-field svg {
+  position: absolute;
+  left: 0.85rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #00ffd5;
+  pointer-events: none;
+}
+
+.favorites-browser-input {
+  height: 2.65rem;
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(0, 255, 213, 0.16);
+  background: rgba(7, 19, 26, 0.55);
+  padding: 0 0.85rem 0 2.45rem;
+  color: #f5f7fa;
+  font-size: 0.8125rem;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.favorites-browser-input:focus {
+  border-color: rgba(0, 255, 213, 0.38);
+  box-shadow: 0 0 0 3px rgba(0, 255, 213, 0.1);
+}
+
+.favorites-browser-select {
+  padding-left: 0.85rem;
+}
+
+.favorites-browser-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .favorites-browser-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .favorites-browser-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .favorites-browser-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* ——— Tarjeta favorito compacta ——— */
+
+.fav-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  min-height: 8.75rem;
+  overflow: hidden;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(8, 14, 17, 0.72);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease,
+    border-color 0.22s ease;
+}
+
+.fav-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(0, 255, 213, 0.22);
+  box-shadow:
+    0 16px 36px rgba(0, 0, 0, 0.28),
+    0 0 24px rgba(0, 255, 213, 0.08);
+}
+
+.fav-card-cover {
+  position: relative;
+  overflow: hidden;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.fav-card-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.fav-card-cover-art {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  min-height: 8.75rem;
+}
+
+.fav-card-doc {
+  position: absolute;
+  width: 2.4rem;
+  aspect-ratio: 0.72;
+  border-radius: 4px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.12);
+}
+
+.fav-card-doc--back {
+  background: rgba(255, 255, 255, 0.72);
+  transform: rotate(-7deg) translate(-4px, -2px);
+}
+
+.fav-card-doc--front {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--fav-accent, #0f766e);
+  transform: rotate(5deg) translate(4px, 3px);
+}
+
+.fav-card-doc--front span {
+  font-size: 0.5rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.fav-card-cover-course {
+  position: absolute;
+  left: 0.35rem;
+  right: 0.35rem;
+  bottom: 1.55rem;
+  margin: 0;
+  font-size: 0.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  color: rgba(15, 23, 42, 0.72);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-align: center;
+}
+
+.fav-card-cover-tag {
+  position: absolute;
+  left: 0.35rem;
+  bottom: 0.35rem;
+  padding: 0.12rem 0.35rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.88);
+  color: #0f172a;
+  font-size: 0.5625rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.fav-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+  padding: 0.65rem 0.7rem 0.7rem;
+  min-width: 0;
+}
+
+.fav-card-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.28rem;
+}
+
+.fav-card-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22rem;
+  padding: 0.14rem 0.4rem;
+  border-radius: 999px;
+  font-size: 0.5625rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.fav-card-badge--saved {
+  border: 1px solid rgba(251, 191, 36, 0.28);
+  background: rgba(251, 191, 36, 0.1);
+  color: #fbbf24;
+}
+
+.fav-card-badge--ai {
+  border: 1px solid rgba(0, 255, 213, 0.2);
+  background: rgba(0, 255, 213, 0.08);
+  color: #00ffd5;
+}
+
+.fav-card-course {
+  margin: 0;
+  font-size: 0.5625rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(245, 247, 250, 0.48);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fav-card-title {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  color: #f8fafc;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.fav-card-title a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.fav-card-title a:hover {
+  color: #00ffd5;
+}
+
+.fav-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+  margin-top: 0.1rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  color: rgba(245, 247, 250, 0.5);
+}
+
+.fav-card-progress {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.fav-card-progress-bar {
+  display: inline-block;
+  width: 2.5rem;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(245, 247, 250, 0.12);
+  overflow: hidden;
+}
+
+.fav-card-progress-bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #00ffd5, #00bfff);
+}
+
+.fav-card-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem;
+  margin-top: auto;
+  padding-top: 0.35rem;
+}
+
+.fav-card-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.28rem;
+  min-height: 1.85rem;
+  border-radius: 0.55rem;
+  border: 1px solid transparent;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.16s ease, opacity 0.16s ease;
+}
+
+.fav-card-btn:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.fav-card-btn--ghost {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(245, 247, 250, 0.88);
+}
+
+.fav-card-btn--primary {
+  background: linear-gradient(135deg, #00ffd5, #00bfff);
+  color: #041014;
+}
+
+.fav-card-message {
+  margin: 0;
+  padding: 0 0.7rem 0.55rem;
+  font-size: 0.6875rem;
+  color: #f87171;
+}
+
+.fav-card-footer {
+  grid-column: 1 / -1;
+}
+
+.fav-card-footer .fav-card-message {
+  padding-top: 0;
+}
+
+.fav-card-footer > div {
+  padding: 0 0.7rem 0.55rem;
+}
+
+.favorites-empty,
+.favorites-filter-empty {
+  border-radius: var(--fav-radius);
+  border: 1px dashed rgba(0, 255, 213, 0.18);
+  background: rgba(7, 19, 26, 0.35);
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+}
+
+/* ——— Tema claro ——— */
+
+html:not(.dark) .favorites-page-hero {
+  border-color: color-mix(in srgb, var(--accent) 18%, transparent);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--accent) 8%, #fff), transparent 45%),
+    #fff;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.06);
+}
+
+html:not(.dark) .favorites-page-hero h1 {
+  color: var(--foreground);
+}
+
+html:not(.dark) .favorites-page-kicker,
+html:not(.dark) .favorites-page-stat {
+  color: var(--accent);
+}
+
+html:not(.dark) .favorites-page-stat {
+  background: color-mix(in srgb, var(--accent) 10%, #fff);
+  border-color: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+html:not(.dark) .favorites-browser-toolbar {
+  background: #fff;
+  border-color: color-mix(in srgb, var(--border) 80%, transparent);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+}
+
+html:not(.dark) .favorites-browser-input {
+  background: #fff;
+  border-color: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--foreground);
+}
+
+html:not(.dark) .fav-card {
+  background: #fff;
+  border-color: color-mix(in srgb, var(--border) 75%, transparent);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+html:not(.dark) .fav-card:hover {
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.1);
+}
+
+html:not(.dark) .fav-card-cover {
+  border-right-color: color-mix(in srgb, var(--border) 70%, transparent);
+  background: color-mix(in srgb, var(--background) 92%, #fff);
+}
+
+html:not(.dark) .fav-card-title {
+  color: var(--foreground);
+}
+
+html:not(.dark) .fav-card-title a:hover {
+  color: var(--accent);
+}
+
+html:not(.dark) .fav-card-course,
+html:not(.dark) .fav-card-meta {
+  color: var(--muted-foreground);
+}
+
+html:not(.dark) .fav-card-btn--ghost {
+  background: rgba(15, 23, 42, 0.04);
+  border-color: color-mix(in srgb, var(--border) 80%, transparent);
+  color: var(--foreground);
+}
+
+html:not(.dark) .favorites-empty,
+html:not(.dark) .favorites-filter-empty {
+  background: #fff;
+  border-color: color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fav-card,
+  .fav-card:hover {
+    transform: none;
+    transition: none;
+  }
+}
