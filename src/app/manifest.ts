@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "MemoriaStudy",
     description:
       "Plataforma académica para estudiantes de Derecho UNT. Biblioteca, estudio guiado y tutor jurídico.",
-    start_url: "/dashboard",
+    start_url: "/",
     display: "standalone",
     background_color: "#07131A",
     theme_color: "#00FFD5",

@@ -1,4 +1,4 @@
-/** URLs permitidas en Supabase: /auth y /dashboard */
+/** URLs permitidas en Supabase: /auth y / (inicio unificado) */
 export function authPageUrl(mode?: string): string {
   const origin =
     typeof window !== "undefined"

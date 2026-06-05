@@ -56,7 +56,7 @@ export function buildRecentContinueItems(input: {
     kind: "chat",
     title: "Consulta con el asistente jurídico",
     subtitle: "Pregunta conceptos, casos o preparación de examen",
-    href: "/dashboard#asistente",
+    href: "/#asistente",
     at: new Date().toISOString(),
   });
 

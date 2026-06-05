@@ -11,17 +11,22 @@ import { UserMenu } from "@/components/ui/user-menu";
 import { OfflineSyncBanner } from "@/components/ui/offline-sync-banner";
 
 const NAV = [
-  { href: "/dashboard", label: "Inicio" },
+  { href: "/", label: "Inicio" },
   { href: "/library", label: "Biblioteca" },
   { href: "/favorites", label: "Favoritos" },
   { href: "/organizers", label: "Organizadores" },
   { href: "/cuaderno", label: "Cuaderno IA" },
   { href: "/fuentes-juridicas", label: "Fuentes" },
-];
+] as const;
+
+function navIsActive(pathname: string, href: string): boolean {
+  if (href === "/") return pathname === "/";
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isHome = pathname === "/dashboard" || pathname === "/";
+  const isHome = pathname === "/";
 
   return (
     <div
@@ -50,7 +55,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           }`}
         >
           <Link
-            href={isHome ? "/dashboard" : "/"}
+            href="/"
             className={`group flex items-center gap-2.5 transition ${
               isHome
                 ? "rounded-lg px-1 py-1 hover:opacity-80"
@@ -81,7 +86,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Link
                 key={item.href}
                 href={item.href}
-                data-active={pathname.startsWith(item.href) ? "true" : undefined}
+                data-active={navIsActive(pathname, item.href) ? "true" : undefined}
                 className="tron-nav-link"
               >
                 {item.label}

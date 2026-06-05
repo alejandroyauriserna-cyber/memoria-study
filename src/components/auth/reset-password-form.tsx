@@ -77,7 +77,7 @@ export function ResetPasswordForm() {
 
       setStatus("done");
       setMessage("Contraseña actualizada. Redirigiendo…");
-      window.setTimeout(() => router.replace("/dashboard"), 1200);
+      window.setTimeout(() => router.replace("/"), 1200);
     } catch (error) {
       setStatus("error");
       setMessage(error instanceof Error ? error.message : "No se pudo actualizar la contraseña.");

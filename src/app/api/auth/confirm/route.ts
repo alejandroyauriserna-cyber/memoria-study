@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     return redirectWithError(request, "Enlace de acceso inválido o expirado.");
   }
 
-  const successPath = type === "recovery" ? "/auth?mode=reset-password" : "/dashboard";
+  const successPath = type === "recovery" ? "/auth?mode=reset-password" : "/";
   const successUrl = new URL(successPath, request.url);
   let response = NextResponse.redirect(successUrl);
 

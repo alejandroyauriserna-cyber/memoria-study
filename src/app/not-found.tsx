@@ -15,7 +15,7 @@ export default function NotFound() {
             Puede que el enlace esté roto o el recurso ya no exista. Explora la biblioteca o vuelve al panel para continuar estudiando.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link href="/dashboard" className="tron-btn-primary inline-flex h-12 items-center justify-center rounded-xl px-6 text-sm font-semibold">
+            <Link href="/" className="tron-btn-primary inline-flex h-12 items-center justify-center rounded-xl px-6 text-sm font-semibold">
               Ir al panel
             </Link>
             <Link href="/library" className="tron-btn-secondary inline-flex h-12 items-center justify-center rounded-xl px-6 text-sm font-semibold">

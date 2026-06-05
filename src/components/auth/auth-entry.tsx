@@ -61,7 +61,7 @@ export function AuthEntry() {
             return;
           }
 
-          router.replace("/dashboard");
+          router.replace("/");
           return;
         } catch (error) {
           setCallbackError(
