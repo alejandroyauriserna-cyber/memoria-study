@@ -78,11 +78,11 @@ export function LegalAiHero() {
     >
       <Scale className="ms-home-legal-watermark hidden md:block" size={160} strokeWidth={0.75} />
       <div className="relative z-[1] mx-auto max-w-3xl text-center">
-        <p className="inline-flex items-center justify-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#00FFD5]">
+        <p className="inline-flex items-center justify-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-accent">
           <Sparkles size={14} />
           Asistente jurídico UNT
         </p>
-        <h1 className="mt-4 text-3xl font-bold tracking-tight text-[#F5F7FA] md:text-4xl">
+        <h1 className="mt-4 text-3xl font-bold tracking-tight text-foreground md:text-4xl">
           ¿Qué deseas estudiar hoy?
         </h1>
         <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground md:text-base">
@@ -141,14 +141,14 @@ export function LegalAiHero() {
                 onClick={() => applyQuickPrompt(action.query)}
                 className="ms-home-chip"
               >
-                <Icon size={15} className="text-[#00FFD5]" />
+                <Icon size={15} className="text-accent" />
                 {action.label}
               </button>
             );
           }
           return (
             <Link key={action.label} href={action.href} className="ms-home-chip">
-              <Icon size={15} className="text-[#00FFD5]" />
+              <Icon size={15} className="text-accent" />
               {action.label}
             </Link>
           );
@@ -180,7 +180,7 @@ export function LegalAiHero() {
             animate={{ opacity: 1, y: 0 }}
             className="relative z-[1] mx-auto mt-8 max-w-3xl"
           >
-            <div className="mb-2 flex items-center gap-2 text-xs font-medium text-[#00FFD5]">
+            <div className="mb-2 flex items-center gap-2 text-xs font-medium text-accent">
               <Gavel size={14} />
               Respuesta jurídica
             </div>

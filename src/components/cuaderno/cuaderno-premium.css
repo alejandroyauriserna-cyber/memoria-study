@@ -3353,13 +3353,107 @@ html:not(.dark) .ms-notebook-shell.cuaderno-shell:not(.cn-immersive-root) .cn-ta
     0 8px 20px rgba(15, 23, 42, 0.06);
 }
 
-html:not(.dark) .ms-notebook-shell .cn-ai-answer-card,
-html:not(.dark) .ms-notebook-shell .cn-ai-block,
-html:not(.dark) .ms-notebook-shell .cn-floating-concept-card,
-html:not(.dark) .ms-notebook-shell .cn-template-tile,
 html:not(.dark) .ms-notebook-shell .cuaderno-folder-card,
 html:not(.dark) .ms-notebook-shell .cuaderno-sheet-card {
   background: rgba(255, 255, 255, 0.88);
   border-color: color-mix(in srgb, var(--border) 80%, transparent);
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.06);
+}
+
+/* —— Tema claro: textos y paneles del cuaderno —— */
+
+html:not(.dark) .ms-notebook-shell:not(.cn-immersive-root) .cn-hero-title,
+html:not(.dark) .ms-notebook-shell:not(.cn-immersive-root) h1,
+html:not(.dark) .ms-notebook-shell:not(.cn-immersive-root) h2,
+html:not(.dark) .ms-notebook-shell:not(.cn-immersive-root) h3,
+html:not(.dark) .ms-notebook-shell:not(.cn-immersive-root) .text-\[\#F5F7FA\],
+html:not(.dark) .cn-bookshelf-hero-title,
+html:not(.dark) .cn-bookshelf-section-head h2 {
+  color: var(--foreground) !important;
+}
+
+html:not(.dark) .ms-notebook-shell:not(.cn-immersive-root) .text-muted-foreground,
+html:not(.dark) .ms-notebook-shell:not(.cn-immersive-root) p,
+html:not(.dark) .ms-notebook-shell:not(.cn-immersive-root) .cn-hero-sub {
+  color: var(--muted-foreground);
+}
+
+html:not(.dark) .ms-notebook-shell .cn-template-tile,
+html:not(.dark) .ms-notebook-shell .cn-ai-answer-card,
+html:not(.dark) .ms-notebook-shell .cn-ai-block,
+html:not(.dark) .ms-notebook-shell .cn-floating-concept-card {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: color-mix(in srgb, var(--border) 80%, transparent);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.06);
+}
+
+html:not(.dark) .ms-notebook-shell .cn-template-tile,
+html:not(.dark) .ms-notebook-shell .cuaderno-folder-card,
+html:not(.dark) .ms-notebook-shell .cuaderno-sheet-card,
+html:not(.dark) .ms-notebook-shell .cn-ai-answer-card,
+html:not(.dark) .ms-notebook-shell .cn-ai-block {
+  color: var(--foreground);
+}
+
+html:not(.dark) .ms-notebook-shell .cn-ai-answer-card-body,
+html:not(.dark) .ms-notebook-shell .cn-ai-block-body {
+  color: var(--muted-foreground);
+}
+
+html:not(.dark) .ms-notebook-shell .cn-page-sidebar,
+html:not(.dark) .ms-notebook-shell .cn-page-timeline,
+html:not(.dark) .ms-notebook-shell .cn-block-inspector,
+html:not(.dark) .ms-notebook-shell .cn-ai-sidebar,
+html:not(.dark) .ms-notebook-shell .cn-float-toolbar,
+html:not(.dark) .ms-notebook-shell .cn-immersive-header--studio,
+html:not(.dark) .cuaderno-shell .sidebar,
+html:not(.dark) .cuaderno-shell .inspector,
+html:not(.dark) .cuaderno-shell .ai-panel,
+html:not(.dark) .cuaderno-shell .notebook-toolbar,
+html:not(.dark) .cuaderno-shell .notebook-sidebar {
+  background: color-mix(in srgb, var(--card) 92%, transparent) !important;
+  border-color: color-mix(in srgb, var(--border) 85%, transparent) !important;
+  color: var(--foreground);
+}
+
+html:not(.dark) .cn-immersive-root {
+  --cn-studio-bg: #eef4f8;
+  --cn-studio-surface: rgba(255, 255, 255, 0.88);
+  --cn-studio-glass: rgba(255, 255, 255, 0.78);
+  --cn-studio-border: color-mix(in srgb, var(--accent) 18%, transparent);
+  --cn-studio-text: #0f172a;
+  --cn-studio-muted: rgba(15, 23, 42, 0.62);
+  --cn-luxury-muted: rgba(15, 23, 42, 0.62);
+  --cn-luxury-panel: rgba(255, 255, 255, 0.9);
+}
+
+html:not(.dark) .cn-immersive-root.cn-ambient-bg::before,
+html:not(.dark) .cn-immersive-root.cn-ambient-bg::after {
+  opacity: 0.35;
+}
+
+html:not(.dark) .cn-immersive-root .cn-immersive-header-course,
+html:not(.dark) .cn-immersive-root .cn-page-timeline-head,
+html:not(.dark) .cn-immersive-root .cn-ai-sidebar-head,
+html:not(.dark) .cn-immersive-root .cn-inspector-title,
+html:not(.dark) .cn-immersive-root .cn-side-rail-label {
+  color: var(--foreground);
+}
+
+html:not(.dark) .cn-immersive-root .cn-float-tb-btn,
+html:not(.dark) .cn-immersive-root .cn-selection-menu-btn {
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--foreground) 4%, transparent);
+}
+
+html:not(.dark) .cn-immersive-root .cn-paper {
+  color: var(--paper-ink, #0f172a);
+}
+
+html:not(.dark) .cn-immersive-root .cn-prosemirror {
+  color: var(--paper-ink, #0f172a);
+}
+
+html:not(.dark) .cn-immersive-root .cn-canvas-viewport--immersive {
+  background: transparent;
 }

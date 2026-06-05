@@ -80,7 +80,7 @@ export function PersonalDashboardStrip({
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="ms-home-section-title">Panel personalizado</p>
-          <h2 className="mt-2 text-2xl font-bold tracking-tight text-[#F5F7FA] md:text-3xl">
+          <h2 className="mt-2 text-2xl font-bold tracking-tight text-foreground md:text-3xl">
             {greeting}, {firstName}
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -102,8 +102,8 @@ export function PersonalDashboardStrip({
             key={stat.label}
             className="rounded-xl border border-[rgba(0,255,213,0.08)] bg-[rgba(7,19,26,0.45)] px-4 py-3.5"
           >
-            <stat.icon size={16} className="text-[#00FFD5]" />
-            <p className="ms-home-stat-value mt-2 text-xl font-bold text-[#F5F7FA]">{stat.value}</p>
+            <stat.icon size={16} className="text-accent" />
+            <p className="ms-home-stat-value mt-2 text-xl font-bold text-foreground">{stat.value}</p>
             <p className="text-xs font-medium text-muted-foreground">{stat.label}</p>
             <p className="mt-0.5 text-[10px] text-muted-foreground/80">{stat.hint}</p>
           </div>

@@ -675,3 +675,49 @@ html:not(.dark) .ms-home-answer {
 html:not(.dark) .ms-home-section-title {
   color: var(--muted-foreground);
 }
+
+html:not(.dark) .ms-home-prompt {
+  border-color: color-mix(in srgb, var(--accent) 22%, transparent);
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--foreground);
+  box-shadow: inset 0 1px 0 rgba(15, 23, 42, 0.04);
+}
+
+html:not(.dark) .ms-home-prompt:focus {
+  border-color: color-mix(in srgb, var(--accent) 42%, transparent);
+  background: #fff;
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent),
+    inset 0 1px 0 rgba(15, 23, 42, 0.04);
+}
+
+html:not(.dark) .ms-home-prompt::placeholder {
+  color: var(--muted-foreground);
+}
+
+html:not(.dark) .ms-home-hero .text-accent,
+html:not(.dark) .ms-home-hero h1 {
+  color: var(--foreground);
+}
+
+html:not(.dark) .ms-home-progress-ring {
+  background:
+    radial-gradient(circle closest-side, #fff 70%, transparent 72%),
+    conic-gradient(var(--accent) 0 82%, rgba(15, 23, 42, 0.08) 82% 100%);
+  color: var(--foreground);
+}
+
+html:not(.dark) .ms-home-chat-line {
+  background: rgba(15, 23, 42, 0.08);
+}
+
+html:not(.dark) .ms-home-chat-line.is-hot {
+  background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
+}
+
+html:not(.dark) .ms-home-product-main h2,
+html:not(.dark) .ms-home-hero h1 {
+  -webkit-text-fill-color: unset;
+  background: none;
+  color: var(--foreground);
+}

@@ -607,3 +607,59 @@ html:not(.dark) .shell--home .tron-nav-link[data-active="true"] {
   color: var(--foreground);
   background: var(--accent-soft);
 }
+
+/* ——— Light mode: utilidades hardcodeadas (legado) ——— */
+
+html:not(.dark) .text-\[\#F5F7FA\] {
+  color: var(--foreground) !important;
+}
+
+html:not(.dark) .text-\[\#F5F7FA\]\/80,
+html:not(.dark) .text-\[\#F5F7FA\]\/85,
+html:not(.dark) .text-\[\#F5F7FA\]\/88,
+html:not(.dark) .text-\[\#F5F7FA\]\/90 {
+  color: color-mix(in srgb, var(--foreground) 88%, transparent) !important;
+}
+
+html:not(.dark) .text-\[\#00FFD5\],
+html:not(.dark) .text-\[\#00FFD5\]\/70,
+html:not(.dark) .text-\[\#00FFD5\]\/80 {
+  color: var(--accent) !important;
+}
+
+html:not(.dark) .bg-\[rgba\(0\,0\,0\,0\.25\)\] {
+  background: color-mix(in srgb, var(--foreground) 6%, transparent) !important;
+}
+
+html:not(.dark) .hover\:text-\[\#00FFD5\]:hover {
+  color: var(--accent) !important;
+}
+
+html:not(.dark) .hover\:text-\[\#F5F7FA\]:hover {
+  color: var(--foreground) !important;
+}
+
+html:not(.dark) .hover\:text-\[\#F5F7FA\]\/80:hover {
+  color: color-mix(in srgb, var(--foreground) 88%, transparent) !important;
+}
+
+html:not(.dark) .border-\[rgba\(0\,255\,213\,0\.15\)\],
+html:not(.dark) .border-\[rgba\(0\,255\,213\,0\.12\)\],
+html:not(.dark) .border-\[rgba\(0\,255\,213\,0\.1\)\] {
+  border-color: color-mix(in srgb, var(--accent) 18%, transparent) !important;
+}
+
+html:not(.dark) .bg-\[rgba\(0\,255\,213\,0\.06\)\],
+html:not(.dark) .bg-\[rgba\(0\,255\,213\,0\.08\)\],
+html:not(.dark) .bg-\[rgba\(16\,39\,48\,0\.6\)\],
+html:not(.dark) .bg-\[rgba\(16\,39\,48\,0\.85\)\] {
+  background: color-mix(in srgb, var(--accent) 8%, #fff) !important;
+}
+
+html:not(.dark) .hover\:bg-\[rgba\(0\,255\,213\,0\.08\)\]:hover {
+  background: color-mix(in srgb, var(--accent) 12%, #fff) !important;
+}
+
+html:not(.dark) .hover\:bg-\[rgba\(0\,255\,213\,0\.05\)\]:hover {
+  background: color-mix(in srgb, var(--accent) 8%, #fff) !important;
+}

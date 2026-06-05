@@ -86,7 +86,7 @@ export default async function Page({ params }: { params: any }) {
             </Link>
           </div>
         ) : (
-          <div className="grid gap-6">
+          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {materials.map((material) => (
               <MaterialCard key={material.id} material={material} />
             ))}

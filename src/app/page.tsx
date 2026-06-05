@@ -179,15 +179,15 @@ export default async function Home() {
               <div className="ms-home-product-panel ms-home-product-main">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-[#00FFD5]">
+                    <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-accent">
                       Sesion activa
                     </p>
-                    <h2 className="mt-2 text-xl font-semibold text-[#F5F7FA]">{sessionTitle}</h2>
+                    <h2 className="mt-2 text-xl font-semibold text-foreground">{sessionTitle}</h2>
                     {isAuthenticated ? (
                       <p className="mt-1 text-xs text-muted-foreground">{sessionSubtitle}</p>
                     ) : null}
                   </div>
-                  <Scale size={34} className="text-[#00FFD5]" strokeWidth={1.4} />
+                  <Scale size={34} className="text-accent" strokeWidth={1.4} />
                 </div>
                 <div className="mt-6 space-y-3">
                   {PRODUCT_STEPS.map((step, index) => {
@@ -244,7 +244,7 @@ export default async function Home() {
         <LegalAiHero />
 
         <p className="flex items-center justify-center gap-2 text-center text-xs text-muted-foreground">
-          <Scale size={14} className="text-[#00FFD5]/70" />
+          <Scale size={14} className="text-accent/70" />
           {isAuthenticated
             ? "Tu espacio de estudio esta listo — continua desde biblioteca, cuaderno o tutor IA"
             : "Vista previa del asistente / requiere cuenta para guardar tu progreso"}

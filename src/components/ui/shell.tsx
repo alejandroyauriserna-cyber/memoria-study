@@ -44,11 +44,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <OfflineSyncBanner />
 
       <header
-        className={`sticky top-0 z-40 shrink-0 backdrop-blur-xl ${
-          isHome
-            ? "border-b border-[rgba(255,255,255,0.06)] bg-[rgba(8,10,12,0.72)]"
-            : "border-b border-[var(--border)] bg-[var(--shell-header-bg)]"
-        }`}
+        className="sticky top-0 z-40 shrink-0 border-b border-[var(--border)] bg-[var(--shell-header-bg)] backdrop-blur-xl"
       >
         <div
           className={`relative mx-auto flex items-center justify-between gap-4 px-4 sm:px-6 lg:px-8 ${

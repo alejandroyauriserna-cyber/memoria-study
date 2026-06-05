@@ -17,7 +17,7 @@ import {
   Upload,
   X,
 } from "lucide-react";
-import { MaterialCard } from "@/components/library/material-card";
+import { MaterialCardDetail } from "@/components/library/material-card-detail";
 import { MaterialFileRow } from "@/components/library/material-file-row";
 import {
   buildFilteredLibraryTree,
@@ -600,8 +600,8 @@ function MaterialPreviewPanel({
           <X size={18} />
         </button>
       </div>
-      <div className="library-preview-body flex-1 overflow-y-auto p-5">
-        <MaterialCard material={material} />
+      <div className="library-preview-body flex-1 overflow-y-auto p-4">
+        <MaterialCardDetail material={material} />
       </div>
     </div>
   );

@@ -428,14 +428,14 @@
 .cn-paper[data-page-size="a4"] {
   width: 100%;
   aspect-ratio: 210 / 297;
-  min-height: auto;
+  min-height: clamp(480px, 72dvh, 1200px);
   height: auto;
 }
 
 .cn-paper[data-page-size="letter"] {
   width: 100%;
   aspect-ratio: 8.5 / 11;
-  min-height: auto;
+  min-height: clamp(480px, 72dvh, 1200px);
   height: auto;
 }
 

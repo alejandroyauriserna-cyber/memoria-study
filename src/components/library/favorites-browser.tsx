@@ -85,7 +85,7 @@ export function FavoritesBrowser({ materials }: { materials: Material[] }) {
       <p className="text-sm font-semibold text-muted-foreground">{materials.length} materiales guardados</p>
 
       {filtered.length ? (
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-5 sm:grid-cols-2">
           {filtered.map((material) => (
             <MaterialCard key={material.id} material={material} />
           ))}

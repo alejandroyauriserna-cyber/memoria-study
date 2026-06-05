@@ -55,7 +55,7 @@ export default async function MyMaterialsPage() {
             No has subido ningún material aún.
           </div>
         ) : (
-          <div className="grid gap-4">
+          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {materials.map((material) => (
               <MaterialCard key={material.id} material={material} />
             ))}

@@ -285,7 +285,7 @@ export function LibrarySearch({ compact = false }: { compact?: boolean }) {
           <p className="text-sm text-muted-foreground">
             {results.length} resultado{results.length === 1 ? "" : "s"} para «{committedQuery}»
           </p>
-          <div className="grid gap-4">
+          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {results.map((material) => (
               <MaterialCard key={material.id} material={material} />
             ))}
