@@ -3,6 +3,301 @@
 .ms-home {
   --ms-home-glow: rgba(0, 255, 213, 0.14);
   --ms-home-line: rgba(0, 255, 213, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.ms-home-landing {
+  position: relative;
+  display: grid;
+  min-height: clamp(520px, calc(100dvh - 150px), 620px);
+  grid-template-columns: minmax(0, 1.02fr) minmax(360px, 0.98fr);
+  align-items: center;
+  gap: clamp(2rem, 5vw, 4.5rem);
+  overflow: hidden;
+  border-radius: 1.5rem;
+  border: 1px solid rgba(0, 255, 213, 0.12);
+  background:
+    linear-gradient(140deg, rgba(255, 138, 0, 0.1), transparent 28%),
+    radial-gradient(ellipse 80% 60% at 85% 15%, rgba(0, 191, 255, 0.16), transparent 58%),
+    radial-gradient(ellipse 70% 60% at 5% 20%, rgba(0, 255, 213, 0.13), transparent 54%),
+    linear-gradient(160deg, rgba(16, 39, 48, 0.72), rgba(7, 19, 26, 0.92));
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.03),
+    0 30px 90px rgba(0, 0, 0, 0.44);
+  padding: clamp(1.35rem, 4vw, 4rem);
+  isolation: isolate;
+}
+
+.ms-home-landing::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    linear-gradient(rgba(0, 255, 213, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 213, 0.05) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: linear-gradient(110deg, black, transparent 72%);
+  opacity: 0.45;
+}
+
+.ms-home-landing-copy {
+  max-width: 44rem;
+}
+
+.ms-home-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 255, 213, 0.18);
+  background: rgba(0, 255, 213, 0.07);
+  padding: 0.5rem 0.8rem;
+  color: #00ffd5;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.ms-home-landing h1 {
+  margin-top: 1.1rem;
+  max-width: 15.5ch;
+  color: #f8fafc;
+  font-size: clamp(2.7rem, 4.6vw, 4.1rem);
+  font-weight: 760;
+  line-height: 0.92;
+  letter-spacing: 0;
+  text-wrap: balance;
+}
+
+.ms-home-lead {
+  margin-top: 1rem;
+  max-width: 40rem;
+  color: rgba(245, 247, 250, 0.72);
+  font-size: clamp(1rem, 1.7vw, 1.18rem);
+  line-height: 1.65;
+}
+
+.ms-home-actions {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+}
+
+.ms-home-trust {
+  margin-top: 1.4rem;
+  display: none;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  color: rgba(245, 247, 250, 0.64);
+  font-size: 0.82rem;
+}
+
+.ms-home-trust span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+}
+
+.ms-home-trust svg {
+  color: #00ffd5;
+}
+
+.ms-home-product-shot {
+  position: relative;
+  border-radius: 1.25rem;
+  border: 1px solid rgba(0, 255, 213, 0.18);
+  background:
+    linear-gradient(160deg, rgba(8, 14, 17, 0.92), rgba(16, 39, 48, 0.82)),
+    radial-gradient(ellipse 80% 70% at 20% 0%, rgba(0, 255, 213, 0.16), transparent 60%);
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.46),
+    0 0 70px rgba(0, 255, 213, 0.12);
+  overflow: hidden;
+  transform: perspective(1200px) rotateY(-7deg) rotateX(4deg);
+  transform-origin: center;
+}
+
+.ms-home-product-shot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 0 35%, rgba(255, 255, 255, 0.08) 45%, transparent 58%);
+  transform: translateX(-70%);
+  animation: ms-home-sheen 7s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.ms-home-product-topbar {
+  display: flex;
+  gap: 0.45rem;
+  border-bottom: 1px solid rgba(0, 255, 213, 0.1);
+  padding: 0.9rem 1rem;
+}
+
+.ms-home-product-topbar span {
+  height: 0.58rem;
+  width: 0.58rem;
+  border-radius: 50%;
+  background: rgba(245, 247, 250, 0.28);
+}
+
+.ms-home-product-topbar span:first-child {
+  background: #ff8a00;
+}
+
+.ms-home-product-topbar span:nth-child(2) {
+  background: #00bfff;
+}
+
+.ms-home-product-topbar span:nth-child(3) {
+  background: #00ffd5;
+}
+
+.ms-home-product-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 0.9rem;
+  padding: 1rem;
+}
+
+.ms-home-product-panel {
+  min-height: 9rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(0, 255, 213, 0.12);
+  background: rgba(7, 19, 26, 0.62);
+  padding: 1rem;
+  backdrop-filter: blur(14px);
+}
+
+.ms-home-product-main {
+  grid-row: span 2;
+  min-height: 20rem;
+}
+
+.ms-home-step-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.8rem;
+  border-radius: 0.9rem;
+  border: 1px solid rgba(0, 255, 213, 0.1);
+  background: rgba(255, 255, 255, 0.035);
+  padding: 0.8rem;
+}
+
+.ms-home-step-icon {
+  display: grid;
+  height: 2.35rem;
+  width: 2.35rem;
+  place-items: center;
+  border-radius: 0.8rem;
+  background: rgba(0, 255, 213, 0.1);
+  color: #00ffd5;
+}
+
+.ms-home-step-row strong,
+.ms-home-step-row small {
+  display: block;
+}
+
+.ms-home-step-row strong {
+  color: #f5f7fa;
+  font-size: 0.9rem;
+}
+
+.ms-home-step-row small {
+  margin-top: 0.12rem;
+  overflow: hidden;
+  color: rgba(245, 247, 250, 0.55);
+  font-size: 0.76rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ms-home-step-row em {
+  display: grid;
+  height: 1.55rem;
+  width: 1.55rem;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(255, 138, 0, 0.12);
+  color: #ffb45f;
+  font-size: 0.72rem;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.ms-home-mini-title {
+  color: rgba(245, 247, 250, 0.56);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.ms-home-progress-ring {
+  display: grid;
+  width: min(7.5rem, 100%);
+  aspect-ratio: 1;
+  place-items: center;
+  margin-top: 1rem;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle closest-side, #0b1d24 70%, transparent 72%),
+    conic-gradient(#00ffd5 0 82%, rgba(255, 255, 255, 0.08) 82% 100%);
+  color: #f5f7fa;
+  font-size: 1.45rem;
+  font-weight: 760;
+}
+
+.ms-home-chat-line {
+  display: block;
+  height: 0.82rem;
+  border-radius: 999px;
+  background: rgba(245, 247, 250, 0.14);
+}
+
+.ms-home-chat-line.is-hot {
+  background: linear-gradient(90deg, #00ffd5, #00bfff);
+  box-shadow: 0 0 24px rgba(0, 255, 213, 0.26);
+}
+
+.ms-home-feature-band {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.ms-home-feature-card {
+  border-radius: 1.15rem;
+  border: 1px solid rgba(0, 255, 213, 0.11);
+  background: rgba(16, 39, 48, 0.52);
+  padding: 1.1rem;
+  box-shadow: 0 14px 46px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(14px);
+}
+
+.ms-home-feature-card svg {
+  color: #00ffd5;
+}
+
+.ms-home-feature-card h2 {
+  margin-top: 0.9rem;
+  color: #f5f7fa;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.ms-home-feature-card p {
+  margin-top: 0.45rem;
+  color: rgba(245, 247, 250, 0.58);
+  font-size: 0.88rem;
+  line-height: 1.65;
 }
 
 .ms-home-hero {
@@ -129,6 +424,70 @@
   pointer-events: none;
 }
 
+@keyframes ms-home-sheen {
+  0%,
+  45% {
+    transform: translateX(-80%);
+  }
+  70%,
+  100% {
+    transform: translateX(80%);
+  }
+}
+
+@media (max-width: 1023px) {
+  .ms-home-landing {
+    min-height: auto;
+    grid-template-columns: 1fr;
+  }
+
+  .ms-home-landing h1 {
+    max-width: 15ch;
+  }
+
+  .ms-home-product-shot {
+    transform: none;
+  }
+}
+
+@media (min-height: 800px) and (min-width: 768px) {
+  .ms-home-trust {
+    display: flex;
+  }
+}
+
+@media (max-width: 767px) {
+  .ms-home {
+    gap: 1.4rem;
+  }
+
+  .ms-home-landing {
+    border-radius: 1.1rem;
+    padding: 1.15rem;
+  }
+
+  .ms-home-landing h1 {
+    font-size: clamp(2.45rem, 13vw, 3.55rem);
+  }
+
+  .ms-home-actions > * {
+    width: 100%;
+  }
+
+  .ms-home-product-grid,
+  .ms-home-feature-band {
+    grid-template-columns: 1fr;
+  }
+
+  .ms-home-product-shot {
+    display: none;
+  }
+
+  .ms-home-product-main {
+    min-height: auto;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ms-home-chip,
   .ms-home-glass {
@@ -137,5 +496,9 @@
   .ms-home-chip:hover,
   .ms-home-glass:hover {
     transform: none;
+  }
+
+  .ms-home-product-shot::after {
+    animation: none;
   }
 }
