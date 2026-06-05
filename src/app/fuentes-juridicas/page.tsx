@@ -6,9 +6,9 @@ export const dynamic = "force-dynamic";
 export default function LegalSourcesPage() {
   return (
     <AppShell>
-      <section className="px-4 py-8 sm:px-6 lg:px-8">
+      <div className="ms-home fuentes-page mx-auto w-full max-w-7xl px-4 pb-12 pt-6 sm:px-6 lg:px-8">
         <LegalSourcesWorkspace />
-      </section>
+      </div>
     </AppShell>
   );
 }

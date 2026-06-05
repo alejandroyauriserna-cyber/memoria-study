@@ -55,17 +55,17 @@ export function LegalSourcesWizard({ settings, onComplete, onDismiss }: LegalSou
   const selectedOptions = STUDY_CATEGORY_OPTIONS.filter((o) => selected.has(o.id));
 
   return (
-    <section className="tron-panel rounded-2xl border border-[rgba(0,255,213,0.25)] p-6">
-      <p className="flex items-center gap-2 text-sm font-bold text-[#F5F7FA]">
+    <section className="fuentes-wizard-panel">
+      <p className="fuentes-panel-title">
         <Sparkles size={16} className="text-[#00FFD5]" />
-        Configura tu biblioteca jurídica
-        <span className="text-[10px] font-normal text-muted-foreground">Paso {step} de 2</span>
+        Configura tu biblioteca juridica
+        <span className="ml-2 text-[10px] font-normal text-muted-foreground">Paso {step} de 2</span>
       </p>
 
       {step === 1 ? (
         <>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Elige un curso UNT o personaliza las categorías de fuentes que verás.
+          <p className="fuentes-panel-copy">
+            Elige un curso UNT o personaliza las categorias de fuentes que veras.
           </p>
           <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {COURSE_SOURCE_PRESETS.map((preset) => (
@@ -73,11 +73,7 @@ export function LegalSourcesWizard({ settings, onComplete, onDismiss }: LegalSou
                 key={preset.id}
                 type="button"
                 onClick={() => applyPreset(preset.id)}
-                className={`rounded-xl border p-3 text-left transition ${
-                  activePresetId === preset.id
-                    ? "border-[rgba(0,255,213,0.35)] bg-[rgba(0,255,213,0.08)]"
-                    : "border-[rgba(255,255,255,0.08)] bg-[rgba(0,0,0,0.2)]"
-                }`}
+                className={`fuentes-wizard-option${activePresetId === preset.id ? " is-active" : ""}`}
               >
                 <span className="block text-sm font-semibold text-[#F5F7FA]">{preset.label}</span>
                 <span className="mt-0.5 block text-[10px] text-muted-foreground">
@@ -86,8 +82,8 @@ export function LegalSourcesWizard({ settings, onComplete, onDismiss }: LegalSou
               </button>
             ))}
           </div>
-          <p className="mt-4 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-            O elige categorías manualmente
+          <p className="fuentes-section-label mt-4">
+            O elige categorias manualmente
           </p>
           <div className="mt-2 grid gap-2 sm:grid-cols-2">
             {STUDY_CATEGORY_OPTIONS.map((option) => {
@@ -97,11 +93,7 @@ export function LegalSourcesWizard({ settings, onComplete, onDismiss }: LegalSou
                   key={option.id}
                   type="button"
                   onClick={() => toggleCategory(option.id)}
-                  className={`flex items-start gap-3 rounded-xl border p-3 text-left transition ${
-                    active
-                      ? "border-[rgba(0,255,213,0.35)] bg-[rgba(0,255,213,0.08)]"
-                      : "border-[rgba(255,255,255,0.08)] bg-[rgba(0,0,0,0.2)]"
-                  }`}
+                  className={`fuentes-wizard-option flex items-start gap-3${active ? " is-active" : ""}`}
                 >
                   <span
                     className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border ${
@@ -147,15 +139,15 @@ export function LegalSourcesWizard({ settings, onComplete, onDismiss }: LegalSou
         </>
       ) : (
         <>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Recomendaciones según tu selección. Luego podrás subir PDF, sincronizar URLs LP u
-            oficiales en cada sección.
+          <p className="fuentes-panel-copy">
+            Recomendaciones segun tu seleccion. Luego podras subir PDF, sincronizar URLs LP u
+            oficiales en cada seccion.
           </p>
           <ul className="mt-4 space-y-2">
             {selectedOptions.map((option) => (
               <li
                 key={option.id}
-                className="rounded-xl border border-[rgba(0,255,213,0.12)] bg-[rgba(0,0,0,0.2)] px-3 py-2.5 text-xs text-[#F5F7FA]"
+                className="fuentes-source-row"
               >
                 <span className="font-semibold text-[#00FFD5]">
                   {LEGAL_SOURCE_CATEGORY_LABELS[option.id]}

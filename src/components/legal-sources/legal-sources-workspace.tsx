@@ -496,7 +496,7 @@ export function LegalSourcesWorkspace() {
 
   if (loading || !settings) {
     return (
-      <div className="mx-auto max-w-4xl py-12">
+      <div className="fuentes-page-content py-8">
         <LoadingState
           active
           preset="profile"
@@ -510,11 +510,9 @@ export function LegalSourcesWorkspace() {
 
   if (!settings.wizardCompleted || showReconfigureWizard) {
     return (
-      <div className="mx-auto max-w-4xl space-y-6 py-6">
+      <div className="fuentes-page-content space-y-4">
         {wizardDismissError ? (
-          <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-            {wizardDismissError}
-          </p>
+          <p className="fuentes-alert is-error">{wizardDismissError}</p>
         ) : null}
         <LegalSourcesWizard
           settings={settings}
@@ -537,35 +535,75 @@ export function LegalSourcesWorkspace() {
   }
 
   const sourcesReady = hasReadyLegalSources(settings);
+  const syncedLpCount = syncedPresets.size;
+  const categoryCount = settings.studyCategories?.length ?? DEFAULT_STUDY_CATEGORIES.length;
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="fuentes-page-content">
       {!sourcesReady ? (
-        <p className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+        <p className="fuentes-alert is-warning">
           Sincroniza al menos una fuente (LP Derecho, PDF o material) para que el tutor pueda citar
           normativa verificable.
         </p>
       ) : null}
-      <div className="tron-panel rounded-2xl p-6">
-        <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#00FFD5]">
-          <Scale size={14} />
-          Fuentes Jurídicas
-        </p>
-        <h1 className="mt-2 text-3xl font-bold text-[#F5F7FA]">Mi Biblioteca Jurídica</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-          Controla qué fuentes puede usar la IA. La normativa verificable proviene únicamente de
-          LP Derecho que sincronices tú (con URL y fecha). No usamos códigos integrados estáticos.
-        </p>
 
-        <div className="mt-5 flex flex-wrap items-center gap-3">
+      <header className="fuentes-page-hero">
+        <div className="fuentes-page-hero-copy">
+          <p className="ms-home-kicker">
+            <Scale size={14} />
+            Fuentes juridicas verificables
+          </p>
+          <h1>Mi biblioteca juridica para el tutor IA</h1>
+          <p className="ms-home-lead">
+            Controla que fuentes puede usar la IA. La normativa verificable proviene unicamente de LP
+            Derecho que sincronices tu — con URL y fecha. Sin codigos estaticos integrados.
+          </p>
+        </div>
+
+        <div className="fuentes-page-stats" aria-label="Resumen de fuentes">
+          <div className="fuentes-page-stat">
+            <span className="fuentes-page-stat-icon">
+              <Sparkles size={18} />
+            </span>
+            <span>
+              <strong>{enabledSources.length}</strong>
+              <em>Fuentes activas</em>
+            </span>
+          </div>
+          <div className="fuentes-page-stat">
+            <span className="fuentes-page-stat-icon is-blue">
+              <Globe size={18} />
+            </span>
+            <span>
+              <strong>{syncedLpCount}</strong>
+              <em>LP sincronizados</em>
+            </span>
+          </div>
+          <div className="fuentes-page-stat">
+            <span className="fuentes-page-stat-icon is-purple">
+              <BookOpen size={18} />
+            </span>
+            <span>
+              <strong>{manageableSources.length}</strong>
+              <em>Gestionables</em>
+            </span>
+          </div>
+          <div className="fuentes-page-stat">
+            <span className="fuentes-page-stat-icon">
+              <Lock size={18} />
+            </span>
+            <span>
+              <strong>{categoryCount}</strong>
+              <em>Categorias</em>
+            </span>
+          </div>
+        </div>
+
+        <div className="fuentes-page-actions">
           <button
             type="button"
             onClick={toggleStrict}
-            className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition ${
-              settings.strictMode
-                ? "border-[rgba(248,113,113,0.4)] bg-[rgba(248,113,113,0.12)] text-[#FCA5A5]"
-                : "border-[rgba(0,255,213,0.15)] text-muted-foreground hover:text-[#F5F7FA]"
-            }`}
+            className={`fuentes-toggle-btn${settings.strictMode ? " is-active-strict" : ""}`}
           >
             <Lock size={15} />
             Solo responder con mis fuentes
@@ -573,54 +611,45 @@ export function LegalSourcesWorkspace() {
           <button
             type="button"
             onClick={toggleStrictNormative}
-            className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition ${
-              settings.strictNormativeMode
-                ? "border-[rgba(74,222,128,0.35)] bg-[rgba(74,222,128,0.1)] text-[#86EFAC]"
-                : "border-[rgba(0,255,213,0.15)] text-muted-foreground hover:text-[#F5F7FA]"
-            }`}
+            className={`fuentes-toggle-btn${settings.strictNormativeMode ? " is-active-normative" : ""}`}
           >
             <Scale size={15} />
-            Solo mostrar artículos verificados
+            Solo articulos verificados
           </button>
-          <span className="text-xs text-muted-foreground">
-            {enabledSources.length} fuente{enabledSources.length === 1 ? "" : "s"} activa
-            {enabledSources.length === 1 ? "" : "s"}
-          </span>
           <button
             type="button"
             onClick={() => setShowReconfigureWizard(true)}
-            className="inline-flex items-center gap-2 rounded-xl border border-[rgba(0,255,213,0.15)] px-3 py-2 text-xs font-semibold text-muted-foreground transition hover:text-[#F5F7FA]"
+            className="ms-home-chip"
           >
-            <Sparkles size={13} className="text-[#00FFD5]" />
-            Reconfigurar tipos de fuente
+            <Sparkles size={13} />
+            Reconfigurar tipos
           </button>
         </div>
 
         {settings.strictNormativeMode ? (
-          <p className="mt-3 rounded-xl border border-[rgba(74,222,128,0.2)] bg-[rgba(74,222,128,0.06)] px-3 py-2 text-xs text-[#86EFAC]">
-            Modo normativo estricto: solo se muestran artículos presentes en tus fuentes LP
-            sincronizadas. Sin sync activo, el tutor no citará números de artículo.
+          <p className="fuentes-alert is-info-green fuentes-page-hero-wide">
+            Modo normativo estricto: solo se muestran articulos presentes en tus fuentes LP
+            sincronizadas. Sin sync activo, el tutor no citara numeros de articulo.
           </p>
         ) : null}
         {settings.strictMode ? (
-          <p className="mt-3 rounded-xl border border-[rgba(248,113,113,0.2)] bg-[rgba(248,113,113,0.06)] px-3 py-2 text-xs text-[#FCA5A5]">
-            Modo estricto: si la respuesta no está en tus fuentes autorizadas ni en el PDF en
-            estudio, la IA responderá: &quot;No encontré esta información dentro de las fuentes
-            autorizadas por el usuario.&quot;
+          <p className="fuentes-alert is-info-red fuentes-page-hero-wide">
+            Modo estricto: si la respuesta no esta en tus fuentes autorizadas ni en el PDF en estudio,
+            la IA respondera: &quot;No encontre esta informacion dentro de las fuentes autorizadas por
+            el usuario.&quot;
           </p>
         ) : null}
-      </div>
+      </header>
 
       {manageableSources.length ? (
-        <section className="tron-panel rounded-2xl p-5">
-          <p className="flex items-center gap-2 text-sm font-bold text-[#F5F7FA]">
+        <section className="fuentes-panel">
+          <p className="fuentes-panel-title">
             <BookOpen size={16} className="text-[#86EFAC]" />
             Activar fuentes para el tutor
           </p>
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="fuentes-panel-copy">
             {enabledSources.length} de {manageableSources.length} activa
-            {enabledSources.length === 1 ? "" : "s"}. Los cambios se sincronizan con el estudio
-            guiado.
+            {enabledSources.length === 1 ? "" : "s"}. Los cambios se sincronizan con el estudio guiado.
           </p>
           <div className="mt-3 space-y-2">
             {manageableSources.map((source) => renderSourceRow(source))}
@@ -629,27 +658,23 @@ export function LegalSourcesWorkspace() {
       ) : null}
 
       {usesStudyCategory(settings, "normativa") ? (
-      <section className="tron-panel rounded-2xl p-5">
-        <p className="flex items-center gap-2 text-sm font-bold text-[#F5F7FA]">
+      <section className="fuentes-panel">
+        <p className="fuentes-panel-title">
           <Globe size={16} className="text-[#00BFFF]" />
           Normativa — sincronizar desde web (LP Derecho)
         </p>
-        <p className="mt-2 text-xs leading-5 text-muted-foreground">
-          Descarga normativa desde LP Pasión por el Derecho. Es la única fuente normativa
-          verificable de la app: tú eliges la URL, revisas el enlace y queda registrada la fecha de
-          sync. Puedes agregar varias URLs si LP divide un código en partes.
+        <p className="fuentes-panel-copy">
+          Descarga normativa desde LP Pasion por el Derecho. Es la unica fuente normativa verificable
+          de la app: tu eliges la URL, revisas el enlace y queda registrada la fecha de sync.
         </p>
-        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+        <div className="fuentes-preset-grid">
           {LP_NORMATIVE_PRESETS.map((preset) => {
             const synced = syncedPresets.get(preset.id);
             const busy = syncingPresetId === preset.id;
             const presetUrls = resolvePresetSyncUrls(settings, preset.id, preset.url);
 
             return (
-              <div
-                key={preset.id}
-                className="flex flex-col gap-2 rounded-xl border border-[rgba(0,191,255,0.15)] bg-[rgba(0,191,255,0.04)] p-3"
-              >
+              <div key={preset.id} className="fuentes-preset-card">
                 <div>
                   <p className="text-sm font-semibold text-[#F5F7FA]">{preset.title}</p>
                   <div className="mt-0.5 flex flex-wrap items-center gap-2">
@@ -712,7 +737,7 @@ export function LegalSourcesWorkspace() {
             );
           })}
         </div>
-        {error ? <p className="mt-3 text-xs text-red-400">{error}</p> : null}
+        {error ? <p className="fuentes-alert is-error mt-3">{error}</p> : null}
       </section>
       ) : null}
 
@@ -727,10 +752,8 @@ export function LegalSourcesWorkspace() {
       />
       ) : null}
 
-      <div className="tron-panel rounded-2xl p-5">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Agregar otra fuente
-        </p>
+      <div className="fuentes-panel">
+        <p className="fuentes-section-label">Agregar otra fuente</p>
         {!showAdd ? (
           <div className="flex flex-wrap gap-2">
             <button
@@ -787,10 +810,8 @@ export function LegalSourcesWorkspace() {
                   key={mode}
                   type="button"
                   onClick={() => setAddMode(mode)}
-                  className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${
-                    addMode === mode
-                      ? "bg-[rgba(0,255,213,0.15)] text-[#00FFD5]"
-                      : "text-muted-foreground"
+                  className={`fuentes-mode-chip ms-home-chip rounded-full px-3 py-1.5 text-xs font-semibold ${
+                    addMode === mode ? "is-active" : "text-muted-foreground"
                   }`}
                 >
                   {mode === "upload"
@@ -807,7 +828,7 @@ export function LegalSourcesWorkspace() {
             <select
               value={newCategory}
               onChange={(e) => setNewCategory(e.target.value as LegalSourceCategory)}
-              className="h-10 w-full rounded-xl border border-[rgba(0,255,213,0.12)] bg-[rgba(0,0,0,0.25)] px-3 text-sm"
+              className="fuentes-select"
             >
               {LEGAL_SOURCE_CATEGORY_ORDER.filter((cat) => usesStudyCategory(settings, cat)).map(
                 (cat) => (
@@ -831,15 +852,15 @@ export function LegalSourcesWorkspace() {
                         ? "Ej. Compendio de casaciones civiles — 2024"
                         : "Ej. Manual de Acto Jurídico — Juan Espinoza"
                   }
-                  className="h-10 w-full rounded-xl border border-[rgba(0,255,213,0.12)] bg-[rgba(0,0,0,0.25)] px-3 text-sm"
+                  className="fuentes-input"
                 />
                 <input
                   value={newAuthor}
                   onChange={(e) => setNewAuthor(e.target.value)}
                   placeholder="Autor (opcional)"
-                  className="h-10 w-full rounded-xl border border-[rgba(0,255,213,0.12)] bg-[rgba(0,0,0,0.25)] px-3 text-sm"
+                  className="fuentes-input"
                 />
-                <label className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border border-dashed border-[rgba(0,255,213,0.2)] bg-[rgba(0,0,0,0.2)] px-4 py-6 text-sm text-muted-foreground hover:border-[rgba(0,255,213,0.35)]">
+                <label className="fuentes-upload-zone">
                   <FileUp size={24} className="text-[#00FFD5]" />
                   {uploadFile ? uploadFile.name : "Seleccionar PDF jurídico"}
                   <input
@@ -860,11 +881,11 @@ export function LegalSourcesWorkspace() {
                     value={materialQuery}
                     onChange={(e) => void searchMaterials(e.target.value)}
                     placeholder="Buscar material en la biblioteca..."
-                    className="h-10 w-full rounded-xl border border-[rgba(0,255,213,0.12)] bg-[rgba(0,0,0,0.25)] pl-9 pr-3 text-sm"
+                    className="fuentes-input pl-9 pr-3"
                   />
                 </div>
                 {materialOptions.length ? (
-                  <div className="max-h-40 space-y-1 overflow-y-auto rounded-xl border border-[rgba(0,255,213,0.1)] p-2">
+                  <div className="max-h-40 space-y-1 overflow-y-auto rounded-xl border border-[rgba(0,255,213,0.12)] bg-[rgba(7,19,26,0.45)] p-2">
                     {materialOptions.map((m) => (
                       <button
                         key={m.id}
@@ -897,13 +918,13 @@ export function LegalSourcesWorkspace() {
                       ? "Ej. Artículo — Revista de Derecho Civil"
                       : "Ej. Sentencia TC — expediente 1234"
                   }
-                  className="h-10 w-full rounded-xl border border-[rgba(0,255,213,0.12)] bg-[rgba(0,0,0,0.25)] px-3 text-sm"
+                  className="fuentes-input"
                 />
                 <input
                   value={newAuthor}
                   onChange={(e) => setNewAuthor(e.target.value)}
                   placeholder="Autor u órgano (opcional)"
-                  className="h-10 w-full rounded-xl border border-[rgba(0,255,213,0.12)] bg-[rgba(0,0,0,0.25)] px-3 text-sm"
+                  className="fuentes-input"
                 />
                 <LpUrlEditor
                   urls={genericWebUrls}
@@ -928,18 +949,18 @@ export function LegalSourcesWorkspace() {
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
                   placeholder="Título de la fuente"
-                  className="h-10 w-full rounded-xl border border-[rgba(0,255,213,0.12)] bg-[rgba(0,0,0,0.25)] px-3 text-sm"
+                  className="fuentes-input"
                 />
                 <input
                   value={newAuthor}
                   onChange={(e) => setNewAuthor(e.target.value)}
                   placeholder="Autor (opcional)"
-                  className="h-10 w-full rounded-xl border border-[rgba(0,255,213,0.12)] bg-[rgba(0,0,0,0.25)] px-3 text-sm"
+                  className="fuentes-input"
                 />
               </>
             ) : null}
 
-            {error ? <p className="text-xs text-red-400">{error}</p> : null}
+            {error ? <p className="fuentes-alert is-error">{error}</p> : null}
 
             {uploading ? (
               <LoadingState
@@ -977,7 +998,7 @@ export function LegalSourcesWorkspace() {
         )}
       </div>
 
-      <p className="text-center text-xs text-muted-foreground">
+      <p className="fuentes-footer-note">
         Prioridad: arriba = mayor peso cuando existan contradicciones entre fuentes. Las citaciones
         automáticas aparecen en el tutor jurídico durante el estudio guiado.
       </p>
@@ -1012,20 +1033,12 @@ function SourceRow({
 }) {
   return (
     <div
-      className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 transition ${
-        source.enabled
-          ? "border-[rgba(0,255,213,0.1)] bg-[rgba(7,19,26,0.45)]"
-          : "border-[rgba(255,255,255,0.06)] bg-[rgba(0,0,0,0.2)] opacity-70"
-      }`}
+      className={`fuentes-source-row${source.enabled ? "" : " is-disabled"}`}
     >
       <button
         type="button"
         onClick={onToggle}
-        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border text-xs font-bold transition ${
-          source.enabled
-            ? "border-[rgba(0,255,213,0.35)] bg-[rgba(0,255,213,0.12)] text-[#00FFD5]"
-            : "border-[rgba(255,255,255,0.08)] text-muted-foreground"
-        }`}
+        className={`fuentes-source-toggle${source.enabled ? " is-on" : ""}`}
         aria-label={source.enabled ? "Desactivar" : "Activar"}
       >
         {source.enabled ? "✓" : ""}

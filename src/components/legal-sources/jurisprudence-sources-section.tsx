@@ -23,14 +23,14 @@ export function JurisprudenceSourcesSection({
   onSyncWebUrl,
 }: JurisprudenceSourcesSectionProps) {
   return (
-    <section className="tron-panel rounded-2xl p-5">
-      <p className="flex items-center gap-2 text-sm font-bold text-[#F5F7FA]">
+    <section className="fuentes-panel">
+      <p className="fuentes-panel-title">
         <Gavel size={16} className="text-[#C4B5FD]" />
         Jurisprudencia (PDF o URL)
       </p>
-      <p className="mt-2 text-xs leading-5 text-muted-foreground">
-        Sube PDF o sincroniza páginas de LP, TC, PJ o SUNAT. El tutor cita fragmentos del texto
-        indexado (expediente, fecha, párrafo) — no valida artículos del código.
+      <p className="fuentes-panel-copy">
+        Sube PDF o sincroniza paginas de LP, TC, PJ o SUNAT. El tutor cita fragmentos del texto
+        indexado (expediente, fecha, parrafo) — no valida articulos del codigo.
       </p>
 
       <div className="mt-4 grid gap-3 lg:grid-cols-1">
@@ -45,10 +45,7 @@ export function JurisprudenceSourcesSection({
           const synced = sources.find((s) => s.webTemplateId === template.id);
 
           return (
-            <div
-              key={template.id}
-              className="rounded-xl border border-[rgba(196,181,253,0.2)] bg-[rgba(196,181,253,0.05)] p-3"
-            >
+            <div key={template.id} className="fuentes-preset-card fuentes-juris-card">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
                   <p className="text-sm font-semibold text-[#F5F7FA]">{template.title}</p>
@@ -111,11 +108,11 @@ export function JurisprudenceSourcesSection({
       </div>
 
       {!sources.length ? (
-        <div className="mt-4 flex flex-col items-center gap-2 rounded-xl border border-dashed border-[rgba(196,181,253,0.2)] bg-[rgba(0,0,0,0.15)] px-4 py-8 text-center">
+        <div className="fuentes-upload-zone mt-4 text-center">
           <FileUp size={28} className="text-[#C4B5FD]/70" />
           <p className="text-sm text-muted-foreground">
-            Elige una plantilla: sube PDF o pega la URL de la sentencia / compendio. Gestiona activación
-            en la sección superior.
+            Elige una plantilla: sube PDF o pega la URL de la sentencia / compendio. Gestiona activacion
+            en la seccion superior.
           </p>
         </div>
       ) : null}
