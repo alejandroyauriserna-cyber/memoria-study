@@ -459,7 +459,88 @@
   }
 
   .fuentes-preset-card:hover,
-  .fuentes-wizard-option:hover {
+  .fuentes-wizard-option:hover,
+  .fuentes-panel:hover {
     transform: none;
   }
+}
+
+/* ——— Fuentes 2026 ultra premium ——— */
+
+:root {
+  --ms-ai-cyan: #00ffd5;
+  --ms-ai-blue: #00bfff;
+  --ms-ai-violet: #c4b5fd;
+}
+
+.fuentes-page-hero-copy h1 {
+  font-size: clamp(2.6rem, 4vw, 4.4rem);
+  font-weight: 800;
+  line-height: 0.9;
+  letter-spacing: -0.045em;
+  background: linear-gradient(180deg, #ffffff, rgba(255, 255, 255, 0.75));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.fuentes-page-hero::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    rgba(0, 255, 213, 0.18),
+    rgba(0, 191, 255, 0.08),
+    rgba(196, 181, 253, 0.15)
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.fuentes-panel,
+.fuentes-wizard-panel,
+.fuentes-preset-card {
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.fuentes-panel:hover,
+.fuentes-preset-card:hover,
+.fuentes-wizard-panel:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 25px 50px rgba(0, 0, 0, 0.45),
+    0 0 35px rgba(0, 255, 213, 0.08);
+}
+
+.fuentes-preset-card {
+  overflow: hidden;
+}
+
+.fuentes-preset-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100px;
+  height: 100px;
+  background: radial-gradient(circle, rgba(0, 255, 213, 0.14), transparent 70%);
+  pointer-events: none;
+}
+
+.fuentes-chip,
+.fuentes-badge,
+.fuentes-toggle-btn,
+.ms-home-chip {
+  backdrop-filter: blur(16px);
 }

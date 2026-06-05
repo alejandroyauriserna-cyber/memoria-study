@@ -510,4 +510,95 @@
   .ms-home-product-shot::after {
     animation: none;
   }
+
+  .ms-home-feature-card:hover,
+  .ms-home-glass:hover,
+  .ms-home-hero:hover,
+  .ms-home-actions a:hover {
+    transform: none;
+  }
+}
+
+/* ——— Home 2026 ultra premium ——— */
+
+.ms-home-landing h1 {
+  font-size: clamp(3rem, 5vw, 5rem);
+  line-height: 0.88;
+  letter-spacing: -0.055em;
+  background: linear-gradient(180deg, #ffffff, rgba(255, 255, 255, 0.78));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.ms-home-landing::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(0, 255, 213, 0.08), transparent 30%),
+    radial-gradient(circle at 80% 15%, rgba(0, 191, 255, 0.08), transparent 30%);
+  pointer-events: none;
+}
+
+.ms-home-feature-card,
+.ms-home-glass,
+.ms-home-hero {
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.ms-home-feature-card:hover,
+.ms-home-glass:hover,
+.ms-home-hero:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 30px 60px rgba(0, 0, 0, 0.45),
+    0 0 40px rgba(0, 255, 213, 0.08);
+}
+
+.ms-home-actions a {
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.ms-home-actions a:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 30px rgba(0, 255, 213, 0.2);
+}
+
+.ms-home-product-shot {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 35px 90px rgba(0, 0, 0, 0.55),
+    0 0 60px rgba(0, 255, 213, 0.12);
+}
+
+.ms-home-feature-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.ms-home-feature-card::after {
+  content: "";
+  position: absolute;
+  top: -20px;
+  right: -20px;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 255, 213, 0.12), transparent 70%);
+  pointer-events: none;
+}
+
+.ms-home-feature-card h2 {
+  font-size: 1.08rem;
+  letter-spacing: -0.02em;
+}
+
+.ms-home-feature-card p {
+  color: rgba(255, 255, 255, 0.68);
 }
