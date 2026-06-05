@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import {
+  AlertTriangle,
   ArrowRight,
   BookOpen,
   Brain,
@@ -46,42 +47,39 @@ const PROFESSOR_ACTIONS: Array<{
 ];
 
 function SourcePicker({
-  availableSources,
-  selectedSourceIds,
+  manageableSources,
   activeSources,
   disabled,
   onToggle,
-  onSelectAll,
+  onEnableAll,
 }: {
-  availableSources: LegalSourceRecord[];
-  selectedSourceIds: string[];
+  manageableSources: LegalSourceRecord[];
   activeSources?: LegalSourceAttribution[];
   disabled?: boolean;
   onToggle: (sourceId: string) => void;
-  onSelectAll: () => void;
+  onEnableAll: () => void;
 }) {
-  if (!availableSources.length) return null;
+  if (!manageableSources.length) return null;
 
-  const allSelected = selectedSourceIds.length >= availableSources.length;
+  const allEnabled = manageableSources.every((s) => s.enabled);
 
   return (
     <div className="gs-sources-banner">
       <div className="flex items-center justify-between gap-2">
         <p className="text-[10px] font-semibold uppercase tracking-wider text-[#86EFAC]">
-          Fuentes para esta explicación
+          Fuentes para el tutor
         </p>
         <button
           type="button"
-          disabled={disabled || allSelected}
-          onClick={onSelectAll}
+          disabled={disabled || allEnabled}
+          onClick={onEnableAll}
           className="text-[9px] font-semibold text-[#00FFD5] hover:underline disabled:opacity-40"
         >
-          Todas
+          Activar todas
         </button>
       </div>
       <div className="mt-1.5 flex flex-wrap gap-1">
-        {availableSources.map((s) => {
-          const selected = selectedSourceIds.includes(s.id);
+        {manageableSources.map((s) => {
           const usedNow = activeSources?.some((a) => a.sourceId === s.id);
           return (
             <button
@@ -89,18 +87,65 @@ function SourcePicker({
               type="button"
               disabled={disabled}
               onClick={() => onToggle(s.id)}
-              title={LEGAL_SOURCE_CATEGORY_LABELS[s.category]}
-              className={`gs-source-tag gs-source-tag--pickable ${selected ? "gs-source-tag--selected" : ""} ${usedNow ? "gs-source-tag--active" : ""}`}
+              title={`${LEGAL_SOURCE_CATEGORY_LABELS[s.category]} — ${s.enabled ? "Activa" : "Desactivada"}`}
+              className={`gs-source-tag gs-source-tag--pickable ${s.enabled ? "gs-source-tag--selected" : ""} ${usedNow ? "gs-source-tag--active" : ""}`}
             >
-              {selected ? "✓ " : ""}
+              {s.enabled ? "✓ " : ""}
               {s.title}
             </button>
           );
         })}
       </div>
       <p className="mt-1.5 text-[9px] text-muted-foreground">
-        Elige qué fuentes autorizadas usa el profesor. Solo las marcadas con ✓ se envían al tutor.
+        Activa o desactiva fuentes. El cambio se guarda al instante; pulsa Actualizar explicación para
+        aplicarlo al profesor.
       </p>
+    </div>
+  );
+}
+
+function NoSourcesBanner() {
+  return (
+    <div className="gs-no-sources-banner">
+      <AlertTriangle size={16} className="shrink-0 text-[#FBBF24]" />
+      <div>
+        <p className="text-xs font-semibold text-[#FBBF24]">Sin fuentes activas</p>
+        <p className="mt-0.5 text-[10px] leading-4 text-muted-foreground">
+          Activa al menos una fuente aquí o en tu biblioteca para que el profesor cite información
+          verificable.
+        </p>
+        <Link
+          href="/fuentes-juridicas"
+          className="mt-1.5 inline-flex text-[10px] font-semibold text-[#00FFD5] hover:underline"
+        >
+          Ir a Fuentes Jurídicas →
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function SourcesStaleBanner({
+  disabled,
+  onRefresh,
+}: {
+  disabled?: boolean;
+  onRefresh: () => void;
+}) {
+  return (
+    <div className="gs-sources-stale-banner">
+      <p className="text-[10px] text-[#F5F7FA]">
+        Cambiaste las fuentes activas. La explicación actual puede no reflejarlo.
+      </p>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={onRefresh}
+        className="gs-refresh-explanation-btn"
+      >
+        <RefreshCw size={12} />
+        Actualizar explicación
+      </button>
     </div>
   );
 }
@@ -114,10 +159,12 @@ export function LegalTutorPanel({
   customReply,
   examOnly,
   activeSources,
-  availableSources,
-  selectedSourceIds,
+  manageableSources,
   onToggleSource,
-  onSelectAllSources,
+  onEnableAllSources,
+  hasEnabledSources,
+  sourcesStale,
+  onRefreshExplanation,
   needsGeneration,
   onExamOnlyChange,
   activeHighlightId,
@@ -136,10 +183,12 @@ export function LegalTutorPanel({
   customReply?: string | null;
   examOnly: boolean;
   activeSources?: LegalSourceAttribution[];
-  availableSources?: LegalSourceRecord[];
-  selectedSourceIds?: string[];
+  manageableSources?: LegalSourceRecord[];
   onToggleSource?: (sourceId: string) => void;
-  onSelectAllSources?: () => void;
+  onEnableAllSources?: () => void;
+  hasEnabledSources?: boolean;
+  sourcesStale?: boolean;
+  onRefreshExplanation?: () => void;
   needsGeneration?: boolean;
   onExamOnlyChange: (value: boolean) => void;
   activeHighlightId?: string | null;
@@ -233,14 +282,15 @@ export function LegalTutorPanel({
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
-        {availableSources?.length && onToggleSource && onSelectAllSources && selectedSourceIds ? (
+        {hasEnabledSources === false ? <NoSourcesBanner /> : null}
+
+        {manageableSources?.length && onToggleSource && onEnableAllSources ? (
           <SourcePicker
-            availableSources={availableSources}
-            selectedSourceIds={selectedSourceIds}
+            manageableSources={manageableSources}
             activeSources={activeSources}
             disabled={loading}
             onToggle={onToggleSource}
-            onSelectAll={onSelectAllSources}
+            onEnableAll={onEnableAllSources}
           />
         ) : activeSources?.length ? (
           <div className="gs-sources-banner">
@@ -255,6 +305,10 @@ export function LegalTutorPanel({
               ))}
             </div>
           </div>
+        ) : null}
+
+        {sourcesStale && onRefreshExplanation && hasEnabledSources !== false ? (
+          <SourcesStaleBanner disabled={loading} onRefresh={onRefreshExplanation} />
         ) : null}
 
         {loading ? (

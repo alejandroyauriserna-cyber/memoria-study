@@ -1,6 +1,5 @@
 "use client";
 
-import type { ReactNode } from "react";
 import { FileUp, Gavel, Globe, RefreshCw, Upload } from "lucide-react";
 import { LpUrlEditor } from "@/components/legal-sources/lp-url-editor";
 import { JURISPRUDENCE_UPLOAD_TEMPLATES } from "@/lib/legal-sources/jurisprudence-templates";
@@ -13,7 +12,6 @@ type JurisprudenceSourcesSectionProps = {
   onQuickUpload: (templateId: string) => void;
   onTemplateUrlsChange: (templateId: string, urls: string[]) => void;
   onSyncWebUrl: (templateId: string, urls: string[]) => void;
-  renderSourceRow: (source: LegalSourceRecord) => ReactNode;
 };
 
 export function JurisprudenceSourcesSection({
@@ -23,7 +21,6 @@ export function JurisprudenceSourcesSection({
   onQuickUpload,
   onTemplateUrlsChange,
   onSyncWebUrl,
-  renderSourceRow,
 }: JurisprudenceSourcesSectionProps) {
   return (
     <section className="tron-panel rounded-2xl p-5">
@@ -56,12 +53,17 @@ export function JurisprudenceSourcesSection({
                 <div>
                   <p className="text-sm font-semibold text-[#F5F7FA]">{template.title}</p>
                   <p className="mt-0.5 text-[10px] text-muted-foreground">{template.subtitle}</p>
+                  {synced ? (
+                    <p
+                      className={`mt-0.5 text-[10px] ${synced.enabled ? "text-[#86EFAC]" : "text-muted-foreground"}`}
+                    >
+                      {synced.enabled ? "Activa en tutor" : "Desactivada — actívala arriba"}
+                      {synced.lastSyncedAt
+                        ? ` · ${new Date(synced.lastSyncedAt).toLocaleDateString("es-PE")}`
+                        : ""}
+                    </p>
+                  ) : null}
                 </div>
-                {synced?.lastSyncedAt ? (
-                  <span className="text-[10px] text-[#86EFAC]">
-                    Web sync · {new Date(synced.lastSyncedAt).toLocaleDateString("es-PE")}
-                  </span>
-                ) : null}
               </div>
 
               <div className="mt-3 flex flex-wrap gap-2">
@@ -108,21 +110,15 @@ export function JurisprudenceSourcesSection({
         })}
       </div>
 
-      {sources.length ? (
-        <div className="mt-4 space-y-2">
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-            Tus fuentes de jurisprudencia
-          </p>
-          {sources.map((source) => renderSourceRow(source))}
-        </div>
-      ) : (
+      {!sources.length ? (
         <div className="mt-4 flex flex-col items-center gap-2 rounded-xl border border-dashed border-[rgba(196,181,253,0.2)] bg-[rgba(0,0,0,0.15)] px-4 py-8 text-center">
           <FileUp size={28} className="text-[#C4B5FD]/70" />
           <p className="text-sm text-muted-foreground">
-            Elige una plantilla: sube PDF o pega la URL de la sentencia / compendio.
+            Elige una plantilla: sube PDF o pega la URL de la sentencia / compendio. Gestiona activación
+            en la sección superior.
           </p>
         </div>
-      )}
+      ) : null}
     </section>
   );
 }

@@ -12,6 +12,7 @@ import {
 import { processNormativeAnalysis } from "@/lib/guided-study/validate-citations";
 import { buildLegalSourcesPromptBlock } from "@/lib/legal-sources/prompt";
 import { buildNormativeIndexForUser } from "@/lib/legal-sources/server";
+import { getEnabledSources } from "@/lib/legal-sources/storage";
 import type { LegalSourceAttribution, LegalSourcesSettings } from "@/types/legal-sources";
 import type {
   DocumentStudyIndex,
@@ -143,15 +144,15 @@ export async function askLegalStudyTutor(input: {
   chapterTitle?: string;
   chapterOverview?: string;
   sourceSettings?: LegalSourcesSettings;
-  sourceIds?: string[];
   userId?: string;
 }): Promise<TutorResponse> {
-  const filteredSettings = applySourceIdFilter(input.sourceSettings, input.sourceIds);
-  const enabledSources = getEnabledSourcesFromSettings(filteredSettings);
-  const strictMode = filteredSettings?.strictMode ?? false;
-  const strictNormativeMode = filteredSettings?.strictNormativeMode !== false;
+  const enabledSources = input.sourceSettings
+    ? getEnabledSources(input.sourceSettings)
+    : [];
+  const strictMode = input.sourceSettings?.strictMode ?? false;
+  const strictNormativeMode = input.sourceSettings?.strictNormativeMode !== false;
   const sourcesBlock = buildLegalSourcesPromptBlock(enabledSources, strictMode);
-  const normativeIndex = await buildNormativeIndexForUser(input.userId, filteredSettings);
+  const normativeIndex = await buildNormativeIndexForUser(input.userId, input.sourceSettings);
 
   const relevantArticles = searchLegalBase(
     `${input.pageText} ${input.chapterTitle ?? ""} ${input.chapterOverview ?? ""} ${input.customPrompt ?? ""}`,
@@ -238,26 +239,6 @@ export async function askLegalStudyTutor(input: {
       ? undefined
       : "No se pudo extraer texto de esta página. Revisa el PDF visualmente mientras el profesor te guía.",
     activeSources,
-  };
-}
-
-function getEnabledSourcesFromSettings(settings?: LegalSourcesSettings) {
-  if (!settings) return [];
-  return settings.sources.filter((s) => s.enabled).sort((a, b) => a.priority - b.priority);
-}
-
-function applySourceIdFilter(
-  settings?: LegalSourcesSettings,
-  sourceIds?: string[],
-): LegalSourcesSettings | undefined {
-  if (!settings || !sourceIds?.length) return settings;
-  const allowed = new Set(sourceIds);
-  return {
-    ...settings,
-    sources: settings.sources.map((s) => ({
-      ...s,
-      enabled: s.enabled && allowed.has(s.id),
-    })),
   };
 }
 

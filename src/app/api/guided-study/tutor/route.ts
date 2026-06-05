@@ -52,7 +52,6 @@ export async function POST(request: Request) {
       index?: DocumentStudyIndex;
       examOnly?: boolean;
       sourceSettings?: import("@/types/legal-sources").LegalSourcesSettings;
-      sourceIds?: string[];
     };
 
     if (!body.materialId || !body.pageNumber) {
@@ -88,7 +87,6 @@ export async function POST(request: Request) {
       chapterTitle: chapter?.title,
       chapterOverview: chapter?.learningOverview,
       sourceSettings,
-      sourceIds: body.sourceIds,
       userId: user.id,
     });
 

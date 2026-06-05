@@ -26,7 +26,6 @@ import {
   type LegalSourceRecord,
   type LegalSourcesSettings,
 } from "@/types/legal-sources";
-import { LEGAL_SOURCE_TYPE_HINTS } from "@/lib/legal-sources/defaults";
 import { getJurisprudenceTemplate } from "@/lib/legal-sources/jurisprudence-templates";
 import { JurisprudenceSourcesSection } from "@/components/legal-sources/jurisprudence-sources-section";
 import { LegalSourcesWizard } from "@/components/legal-sources/legal-sources-wizard";
@@ -50,6 +49,7 @@ import {
   addCustomSource,
   fetchLegalSourcesSettings,
   getEnabledSources,
+  getManageableSources,
   removeCustomSource,
   reorderSourcePriority,
   saveLegalSourcesSettings,
@@ -104,21 +104,6 @@ export function LegalSourcesWorkspace() {
       .finally(() => setLoading(false));
   }, []);
 
-  const grouped = useMemo(() => {
-    if (!settings) return [];
-    const sorted = [...settings.sources].sort((a, b) => a.priority - b.priority);
-    return LEGAL_SOURCE_CATEGORY_ORDER.map((cat) => ({
-      category: cat,
-      hints: LEGAL_SOURCE_TYPE_HINTS[cat] ?? [],
-      items: sorted.filter((s) => {
-        if (s.category !== cat) return false;
-        if (cat === "jurisprudencia") return false;
-        if (cat === "normativa" && s.kind === "url" && s.lpPresetId) return false;
-        return true;
-      }),
-    })).filter((g) => g.items.length && usesStudyCategory(settings!, g.category));
-  }, [settings]);
-
   const jurisprudenceSources = useMemo(() => {
     if (!settings) return [];
     return [...settings.sources]
@@ -128,6 +113,11 @@ export function LegalSourcesWorkspace() {
 
   const enabledSources = useMemo(
     () => (settings ? getEnabledSources(settings) : []),
+    [settings],
+  );
+
+  const manageableSources = useMemo(
+    () => (settings ? getManageableSources(settings) : []),
     [settings],
   );
 
@@ -469,6 +459,7 @@ export function LegalSourcesWorkspace() {
         source={source}
         syncUrls={sourceUrls.length ? sourceUrls : undefined}
         catalogUrl={preset?.url}
+        hideUrlEditor={Boolean(source.lpPresetId)}
         onToggle={() => toggleSource(source.id)}
         onMoveUp={() => persist(reorderSourcePriority(settings, source.id, "up"))}
         onMoveDown={() => persist(reorderSourcePriority(settings, source.id, "down"))}
@@ -609,46 +600,20 @@ export function LegalSourcesWorkspace() {
         ) : null}
       </div>
 
-      {enabledSources.length ? (
+      {manageableSources.length ? (
         <section className="tron-panel rounded-2xl p-5">
           <p className="flex items-center gap-2 text-sm font-bold text-[#F5F7FA]">
             <BookOpen size={16} className="text-[#86EFAC]" />
-            Fuentes activadas (orden de prioridad)
+            Activar fuentes para el tutor
           </p>
-          <ol className="mt-3 space-y-1.5">
-            {enabledSources.map((s, i) => (
-              <li
-                key={s.id}
-                className="flex items-center gap-2 rounded-lg border border-[rgba(134,239,172,0.15)] bg-[rgba(134,239,172,0.06)] px-3 py-2 text-sm text-[#F5F7FA]"
-              >
-                <span className="mr-2 text-xs font-bold text-[#86EFAC]">{i + 1}.</span>
-                <span className="min-w-0 flex-1 truncate">{s.title}</span>
-                {s.kind === "url" && (s.syncUrls?.length ?? 0) > 1 ? (
-                  <span className="shrink-0 text-[10px] text-[#00BFFF]">
-                    {s.syncUrls!.length} URLs LP
-                  </span>
-                ) : s.kind === "url" && s.sourceUrl ? (
-                  <a
-                    href={s.sourceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="shrink-0 max-w-[45%] truncate font-mono text-[10px] text-[#00BFFF] hover:underline"
-                    title={s.sourceUrl}
-                  >
-                    {s.sourceUrl.replace(/^https?:\/\//, "")}
-                  </a>
-                ) : null}
-                {s.extractedText ? (
-                  <span className="shrink-0 text-[10px] text-[#86EFAC]">PDF indexado</span>
-                ) : null}
-                {s.kind === "url" && s.articleCount ? (
-                  <span className="shrink-0 text-[10px] text-[#00BFFF]">
-                    {s.articleCount} arts. LP
-                  </span>
-                ) : null}
-              </li>
-            ))}
-          </ol>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {enabledSources.length} de {manageableSources.length} activa
+            {enabledSources.length === 1 ? "" : "s"}. Los cambios se sincronizan con el estudio
+            guiado.
+          </p>
+          <div className="mt-3 space-y-2">
+            {manageableSources.map((source) => renderSourceRow(source))}
+          </div>
         </section>
       ) : null}
 
@@ -681,6 +646,13 @@ export function LegalSourcesWorkspace() {
                     <span className="rounded bg-[rgba(0,191,255,0.15)] px-1.5 py-0.5 text-[9px] font-semibold text-[#00BFFF]">
                       LP Derecho
                     </span>
+                    {synced ? (
+                      <span
+                        className={`text-[10px] ${synced.enabled ? "text-[#86EFAC]" : "text-muted-foreground"}`}
+                      >
+                        {synced.enabled ? "· Activa en tutor" : "· Desactivada — actívala arriba"}
+                      </span>
+                    ) : null}
                   </div>
                 </div>
                 <LpUrlEditor
@@ -741,21 +713,8 @@ export function LegalSourcesWorkspace() {
         onQuickUpload={openQuickJurisUpload}
         onTemplateUrlsChange={updateJurisTemplateUrls}
         onSyncWebUrl={(templateId, urls) => void handleSyncWebDocument(templateId, urls)}
-        renderSourceRow={(source) => renderSourceRow(source)!}
       />
       ) : null}
-
-      {grouped.map(({ category, hints, items }) => (
-        <section key={category} className="tron-panel rounded-2xl p-5">
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <h2 className="text-sm font-bold text-[#F5F7FA]">
-              {LEGAL_SOURCE_CATEGORY_LABELS[category]}
-            </h2>
-            <p className="max-w-md text-[10px] text-muted-foreground">{hints.join(" · ")}</p>
-          </div>
-          <div className="mt-3 space-y-2">{items.map((source) => renderSourceRow(source))}</div>
-        </section>
-      ))}
 
       <div className="tron-panel rounded-2xl p-5">
         <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -1019,6 +978,7 @@ function SourceRow({
   source,
   syncUrls,
   catalogUrl,
+  hideUrlEditor,
   onToggle,
   onMoveUp,
   onMoveDown,
@@ -1030,6 +990,7 @@ function SourceRow({
   source: LegalSourceRecord;
   syncUrls?: string[];
   catalogUrl?: string;
+  hideUrlEditor?: boolean;
   onToggle: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
@@ -1039,7 +1000,13 @@ function SourceRow({
   onRemove?: () => void;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-[rgba(0,255,213,0.1)] bg-[rgba(7,19,26,0.45)] px-3 py-2.5">
+    <div
+      className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 transition ${
+        source.enabled
+          ? "border-[rgba(0,255,213,0.1)] bg-[rgba(7,19,26,0.45)]"
+          : "border-[rgba(255,255,255,0.06)] bg-[rgba(0,0,0,0.2)] opacity-70"
+      }`}
+    >
       <button
         type="button"
         onClick={onToggle}
@@ -1071,7 +1038,7 @@ function SourceRow({
             <span className="text-[10px] text-[#00BFFF]">Biblioteca</span>
           ) : null}
         </div>
-        {source.kind === "url" && syncUrls?.length && onUrlsChange ? (
+        {source.kind === "url" && syncUrls?.length && onUrlsChange && !hideUrlEditor ? (
           <LpUrlEditor
             urls={syncUrls}
             catalogUrl={catalogUrl}

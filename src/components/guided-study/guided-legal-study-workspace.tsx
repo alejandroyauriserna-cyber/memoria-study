@@ -19,7 +19,11 @@ import { filterAnalysisForExamMode } from "@/lib/guided-study/legal-tutor";
 import {
   fetchLegalSourcesSettings,
   getEnabledSources,
+  getManageableSources,
   loadLegalSourcesSettings,
+  saveLegalSourcesSettings,
+  syncLegalSourcesSettings,
+  updateSourceInSettings,
 } from "@/lib/legal-sources/storage";
 import {
   getStudyProgressPercent,
@@ -62,7 +66,6 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
   const [examOnly, setExamOnly] = useState(false);
   const [activeHighlightId, setActiveHighlightId] = useState<string | null>(null);
   const [sourceSettings, setSourceSettings] = useState<LegalSourcesSettings | null>(null);
-  const [selectedSourceIds, setSelectedSourceIds] = useState<string[]>([]);
   const [tutorLoading, setTutorLoading] = useState(false);
   const [tutorState, setTutorState] = useState<TutorState>({
     analysis: null,
@@ -70,6 +73,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
     activeSources: [],
   });
   const [analyzedPage, setAnalyzedPage] = useState<number | null>(null);
+  const [sourcesStale, setSourcesStale] = useState(false);
   const initialAnalysisDone = useRef(false);
   const initProgress = useLoadingProgress(phase === "loading", "guidedStudyInit");
   const tutorProgress = useLoadingProgress(tutorLoading, "aiAnalyze");
@@ -80,13 +84,8 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
       setCurrentPage(session.currentPage);
       setUnderstoodPages(session.understoodPages);
     }
-    const local = loadLegalSourcesSettings();
-    setSourceSettings(local);
-    setSelectedSourceIds(getEnabledSources(local).map((s) => s.id));
-    void fetchLegalSourcesSettings().then((remote) => {
-      setSourceSettings(remote);
-      setSelectedSourceIds(getEnabledSources(remote).map((s) => s.id));
-    });
+    setSourceSettings(loadLegalSourcesSettings());
+    void fetchLegalSourcesSettings().then(setSourceSettings);
   }, [materialId]);
 
   useEffect(() => {
@@ -133,12 +132,16 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
   }, [materialId]);
 
   const askTutor = useCallback(
-    async (action: GuidedStudyTutorAction, customPrompt?: string) => {
+    async (
+      action: GuidedStudyTutorAction,
+      customPrompt?: string,
+      settingsOverride?: LegalSourcesSettings,
+    ) => {
       if (!material) return;
 
       setTutorLoading(true);
       setActiveHighlightId(null);
-      const settings = sourceSettings ?? loadLegalSourcesSettings();
+      const settings = settingsOverride ?? sourceSettings ?? loadLegalSourcesSettings();
 
       try {
         const response = await fetch("/api/guided-study/tutor", {
@@ -152,7 +155,6 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
             index,
             examOnly,
             sourceSettings: settings,
-            sourceIds: selectedSourceIds.length ? selectedSourceIds : undefined,
           }),
         });
 
@@ -167,6 +169,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
           activeSources: payload.activeSources ?? [],
         });
         setAnalyzedPage(currentPage);
+        setSourcesStale(false);
       } catch (caught) {
         setTutorState({
           analysis: null,
@@ -177,29 +180,58 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
         setTutorLoading(false);
       }
     },
-    [material, materialId, currentPage, index, examOnly, sourceSettings, selectedSourceIds],
+    [material, materialId, currentPage, index, examOnly, sourceSettings],
   );
 
-  const availableSources = useMemo(
+  const manageableSources = useMemo(
+    () => (sourceSettings ? getManageableSources(sourceSettings) : []),
+    [sourceSettings],
+  );
+
+  const enabledSources = useMemo(
     () => (sourceSettings ? getEnabledSources(sourceSettings) : []),
     [sourceSettings],
   );
 
-  function toggleSourceSelection(sourceId: string) {
-    setSelectedSourceIds((prev) => {
-      if (prev.includes(sourceId)) {
-        const next = prev.filter((id) => id !== sourceId);
-        return next.length ? next : availableSources.map((s) => s.id);
-      }
-      return [...prev, sourceId];
-    });
+  function persistSourceEnabled(sourceId: string) {
+    const current = sourceSettings ?? loadLegalSourcesSettings();
+    const source = current.sources.find((s) => s.id === sourceId);
+    if (!source) return;
+
+    const next = updateSourceInSettings(current, sourceId, { enabled: !source.enabled });
+    setSourceSettings(next);
+    saveLegalSourcesSettings(next);
+    void syncLegalSourcesSettings(next);
+
+    if (analyzedPage === currentPage) {
+      setSourcesStale(true);
+    }
   }
 
-  function selectAllSources() {
-    setSelectedSourceIds(availableSources.map((s) => s.id));
+  function enableAllSources() {
+    const current = sourceSettings ?? loadLegalSourcesSettings();
+    let next = current;
+    for (const source of getManageableSources(current)) {
+      if (!source.enabled) {
+        next = updateSourceInSettings(next, source.id, { enabled: true });
+      }
+    }
+    if (next === current) return;
+
+    setSourceSettings(next);
+    saveLegalSourcesSettings(next);
+    void syncLegalSourcesSettings(next);
+
+    if (analyzedPage === currentPage) {
+      setSourcesStale(true);
+    }
   }
 
   const defaultTutorAction = examOnly ? "exam_essentials" : "explain_page";
+
+  function handleRefreshExplanation() {
+    void askTutor(defaultTutorAction);
+  }
 
   useEffect(() => {
     if (phase !== "ready" || !material || initialAnalysisDone.current) return;
@@ -213,12 +245,6 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
     void askTutor(defaultTutorAction);
   }, [examOnly]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    if (!initialAnalysisDone.current || phase !== "ready" || !material) return;
-    if (analyzedPage !== currentPage) return;
-    void askTutor(defaultTutorAction);
-  }, [selectedSourceIds]); // eslint-disable-line react-hooks/exhaustive-deps
-
   const displayAnalysis = useMemo(() => {
     if (!tutorState.analysis) return null;
     return filterAnalysisForExamMode(tutorState.analysis, examOnly);
@@ -230,6 +256,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
     setActiveHighlightId(null);
     if (page !== analyzedPage) {
       setTutorState({ analysis: null, customReply: null, activeSources: [] });
+      setSourcesStale(false);
     }
   }
 
@@ -340,10 +367,12 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
             customReply={tutorState.customReply}
             examOnly={examOnly}
             activeSources={tutorState.activeSources}
-            availableSources={availableSources}
-            selectedSourceIds={selectedSourceIds}
-            onToggleSource={toggleSourceSelection}
-            onSelectAllSources={selectAllSources}
+            manageableSources={manageableSources}
+            onToggleSource={persistSourceEnabled}
+            onEnableAllSources={enableAllSources}
+            hasEnabledSources={enabledSources.length > 0}
+            sourcesStale={sourcesStale}
+            onRefreshExplanation={handleRefreshExplanation}
             needsGeneration={analyzedPage !== currentPage}
             onExamOnlyChange={setExamOnly}
             activeHighlightId={activeHighlightId}

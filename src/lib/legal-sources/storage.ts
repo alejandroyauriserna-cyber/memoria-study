@@ -40,17 +40,22 @@ export function saveLegalSourcesSettings(settings: LegalSourcesSettings) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
 }
 
-export function getEnabledSources(settings: LegalSourcesSettings): LegalSourceRecord[] {
+function isManageableSource(source: LegalSourceRecord): boolean {
+  return !(
+    source.kind === "builtin" &&
+    (source.category === "normativa" || source.category === "jurisprudencia")
+  );
+}
+
+/** Fuentes que el estudiante puede activar/desactivar (incluye desactivadas). */
+export function getManageableSources(settings: LegalSourcesSettings): LegalSourceRecord[] {
   return settings.sources
-    .filter(
-      (s) =>
-        s.enabled &&
-        !(
-          s.kind === "builtin" &&
-          (s.category === "normativa" || s.category === "jurisprudencia")
-        ),
-    )
+    .filter(isManageableSource)
     .sort((a, b) => a.priority - b.priority);
+}
+
+export function getEnabledSources(settings: LegalSourcesSettings): LegalSourceRecord[] {
+  return getManageableSources(settings).filter((s) => s.enabled);
 }
 
 export function toSourceAttributions(sources: LegalSourceRecord[]): LegalSourceAttribution[] {
