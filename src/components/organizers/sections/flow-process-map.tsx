@@ -231,7 +231,7 @@ export function FlowProcessMap({
                 </p>
                 <h4 className="org-panel-title mt-1 text-base font-bold">{selected.label}</h4>
               </div>
-              <p className="max-w-xs rounded-lg border border-[rgba(255,138,0,0.25)] bg-[rgba(255,138,0,0.08)] px-2.5 py-1.5 text-[11px] leading-5 text-amber-100">
+              <p className="org-panel-callout-warn max-w-xs rounded-lg px-2.5 py-1.5 text-[11px] leading-5">
                 {stepDetail.reasoningPrompt}
               </p>
             </div>
@@ -264,17 +264,17 @@ export function FlowProcessMap({
               </FlowDetailBlock>
             </div>
 
-            <div className="flex items-center justify-between gap-2 border-t border-[rgba(0,255,213,0.1)] pt-3">
+            <div className="flex items-center justify-between gap-2 border-t border-[var(--org-accent-border)] pt-3">
               <button
                 type="button"
                 onClick={goPrev}
                 disabled={!selected.prevId}
-                className="flex items-center gap-1 rounded-xl border border-[rgba(0,255,213,0.15)] px-3 py-2 text-xs font-semibold text-[#F5F7FA] transition hover:text-[#00FFD5] disabled:opacity-40"
+                className="org-panel-nav-btn"
               >
                 <ArrowLeft size={14} />
                 Paso anterior
               </button>
-              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+              <span className="org-panel-text-muted text-[10px] uppercase tracking-wider">
                 {selected.prevId ? nodeById.get(selected.prevId)?.label.slice(0, 28) : "Inicio"}
                 {" → "}
                 {selected.nextId ? nodeById.get(selected.nextId)?.label.slice(0, 28) : "Fin"}
@@ -283,7 +283,7 @@ export function FlowProcessMap({
                 type="button"
                 onClick={goNext}
                 disabled={!selected.nextId}
-                className="flex items-center gap-1 rounded-xl bg-[rgba(0,255,213,0.12)] px-3 py-2 text-xs font-semibold text-[#00FFD5] transition hover:bg-[rgba(0,255,213,0.2)] disabled:opacity-40"
+                className="org-panel-nav-btn org-panel-nav-btn--primary"
               >
                 Paso siguiente
                 <ArrowRight size={14} />

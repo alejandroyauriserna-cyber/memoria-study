@@ -89,6 +89,61 @@ html:not(.dark) .organizers-studio .organizer-float-sheet__head {
 
 /* Shared panel utilities */
 
+.org-panel-callout-warn {
+  border: 1px solid rgba(255, 138, 0, 0.28);
+  background: rgba(255, 138, 0, 0.1);
+  color: #ffedd5;
+}
+
+html:not(.dark) .organizers-studio .org-panel-callout-warn {
+  border-color: rgba(180, 83, 9, 0.22);
+  background: #fff7ed;
+  color: #9a3412;
+}
+
+.org-panel-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--org-accent-border);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--org-panel-text);
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+
+.org-panel-nav-btn:hover:not(:disabled) {
+  color: var(--org-accent);
+  border-color: var(--org-accent-border-strong);
+}
+
+.org-panel-nav-btn:disabled {
+  opacity: 0.4;
+}
+
+.org-panel-nav-btn--primary {
+  border-color: transparent;
+  background: var(--org-accent-bg);
+  color: var(--org-accent);
+}
+
+.org-panel-nav-btn--primary:hover:not(:disabled) {
+  background: var(--org-accent-soft);
+  color: var(--org-accent);
+}
+
+html:not(.dark) .organizers-studio .org-panel-nav-btn--primary {
+  background: rgba(13, 148, 136, 0.12);
+  color: #0f766e;
+}
+
+html:not(.dark) .organizers-studio .org-panel-nav-btn--primary:hover:not(:disabled) {
+  background: rgba(13, 148, 136, 0.18);
+  color: #115e59;
+}
+
 .org-panel-kicker {
   color: var(--org-accent);
 }
