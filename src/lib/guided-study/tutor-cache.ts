@@ -58,6 +58,20 @@ function saveStore(materialId: string, store: MaterialCacheStore) {
   localStorage.setItem(`${CACHE_PREFIX}${materialId}`, JSON.stringify(store));
 }
 
+export function hasTutorCacheContent(
+  result: Pick<TutorResponse, "analysis" | "customReply"> | null | undefined,
+): boolean {
+  if (!result) return false;
+  if (result.customReply?.trim()) return true;
+  if (!result.analysis) return false;
+  return Boolean(
+    result.analysis.pageFocus?.trim() ||
+      result.analysis.conceptCards.length ||
+      result.analysis.keyLearning.length ||
+      result.analysis.highlights.length,
+  );
+}
+
 export function loadTutorCache(
   materialId: string,
   scope: TutorCacheScope,
@@ -67,11 +81,14 @@ export function loadTutorCache(
   const store = loadStore(materialId);
   const entry = store[scopeKey(scope, examOnly)];
   if (!entry || entry.fingerprint !== fingerprint) return null;
-  return {
+
+  const result = {
     analysis: entry.analysis,
     customReply: entry.customReply,
     activeSources: entry.activeSources,
   };
+
+  return hasTutorCacheContent(result) ? result : null;
 }
 
 export function saveTutorCache(

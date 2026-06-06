@@ -470,7 +470,7 @@ export function LegalTutorPanel({
             animate={{ opacity: 1, y: 0 }}
             className="space-y-3"
           >
-            {customReply && !analysis ? (
+            {customReply ? (
               <div className="gs-custom-reply">
                 <p className="text-sm leading-7 text-[#F5F7FA]">{customReply}</p>
               </div>
@@ -508,7 +508,21 @@ export function LegalTutorPanel({
               </>
             ) : null}
           </motion.div>
-        ) : null}
+        ) : (
+          <div className="gs-page-prompt">
+            <Sparkles size={22} className="text-[#00FFD5]" />
+            <p>
+              El profesor IA aún no tiene explicación para esta vista. Pulsa{" "}
+              <strong className="text-[#F5F7FA]">Explicar página</strong> para generarla.
+            </p>
+            {onGeneratePage ? (
+              <button type="button" onClick={onGeneratePage} className="gs-page-nav-generate mt-1">
+                <Sparkles size={15} />
+                Explicar página
+              </button>
+            ) : null}
+          </div>
+        )}
       </div>
 
       <div className="shrink-0 border-t border-[rgba(0,255,213,0.08)] px-3 py-2">

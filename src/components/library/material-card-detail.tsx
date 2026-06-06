@@ -6,7 +6,6 @@ import {
   ArrowDown,
   BookOpen,
   CalendarDays,
-  ChevronDown,
   Clock3,
   FileText,
   GraduationCap,
@@ -24,8 +23,10 @@ import { StudyWithAiStatus } from "@/components/organizers/study-with-ai-status"
 import { useStudyWithAi } from "@/hooks/use-study-with-ai";
 import {
   getMaterialConceptCount,
+  getMaterialCoverFormat,
   getMaterialCoverGradient,
   getMaterialPageCount,
+  getMaterialPagesDisplay,
   getMaterialReadingMinutes,
   getMaterialTypeLabel,
 } from "@/lib/materials/material-card-visual";
@@ -51,6 +52,8 @@ export function MaterialCardDetail({ material }: { material: Material }) {
   const actionsDisabled = busy || isGenerating || !material.id;
   const coverGradient = getMaterialCoverGradient(material.courseId);
   const typeLabel = getMaterialTypeLabel(material.materialType);
+  const coverFormat = getMaterialCoverFormat(material);
+  const pagesLabel = getMaterialPagesDisplay(material);
   const pageCount = getMaterialPageCount(material);
   const conceptCount = getMaterialConceptCount(material);
   const readingMinutes = getMaterialReadingMinutes(material);
@@ -189,17 +192,21 @@ export function MaterialCardDetail({ material }: { material: Material }) {
         </div>
       </section>
 
-      <section className="lib-detail-preview" style={{ background: coverGradient }} aria-hidden>
+      <section
+        className="lib-detail-preview"
+        style={{ background: coverGradient }}
+        aria-label={`Portada de ${material.title}`}
+      >
         <div className="lib-detail-preview-shine" />
-        <div className="lib-detail-preview-doc lib-detail-preview-doc--back" />
-        <div className="lib-detail-preview-doc lib-detail-preview-doc--front">
-          <div className="lib-detail-preview-lines">
-            <i />
-            <i />
-            <i />
-            <i />
-            <i />
-          </div>
+        <div className="lib-detail-preview-cover">
+          <span className="lib-detail-preview-format">{coverFormat}</span>
+          <h3 className="lib-detail-preview-title">{material.title}</h3>
+          <p className="lib-detail-preview-course">{material.courseName}</p>
+          <p className="lib-detail-preview-pages">{pagesLabel}</p>
+          <span className="lib-detail-preview-ai">
+            <Sparkles size={12} strokeWidth={2} aria-hidden />
+            IA lista
+          </span>
         </div>
       </section>
 
@@ -293,32 +300,32 @@ export function MaterialCardDetail({ material }: { material: Material }) {
         ) : null}
       </div>
 
-      <details className="lib-detail-more">
-        <summary>
-          Información adicional
-          <ChevronDown size={16} className="lib-detail-more-chevron" aria-hidden />
-        </summary>
-        <div className="lib-detail-more-body">
-          <div className="lib-detail-more-row">
-            <User size={14} aria-hidden />
-            <span>{material.authorName}</span>
-          </div>
-          <div className="lib-detail-more-row">
-            <CalendarDays size={14} aria-hidden />
-            <span>{new Date(material.createdAt ?? "").toLocaleDateString("es-PE")}</span>
-          </div>
-          <div className="lib-detail-more-stats">
-            <span>
-              <ArrowDown size={13} aria-hidden />
-              {downloads} descargas
-            </span>
-            <span>
-              <Heart size={13} aria-hidden />
-              {likes} likes
-            </span>
-          </div>
+      <section className="lib-detail-meta" aria-label="Información del material">
+        <div className="lib-detail-meta-row">
+          <User size={14} aria-hidden />
+          <span>{material.authorName}</span>
         </div>
-      </details>
+        <div className="lib-detail-meta-row">
+          <GraduationCap size={14} aria-hidden />
+          <span>
+            {material.cycleLabel} · {material.courseName}
+          </span>
+        </div>
+        <div className="lib-detail-meta-row">
+          <CalendarDays size={14} aria-hidden />
+          <span>{new Date(material.createdAt ?? "").toLocaleDateString("es-PE")}</span>
+        </div>
+        <div className="lib-detail-meta-stats">
+          <span>
+            <ArrowDown size={13} aria-hidden />
+            {downloads} descargas
+          </span>
+          <span>
+            <Heart size={13} aria-hidden />
+            {likes} likes
+          </span>
+        </div>
+      </section>
 
       <StudyWithAiStatus
         isGenerating={isGenerating}

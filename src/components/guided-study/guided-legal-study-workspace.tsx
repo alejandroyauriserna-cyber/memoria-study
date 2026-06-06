@@ -99,6 +99,10 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
   const tutorProgress = useLoadingProgress(tutorLoading, "aiAnalyze");
 
   useEffect(() => {
+    initialAnalysisDone.current = false;
+  }, [materialId]);
+
+  useEffect(() => {
     const local = loadGuidedStudySession(materialId);
     void fetchCloudGuidedStudySession(materialId).then((remote) => {
       const session = mergeGuidedStudySessions(local, remote);
@@ -125,11 +129,15 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
       setPhase("loading");
       setError("");
 
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => controller.abort(), 180_000);
+
       try {
         const response = await fetch("/api/guided-study/analyze", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ materialId }),
+          signal: controller.signal,
         });
 
         const payload = await response.json();
@@ -149,9 +157,17 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
         }
       } catch (caught) {
         if (!cancelled) {
-          setError(caught instanceof Error ? caught.message : "Error desconocido.");
+          const message =
+            caught instanceof Error && caught.name === "AbortError"
+              ? "El análisis del PDF tardó demasiado. Intenta de nuevo o usa un PDF más corto."
+              : caught instanceof Error
+                ? caught.message
+                : "Error desconocido.";
+          setError(message);
           setPhase("error");
         }
+      } finally {
+        window.clearTimeout(timeoutId);
       }
     }
 
@@ -253,6 +269,9 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
       setTutorLoading(true);
       setActiveHighlightId(null);
 
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => controller.abort(), 120_000);
+
       try {
         const response = await fetch("/api/guided-study/tutor", {
           method: "POST",
@@ -267,6 +286,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
             sourceSettings: settings,
             chapterId: options?.chapterId ?? (scope.type === "chapter" ? scope.chapterId : undefined),
           }),
+          signal: controller.signal,
         });
 
         const payload = await response.json();
@@ -274,14 +294,26 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
           throw new Error(payload.error ?? "Error del tutor.");
         }
 
+        if (!payload.analysis && !payload.customReply?.trim()) {
+          throw new Error("El profesor IA no devolvió contenido para esta página. Intenta de nuevo.");
+        }
+
         applyTutorResult(scope, payload, settings);
       } catch (caught) {
+        const message =
+          caught instanceof Error && caught.name === "AbortError"
+            ? "El profesor IA tardó demasiado. Comprueba tu conexión y pulsa «Explicar página»."
+            : caught instanceof Error
+              ? caught.message
+              : "Error consultando al profesor.";
         setTutorState({
           analysis: null,
-          customReply: caught instanceof Error ? caught.message : "Error consultando al profesor.",
+          customReply: message,
           activeSources: [],
         });
+        setAnalyzedScope(null);
       } finally {
+        window.clearTimeout(timeoutId);
         setTutorLoading(false);
       }
     },
@@ -380,11 +412,19 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
 
   useEffect(() => {
     if (phase !== "ready" || !material || initialAnalysisDone.current) return;
-    initialAnalysisDone.current = true;
+
     const scope = { type: "page" as const, pageNumber: currentPage };
     setTutorScope(scope);
+
+    const settings = sourceSettings ?? loadLegalSourcesSettings();
+    if (tryLoadCachedTutor(scope, settings)) {
+      initialAnalysisDone.current = true;
+      return;
+    }
+
+    initialAnalysisDone.current = true;
     void askTutor(defaultTutorAction, { scope });
-  }, [phase, material?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [phase, material, currentPage, defaultTutorAction, askTutor, tryLoadCachedTutor, sourceSettings]);
 
   useEffect(() => {
     if (!initialAnalysisDone.current || phase !== "ready" || !material) return;
