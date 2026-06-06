@@ -115,14 +115,14 @@ function SourcePicker({
   return (
     <div className="gs-sources-banner">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-[#86EFAC]">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-green-600 dark:text-green-300">
           Fuentes para el tutor
         </p>
         <button
           type="button"
           disabled={disabled || allEnabled}
           onClick={onEnableAll}
-          className="text-[9px] font-semibold text-[#00FFD5] hover:underline disabled:opacity-40"
+          className="text-[9px] font-semibold text-accent hover:underline disabled:opacity-40"
         >
           Activar todas
         </button>
@@ -172,7 +172,7 @@ function NoSourcesBanner() {
         </p>
         <Link
           href="/fuentes-juridicas"
-          className="mt-1.5 inline-flex text-[10px] font-semibold text-[#00FFD5] hover:underline"
+          className="mt-1.5 inline-flex text-[10px] font-semibold text-accent hover:underline"
         >
           Ir a Fuentes Jurídicas →
         </Link>
@@ -190,7 +190,7 @@ function SourcesStaleBanner({
 }) {
   return (
     <div className="gs-sources-stale-banner">
-      <p className="text-[10px] text-[#F5F7FA]">
+      <p className="text-[10px] text-foreground">
         Cambiaste las fuentes activas. La explicación actual puede no reflejarlo.
       </p>
       <button
@@ -279,10 +279,10 @@ export function LegalTutorPanel({
   );
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-[rgba(0,255,213,0.15)] bg-[rgba(7,19,26,0.6)]">
-      <div className="shrink-0 border-b border-[rgba(0,255,213,0.1)] px-3 py-2.5">
+    <div className="gs-panel-shell flex h-full min-h-0 flex-col overflow-hidden">
+      <div className="shrink-0 border-b border-border px-3 py-2.5">
         <div className="flex items-center justify-between gap-2">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#00FFD5]">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-accent">
             Profesor IA
           </p>
           <button
@@ -348,7 +348,7 @@ export function LegalTutorPanel({
         <button
           type="button"
           onClick={() => setShowMoreActions((v) => !v)}
-          className="mt-1.5 flex w-full items-center justify-center gap-1 text-[9px] font-semibold text-muted-foreground hover:text-[#00FFD5]"
+          className="mt-1.5 flex w-full items-center justify-center gap-1 text-[9px] font-semibold text-muted-foreground hover:text-accent"
         >
           Más opciones
           <ChevronDown size={12} className={`transition ${showMoreActions ? "rotate-180" : ""}`} />
@@ -379,7 +379,7 @@ export function LegalTutorPanel({
               }
             }}
             placeholder="Pregunta al profesor..."
-            className="h-8 min-w-0 flex-1 rounded-lg border border-[rgba(0,255,213,0.12)] bg-[rgba(0,0,0,0.25)] px-2.5 text-xs text-[#F5F7FA] placeholder:text-muted-foreground"
+            className="h-8 min-w-0 flex-1 rounded-lg border border-border bg-muted px-2.5 text-xs text-foreground placeholder:text-muted-foreground"
           />
           <button
             type="button"
@@ -388,7 +388,7 @@ export function LegalTutorPanel({
               onCustomAsk(customPrompt.trim());
               setCustomPrompt("");
             }}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#00FFD5] text-[#07131a] disabled:opacity-40"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-foreground disabled:opacity-40"
             aria-label="Enviar"
           >
             <Send size={14} />
@@ -397,7 +397,7 @@ export function LegalTutorPanel({
 
         <Link
           href="/fuentes-juridicas"
-          className="mt-2 inline-flex text-[10px] text-muted-foreground hover:text-[#00FFD5]"
+          className="mt-2 inline-flex text-[10px] text-muted-foreground hover:text-accent"
         >
           Configurar fuentes jurídicas →
         </Link>
@@ -424,7 +424,7 @@ export function LegalTutorPanel({
           />
         ) : activeSources?.length ? (
           <div className="gs-sources-banner">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-[#86EFAC]">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-green-600 dark:text-green-300">
               Explicación basada en
             </p>
             <div className="mt-1.5 flex flex-wrap gap-1">
@@ -452,9 +452,9 @@ export function LegalTutorPanel({
           />
         ) : needsGeneration && !analysis && !customReply ? (
           <div className="gs-page-prompt">
-            <Sparkles size={22} className="text-[#00FFD5]" />
+            <Sparkles size={22} className="text-accent" />
             <p>
-              Estás en una página nueva. Pulsa <strong className="text-[#F5F7FA]">Explicar página</strong>{" "}
+              Estás en una página nueva. Pulsa <strong className="text-foreground">Explicar página</strong>{" "}
               arriba para que el profesor analice este contenido.
             </p>
             {onGeneratePage ? (
@@ -472,7 +472,7 @@ export function LegalTutorPanel({
           >
             {customReply ? (
               <div className="gs-custom-reply">
-                <p className="text-sm leading-7 text-[#F5F7FA]">{customReply}</p>
+                <p className="text-sm leading-7 text-foreground">{customReply}</p>
               </div>
             ) : null}
             {analysis ? (
@@ -510,10 +510,10 @@ export function LegalTutorPanel({
           </motion.div>
         ) : (
           <div className="gs-page-prompt">
-            <Sparkles size={22} className="text-[#00FFD5]" />
+            <Sparkles size={22} className="text-accent" />
             <p>
               El profesor IA aún no tiene explicación para esta vista. Pulsa{" "}
-              <strong className="text-[#F5F7FA]">Explicar página</strong> para generarla.
+              <strong className="text-foreground">Explicar página</strong> para generarla.
             </p>
             {onGeneratePage ? (
               <button type="button" onClick={onGeneratePage} className="gs-page-nav-generate mt-1">
@@ -525,7 +525,7 @@ export function LegalTutorPanel({
         )}
       </div>
 
-      <div className="shrink-0 border-t border-[rgba(0,255,213,0.08)] px-3 py-2">
+      <div className="shrink-0 border-t border-border px-3 py-2">
         <button
           type="button"
           onClick={onMarkUnderstood}

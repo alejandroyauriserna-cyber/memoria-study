@@ -9,8 +9,8 @@ export function LibrarySetupChecklist({ steps }: { steps: LibrarySetupStep[] }) 
 
   return (
     <div className="gs-setup-checklist">
-      <p className="flex items-center gap-2 text-xs font-semibold text-[#F5F7FA]">
-        <Library size={14} className="text-[#00FFD5]" />
+      <p className="flex items-center gap-2 text-xs font-semibold text-foreground">
+        <Library size={14} className="text-accent" />
         Configura tu biblioteca para estudiar
       </p>
       <p className="mt-1 text-[10px] leading-4 text-muted-foreground">
@@ -18,7 +18,7 @@ export function LibrarySetupChecklist({ steps }: { steps: LibrarySetupStep[] }) 
       </p>
       <ol className="mt-3 space-y-2">
         {steps.map((step) => (
-          <li key={step.id} className="flex items-start gap-2 text-[11px] text-[#F5F7FA]/90">
+          <li key={step.id} className="flex items-start gap-2 text-[11px] text-foreground/90">
             {step.done ? (
               <Check size={14} className="mt-0.5 shrink-0 text-[#86EFAC]" />
             ) : (
@@ -30,7 +30,7 @@ export function LibrarySetupChecklist({ steps }: { steps: LibrarySetupStep[] }) 
       </ol>
       <Link
         href="/fuentes-juridicas"
-        className="mt-3 inline-flex text-[10px] font-semibold text-[#00FFD5] hover:underline"
+        className="mt-3 inline-flex text-[10px] font-semibold text-accent hover:underline"
       >
         Ir a Fuentes Jurídicas →
       </Link>

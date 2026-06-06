@@ -34,7 +34,7 @@ export function KeyLearningPanel({
                 onClick={() => onItemClick?.(item)}
                 className={`gs-key-item ${active ? "gs-key-item--active" : ""}`}
               >
-                <CheckCircle2 size={14} className="shrink-0 text-[#00FFD5]" />
+                <CheckCircle2 size={14} className="shrink-0 text-accent" />
                 <span>{item.label}</span>
                 {item.essential ? (
                   <span className="gs-badge-exam">Examen</span>

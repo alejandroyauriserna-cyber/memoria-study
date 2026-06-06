@@ -50,7 +50,7 @@ export function StudyPageNavigator({
   }
 
   return (
-    <div className="gs-page-nav shrink-0 rounded-xl border border-[rgba(0,255,213,0.12)] bg-[rgba(7,19,26,0.55)] px-3 py-2">
+    <div className="gs-page-nav shrink-0 rounded-xl border border-border bg-card px-3 py-2">
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex min-w-0 flex-1 items-center justify-center gap-1 sm:justify-start">
           <button

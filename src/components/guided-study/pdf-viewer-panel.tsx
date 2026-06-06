@@ -71,27 +71,27 @@ export function PdfViewerPanel({
   return (
     <div
       ref={containerRef}
-      className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-[rgba(0,255,213,0.15)] bg-[rgba(7,19,26,0.6)]"
+      className="gs-panel-shell flex h-full min-h-0 flex-col overflow-hidden"
     >
-      <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-[rgba(0,255,213,0.1)] px-3 py-2">
+      <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-border px-3 py-2">
         <div className="flex items-center gap-1">
           <button
             type="button"
             onClick={goPrev}
             disabled={pageNumber <= 1}
-            className="rounded-lg p-2 text-[#00FFD5] hover:bg-[rgba(0,255,213,0.08)] disabled:opacity-30"
+            className="rounded-lg p-2 text-accent hover:bg-accent-soft disabled:opacity-30"
             aria-label="Página anterior"
           >
             <ChevronLeft size={18} />
           </button>
-          <span className="min-w-[5rem] text-center text-sm font-semibold text-[#F5F7FA]">
+          <span className="min-w-[5rem] text-center text-sm font-semibold text-foreground">
             {pageNumber} / {totalPages}
           </span>
           <button
             type="button"
             onClick={goNext}
             disabled={pageNumber >= totalPages}
-            className="rounded-lg p-2 text-[#00FFD5] hover:bg-[rgba(0,255,213,0.08)] disabled:opacity-30"
+            className="rounded-lg p-2 text-accent hover:bg-accent-soft disabled:opacity-30"
             aria-label="Página siguiente"
           >
             <ChevronRight size={18} />
@@ -102,7 +102,7 @@ export function PdfViewerPanel({
           <button
             type="button"
             onClick={() => setZoom((z) => Math.max(50, z - 10))}
-            className="rounded-lg p-2 text-muted-foreground hover:bg-white/5 hover:text-white"
+            className="rounded-lg p-2 text-muted-foreground hover:bg-foreground/5 hover:text-foreground"
             aria-label="Reducir zoom"
           >
             <ZoomOut size={16} />
@@ -111,7 +111,7 @@ export function PdfViewerPanel({
           <button
             type="button"
             onClick={() => setZoom((z) => Math.min(200, z + 10))}
-            className="rounded-lg p-2 text-muted-foreground hover:bg-white/5 hover:text-white"
+            className="rounded-lg p-2 text-muted-foreground hover:bg-foreground/5 hover:text-foreground"
             aria-label="Aumentar zoom"
           >
             <ZoomIn size={16} />
@@ -127,27 +127,27 @@ export function PdfViewerPanel({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Buscar en la página"
-            className="h-8 w-full rounded-lg border border-[rgba(0,255,213,0.12)] bg-[rgba(0,0,0,0.25)] pl-8 pr-3 text-xs text-[#F5F7FA] placeholder:text-muted-foreground"
+            className="h-8 w-full rounded-lg border border-border bg-muted pl-8 pr-3 text-xs text-foreground placeholder:text-muted-foreground"
           />
         </div>
 
         <button
           type="button"
           onClick={toggleFullscreen}
-          className="rounded-lg p-2 text-muted-foreground hover:bg-white/5 hover:text-white"
+          className="rounded-lg p-2 text-muted-foreground hover:bg-foreground/5 hover:text-foreground"
           aria-label="Pantalla completa"
         >
           {fullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
         </button>
       </div>
 
-      <div className="relative min-h-0 flex-1 bg-[#0a1419]">
+      <div className="gs-pdf-viewer-canvas relative min-h-0 flex-1 bg-surface-strong">
         {highlightPhrase?.trim() ? (
           <div className="gs-pdf-highlight-bar">
-            <span className="text-[10px] font-semibold uppercase tracking-wide text-[#00FFD5]">
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-accent">
               Fragmento del concepto
             </span>
-            <p className="mt-0.5 line-clamp-2 text-xs leading-5 text-[#F5F7FA]">
+            <p className="mt-0.5 line-clamp-2 text-xs leading-5 text-foreground">
               {highlightPhrase.trim()}
             </p>
           </div>

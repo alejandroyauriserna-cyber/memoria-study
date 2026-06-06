@@ -114,7 +114,7 @@ export function PdfJsViewer({
           href={fileUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-xs font-semibold text-[#00FFD5] hover:underline"
+          className="text-xs font-semibold text-accent hover:underline"
         >
           Abrir PDF original
         </a>
@@ -125,7 +125,7 @@ export function PdfJsViewer({
   return (
     <div className="relative flex h-full w-full flex-col items-center overflow-auto p-2">
       {rendering ? (
-        <p className="absolute left-3 top-3 z-10 rounded bg-black/60 px-2 py-1 text-[10px] text-[#00FFD5]">
+        <p className="absolute left-3 top-3 z-10 rounded bg-card/90 px-2 py-1 text-[10px] text-accent shadow-sm backdrop-blur-sm">
           Renderizando…
         </p>
       ) : null}

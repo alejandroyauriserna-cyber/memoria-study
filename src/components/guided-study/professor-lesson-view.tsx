@@ -34,7 +34,7 @@ function SecondaryMentionsBlock({ items }: { items: SecondaryMention[] }) {
       <ul className="mt-2 space-y-1">
         {items.map((item, i) => (
           <li key={i} className="text-xs text-muted-foreground">
-            <span className="text-[#F5F7FA]/70">{item.mention}</span>
+            <span className="text-foreground/70">{item.mention}</span>
             {" — "}
             {item.briefNote}
           </li>
@@ -59,12 +59,12 @@ function ConceptCard({
     <article className={`gs-concept-card ${active ? "gs-concept-card--active" : ""}`}>
       <button type="button" className="gs-concept-card-head" onClick={onToggle}>
         <div className="flex items-start gap-2">
-          <Sparkles size={15} className="mt-0.5 shrink-0 text-[#00FFD5]" />
+          <Sparkles size={15} className="mt-0.5 shrink-0 text-accent" />
           <div className="text-left">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#00FFD5]">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-accent">
               Concepto
             </p>
-            <h3 className="text-sm font-bold text-[#F5F7FA]">{card.concept}</h3>
+            <h3 className="text-sm font-bold text-foreground">{card.concept}</h3>
           </div>
         </div>
         <ChevronDown
@@ -81,7 +81,7 @@ function ConceptCard({
             exit={{ height: 0, opacity: 0 }}
             className="overflow-hidden"
           >
-            <div className="space-y-3 border-t border-[rgba(0,255,213,0.08)] px-4 py-3">
+            <div className="space-y-3 border-t border-border px-4 py-3">
               <Block label="Explicación" icon={Lightbulb} color="#00BFFF">
                 {card.explanation}
               </Block>
@@ -121,7 +121,7 @@ function Block({
         <Icon size={12} />
         {label}
       </p>
-      <p className="mt-1.5 text-sm leading-6 text-[#F5F7FA]/90">{children}</p>
+      <p className="mt-1.5 text-sm leading-6 text-foreground/90">{children}</p>
     </div>
   );
 }
@@ -140,8 +140,8 @@ function DetectedConceptsBlock({
       </p>
       <ul className="mt-2 space-y-1.5">
         {concepts.map((item) => (
-          <li key={item.id} className="flex items-start gap-2 text-sm text-[#F5F7FA]/90">
-            <Sparkles size={12} className="mt-1 shrink-0 text-[#00FFD5]" />
+          <li key={item.id} className="flex items-start gap-2 text-sm text-foreground/90">
+            <Sparkles size={12} className="mt-1 shrink-0 text-accent" />
             <span>{item.term}</span>
           </li>
         ))}
@@ -231,15 +231,15 @@ export function ProfessorLessonView({
             <BookOpen size={12} />
             Respuesta del profesor
           </p>
-          <p className="mt-2 text-sm leading-7 text-[#F5F7FA]">{customReply}</p>
+          <p className="mt-2 text-sm leading-7 text-foreground">{customReply}</p>
         </div>
       ) : null}
 
       <div className="gs-focus-banner">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#00FFD5]">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-accent">
           Enfoque de la página
         </p>
-        <p className="mt-1 text-sm leading-6 text-[#F5F7FA]">{analysis.pageFocus}</p>
+        <p className="mt-1 text-sm leading-6 text-foreground">{analysis.pageFocus}</p>
       </div>
 
       {!examOnly ? <SecondaryMentionsBlock items={analysis.secondaryMentions} /> : null}
@@ -270,7 +270,7 @@ export function ProfessorLessonView({
       {analysis.comprehensionQuestion ? (
         <div className="gs-comprehension-box">
           <p className="text-xs font-semibold text-[#FF8A00]">¿Entendiste este concepto?</p>
-          <p className="mt-1 text-sm text-[#F5F7FA]">{analysis.comprehensionQuestion}</p>
+          <p className="mt-1 text-sm text-foreground">{analysis.comprehensionQuestion}</p>
         </div>
       ) : null}
     </div>

@@ -71,7 +71,7 @@ function StructuredQuestionCard({
           </p>
           <ul className="mt-1 space-y-0.5">
             {item.gradingPoints.map((point, i) => (
-              <li key={i} className="text-[11px] text-[#F5F7FA]/80">
+              <li key={i} className="text-[11px] text-foreground/80">
                 • {point}
               </li>
             ))}
@@ -106,7 +106,7 @@ function TestQuestionCard({ item, index }: { item: ExamTestQuestion; index: numb
       <p className="text-[10px] font-semibold uppercase tracking-wide text-[#C084FC]/80">
         Pregunta {index + 1}
       </p>
-      <p className="mt-1 text-sm font-medium text-[#F5F7FA]">{item.question}</p>
+      <p className="mt-1 text-sm font-medium text-foreground">{item.question}</p>
       <ul className="mt-2 space-y-1">
         {item.options.map((opt, j) => {
           const isPicked = picked === j;
@@ -142,7 +142,7 @@ function TestQuestionCard({ item, index }: { item: ExamTestQuestion; index: numb
         </button>
       ) : (
         <div className="gs-test-explanation">
-          <p className="text-[10px] font-semibold text-[#00FFD5]">
+          <p className="text-[10px] font-semibold text-accent">
             Respuesta: {String.fromCharCode(65 + item.answerIndex)}.{" "}
             {item.options[item.answerIndex]}
           </p>

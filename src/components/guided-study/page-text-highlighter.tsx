@@ -40,7 +40,7 @@ export function PageTextHighlighter({
   }
 
   return (
-    <div ref={containerRef} className="gs-highlight-scroll px-4 py-3 text-sm leading-7 text-[#F5F7FA]">
+    <div ref={containerRef} className="gs-highlight-scroll px-4 py-3 text-sm leading-7 text-foreground">
       {segments.map((seg, i) => {
         if (seg.type === "text") {
           return <span key={i}>{seg.content}</span>;

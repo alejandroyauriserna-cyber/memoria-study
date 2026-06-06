@@ -512,7 +512,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
     return (
       <div className="mx-auto max-w-lg rounded-2xl border border-red-500/30 bg-red-500/10 p-8 text-center">
         <AlertCircle size={32} className="mx-auto text-red-400" />
-        <p className="mt-4 font-semibold text-[#F5F7FA]">No se pudo iniciar el estudio guiado</p>
+        <p className="mt-4 font-semibold text-foreground">No se pudo iniciar el estudio guiado</p>
         <p className="mt-2 text-sm text-muted-foreground">{error}</p>
         <Link
           href={`/materials/${materialId}`}
@@ -526,13 +526,13 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
 
   return (
     <div className="flex h-[calc(100dvh-4.5rem)] min-h-[32rem] flex-col gap-2">
-      <header className="flex shrink-0 flex-wrap items-center justify-between gap-2 rounded-xl border border-[rgba(0,255,213,0.1)] bg-[rgba(7,19,26,0.45)] px-3 py-2">
+      <header className="flex shrink-0 flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-card px-3 py-2">
         <div className="min-w-0 flex-1">
-          <p className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#00FFD5]">
+          <p className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-accent">
             <Sparkles size={11} />
             Estudio guiado
           </p>
-          <h1 className="truncate text-base font-bold text-[#F5F7FA]">{material.title}</h1>
+          <h1 className="truncate text-base font-bold text-foreground">{material.title}</h1>
         </div>
         <div className="flex items-center gap-2">
           <span className="hidden text-xs text-muted-foreground sm:inline">
@@ -563,7 +563,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
 
       {isAnalysisStale(analysisVersion) ? (
         <div className="gs-stale-analysis-banner mx-2 mb-2 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[rgba(255,138,0,0.25)] bg-[rgba(255,138,0,0.08)] px-3 py-2">
-          <p className="text-xs text-[#F5F7FA]">
+          <p className="text-xs text-foreground">
             Este material fue analizado con una versión anterior del profesor IA.
           </p>
           <button
@@ -595,7 +595,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
             role="tab"
             aria-selected={mobilePanel === tab.id}
             onClick={() => setMobilePanel(tab.id)}
-            className={`flex-1 rounded-lg px-3 py-2 text-xs font-semibold ${mobilePanel === tab.id ? "bg-[rgba(0,255,213,0.15)] text-[#00FFD5]" : "bg-[rgba(0,0,0,0.25)] text-muted-foreground"}`}
+            className={`flex-1 rounded-lg px-3 py-2 text-xs font-semibold ${mobilePanel === tab.id ? "bg-accent-soft text-accent" : "bg-muted text-muted-foreground"}`}
           >
             {tab.label}
           </button>
@@ -689,20 +689,20 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
                 onClick={() => setShowIndex(false)}
               />
               <motion.aside
-                className="absolute left-0 top-0 z-30 flex h-full w-[min(100%,300px)] flex-col overflow-hidden rounded-2xl border border-[rgba(0,255,213,0.15)] bg-[#07131a] shadow-2xl"
+                className="absolute left-0 top-0 z-30 flex h-full w-[min(100%,300px)] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl"
                 initial={{ x: -300 }}
                 animate={{ x: 0 }}
                 exit={{ x: -300 }}
               >
-                <div className="flex items-center justify-between border-b border-[rgba(0,255,213,0.1)] px-3 py-2">
-                  <p className="text-sm font-bold text-[#F5F7FA]">Índice</p>
-                  <button type="button" onClick={() => setShowIndex(false)} className="rounded p-1 text-muted-foreground hover:text-white">
+                <div className="flex items-center justify-between border-b border-border px-3 py-2">
+                  <p className="text-sm font-bold text-foreground">Índice</p>
+                  <button type="button" onClick={() => setShowIndex(false)} className="rounded p-1 text-muted-foreground hover:text-foreground">
                     <X size={16} />
                   </button>
                 </div>
                 <div className="min-h-0 flex-1 overflow-y-auto p-3">
                   {index.summary ? (
-                    <p className="mb-3 rounded-lg border border-[rgba(0,255,213,0.1)] bg-[rgba(0,0,0,0.2)] px-2.5 py-2 text-xs leading-5 text-muted-foreground">
+                    <p className="mb-3 rounded-lg border border-border bg-muted px-2.5 py-2 text-xs leading-5 text-muted-foreground">
                       {index.summary}
                     </p>
                   ) : null}
@@ -712,8 +712,8 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
                         key={ch.id}
                         className={`rounded-lg border px-2.5 py-2 ${
                           currentChapter?.id === ch.id
-                            ? "border-[rgba(0,255,213,0.35)] bg-[rgba(0,255,213,0.08)]"
-                            : "border-[rgba(0,255,213,0.08)]"
+                            ? "border-accent/35 bg-accent-soft"
+                            : "border-border"
                         }`}
                       >
                         <button
@@ -725,8 +725,8 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
                           className="flex w-full flex-col gap-1 text-left text-sm"
                         >
                           <span className="flex items-start gap-2">
-                            <ChevronRight size={13} className="mt-0.5 shrink-0 text-[#00FFD5]" />
-                            <span className="font-medium text-[#F5F7FA]">{ch.title}</span>
+                            <ChevronRight size={13} className="mt-0.5 shrink-0 text-accent" />
+                            <span className="font-medium text-foreground">{ch.title}</span>
                           </span>
                           {ch.learningOverview ? (
                             <span className="pl-5 text-[11px] leading-4 text-muted-foreground">
