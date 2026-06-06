@@ -120,7 +120,7 @@ export function OrganizerContentView({
 
   if (studio && hasConceptMap) {
     return (
-      <div className="relative flex h-full min-h-0 flex-1 flex-col">
+      <div className="organizer-canvas-stage relative flex h-full min-h-0 flex-1 flex-col">
         <ConceptMapCanvas
           title={parsed.conceptMap?.title}
           nodes={conceptNodes}

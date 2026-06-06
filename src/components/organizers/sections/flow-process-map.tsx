@@ -111,7 +111,7 @@ export function FlowProcessMap({
   const body = (
     <div className="flex min-h-0 flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#00FFD5]">
+        <p className="org-panel-kicker flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]">
           <Sparkles size={12} />
           Simulación de razonamiento jurídico
         </p>
@@ -133,7 +133,7 @@ export function FlowProcessMap({
 
       <div
         ref={viewportRef}
-        className="relative h-[min(36vh,280px)] min-h-[200px] overflow-hidden rounded-xl border border-[rgba(0,255,213,0.12)] bg-[rgba(7,19,26,0.55)]"
+        className="org-panel-viewport relative h-[min(36vh,280px)] min-h-[200px]"
         onWheel={onWheel}
         onPointerDown={(e) => {
           if ((e.target as HTMLElement).closest("[data-flow-card]")) return;
@@ -196,18 +196,18 @@ export function FlowProcessMap({
                 <button
                   type="button"
                   onClick={() => selectStep(node.id)}
-                  className={`w-full rounded-2xl border p-3 text-left transition ${
+                  className={`org-panel-card w-full rounded-2xl p-3 text-left transition ${
                     isSelected
-                      ? "border-[rgba(0,255,213,0.55)] bg-[rgba(0,255,213,0.14)] shadow-[0_0_32px_rgba(0,255,213,0.25)]"
+                      ? "org-panel-card--selected"
                       : isPast
-                        ? "border-[rgba(0,255,213,0.25)] bg-[rgba(0,255,213,0.06)]"
-                        : "border-[rgba(0,255,213,0.15)] bg-[rgba(16,39,48,0.92)] hover:border-[rgba(0,255,213,0.3)]"
+                        ? "org-panel-card--past"
+                        : "hover:border-[var(--org-accent-border-strong)]"
                   }`}
                 >
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#00FFD5]">
+                  <p className="org-panel-kicker text-[10px] font-semibold uppercase tracking-[0.14em]">
                     Paso {node.stepIndex + 1}
                   </p>
-                  <p className="mt-1 text-sm font-semibold leading-snug text-[#F5F7FA]">{node.label}</p>
+                  <p className="org-panel-title mt-1 text-sm font-semibold leading-snug">{node.label}</p>
                 </button>
               </motion.div>
             );
@@ -222,14 +222,14 @@ export function FlowProcessMap({
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 6 }}
-            className="space-y-3 rounded-2xl border border-[rgba(0,255,213,0.15)] bg-[rgba(7,19,26,0.65)] p-4"
+            className="org-panel-detail space-y-3 p-4"
           >
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#00FFD5]">
+                <p className="org-panel-kicker text-[10px] font-semibold uppercase tracking-[0.12em]">
                   Paso {selected.stepIndex + 1} de {layout.nodes.length}
                 </p>
-                <h4 className="mt-1 text-base font-bold text-[#F5F7FA]">{selected.label}</h4>
+                <h4 className="org-panel-title mt-1 text-base font-bold">{selected.label}</h4>
               </div>
               <p className="max-w-xs rounded-lg border border-[rgba(255,138,0,0.25)] bg-[rgba(255,138,0,0.08)] px-2.5 py-1.5 text-[11px] leading-5 text-amber-100">
                 {stepDetail.reasoningPrompt}
@@ -249,14 +249,14 @@ export function FlowProcessMap({
               <FlowDetailBlock icon={<HelpCircle size={12} />} label="Pregunta de examen" color="#FF8A00">
                 {stepDetail.examQuestion}
                 {showAnswer ? (
-                  <p className="mt-2 rounded-lg bg-[rgba(0,255,213,0.08)] p-2 text-xs text-[#F5F7FA]/85">
+                  <p className="org-panel-text-muted mt-2 rounded-lg bg-[var(--org-accent-soft)] p-2 text-xs">
                     {stepDetail.examAnswer}
                   </p>
                 ) : (
                   <button
                     type="button"
                     onClick={() => setShowAnswer(true)}
-                    className="mt-2 text-xs font-semibold text-[#00FFD5] hover:underline"
+                    className="org-panel-kicker mt-2 text-xs font-semibold hover:underline"
                   >
                     Revelar respuesta
                   </button>
@@ -325,12 +325,12 @@ function FlowDetailBlock({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-[rgba(0,255,213,0.1)] bg-[rgba(16,39,48,0.5)] p-3">
+    <div className="org-panel-block p-3">
       <p className="mb-1.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider" style={{ color }}>
         {icon}
         {label}
       </p>
-      <div className="text-sm leading-6 text-[#F5F7FA]/88">{children}</div>
+      <div className="org-panel-text-soft text-sm leading-6">{children}</div>
     </div>
   );
 }
@@ -349,7 +349,7 @@ function FlowControl({
       type="button"
       aria-label={label}
       onClick={onClick}
-      className="flex h-8 w-8 items-center justify-center rounded-lg border border-[rgba(0,255,213,0.15)] text-[#F5F7FA] hover:text-[#00FFD5]"
+      className="org-panel-control"
     >
       {children}
     </button>

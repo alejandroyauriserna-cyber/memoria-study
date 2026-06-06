@@ -202,9 +202,9 @@ export function FlashcardStudyMode({
             quizlet ? "min-h-[min(48vh,380px)]" : "min-h-56"
           } flex flex-col items-center justify-center text-center`}
         >
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#00FFD5]">Pregunta</p>
+          <p className="org-panel-kicker text-[10px] font-semibold uppercase tracking-[0.2em]">Pregunta</p>
           <p
-            className={`mt-4 font-semibold leading-relaxed text-[#F5F7FA] ${
+            className={`mt-4 font-semibold leading-relaxed org-panel-title ${
               quizlet ? "text-2xl md:text-3xl" : "text-lg"
             }`}
           >
@@ -225,19 +225,19 @@ export function FlashcardStudyMode({
               animate={{ opacity: 1, y: 0 }}
               className="mt-6 w-full max-w-xl space-y-4 text-left"
             >
-              <div className="rounded-xl border border-[rgba(0,255,213,0.15)] bg-[rgba(0,255,213,0.06)] p-4">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-[#00FFD5]">Respuesta</p>
-                <p className="mt-2 text-sm leading-7 text-[#F5F7FA]">{enriched.explanation}</p>
+              <div className="org-panel-recommend p-4">
+                <p className="org-panel-kicker text-[10px] font-semibold uppercase tracking-wider">Respuesta</p>
+                <p className="org-panel-text mt-2 text-sm leading-7">{enriched.explanation}</p>
               </div>
-              <div className="rounded-xl border border-[rgba(0,255,213,0.1)] bg-[rgba(7,19,26,0.45)] p-4">
-                <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-[#00BFFF]">
+              <div className="org-panel-surface-soft p-4">
+                <p className="org-panel-kicker flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider">
                   <Lightbulb size={11} />
                   Explicación ampliada
                 </p>
                 <p className="mt-2 text-xs leading-6 text-muted-foreground">{enriched.explanation}</p>
               </div>
-              <div className="rounded-xl border border-[rgba(0,255,213,0.1)] bg-[rgba(7,19,26,0.45)] p-4">
-                <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-[#00FFD5]">
+              <div className="org-panel-surface-soft p-4">
+                <p className="org-panel-kicker flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider">
                   <GraduationCap size={11} />
                   Ejemplo práctico
                 </p>
@@ -252,7 +252,7 @@ export function FlashcardStudyMode({
                   {enriched.relatedConcepts.map((rel) => (
                     <span
                       key={rel}
-                      className="rounded-lg border border-[rgba(0,255,213,0.12)] bg-[rgba(0,255,213,0.06)] px-2 py-1 text-[11px] text-[#F5F7FA]/85"
+                      className="org-panel-chip px-2 py-1 text-[11px]"
                     >
                       {rel}
                     </span>
@@ -296,7 +296,7 @@ export function FlashcardStudyMode({
               setRevealed(false);
               setIndex((v) => (v - 1 + cards.length) % cards.length);
             }}
-            className="flex h-10 items-center gap-1 rounded-xl border border-[rgba(0,255,213,0.15)] px-3 text-sm text-[#F5F7FA] hover:text-[#00FFD5]"
+            className="org-panel-control h-10 w-auto px-3 text-sm"
           >
             <ChevronLeft size={16} />
             Anterior

@@ -161,7 +161,7 @@ export function ReviewPremiumModule({
                 ? item.id === "examen"
                   ? "bg-[rgba(255,138,0,0.18)] text-amber-200"
                   : "bg-[rgba(0,255,213,0.15)] text-[#00FFD5]"
-                : "text-muted-foreground hover:text-[#F5F7FA]"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             {item.label}
@@ -180,19 +180,19 @@ export function ReviewPremiumModule({
             ].map(({ label, value, icon: Icon }) => (
               <div
                 key={label}
-                className="rounded-xl border border-[rgba(0,255,213,0.12)] bg-[rgba(7,19,26,0.45)] p-3"
+                className="org-panel-stat p-3"
               >
                 <p className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground">
                   <Icon size={11} className="text-[#00FFD5]" />
                   {label}
                 </p>
-                <p className="mt-1 text-xl font-bold text-[#F5F7FA]">{value}</p>
+                <p className="org-panel-title mt-1 text-xl font-bold">{value}</p>
               </div>
             ))}
           </div>
 
           <div>
-            <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#00FFD5]">
+            <p className="org-panel-kicker mb-3 text-[10px] font-semibold uppercase tracking-[0.14em]">
               Dominio por tema
             </p>
             <div className="space-y-3">
@@ -200,7 +200,7 @@ export function ReviewPremiumModule({
                 (item) => (
                   <div key={item.topic}>
                     <div className="mb-1 flex items-center justify-between gap-2 text-sm">
-                      <span className="truncate text-[#F5F7FA]/90">{item.topic}</span>
+                      <span className="org-panel-text-muted truncate">{item.topic}</span>
                       <span className="shrink-0 text-xs font-semibold text-[#00FFD5]">{item.mastery}%</span>
                     </div>
                     <div className="h-2 overflow-hidden rounded-full bg-[rgba(0,255,213,0.08)]">
@@ -222,13 +222,13 @@ export function ReviewPremiumModule({
             </div>
           </div>
 
-          <div className="rounded-xl border border-[rgba(0,255,213,0.12)] bg-[rgba(0,255,213,0.06)] p-4">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-[#00FFD5]">
+          <div className="org-panel-recommend p-4">
+            <p className="org-panel-kicker text-[10px] font-semibold uppercase tracking-wider">
               Recomendaciones automáticas
             </p>
             <ul className="mt-2 space-y-1.5">
               {recommendations.map((rec) => (
-                <li key={rec} className="text-xs leading-5 text-[#F5F7FA]/85">
+                <li key={rec} className="org-panel-text-muted text-xs leading-5">
                   · {rec}
                 </li>
               ))}
@@ -247,17 +247,17 @@ export function ReviewPremiumModule({
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.04 }}
               onClick={() => setSelectedConcept(selectedConcept === index ? null : index)}
-              className={`rounded-xl border p-3 text-left transition ${
+              className={`org-panel-stat rounded-xl border p-3 text-left transition ${
                 selectedConcept === index
-                  ? "border-[rgba(0,255,213,0.35)] bg-[rgba(0,255,213,0.1)]"
-                  : "border-[rgba(0,255,213,0.12)] bg-[rgba(7,19,26,0.45)] hover:border-[rgba(0,255,213,0.25)]"
+                  ? "org-panel-card--active"
+                  : "hover:border-[var(--org-accent-border-strong)]"
               }`}
             >
-              <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#00FFD5]">
+              <p className="org-panel-kicker flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]">
                 <Brain size={12} />
                 Concepto {index + 1}
               </p>
-              <p className="mt-2 text-sm leading-6 text-[#F5F7FA]">{concept}</p>
+              <p className="org-panel-text mt-2 text-sm leading-6">{concept}</p>
             </motion.button>
           ))}
         </div>
@@ -270,7 +270,7 @@ export function ReviewPremiumModule({
             if (!items.length) return null;
             return (
               <div key={level}>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#00FFD5]">
+                <p className="org-panel-kicker mb-2 text-xs font-semibold uppercase tracking-[0.12em]">
                   {difficultyLabel[level]}
                 </p>
                 <div className="space-y-2">
@@ -280,17 +280,17 @@ export function ReviewPremiumModule({
                     return (
                       <div
                         key={globalIndex}
-                        className="overflow-hidden rounded-xl border border-[rgba(0,255,213,0.1)] bg-[rgba(7,19,26,0.35)]"
+                        className="org-panel-accordion"
                       >
                         <button
                           type="button"
                           onClick={() => setOpenIndex(isOpen ? null : globalIndex)}
                           className="flex w-full items-start gap-2 px-3 py-3 text-left"
                         >
-                          <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[rgba(0,255,213,0.12)] text-[10px] font-bold text-[#00FFD5]">
+                          <span className="org-panel-chip flex h-6 w-6 shrink-0 items-center justify-center text-[10px] font-bold">
                             {index + 1}
                           </span>
-                          <span className="flex-1 text-sm leading-6 text-[#F5F7FA]">{item.question}</span>
+                          <span className="org-panel-text flex-1 text-sm leading-6">{item.question}</span>
                           <motion.span animate={{ rotate: isOpen ? 180 : 0 }}>
                             <ChevronDown size={16} className="text-muted-foreground" />
                           </motion.span>
@@ -301,10 +301,10 @@ export function ReviewPremiumModule({
                               initial={{ height: 0, opacity: 0 }}
                               animate={{ height: "auto", opacity: 1 }}
                               exit={{ height: 0, opacity: 0 }}
-                              className="overflow-hidden border-t border-[rgba(0,255,213,0.08)] px-3 py-3"
+                              className="org-panel-accordion__divider overflow-hidden px-3 py-3"
                             >
-                              <p className="text-xs font-semibold text-[#00FFD5]">Respuesta</p>
-                              <p className="mt-1 text-xs leading-6 text-[#F5F7FA]/90">{item.answer}</p>
+                              <p className="org-panel-kicker text-xs font-semibold">Respuesta</p>
+                              <p className="org-panel-text-muted mt-1 text-xs leading-6">{item.answer}</p>
                             </motion.div>
                           ) : null}
                         </AnimatePresence>
@@ -333,10 +333,10 @@ export function ReviewPremiumModule({
             <motion.div
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="rounded-2xl border border-[rgba(0,255,213,0.2)] bg-[rgba(7,19,26,0.55)] p-6 text-center"
+              className="org-panel-detail p-6 text-center"
             >
-              <Trophy size={32} className="mx-auto text-[#00FFD5]" />
-              <p className="mt-3 text-2xl font-bold text-[#F5F7FA]">
+              <Trophy size={32} className="org-panel-kicker mx-auto" />
+              <p className="org-panel-title mt-3 text-2xl font-bold">
                 {examScore.total ? Math.round((examScore.correct / examScore.total) * 100) : 0}%
               </p>
               <p className="mt-1 text-sm text-muted-foreground">
@@ -384,16 +384,16 @@ export function ReviewPremiumModule({
                 return (
                   <div
                     key={`exam-${index}`}
-                    className="rounded-xl border border-[rgba(255,138,0,0.15)] bg-[rgba(7,19,26,0.5)] p-4"
+                    className="org-panel-surface-soft p-4"
                   >
                     <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-200">
                       Pregunta {index + 1} · {item.type.replace("_", " ")}
                     </p>
-                    <p className="mt-2 text-sm font-medium text-[#F5F7FA]">{item.question}</p>
+                    <p className="org-panel-text mt-2 text-sm font-medium">{item.question}</p>
 
                     {item.type === "caso_practico" ? (
                       <textarea
-                        className="mt-3 w-full rounded-lg border border-[rgba(0,255,213,0.15)] bg-[rgba(7,19,26,0.5)] px-3 py-2 text-xs text-[#F5F7FA] disabled:opacity-60"
+                        className="org-panel-block mt-3 w-full rounded-lg px-3 py-2 text-xs disabled:opacity-60"
                         rows={3}
                         placeholder="Escribe tu solución..."
                         value={selected ?? ""}
@@ -458,7 +458,7 @@ export function ReviewPremiumModule({
                           </p>
                           {!isCorrect && item.type !== "caso_practico" ? (
                             <p className="mt-1 text-muted-foreground">
-                              Respuesta correcta: <span className="text-[#F5F7FA]">{item.answer}</span>
+                              Respuesta correcta: <span className="org-panel-title">{item.answer}</span>
                             </p>
                           ) : null}
                           {item.explanation ? (

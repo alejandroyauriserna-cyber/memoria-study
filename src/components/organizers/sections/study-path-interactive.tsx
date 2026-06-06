@@ -108,7 +108,7 @@ export function StudyPathInteractive({
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#00FFD5]">
+          <p className="org-panel-kicker text-[10px] font-semibold uppercase tracking-[0.14em]">
             Ruta de estudio
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
@@ -120,7 +120,7 @@ export function StudyPathInteractive({
             <span>Progreso</span>
             <span>{pathProgressPct}%</span>
           </div>
-          <div className="h-1.5 overflow-hidden rounded-full bg-[rgba(0,255,213,0.08)]">
+          <div className="org-panel-progress-track h-1.5 overflow-hidden rounded-full">
             <motion.div
               className="h-full rounded-full bg-gradient-to-r from-[#00FFD5] to-[#00BFFF]"
               animate={{ width: `${pathProgressPct}%` }}
@@ -159,14 +159,14 @@ export function StudyPathInteractive({
                   setSelectedId(item.id);
                   setGuidedMode(false);
                 }}
-                className={`relative z-[1] flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 transition ${
+                className={`org-panel-node-btn relative z-[1] flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition ${
                   completed
-                    ? "border-[#00FFD5] bg-[#00FFD5] text-[#07131A]"
+                    ? "org-panel-node-btn--done"
                     : active
-                      ? "border-[#00FFD5] bg-[rgba(0,255,213,0.15)] text-[#00FFD5]"
+                      ? "org-panel-node-btn--active"
                       : unlocked
-                        ? "border-[rgba(0,255,213,0.35)] bg-[rgba(16,39,48,0.9)] text-[#00FFD5]"
-                        : "border-[rgba(0,255,213,0.12)] bg-[rgba(16,39,48,0.6)] text-muted-foreground"
+                        ? ""
+                        : "org-panel-node-btn--locked"
                 }`}
               >
                 {completed ? (
@@ -181,14 +181,14 @@ export function StudyPathInteractive({
               <div
                 className={`min-w-0 flex-1 rounded-xl border p-3 transition ${
                   active
-                    ? "border-[rgba(0,255,213,0.4)] bg-[rgba(0,255,213,0.08)]"
+                    ? "org-panel-card org-panel-card--active"
                     : unlocked
-                      ? "border-[rgba(0,255,213,0.12)] bg-[rgba(7,19,26,0.45)] hover:border-[rgba(0,255,213,0.25)]"
-                      : "border-[rgba(0,255,213,0.08)] bg-[rgba(7,19,26,0.25)] opacity-60"
+                      ? "org-panel-surface-soft hover:border-[var(--org-accent-border-strong)]"
+                      : "org-panel-card org-panel-card--locked"
                 }`}
               >
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className={`text-sm font-semibold ${active ? "text-[#F5F7FA]" : "text-[#F5F7FA]/85"}`}>
+                  <p className={`org-panel-title text-sm font-semibold ${active ? "" : "opacity-85"}`}>
                     {item.label}
                   </p>
                   {detail ? (
@@ -225,7 +225,7 @@ export function StudyPathInteractive({
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 6 }}
-            className="rounded-2xl border border-[rgba(0,255,213,0.15)] bg-[rgba(7,19,26,0.55)] p-4"
+            className="org-panel-detail p-4"
           >
             {guidedMode ? (
               <GuidedStudyWalkthrough
@@ -236,10 +236,10 @@ export function StudyPathInteractive({
               />
             ) : (
               <>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#00FFD5]">
+                <p className="org-panel-kicker text-[10px] font-semibold uppercase tracking-[0.12em]">
                   {selected.label}
                 </p>
-                <p className="mt-2 text-sm leading-6 text-[#F5F7FA]/88">{selectedDetail.summary}</p>
+                <p className="org-panel-text-soft mt-2 text-sm leading-6">{selectedDetail.summary}</p>
                 <p className="mt-3 text-xs leading-5 text-muted-foreground">{selectedDetail.simpleExplanation}</p>
                 <div className="mt-4 space-y-2">
                   <GuidedStudyLaunchButton onClick={() => setGuidedMode(true)} />

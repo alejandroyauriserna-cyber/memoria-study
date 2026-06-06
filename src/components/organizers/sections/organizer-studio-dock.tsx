@@ -1,5 +1,6 @@
 "use client";
 
+import { motion } from "framer-motion";
 import {
   BookOpen,
   GitBranch,
@@ -39,26 +40,25 @@ export function OrganizerStudioDock({
   onSelect: (id: StudioPanelId) => void;
 }) {
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-4 z-30 flex justify-center px-4">
-      <div className="organizer-studio-dock pointer-events-auto flex flex-wrap items-center justify-center gap-2 p-2">
+    <div className="pointer-events-none absolute inset-x-0 bottom-5 z-30 flex justify-center px-4">
+      <div className="organizer-studio-dock-premium pointer-events-auto">
         {items.map((item) => {
           const Icon = item.icon;
           const selected = active === item.id;
           return (
-            <button
+            <motion.button
               key={item.id}
               type="button"
               onClick={() => onSelect(selected ? null : item.id)}
-              className={`flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition ${
-                selected
-                  ? "bg-[var(--accent-soft)] text-[var(--accent)]"
-                  : "text-muted-foreground hover:bg-[var(--accent-soft)] hover:text-foreground"
-              }`}
+              whileHover={{ y: -5, scale: 1.08 }}
+              whileTap={{ scale: 0.94 }}
+              transition={{ type: "spring", stiffness: 420, damping: 24 }}
+              className={`organizer-studio-dock-premium__btn${selected ? " is-active" : ""}`}
             >
               <Icon size={14} />
-              {item.label}
+              <span>{item.label}</span>
               {"pro" in item && item.pro ? <PremiumBadge /> : null}
-            </button>
+            </motion.button>
           );
         })}
       </div>

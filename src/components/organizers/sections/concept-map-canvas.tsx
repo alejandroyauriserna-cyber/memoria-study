@@ -260,21 +260,27 @@ export function ConceptMapCanvas({
         </div>
       ) : null}
 
-      <div ref={viewportRef} onWheel={onWheel} className={`study-map-viewport relative overflow-hidden rounded-2xl ${viewportHeight}`}>
+      <div
+        ref={viewportRef}
+        onWheel={onWheel}
+        className={`study-map-viewport relative overflow-hidden ${viewportHeight}${
+          fullscreen ? " organizer-canvas-viewport" : " rounded-2xl"
+        }`}
+      >
         {(hero || fullscreen) && (
-          <div className="map-controls-floating absolute left-3 top-1/2 z-20 -translate-y-1/2">
+          <div className="map-controls-figma absolute left-4 top-1/2 z-20 flex -translate-y-1/2 flex-col gap-3">
             <MapControls
               onZoom={zoom}
               onResetLayout={resetLayout}
               onCenter={centerMap}
               onFit={applyFitView}
-              floating
+              figma
             />
           </div>
         )}
 
         {focusBranchId !== null ? (
-          <div className="absolute right-3 top-3 z-20 rounded-full border border-[rgba(0,255,213,0.25)] bg-[rgba(7,19,26,0.75)] px-3 py-1 text-[11px] font-medium text-[#00FFD5] backdrop-blur-md">
+          <div className="org-panel-focus-badge absolute right-3 top-3 z-20 px-3 py-1 text-[11px] font-medium backdrop-blur-md">
             Enfoque · {branchForId(focusBranchId).name}
           </div>
         ) : null}
@@ -352,16 +358,28 @@ export function ConceptMapCanvas({
                 style={{ left: toPercent(cx, w), top: toPercent(cy, h) }}
               >
                 <div className="relative flex items-center justify-center">
-                  <div className="organizer-map-center-halo absolute -inset-14 rounded-full" aria-hidden />
-                  <div className="organizer-map-center-ring absolute -inset-5 rounded-full" aria-hidden />
                   <div
-                    className="study-map-node tron-node-core organizer-map-center-node relative flex items-center justify-center rounded-full text-center font-bold leading-tight text-[#07131A]"
+                    className={`organizer-map-center-halo absolute -inset-14 rounded-full${
+                      fullscreen ? " organizer-map-center-halo--hero" : ""
+                    }`}
+                    aria-hidden
+                  />
+                  <div
+                    className={`organizer-map-center-ring absolute -inset-5 rounded-full${
+                      fullscreen ? " organizer-map-center-ring--hero" : ""
+                    }`}
+                    aria-hidden
+                  />
+                  <div
+                    className={`study-map-node tron-node-core organizer-map-center-node relative flex items-center justify-center rounded-full text-center font-bold leading-tight text-[#07131A]${
+                      fullscreen ? " organizer-map-center-node--hero" : ""
+                    }`}
                     style={{
-                      minWidth: CENTER_NODE_SIZE,
-                      minHeight: CENTER_NODE_SIZE,
-                      maxWidth: 220,
-                      padding: "12px 16px",
-                      fontSize: title.length > 28 ? "11px" : "13px",
+                      minWidth: fullscreen ? 118 : CENTER_NODE_SIZE,
+                      minHeight: fullscreen ? 118 : CENTER_NODE_SIZE,
+                      maxWidth: fullscreen ? 260 : 220,
+                      padding: fullscreen ? "14px 18px" : "12px 16px",
+                      fontSize: title.length > 28 ? "11px" : fullscreen ? "14px" : "13px",
                     }}
                   >
                     <span className="organizer-map-center-node__shine absolute inset-0 rounded-full" aria-hidden />
@@ -431,7 +449,7 @@ export function ConceptMapCanvas({
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: "100%", opacity: 0 }}
               transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              className="absolute inset-y-0 right-0 z-40 w-[min(100%,400px)] border-l border-[rgba(0,255,213,0.15)] bg-[rgba(7,19,26,0.88)] p-3 shadow-[-12px_0_48px_rgba(0,0,0,0.45)] backdrop-blur-xl"
+              className="org-panel-drawer organizer-studio-panel absolute inset-y-0 right-0 z-40 w-[min(100%,400px)] p-3"
             >
               <StudyAssistantPanel
                 embedded
@@ -471,6 +489,7 @@ function MapControls({
   onFit,
   compact = false,
   floating = false,
+  figma = false,
 }: {
   onZoom: (delta: number) => void;
   onResetLayout: () => void;
@@ -478,7 +497,27 @@ function MapControls({
   onFit: () => void;
   compact?: boolean;
   floating?: boolean;
+  figma?: boolean;
 }) {
+  if (figma) {
+    return (
+      <>
+        <button type="button" aria-label="Ajustar vista" title="Ajustar vista" onClick={onFit} className="map-controls-figma__btn">
+          <Home size={16} />
+        </button>
+        <button type="button" aria-label="Centrar mapa" title="Centrar mapa" onClick={onCenter} className="map-controls-figma__btn">
+          <Crosshair size={16} />
+        </button>
+        <button type="button" aria-label="Restablecer layout" title="Restablecer layout" onClick={onResetLayout} className="map-controls-figma__btn">
+          <RotateCcw size={15} />
+        </button>
+        <button type="button" aria-label="Acercar" title="Acercar" onClick={() => onZoom(0.12)} className="map-controls-figma__btn">
+          <Search size={16} />
+        </button>
+      </>
+    );
+  }
+
   if (floating) {
     return (
       <div className="map-controls-floating__rail flex flex-col gap-1 rounded-2xl p-1.5">

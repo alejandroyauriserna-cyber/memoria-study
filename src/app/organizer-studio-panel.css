@@ -1,0 +1,272 @@
+/* =====================================================
+   ORGANIZER STUDIO PANELS — theme-aware surfaces
+===================================================== */
+
+.organizer-float-sheet,
+.organizer-studio-panel {
+  --org-accent: #00ffd5;
+  --org-accent-soft: rgba(0, 255, 213, 0.08);
+  --org-accent-bg: rgba(0, 255, 213, 0.14);
+  --org-accent-border: rgba(0, 255, 213, 0.12);
+  --org-accent-border-strong: rgba(0, 255, 213, 0.28);
+  --org-panel-bg: rgba(7, 19, 26, 0.96);
+  --org-panel-surface: rgba(7, 19, 26, 0.55);
+  --org-panel-surface-soft: rgba(7, 19, 26, 0.45);
+  --org-panel-surface-muted: rgba(7, 19, 26, 0.25);
+  --org-panel-card: rgba(16, 39, 48, 0.92);
+  --org-panel-block: rgba(16, 39, 48, 0.5);
+  --org-panel-text: #f5f7fa;
+  --org-panel-text-muted: rgba(245, 247, 250, 0.85);
+  --org-panel-text-soft: rgba(245, 247, 250, 0.88);
+}
+
+html:not(.dark) .organizers-studio .organizer-float-sheet,
+html:not(.dark) .organizers-studio .organizer-studio-panel {
+  --org-accent: #0f766e;
+  --org-accent-soft: rgba(13, 148, 136, 0.1);
+  --org-accent-bg: rgba(13, 148, 136, 0.12);
+  --org-accent-border: rgba(15, 23, 42, 0.1);
+  --org-accent-border-strong: rgba(13, 148, 136, 0.28);
+  --org-panel-bg: rgba(255, 255, 255, 0.98);
+  --org-panel-surface: linear-gradient(180deg, #f8fafc, #eef2f7);
+  --org-panel-surface-soft: rgba(248, 250, 252, 0.96);
+  --org-panel-surface-muted: rgba(241, 245, 249, 0.92);
+  --org-panel-card: rgba(255, 255, 255, 0.94);
+  --org-panel-block: rgba(248, 250, 252, 0.95);
+  --org-panel-text: #0f172a;
+  --org-panel-text-muted: rgba(15, 23, 42, 0.72);
+  --org-panel-text-soft: rgba(15, 23, 42, 0.78);
+}
+
+/* Float sheet shell */
+
+.organizer-float-sheet__backdrop {
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+}
+
+.organizer-float-sheet {
+  border: 1px solid rgba(0, 255, 213, 0.2);
+  background: var(--org-panel-bg);
+  box-shadow: 0 0 64px rgba(0, 255, 213, 0.12);
+  backdrop-filter: blur(24px);
+}
+
+.organizer-float-sheet--wide {
+  /* positioning handled in TSX */
+}
+
+.organizer-float-sheet--fullscreen {
+  border-color: rgba(245, 158, 11, 0.25);
+  box-shadow: 0 0 80px rgba(245, 158, 11, 0.15);
+}
+
+.organizer-float-sheet__head {
+  border-bottom: 1px solid rgba(0, 255, 213, 0.12);
+}
+
+.organizer-float-sheet__title {
+  color: var(--org-panel-text);
+}
+
+html:not(.dark) .organizers-studio .organizer-float-sheet__backdrop {
+  background: rgba(15, 23, 42, 0.28);
+}
+
+html:not(.dark) .organizers-studio .organizer-float-sheet {
+  border-color: rgba(15, 23, 42, 0.1);
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.12);
+}
+
+html:not(.dark) .organizers-studio .organizer-float-sheet--fullscreen {
+  border-color: rgba(245, 158, 11, 0.22);
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.1);
+}
+
+html:not(.dark) .organizers-studio .organizer-float-sheet__head {
+  border-bottom-color: rgba(15, 23, 42, 0.08);
+}
+
+/* Shared panel utilities */
+
+.org-panel-kicker {
+  color: var(--org-accent);
+}
+
+.org-panel-viewport {
+  overflow: hidden;
+  border-radius: 0.75rem;
+  border: 1px solid var(--org-accent-border);
+  background: var(--org-panel-surface);
+}
+
+.org-panel-stat,
+.org-panel-surface-soft {
+  border-radius: 0.75rem;
+  border: 1px solid var(--org-accent-border);
+  background: var(--org-panel-surface-soft);
+}
+
+.org-panel-block {
+  border-radius: 0.75rem;
+  border: 1px solid var(--org-accent-border);
+  background: var(--org-panel-block);
+}
+
+.org-panel-detail {
+  border-radius: 1rem;
+  border: 1px solid var(--org-accent-border-strong);
+  background: var(--org-panel-surface-soft);
+}
+
+.org-panel-card {
+  border: 1px solid var(--org-accent-border);
+  background: var(--org-panel-card);
+}
+
+.org-panel-card--selected {
+  border-color: rgba(0, 255, 213, 0.55);
+  background: var(--org-accent-bg);
+  box-shadow: 0 0 32px rgba(0, 255, 213, 0.25);
+}
+
+.org-panel-card--past {
+  border-color: rgba(0, 255, 213, 0.25);
+  background: var(--org-accent-soft);
+}
+
+.org-panel-card--active {
+  border-color: var(--org-accent-border-strong);
+  background: var(--org-accent-soft);
+}
+
+.org-panel-card--locked {
+  border-color: rgba(0, 255, 213, 0.08);
+  background: var(--org-panel-surface-muted);
+  opacity: 0.6;
+}
+
+html:not(.dark) .organizers-studio .org-panel-card--selected {
+  border-color: rgba(13, 148, 136, 0.45);
+  box-shadow: 0 8px 28px rgba(13, 148, 136, 0.14);
+}
+
+.org-panel-title {
+  color: var(--org-panel-text);
+}
+
+.org-panel-text {
+  color: var(--org-panel-text);
+}
+
+.org-panel-text-muted {
+  color: var(--org-panel-text-muted);
+}
+
+.org-panel-text-soft {
+  color: var(--org-panel-text-soft);
+}
+
+.org-panel-control {
+  display: flex;
+  height: 2rem;
+  width: 2rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  border: 1px solid var(--org-accent-border);
+  color: var(--org-panel-text);
+  transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+
+.org-panel-control:hover {
+  color: var(--org-accent);
+  background: var(--org-accent-soft);
+}
+
+.org-panel-progress-track {
+  background: var(--org-accent-soft);
+}
+
+.org-panel-recommend {
+  border-radius: 0.75rem;
+  border: 1px solid var(--org-accent-border);
+  background: var(--org-accent-soft);
+}
+
+.org-panel-accordion {
+  overflow: hidden;
+  border-radius: 0.75rem;
+  border: 1px solid var(--org-accent-border);
+  background: var(--org-panel-surface-muted);
+}
+
+.org-panel-accordion__divider {
+  border-top: 1px solid var(--org-accent-border);
+}
+
+.org-panel-chip {
+  border-radius: 999px;
+  background: var(--org-accent-soft);
+  color: var(--org-accent);
+}
+
+.org-panel-node-btn {
+  border: 2px solid var(--org-accent-border-strong);
+  background: var(--org-panel-card);
+  color: var(--org-accent);
+}
+
+.org-panel-node-btn--done {
+  border-color: var(--org-accent);
+  background: var(--org-accent);
+  color: #07131a;
+}
+
+.org-panel-node-btn--active {
+  border-color: var(--org-accent);
+  background: var(--org-accent-bg);
+  color: var(--org-accent);
+}
+
+.org-panel-node-btn--locked {
+  border-color: var(--org-accent-border);
+  background: var(--org-panel-surface-muted);
+  color: rgba(148, 163, 184, 0.9);
+}
+
+html:not(.dark) .organizers-studio .org-panel-node-btn--done {
+  color: #fff;
+}
+
+.org-panel-drawer {
+  border-left: 1px solid var(--org-accent-border);
+  background: var(--org-panel-bg);
+  box-shadow: -12px 0 48px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(20px);
+}
+
+html:not(.dark) .organizers-studio .org-panel-stat,
+html:not(.dark) .organizers-studio .org-panel-surface-soft,
+html:not(.dark) .organizers-studio .org-panel-block,
+html:not(.dark) .organizers-studio .org-panel-detail,
+html:not(.dark) .organizers-studio .org-panel-accordion {
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+}
+
+html:not(.dark) .organizers-studio .flashcard-premium {
+  color: #0f172a;
+}
+
+html:not(.dark) .organizers-studio .org-panel-tab-active {
+  color: var(--org-accent);
+  background: var(--org-accent-soft);
+}
+
+.org-panel-focus-badge {
+  border-radius: 999px;
+  border: 1px solid var(--org-accent-border-strong);
+  background: var(--org-panel-bg);
+  color: var(--org-accent);
+  backdrop-filter: blur(12px);
+}

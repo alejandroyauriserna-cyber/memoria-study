@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   BookOpen,
   Eye,
@@ -18,7 +18,7 @@ import {
 import { OrganizerCreatedNotice } from "@/components/organizers/organizer-created-notice";
 import { LoadingState } from "@/components/ui/loading-state";
 import { useLoadingProgress } from "@/hooks/use-loading-progress";
-import { OrganizerDetailModal } from "@/components/organizers/organizer-detail-modal";
+import { OrganizerStudioView } from "@/components/organizers/organizer-studio-view";
 import { OrganizerListSkeleton } from "@/components/organizers/organizer-skeleton";
 import { useToast } from "@/components/ui/toast";
 import {
@@ -504,137 +504,147 @@ export function OrganizersWorkspace({
   }
 
   return (
-    <>
-      <div className="organizers-workspace-header mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <h1 className="organizers-workspace-title">Organizadores visuales</h1>
-          <p className="organizers-workspace-subtitle text-sm text-muted-foreground">
-            {organizers.length} organizador{organizers.length === 1 ? "" : "es"} · mapas con IA
-            {filtered.length !== organizers.length ? ` · ${filtered.length} visibles` : ""}
-          </p>
-        </div>
-        <Link
-          href="/library"
-          className="tron-btn-primary inline-flex h-9 shrink-0 items-center gap-2 rounded-xl px-4 text-sm font-semibold"
-        >
-          <BookOpen size={15} /> Nuevo
-        </Link>
-      </div>
-
-      <div className="organizer-glass organizers-filter-bar mb-3 flex flex-col gap-3 p-3 sm:flex-row sm:items-center">
-        <label className="relative min-w-0 flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={15} />
-          <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Buscar..."
-            className="h-10 w-full rounded-xl border-0 bg-foreground/[0.03] pl-9 pr-3 text-sm outline-none ring-accent focus:ring-2"
+    <div className="organizers-workspace-root flex min-h-0 flex-1 flex-col">
+      <AnimatePresence mode="wait">
+        {selected ? (
+          <OrganizerStudioView
+            key={`studio-${selected.id}`}
+            organizer={selected}
+            readOnly={isSharedView}
+            loading={regeneratingId === selected.id}
+            onBack={() => setSelected(null)}
+            onContentUpdate={(organizerId, content) => {
+              const nextContent = content as OrganizerRecord["content"];
+              setOrganizers((current) =>
+                current.map((item) =>
+                  item.id === organizerId ? { ...item, content: nextContent } : item,
+                ),
+              );
+              setSelected((current) =>
+                current?.id === organizerId ? { ...current, content: nextContent } : current,
+              );
+            }}
           />
-        </label>
-        <select
-          value={courseFilter}
-          onChange={(event) => setCourseFilter(event.target.value)}
-          className="h-10 rounded-xl border-0 bg-foreground/[0.03] px-3 text-sm outline-none"
-        >
-          <option value="all">Curso</option>
-          {courses.map((course) => (
-            <option key={course} value={course}>
-              {course}
-            </option>
-          ))}
-        </select>
-        <select
-          value={cycleFilter}
-          onChange={(event) => setCycleFilter(event.target.value)}
-          className="h-10 rounded-xl border-0 bg-foreground/[0.03] px-3 text-sm outline-none"
-        >
-          <option value="all">Ciclo</option>
-          {cycles.map((cycle) => (
-            <option key={cycle.cycleNumber} value={cycle.cycleNumber}>
-              {cycle.cycleLabel}
-            </option>
-          ))}
-        </select>
-        <div className="organizers-view-toggle flex rounded-xl p-1">
-          <button
-            type="button"
-            onClick={() => setViewMode("grid")}
-            className={`flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-medium ${
-              viewMode === "grid" ? "bg-background shadow-sm" : "text-muted-foreground"
-            }`}
+        ) : (
+          <motion.div
+            key="library"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            className="organizers-library px-3 py-5 sm:px-5 sm:py-6"
           >
-            <Grid3X3 size={14} />
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode("list")}
-            className={`flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-medium ${
-              viewMode === "list" ? "bg-background shadow-sm" : "text-muted-foreground"
-            }`}
-          >
-            <LayoutList size={14} />
-          </button>
-        </div>
-      </div>
+            <div className="organizers-library__header">
+              <div className="min-w-0">
+                <h1 className="organizers-workspace-title">Organizadores</h1>
+                <p className="organizers-workspace-subtitle text-sm text-muted-foreground">
+                  {organizers.length} mapa{organizers.length === 1 ? "" : "s"} · estudio visual con IA
+                  {filtered.length !== organizers.length ? ` · ${filtered.length} visibles` : ""}
+                </p>
+              </div>
+              <Link
+                href="/library"
+                className="tron-btn-primary inline-flex h-9 shrink-0 items-center gap-2 rounded-xl px-4 text-sm font-semibold"
+              >
+                <BookOpen size={15} /> Nuevo
+              </Link>
+            </div>
 
-      {organizers.length ? (
-        <>
-          <OrganizerCreatedNotice organizerId={highlightId} created={created} />
-
-          {filtered.length ? (
-            <div
-              className={
-                viewMode === "grid"
-                  ? "grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
-                  : "flex flex-col gap-3"
-              }
-            >
-              {filtered.map((organizer) => (
-                <OrganizerCardItem
-                  key={organizer.id}
-                  organizer={organizer}
-                  viewMode={viewMode}
-                  highlighted={organizer.id === highlightId}
-                  regenerating={regeneratingId === organizer.id}
-                  regenerateLabel={
-                    regeneratingId === organizer.id
-                      ? `${regenerateProgress.stageLabel} ${regenerateProgress.percent}%`
-                      : undefined
-                  }
-                  onView={() => setSelected(organizer)}
-                  onRegenerate={() => handleRegenerate(organizer)}
-                  onDelete={() => setDeleteTarget(organizer)}
-                  onShare={() => void handleShare(organizer)}
+            <div className="organizers-library__filters">
+              <label className="organizers-library__search relative min-w-0">
+                <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={15} />
+                <input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Buscar organizadores..."
+                  className="h-10 w-full rounded-xl border-0 bg-foreground/[0.03] pl-9 pr-3 text-sm outline-none ring-accent focus:ring-2"
                 />
-              ))}
+              </label>
+              <select
+                value={courseFilter}
+                onChange={(event) => setCourseFilter(event.target.value)}
+                className="h-10 rounded-xl border-0 bg-foreground/[0.03] px-3 text-sm outline-none"
+              >
+                <option value="all">Curso</option>
+                {courses.map((course) => (
+                  <option key={course} value={course}>
+                    {course}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={cycleFilter}
+                onChange={(event) => setCycleFilter(event.target.value)}
+                className="h-10 rounded-xl border-0 bg-foreground/[0.03] px-3 text-sm outline-none"
+              >
+                <option value="all">Ciclo</option>
+                {cycles.map((cycle) => (
+                  <option key={cycle.cycleNumber} value={cycle.cycleNumber}>
+                    {cycle.cycleLabel}
+                  </option>
+                ))}
+              </select>
+              <div className="organizers-view-toggle flex rounded-xl p-1">
+                <button
+                  type="button"
+                  onClick={() => setViewMode("grid")}
+                  className={`flex h-8 w-9 items-center justify-center rounded-lg text-xs font-medium ${
+                    viewMode === "grid" ? "bg-background shadow-sm" : "text-muted-foreground"
+                  }`}
+                  aria-label="Vista cuadrícula"
+                >
+                  <Grid3X3 size={14} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("list")}
+                  className={`flex h-8 w-9 items-center justify-center rounded-lg text-xs font-medium ${
+                    viewMode === "list" ? "bg-background shadow-sm" : "text-muted-foreground"
+                  }`}
+                  aria-label="Vista lista"
+                >
+                  <LayoutList size={14} />
+                </button>
+              </div>
             </div>
-          ) : (
-            <div className="organizer-glass rounded-[22px] px-6 py-14 text-center text-sm text-muted-foreground">
-              Sin resultados para tu búsqueda.
-            </div>
-          )}
-        </>
-      ) : (
-        <OrganizersEmptyState />
-      )}
 
-      <OrganizerDetailModal
-        organizer={selected}
-        readOnly={isSharedView}
-        loading={Boolean(selected && regeneratingId === selected.id)}
-        onClose={() => setSelected(null)}
-        onContentUpdate={(organizerId, content) => {
-          const nextContent = content as OrganizerRecord["content"];
-          setOrganizers((current) =>
-            current.map((item) =>
-              item.id === organizerId ? { ...item, content: nextContent } : item,
-            ),
-          );
-          setSelected((current) =>
-            current?.id === organizerId ? { ...current, content: nextContent } : current,
-          );
-        }}
-      />
+            {organizers.length ? (
+              <>
+                <OrganizerCreatedNotice organizerId={highlightId} created={created} />
+
+                {filtered.length ? (
+                  <div className={viewMode === "grid" ? "organizers-library__grid" : "flex flex-col gap-3"}>
+                    {filtered.map((organizer) => (
+                      <OrganizerCardItem
+                        key={organizer.id}
+                        organizer={organizer}
+                        viewMode={viewMode}
+                        highlighted={organizer.id === highlightId}
+                        regenerating={regeneratingId === organizer.id}
+                        regenerateLabel={
+                          regeneratingId === organizer.id
+                            ? `${regenerateProgress.stageLabel} ${regenerateProgress.percent}%`
+                            : undefined
+                        }
+                        onView={() => setSelected(organizer)}
+                        onRegenerate={() => handleRegenerate(organizer)}
+                        onDelete={() => setDeleteTarget(organizer)}
+                        onShare={() => void handleShare(organizer)}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="organizer-glass rounded-[22px] px-6 py-14 text-center text-sm text-muted-foreground">
+                    Sin resultados para tu búsqueda.
+                  </div>
+                )}
+              </>
+            ) : (
+              <OrganizersEmptyState />
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <ConfirmDialog
         open={Boolean(deleteTarget)}
@@ -646,7 +656,7 @@ export function OrganizersWorkspace({
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
       />
-    </>
+    </div>
   );
 }
 

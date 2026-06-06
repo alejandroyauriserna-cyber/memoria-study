@@ -90,7 +90,7 @@ export function VisualMindMapPanel({
           <Wand2 size={28} />
         </div>
         <div className="max-w-md space-y-2">
-          <h4 className="text-lg font-bold text-[#F5F7FA]">Mapa mental visual con IA</h4>
+          <h4 className="org-panel-title text-lg font-bold">Mapa mental visual con IA</h4>
           <p className="text-sm leading-relaxed text-muted-foreground">
             Genera un mapa mental radial con jerarquía visual, colores por categoría, imágenes IA
             y modo tutor al hacer clic en cada concepto.

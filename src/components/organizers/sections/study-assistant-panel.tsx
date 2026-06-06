@@ -39,7 +39,7 @@ function Section({
         {icon}
         {label}
       </p>
-      <div className="text-sm leading-6 text-[#F5F7FA]/88">{children}</div>
+      <div className="text-sm leading-6 org-panel-text-soft">{children}</div>
     </section>
   );
 }
@@ -71,9 +71,9 @@ export function StudyAssistantPanel({
 
   const content = (
     <>
-      <div className="flex items-start justify-between gap-2 border-b border-[rgba(0,255,213,0.12)] px-4 py-3">
+      <div className="flex items-start justify-between gap-2 border-b border-[var(--org-accent-border)] px-4 py-3">
         <div className="min-w-0">
-          <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#00FFD5]">
+          <p className="org-panel-kicker flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]">
             <Sparkles size={12} />
             Asistente de estudio
           </p>
@@ -84,7 +84,7 @@ export function StudyAssistantPanel({
             <BranchIcon size={11} />
             {branch.name}
           </div>
-          <h4 className="text-base font-bold leading-snug text-[#F5F7FA]">{node.label}</h4>
+          <h4 className="org-panel-title text-base font-bold leading-snug">{node.label}</h4>
         </div>
         <div className="flex shrink-0 gap-1">
           {!embedded ? (
@@ -145,9 +145,9 @@ export function StudyAssistantPanel({
         {detail.previousConcepts.length || detail.derivedConcepts.length ? (
           <section className="grid gap-2 sm:grid-cols-2">
             {detail.previousConcepts.length ? (
-              <div className="rounded-xl border border-[rgba(0,255,213,0.1)] bg-[rgba(7,19,26,0.4)] p-3">
+              <div className="org-panel-block p-3">
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Conceptos previos</p>
-                <ul className="mt-2 space-y-1 text-xs text-[#F5F7FA]/85">
+                <ul className="org-panel-text-muted mt-2 space-y-1 text-xs">
                   {detail.previousConcepts.map((item) => (
                     <li key={item}>· {item}</li>
                   ))}
@@ -155,9 +155,9 @@ export function StudyAssistantPanel({
               </div>
             ) : null}
             {detail.derivedConcepts.length ? (
-              <div className="rounded-xl border border-[rgba(0,255,213,0.1)] bg-[rgba(7,19,26,0.4)] p-3">
+              <div className="org-panel-block p-3">
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Conceptos derivados</p>
-                <ul className="mt-2 space-y-1 text-xs text-[#F5F7FA]/85">
+                <ul className="org-panel-text-muted mt-2 space-y-1 text-xs">
                   {detail.derivedConcepts.map((item) => (
                     <li key={item}>· {item}</li>
                   ))}
@@ -177,7 +177,7 @@ export function StudyAssistantPanel({
               {detail.relations.map((rel) => (
                 <span
                   key={rel}
-                  className="rounded-lg border border-[rgba(0,255,213,0.12)] bg-[rgba(0,255,213,0.06)] px-2.5 py-1 text-xs text-[#F5F7FA]/85"
+                  className="org-panel-chip rounded-lg px-2.5 py-1 text-xs"
                 >
                   {rel}
                 </span>
@@ -187,7 +187,7 @@ export function StudyAssistantPanel({
         ) : null}
       </div>
 
-      <div className="flex flex-col gap-2 border-t border-[rgba(0,255,213,0.1)] p-3">
+      <div className="flex flex-col gap-2 border-t border-[var(--org-accent-border)] p-3">
         <GuidedStudyLaunchButton onClick={() => setGuidedMode(true)} />
         <div className="flex flex-col gap-2 sm:flex-row">
         <button
@@ -196,7 +196,7 @@ export function StudyAssistantPanel({
           className={`flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg text-[11px] font-semibold transition ${
             focusMode
               ? "bg-[#00FFD5] text-[#07131A] shadow-[0_0_16px_rgba(0,255,213,0.35)]"
-              : "border border-[rgba(0,255,213,0.2)] text-[#F5F7FA] hover:bg-[rgba(0,255,213,0.08)]"
+              : "org-panel-control h-9 w-auto flex-1 border px-2"
           }`}
         >
           <Focus size={13} />
@@ -239,10 +239,10 @@ export function StudyAssistantPanel({
     return (
       <div
         data-study-panel
-        className={`flex h-full min-h-0 flex-col overflow-hidden ${
+        className={`organizer-studio-panel flex h-full min-h-0 flex-col overflow-hidden ${
           drawer
             ? ""
-            : "rounded-2xl border border-[rgba(0,255,213,0.2)] bg-[rgba(16,39,48,0.88)] shadow-[0_0_48px_rgba(0,255,213,0.1)] backdrop-blur-2xl"
+            : "org-panel-drawer rounded-2xl"
         }`}
       >
         {content}

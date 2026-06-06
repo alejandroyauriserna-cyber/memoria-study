@@ -7,6 +7,8 @@ import "./fuentes-modern.css";
 import "./profile-modern.css";
 import "./auth-modern.css";
 import "./organizers-2026.css";
+import "./organizer-studio-panel.css";
+import "./organizer-studio-experience.css";
 import { env } from "@/lib/env";
 
 const appUrl = env.appUrl.replace(/\/$/, "");

@@ -79,25 +79,23 @@ export default async function OrganizersPage({
   return (
     <AppShell>
       <ToastProvider>
-        <div className="organizers-studio min-h-0 flex-1">
-          <section className="ms-page mx-auto max-w-[1400px] px-3 py-6 sm:px-5 sm:py-8">
-            {shareInvalid ? (
-              <div className="organizer-glass mb-4 rounded-2xl border border-red-500/20 px-5 py-4 text-sm text-red-400">
-                El enlace de organizador no es válido o dejó de estar compartido.
-              </div>
-            ) : null}
+        <div className="organizers-studio flex min-h-[calc(100dvh-4.5rem)] flex-1 flex-col">
+          {shareInvalid ? (
+            <div className="organizer-glass mx-auto mb-4 mt-6 max-w-[1280px] rounded-2xl border border-red-500/20 px-5 py-4 text-sm text-red-400">
+              El enlace de organizador no es válido o dejó de estar compartido.
+            </div>
+          ) : null}
 
-            <OrganizersWorkspace
-              initialOrganizers={organizers}
-              highlightId={newOrganizerId}
-              created={created === "1"}
-              sharedOrganizer={sharedOrganizer}
-            />
+          <OrganizersWorkspace
+            initialOrganizers={organizers}
+            highlightId={newOrganizerId}
+            created={created === "1"}
+            sharedOrganizer={sharedOrganizer}
+          />
 
-            {error ? (
-              <p className="mt-4 text-sm text-red-500">{error.message}</p>
-            ) : null}
-          </section>
+          {error ? (
+            <p className="mx-auto mt-4 max-w-[1280px] px-3 text-sm text-red-500">{error.message}</p>
+          ) : null}
         </div>
       </ToastProvider>
     </AppShell>
