@@ -1,6 +1,7 @@
 import type { OrganizerContent } from "@/lib/organizers/parse-content";
 import type { OrganizerTypeBadgeVariant } from "@/lib/organizers/type-badge";
 import { layoutStudyMapNodes } from "@/lib/organizers/concept-map-study";
+import { collectStudyConceptLabels } from "@/lib/organizers/enrich-study-content";
 
 export type OrganizerCardPreviewStats = {
   label: string;
@@ -29,16 +30,17 @@ function repasoCount(parsed: OrganizerContent) {
 }
 
 function juridicoCount(parsed: OrganizerContent) {
+  const studyConcepts = collectStudyConceptLabels(parsed);
+  if (studyConcepts.length >= 2) {
+    return studyConcepts.length;
+  }
+
   let count = 0;
   if (parsed.summary?.trim()) count += 1;
   count += parsed.visualSummary?.conceptCards?.length ?? 0;
   count += parsed.visualSummary?.comparisons?.length ?? 0;
   count += parsed.visualSummary?.legalTables?.length ?? 0;
-  count += parsed.reviewBundle?.keyConcepts?.length ?? 0;
   if (parsed.simplifiedExplanation?.trim()) count += 1;
-  if (parsed.aiAnalysis?.conceptsDetected?.length) {
-    count += parsed.aiAnalysis.conceptsDetected.length;
-  }
   return count;
 }
 
@@ -103,13 +105,17 @@ export function resolveOrganizerCardPreview(
   }
 
   const juridico = juridicoCount(parsed);
+  const studyConcepts = collectStudyConceptLabels(parsed);
   if (juridico > 0) {
     candidates.push({
-      label: "JURÍDICO",
+      label: studyConcepts.length >= 2 ? "CONCEPTOS" : "JURÍDICO",
       count: juridico,
-      unit: pluralize(juridico, "sección", "secciones"),
-      variant: "juridico",
-      score: juridico * 70,
+      unit:
+        studyConcepts.length >= 2
+          ? pluralize(juridico, "concepto", "conceptos")
+          : pluralize(juridico, "sección", "secciones"),
+      variant: studyConcepts.length >= 2 ? "mapa" : "juridico",
+      score: juridico * (studyConcepts.length >= 2 ? 95 : 70),
     });
   }
 
@@ -138,19 +144,21 @@ export type OrganizerCardMeta = {
 
 export function resolveOrganizerCardMeta(parsed: OrganizerContent): OrganizerCardMeta {
   const rawNodes = parsed.conceptMap?.nodes?.filter(Boolean) ?? [];
+  const studyConcepts = collectStudyConceptLabels(parsed);
+  const conceptNodes = rawNodes.length >= 2 ? rawNodes : studyConcepts;
 
-  if (rawNodes.length > 0) {
-    const layout = layoutStudyMapNodes(parsed.conceptMap?.title, rawNodes);
+  if (conceptNodes.length > 0) {
+    const layout = layoutStudyMapNodes(parsed.conceptMap?.title, conceptNodes);
     const branchIds = new Set(layout.nodes.map((node) => node.branchId));
 
     return {
-      conceptCount: rawNodes.length,
+      conceptCount: conceptNodes.length,
       branchCount: branchIds.size,
-      hasConceptMap: true,
+      hasConceptMap: rawNodes.length >= 2,
     };
   }
 
-  let branchCount = parsed.hierarchy?.branches?.filter(Boolean).length ?? 0;
+  const branchCount = parsed.hierarchy?.branches?.filter(Boolean).length ?? 0;
 
   return {
     conceptCount: 0,

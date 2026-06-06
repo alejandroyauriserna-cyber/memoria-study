@@ -9,6 +9,8 @@ export function buildReviewBundleFallback(input: {
   flashcards?: Array<{ question?: string; answer?: string }>;
   reviewQuestions?: string[];
   conceptNodes?: string[];
+  visualConceptTitles?: string[];
+  detectedConcepts?: string[];
   reviewBundle?: ReviewBundle;
 }): ReviewBundle {
   if (input.reviewBundle?.examQuestions?.length) {
@@ -19,6 +21,8 @@ export function buildReviewBundleFallback(input: {
     input.reviewBundle?.keyConcepts?.length
       ? input.reviewBundle.keyConcepts
       : input.conceptNodes?.slice(0, 8) ??
+        input.visualConceptTitles?.slice(0, 8) ??
+        input.detectedConcepts?.slice(0, 8) ??
         input.flashcards?.slice(0, 6).map((c) => c.question ?? c.answer ?? "").filter(Boolean) ??
         splitSummaryConcepts(input.summary);
 
@@ -145,6 +149,8 @@ export function mergeReviewContent(parsed: OrganizerContent): ReviewBundle {
     flashcards: parsed.flashcards,
     reviewQuestions: parsed.reviewQuestions,
     conceptNodes: parsed.conceptMap?.nodes,
+    visualConceptTitles: parsed.visualSummary?.conceptCards?.map((card) => card.title),
+    detectedConcepts: parsed.aiAnalysis?.conceptsDetected,
     reviewBundle: parsed.reviewBundle,
   });
 }

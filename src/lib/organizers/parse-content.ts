@@ -1,6 +1,7 @@
 import type { VisualMindMap } from "@/lib/organizers/visual-mind-map-types";
 import type { AcademicInfographic } from "@/lib/organizers/academic-infographic-types";
 import type { VisualPremiumPrompt } from "@/lib/organizers/visual-prompt-types";
+import { enrichOrganizerStudySurfaces } from "@/lib/organizers/enrich-study-content";
 
 export type OrganizerFlashcard = {
   question?: string;
@@ -82,7 +83,7 @@ export function parseOrganizerContent(content: unknown): OrganizerContent {
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
       return {};
     }
-    return parsed as OrganizerContent;
+    return enrichOrganizerStudySurfaces(parsed as OrganizerContent);
   } catch {
     return {};
   }

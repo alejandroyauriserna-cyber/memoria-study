@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { enrichOrganizerStudySurfaces } from "@/lib/organizers/enrich-study-content";
 
 const MAX_CONCEPT_NODES = 14;
 const MAX_HIERARCHY_BRANCHES = 12;
@@ -858,7 +859,7 @@ export function normalizeOrganizerContent(content: OrganizerContentOutput): Stor
       .slice(0, MAX_REVIEW_QUESTIONS);
   }
 
-  return normalized;
+  return enrichOrganizerStudySurfaces(normalized);
 }
 
 export function assertOrganizerHasContent(content: StoredOrganizerContent) {
