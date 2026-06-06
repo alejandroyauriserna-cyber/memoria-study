@@ -480,8 +480,19 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
     const scope = { type: "chapter" as const, chapterId: chapter.id };
     setTutorScope(scope);
     setPracticeExam(false);
-    setCurrentPage(chapter.startPage);
-    updateCurrentPage(materialId, chapter.startPage);
+    setActiveHighlightId(null);
+    setSourcesStale(false);
+
+    const isInsideChapter =
+      currentPage >= chapter.startPage && currentPage <= chapter.endPage;
+
+    if (isInsideChapter) {
+      updateCurrentPage(materialId, currentPage);
+    } else {
+      setCurrentPage(chapter.startPage);
+      updateCurrentPage(materialId, chapter.startPage);
+    }
+
     void askTutor("explain_chapter", { scope, chapterId: chapter.id, skipCache: true });
   }
 
