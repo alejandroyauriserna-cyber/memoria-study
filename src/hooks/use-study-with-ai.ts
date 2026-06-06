@@ -73,8 +73,13 @@ export function useStudyWithAi(materialId: string | undefined) {
     setIsGenerating(true);
     setError("");
 
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 300_000);
+
     try {
-      const response = await fetch(`/api/organizers/create?materialId=${materialId}`);
+      const response = await fetch(`/api/organizers/create?materialId=${materialId}`, {
+        signal: controller.signal,
+      });
       const payload = await response.json();
 
       if (!response.ok) {
@@ -90,8 +95,16 @@ export function useStudyWithAi(materialId: string | undefined) {
 
       window.location.href = redirectUrl;
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Error creando el organizador.");
+      const message =
+        caught instanceof Error && caught.name === "AbortError"
+          ? "La generación tardó demasiado. Intenta de nuevo con un PDF más corto o en unos minutos."
+          : caught instanceof Error
+            ? caught.message
+            : "Error creando el organizador.";
+      setError(message);
       setIsGenerating(false);
+    } finally {
+      window.clearTimeout(timeoutId);
     }
   }, [isGenerating, materialId]);
 

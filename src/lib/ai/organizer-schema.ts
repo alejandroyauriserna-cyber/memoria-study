@@ -224,13 +224,97 @@ function truncateStrings(items: unknown, max: number): string[] {
     .slice(0, max);
 }
 
+function withNullDefaults<T extends Record<string, unknown>>(item: T, keys: Array<keyof T>) {
+  const next = { ...item };
+  for (const key of keys) {
+    if (next[key] === undefined) {
+      next[key] = null as T[keyof T];
+    }
+  }
+  return next;
+}
+
+/** Gemini y otros proveedores omiten campos null; Zod nullable() exige null explícito. */
+function coerceProviderNullables(raw: unknown): unknown {
+  if (Array.isArray(raw)) {
+    return raw.map(coerceProviderNullables);
+  }
+
+  if (!raw || typeof raw !== "object") {
+    return raw;
+  }
+
+  const input = raw as Record<string, unknown>;
+  const output: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(input)) {
+    output[key] = value === undefined ? null : coerceProviderNullables(value);
+  }
+
+  if (Array.isArray(output.questions)) {
+    output.questions = output.questions.map((item) =>
+      item && typeof item === "object" && !Array.isArray(item)
+        ? withNullDefaults(item as Record<string, unknown>, ["difficulty", "type", "options"])
+        : item,
+    );
+  }
+
+  if (Array.isArray(output.examQuestions)) {
+    output.examQuestions = output.examQuestions.map((item) =>
+      item && typeof item === "object" && !Array.isArray(item)
+        ? withNullDefaults(item as Record<string, unknown>, ["options", "explanation"])
+        : item,
+    );
+  }
+
+  if (Array.isArray(output.flashcards)) {
+    output.flashcards = output.flashcards.map((item) =>
+      item && typeof item === "object" && !Array.isArray(item)
+        ? withNullDefaults(item as Record<string, unknown>, ["difficulty"])
+        : item,
+    );
+  }
+
+  if (Array.isArray(output.nodes)) {
+    output.nodes = output.nodes.map((item) =>
+      item && typeof item === "object" && !Array.isArray(item)
+        ? withNullDefaults(item as Record<string, unknown>, [
+            "group",
+            "explanation",
+            "legalBasis",
+            "example",
+            "relatedConcepts",
+          ])
+        : item,
+    );
+  }
+
+  if (Array.isArray(output.edges)) {
+    output.edges = output.edges.map((item) =>
+      item && typeof item === "object" && !Array.isArray(item)
+        ? withNullDefaults(item as Record<string, unknown>, ["label"])
+        : item,
+    );
+  }
+
+  if (Array.isArray(output.events)) {
+    output.events = output.events.map((item) =>
+      item && typeof item === "object" && !Array.isArray(item)
+        ? withNullDefaults(item as Record<string, unknown>, ["date"])
+        : item,
+    );
+  }
+
+  return output;
+}
+
 /** Recorta arrays antes del parseo para tolerar respuestas que exceden límites. */
 export function preprocessOrganizerPayload(raw: unknown): unknown {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
     return raw;
   }
 
-  const input = raw as Record<string, unknown>;
+  const input = coerceProviderNullables(raw) as Record<string, unknown>;
   const output: Record<string, unknown> = { ...input };
 
   if (output.conceptMap && typeof output.conceptMap === "object" && !Array.isArray(output.conceptMap)) {

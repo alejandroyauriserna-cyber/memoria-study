@@ -31,6 +31,26 @@ export class OrganizerGenerationError extends Error {
 const USER_FRIENDLY_ERROR =
   "No pudimos generar el organizador con IA en este momento. Por favor, inténtalo de nuevo en unos minutos.";
 
+const PROVIDER_TIMEOUT_MS = 90_000;
+
+function withProviderTimeout<T>(promise: Promise<T>, provider: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error(`${provider} excedió el tiempo límite de ${PROVIDER_TIMEOUT_MS / 1000}s.`));
+    }, PROVIDER_TIMEOUT_MS);
+
+    promise
+      .then((value) => {
+        clearTimeout(timer);
+        resolve(value);
+      })
+      .catch((error) => {
+        clearTimeout(timer);
+        reject(error);
+      });
+  });
+}
+
 function parseOrganizerJson(raw: string) {
   const cleaned = raw
     .trim()
@@ -102,17 +122,31 @@ async function fetchGeminiOrganizer(input: {
   prompt: string;
 }) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${input.model}:generateContent?key=${input.apiKey}`;
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      contents: [{ role: "user", parts: [{ text: input.prompt }] }],
-      generationConfig: {
-        responseMimeType: "application/json",
-        temperature: 0.2,
-      },
-    }),
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), PROVIDER_TIMEOUT_MS);
+
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [{ text: input.prompt }] }],
+        generationConfig: {
+          responseMimeType: "application/json",
+          temperature: 0.2,
+        },
+      }),
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error(`Gemini excedió el tiempo límite de ${PROVIDER_TIMEOUT_MS / 1000}s.`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   const payload = await response.json();
 
@@ -129,22 +163,36 @@ async function fetchGeminiOrganizer(input: {
 }
 
 async function fetchXaiOrganizer(input: { apiKey: string; model: string; prompt: string }) {
-  const response = await fetch("https://api.x.ai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${input.apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: input.model,
-      temperature: 0.2,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT_ORGANIZER },
-        { role: "user", content: input.prompt },
-      ],
-    }),
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), PROVIDER_TIMEOUT_MS);
+
+  let response: Response;
+  try {
+    response = await fetch("https://api.x.ai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${input.apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: input.model,
+        temperature: 0.2,
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT_ORGANIZER },
+          { role: "user", content: input.prompt },
+        ],
+      }),
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error(`xAI excedió el tiempo límite de ${PROVIDER_TIMEOUT_MS / 1000}s.`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (!response.ok) {
     throw new Error(`xAI falló (${response.status}): ${await response.text()}`);
@@ -225,14 +273,7 @@ export async function generateOrganizerContent(input: {
 
   const providers: Array<{ name: string; run: () => Promise<StoredOrganizerContent> }> = [];
 
-  if (env.openRouterApiKey) {
-    providers.push({ name: "OpenRouter", run: () => tryOpenRouterOrganizer(userPrompt) });
-  }
-
-  if (env.openAiApiKey) {
-    providers.push({ name: "OpenAI", run: () => tryOpenAiOrganizer(userPrompt) });
-  }
-
+  // Gemini primero: suele ser el proveedor más estable en este proyecto.
   if (env.geminiApiKey) {
     providers.push({
       name: "Gemini",
@@ -245,6 +286,14 @@ export async function generateOrganizerContent(input: {
           }),
         ),
     });
+  }
+
+  if (env.openAiApiKey) {
+    providers.push({ name: "OpenAI", run: () => tryOpenAiOrganizer(userPrompt) });
+  }
+
+  if (env.openRouterApiKey) {
+    providers.push({ name: "OpenRouter", run: () => tryOpenRouterOrganizer(userPrompt) });
   }
 
   if (env.xaiApiKey) {
@@ -263,7 +312,7 @@ export async function generateOrganizerContent(input: {
 
   for (const provider of providers) {
     try {
-      return await provider.run();
+      return await withProviderTimeout(provider.run(), provider.name);
     } catch (error) {
       logProviderFailure(provider.name, error);
     }
