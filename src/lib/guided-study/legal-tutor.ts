@@ -169,6 +169,11 @@ export async function askLegalStudyTutor(input: {
     "first_cycle",
   ];
   const temperature = input.action === "exam_mode" ? 0.45 : teachingActions.includes(input.action) ? 0.38 : 0.32;
+  const activeSources: LegalSourceAttribution[] = enabledSources.map((s) => ({
+    sourceId: s.id,
+    title: s.title,
+    category: s.category,
+  }));
 
   let raw: string;
   try {
@@ -196,12 +201,6 @@ export async function askLegalStudyTutor(input: {
       activeSources,
     };
   }
-
-  const activeSources: LegalSourceAttribution[] = enabledSources.map((s) => ({
-    sourceId: s.id,
-    title: s.title,
-    category: s.category,
-  }));
 
   try {
     const parsed = parseTutorResponse(raw);
