@@ -208,30 +208,20 @@ async function fetchXaiOrganizer(input: { apiKey: string; model: string; prompt:
   return parseOrganizerJson(text);
 }
 
-async function tryOpenRouterOrganizer(userPrompt: string) {
-  const openrouter = new OpenAI({
-    apiKey: env.openRouterApiKey!,
-    baseURL: "https://openrouter.ai/api/v1",
+async function fetchOpenRouterOrganizer(input: { prompt: string }) {
+  const { generateOpenRouterTextOnly } = await import("@/lib/ai/generate-text-with-fallback");
+  const result = await generateOpenRouterTextOnly({
+    prompt: input.prompt,
+    temperature: 0.2,
+    json: true,
   });
 
-  return generateWithSummaryRetries(async () => {
-    const response = await openrouter.responses.parse({
-      model: env.openRouterModel,
-      input: [
-        { role: "system", content: SYSTEM_PROMPT_ORGANIZER },
-        { role: "user", content: userPrompt },
-      ],
-      text: {
-        format: zodTextFormat(organizerContentSchema, "organizer_content"),
-      },
-    });
+  console.info(`[organizer-ai] OpenRouter (${result.model}).`);
+  return parseOrganizerJson(result.text);
+}
 
-    if (!response.output_parsed) {
-      throw new MissingSummaryError();
-    }
-
-    return parseOrganizerContent(response.output_parsed);
-  });
+async function tryOpenRouterOrganizer(providerPrompt: string) {
+  return generateWithSummaryRetries(() => fetchOpenRouterOrganizer({ prompt: providerPrompt }));
 }
 
 async function tryOpenAiOrganizer(userPrompt: string) {
@@ -288,12 +278,15 @@ export async function generateOrganizerContent(input: {
     });
   }
 
-  if (env.openAiApiKey) {
-    providers.push({ name: "OpenAI", run: () => tryOpenAiOrganizer(userPrompt) });
+  if (env.openRouterApiKey) {
+    providers.push({
+      name: "OpenRouter (DeepSeek gratis)",
+      run: () => tryOpenRouterOrganizer(providerPrompt),
+    });
   }
 
-  if (env.openRouterApiKey) {
-    providers.push({ name: "OpenRouter", run: () => tryOpenRouterOrganizer(userPrompt) });
+  if (env.openAiApiKey) {
+    providers.push({ name: "OpenAI", run: () => tryOpenAiOrganizer(userPrompt) });
   }
 
   if (env.xaiApiKey) {

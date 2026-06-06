@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { generateGeminiText } from "@/lib/ai/gemini-text";
+import { generateTextWithFallback } from "@/lib/ai/generate-text-with-fallback";
 import {
   GUIDED_STUDY_SYSTEM_ROLE,
   buildAnalyzeDocumentPrompt,
@@ -112,7 +112,7 @@ export async function analyzeDocumentForStudy(input: {
   }
 
   try {
-    const raw = await generateGeminiText({
+    const { text: raw } = await generateTextWithFallback({
       prompt: `${GUIDED_STUDY_SYSTEM_ROLE}\n\n${buildAnalyzeDocumentPrompt({
         title: input.title,
         totalPages,
@@ -170,17 +170,32 @@ export async function askLegalStudyTutor(input: {
   ];
   const temperature = input.action === "exam_mode" ? 0.45 : teachingActions.includes(input.action) ? 0.38 : 0.32;
 
-  const raw = await generateGeminiText({
-    prompt: `${GUIDED_STUDY_SYSTEM_ROLE}\n\n${buildTutorUserPrompt({
-      ...input,
-      legalBaseBlock: indexedNormativeBlock,
-      sourcesBlock: sourcesBlock || undefined,
-      strictNormativeMode,
-      structured,
-    })}`,
-    temperature,
-    json: true,
-  });
+  let raw: string;
+  try {
+    const result = await generateTextWithFallback({
+      prompt: `${GUIDED_STUDY_SYSTEM_ROLE}\n\n${buildTutorUserPrompt({
+        ...input,
+        legalBaseBlock: indexedNormativeBlock,
+        sourcesBlock: sourcesBlock || undefined,
+        strictNormativeMode,
+        structured,
+      })}`,
+      temperature,
+      json: true,
+    });
+    raw = result.text;
+    if (result.provider !== "gemini") {
+      console.info(`[guided-study/tutor] Respuesta generada con ${result.provider} (${result.model}).`);
+    }
+  } catch (error) {
+    console.error("[guided-study/tutor] Todos los proveedores fallaron:", error);
+    return {
+      analysis: buildFallbackAnalysis(input.pageText, input.pageNumber),
+      customReply:
+        "El profesor IA no está disponible ahora (Gemini sin cuota y respaldo OpenRouter/DeepSeek no configurado o agotado). Revisa OPENROUTER_API_KEY en el servidor o inténtalo más tarde.",
+      activeSources,
+    };
+  }
 
   const activeSources: LegalSourceAttribution[] = enabledSources.map((s) => ({
     sourceId: s.id,
