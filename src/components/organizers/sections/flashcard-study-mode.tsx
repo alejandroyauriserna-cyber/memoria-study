@@ -159,33 +159,33 @@ export function FlashcardStudyMode({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#00FFD5]">
+        <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">
           <BookOpen size={12} />
           Modo estudio · Aprender
         </p>
         <p className="text-xs text-muted-foreground">
-          Dominio global: <span className="font-semibold text-[#00FFD5]">{overallMastery}%</span>
+          Dominio global: <span className="font-semibold text-accent">{overallMastery}%</span>
         </p>
       </div>
 
       <div className="flex items-center justify-between text-[10px]">
         <span
-          className={`rounded-full px-2 py-0.5 ${
+          className={`rounded-full px-2 py-0.5 font-semibold ${
             progress.mastery < 40
-              ? "bg-red-500/15 text-red-300"
+              ? "bg-red-100 text-red-800 dark:bg-red-500/15 dark:text-red-300"
               : progress.mastery < 70
-                ? "bg-amber-500/15 text-amber-200"
-                : "bg-[rgba(0,255,213,0.12)] text-[#00FFD5]"
+                ? "bg-amber-100 text-amber-900 dark:bg-amber-500/15 dark:text-amber-200"
+                : "bg-accent-soft text-accent"
           }`}
         >
           {progress.mastery < 40 ? "Por repasar" : progress.mastery < 70 ? "En progreso" : "Dominado"}
         </span>
         {card.difficulty ? (
-          <span className="text-[#00FFD5]/80">{difficultyLabel[card.difficulty]}</span>
+          <span className="font-medium text-accent/90">{difficultyLabel[card.difficulty]}</span>
         ) : null}
       </div>
 
-      <div className="h-1.5 overflow-hidden rounded-full bg-[rgba(0,255,213,0.08)]">
+      <div className="h-1.5 overflow-hidden rounded-full bg-accent-soft">
         <motion.div
           className="h-full rounded-full bg-gradient-to-r from-[#00FFD5] to-[#00BFFF]"
           animate={{ width: `${((index + 1) / cards.length) * 100}%` }}
@@ -215,7 +215,7 @@ export function FlashcardStudyMode({
             <button
               type="button"
               onClick={() => setRevealed(true)}
-              className="mt-8 rounded-xl bg-[rgba(0,255,213,0.15)] px-6 py-3 text-sm font-semibold text-[#00FFD5] transition hover:bg-[rgba(0,255,213,0.22)]"
+              className="mt-8 rounded-xl bg-accent-soft px-6 py-3 text-sm font-semibold text-accent transition hover:bg-accent/15"
             >
               Mostrar respuesta
             </button>
@@ -269,7 +269,7 @@ export function FlashcardStudyMode({
           <button
             type="button"
             onClick={() => persistRate(false)}
-            className="flex items-center justify-center gap-2 rounded-xl border border-red-400/30 bg-red-500/10 py-3 text-sm font-semibold text-red-200 transition hover:bg-red-500/15"
+            className="flex items-center justify-center gap-2 rounded-xl border border-red-300 bg-red-50 py-3 text-sm font-semibold text-red-800 transition hover:bg-red-100 dark:border-red-400/30 dark:bg-red-500/10 dark:text-red-200 dark:hover:bg-red-500/15"
           >
             <ThumbsDown size={16} />
             Necesito repasarlo
@@ -277,7 +277,7 @@ export function FlashcardStudyMode({
           <button
             type="button"
             onClick={() => persistRate(true)}
-            className="flex items-center justify-center gap-2 rounded-xl border border-[rgba(0,255,213,0.35)] bg-[rgba(0,255,213,0.12)] py-3 text-sm font-semibold text-[#00FFD5] transition hover:bg-[rgba(0,255,213,0.18)]"
+            className="flex items-center justify-center gap-2 rounded-xl border border-accent/35 bg-accent-soft py-3 text-sm font-semibold text-accent transition hover:bg-accent/15"
           >
             <ThumbsUp size={16} />
             Ya lo sabía
@@ -307,7 +307,7 @@ export function FlashcardStudyMode({
               setRevealed(false);
               setIndex((v) => (v + 1) % cards.length);
             }}
-            className="flex h-10 items-center gap-1 rounded-xl border border-[rgba(0,255,213,0.15)] px-3 text-sm text-[#00FFD5] hover:bg-[rgba(0,255,213,0.08)]"
+            className="flex h-10 items-center gap-1 rounded-xl border border-border px-3 text-sm text-accent hover:bg-accent-soft"
           >
             Siguiente
             <ChevronRight size={16} />
@@ -318,7 +318,7 @@ export function FlashcardStudyMode({
               setRevealed(false);
               setIndex(0);
             }}
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-[rgba(0,255,213,0.12)] text-muted-foreground hover:text-[#00FFD5]"
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-border text-muted-foreground hover:text-accent"
             aria-label="Reiniciar"
           >
             <RotateCcw size={14} />

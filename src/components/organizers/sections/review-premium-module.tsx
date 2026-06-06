@@ -159,8 +159,8 @@ export function ReviewPremiumModule({
             className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
               tab === item.id
                 ? item.id === "examen"
-                  ? "bg-[rgba(255,138,0,0.18)] text-amber-200"
-                  : "bg-[rgba(0,255,213,0.15)] text-[#00FFD5]"
+                  ? "bg-amber-100 text-amber-900 dark:bg-amber-500/20 dark:text-amber-100"
+                  : "bg-accent-soft text-accent"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -183,7 +183,7 @@ export function ReviewPremiumModule({
                 className="org-panel-stat p-3"
               >
                 <p className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground">
-                  <Icon size={11} className="text-[#00FFD5]" />
+                  <Icon size={11} className="text-accent" />
                   {label}
                 </p>
                 <p className="org-panel-title mt-1 text-xl font-bold">{value}</p>
@@ -201,7 +201,7 @@ export function ReviewPremiumModule({
                   <div key={item.topic}>
                     <div className="mb-1 flex items-center justify-between gap-2 text-sm">
                       <span className="org-panel-text-muted truncate">{item.topic}</span>
-                      <span className="shrink-0 text-xs font-semibold text-[#00FFD5]">{item.mastery}%</span>
+                      <span className="shrink-0 text-xs font-semibold text-accent">{item.mastery}%</span>
                     </div>
                     <div className="h-2 overflow-hidden rounded-full bg-[rgba(0,255,213,0.08)]">
                       <motion.div
@@ -320,8 +320,8 @@ export function ReviewPremiumModule({
 
       {tab === "examen" ? (
         <div className="space-y-4">
-          <div className="rounded-xl border border-[rgba(255,138,0,0.2)] bg-[rgba(255,138,0,0.08)] px-4 py-3">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-200">
+          <div className="rounded-xl border border-amber-300/40 bg-amber-50 px-4 py-3 dark:border-amber-500/25 dark:bg-amber-500/10">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-900 dark:text-amber-200">
               Modo examen · Evaluar conocimiento
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
@@ -344,7 +344,7 @@ export function ReviewPremiumModule({
               </p>
               {weak.length ? (
                 <div className="mt-4 text-left">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-amber-300">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-amber-800 dark:text-amber-300">
                     Temas débiles
                   </p>
                   <ul className="mt-2 space-y-1">
@@ -358,7 +358,7 @@ export function ReviewPremiumModule({
               ) : null}
               <ul className="mt-4 space-y-1 text-left">
                 {recommendations.map((r) => (
-                  <li key={r} className="text-xs text-[#F5F7FA]/85">
+                  <li key={r} className="text-xs text-foreground/85">
                     → {r}
                   </li>
                 ))}
@@ -366,7 +366,7 @@ export function ReviewPremiumModule({
               <button
                 type="button"
                 onClick={resetExam}
-                className="mt-5 rounded-xl bg-[rgba(0,255,213,0.15)] px-5 py-2 text-sm font-semibold text-[#00FFD5]"
+                className="mt-5 rounded-xl bg-accent-soft px-5 py-2 text-sm font-semibold text-accent"
               >
                 Reintentar examen
               </button>
@@ -386,7 +386,7 @@ export function ReviewPremiumModule({
                     key={`exam-${index}`}
                     className="org-panel-surface-soft p-4"
                   >
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-200">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-900 dark:text-amber-200">
                       Pregunta {index + 1} · {item.type.replace("_", " ")}
                     </p>
                     <p className="org-panel-text mt-2 text-sm font-medium">{item.question}</p>
@@ -412,8 +412,8 @@ export function ReviewPremiumModule({
                             onClick={() => setExamAnswers((c) => ({ ...c, [index]: option }))}
                             className={`block w-full rounded-lg border px-3 py-2 text-left text-xs transition disabled:cursor-default ${
                               selected === option
-                                ? "border-[rgba(255,138,0,0.35)] bg-[rgba(255,138,0,0.12)] text-amber-100"
-                                : "border-[rgba(0,255,213,0.1)] text-muted-foreground hover:border-[rgba(0,255,213,0.25)]"
+                                ? "border-amber-400/60 bg-amber-50 text-amber-950 dark:border-amber-500/35 dark:bg-amber-500/12 dark:text-amber-100"
+                                : "border-border text-muted-foreground hover:border-accent/30 hover:text-foreground"
                             }`}
                           >
                             {option}
@@ -435,7 +435,7 @@ export function ReviewPremiumModule({
                               : selected === item.answer,
                           )
                         }
-                        className="mt-3 rounded-lg bg-[rgba(255,138,0,0.15)] px-4 py-2 text-xs font-semibold text-amber-200 disabled:opacity-40"
+                        className="mt-3 rounded-lg bg-amber-100 px-4 py-2 text-xs font-semibold text-amber-900 disabled:opacity-40 dark:bg-amber-500/15 dark:text-amber-200"
                       >
                         Confirmar respuesta
                       </button>
@@ -448,12 +448,12 @@ export function ReviewPremiumModule({
                         }`}
                       >
                         {isCorrect ? (
-                          <CheckCircle2 size={16} className="shrink-0 text-[#00FFD5]" />
+                          <CheckCircle2 size={16} className="shrink-0 text-accent" />
                         ) : (
-                          <XCircle size={16} className="shrink-0 text-red-300" />
+                          <XCircle size={16} className="shrink-0 text-red-600 dark:text-red-300" />
                         )}
                         <div className="text-xs leading-5">
-                          <p className={isCorrect ? "text-[#00FFD5]" : "text-red-200"}>
+                          <p className={isCorrect ? "font-semibold text-accent" : "font-semibold text-red-800 dark:text-red-200"}>
                             {isCorrect ? "Correcto" : "Incorrecto"}
                           </p>
                           {!isCorrect && item.type !== "caso_practico" ? (
@@ -486,7 +486,7 @@ export function ReviewPremiumModule({
       ) : null}
 
       <p className="mt-4 flex items-center gap-2 text-[11px] text-muted-foreground">
-        <ClipboardCheck size={12} className="text-[#00FFD5]" />
+        <ClipboardCheck size={12} className="text-accent" />
         Estudio en flashcards · Evaluación en modo examen — herramientas separadas.
       </p>
     </OrganizerFloatPanel>
