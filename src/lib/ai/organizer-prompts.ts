@@ -38,9 +38,10 @@ Requisitos por sección:
   * comparisons: 2-4 comparaciones con title + left + right (ej. mera legalidad vs estricta legalidad).
   * legalTables: tablas con headers y rows cuando el PDF lo permita.
 - flowProcess: mapa de proceso con nodes (id, label, explanation, legalBasis, example, relatedConcepts) y edges conectados. Proceso REAL del documento.
-- reviewBundle: keyConcepts + questions (básico/intermedio/avanzado con answer) + examQuestions (opción múltiple, V/F, casos prácticos).
-- conceptMap, hierarchy, timeline, flashcards: solo si el PDF lo sustenta.
-- flashcards: incluir difficulty (basico|intermedio|avanzado).
+- reviewBundle: keyConcepts + questions (respuestas de al menos 10 caracteres) + examQuestions.
+- Si una sección opcional no puede completarse con calidad, envía null en esa sección (no inventes datos cortos).
+- conceptMap, hierarchy, timeline, flashcards: solo si el PDF lo sustenta; si no, null.
+- flashcards: mínimo 2 tarjetas con question/answer de al menos 5 caracteres.
 
 Texto fuente del PDF:
 ${input.text}

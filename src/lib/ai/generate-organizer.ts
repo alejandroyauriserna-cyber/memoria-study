@@ -68,13 +68,13 @@ function parseOrganizerJson(raw: string) {
   return parseOrganizerContent(JSON.parse(cleaned.slice(jsonStart, jsonEnd + 1)));
 }
 
-function isMissingSummaryError(error: unknown) {
+function isRetriableOrganizerError(error: unknown) {
   if (error instanceof MissingSummaryError) {
     return true;
   }
 
   if (error instanceof ZodError) {
-    return error.issues.some((issue) => issue.path[0] === "summary");
+    return true;
   }
 
   return false;
@@ -102,7 +102,7 @@ async function generateWithSummaryRetries(
     try {
       return finalizeOrganizer(await generate());
     } catch (error) {
-      if (!isMissingSummaryError(error)) {
+      if (!isRetriableOrganizerError(error)) {
         throw error;
       }
 

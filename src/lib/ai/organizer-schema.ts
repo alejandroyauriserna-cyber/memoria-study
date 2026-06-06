@@ -234,6 +234,233 @@ function withNullDefaults<T extends Record<string, unknown>>(item: T, keys: Arra
   return next;
 }
 
+function ensureMinText(value: unknown, min: number, fallback: string): string | null {
+  const text = typeof value === "string" ? value.trim() : "";
+  if (text.length >= min) return text;
+  const candidate = (text || fallback).trim();
+  if (candidate.length >= min) return candidate;
+  return `${candidate || fallback}${".".repeat(Math.max(0, min - (candidate || fallback).length))}`;
+}
+
+function sanitizeEnum<T extends string>(
+  value: unknown,
+  allowed: readonly T[],
+): T | null {
+  return typeof value === "string" && (allowed as readonly string[]).includes(value)
+    ? (value as T)
+    : null;
+}
+
+function sanitizeReviewBundle(bundle: unknown): Record<string, unknown> | null {
+  if (!bundle || typeof bundle !== "object" || Array.isArray(bundle)) return null;
+
+  const source = bundle as Record<string, unknown>;
+  const next: Record<string, unknown> = { ...source };
+
+  if (Array.isArray(source.questions)) {
+    const questions = source.questions
+      .map((item) => {
+        if (!item || typeof item !== "object" || Array.isArray(item)) return null;
+        const row = withNullDefaults(item as Record<string, unknown>, [
+          "difficulty",
+          "type",
+          "options",
+        ]);
+        const question = ensureMinText(row.question, 10, "Pregunta de repaso sobre el material");
+        const answer = ensureMinText(row.answer, 10, "Respuesta basada en el contenido del PDF.");
+        if (!question || !answer) return null;
+        return {
+          question,
+          answer,
+          difficulty: sanitizeEnum(row.difficulty, ["basico", "intermedio", "avanzado"] as const),
+          type: sanitizeEnum(row.type, [
+            "abierta",
+            "opcion_multiple",
+            "verdadero_falso",
+            "caso_practico",
+          ] as const),
+          options: Array.isArray(row.options)
+            ? row.options.filter((opt): opt is string => typeof opt === "string" && opt.trim().length > 0)
+            : null,
+        };
+      })
+      .filter(Boolean)
+      .slice(0, MAX_REVIEW_QUESTIONS);
+    next.questions = questions.length ? questions : null;
+  }
+
+  if (Array.isArray(source.examQuestions)) {
+    const examQuestions = source.examQuestions
+      .map((item) => {
+        if (!item || typeof item !== "object" || Array.isArray(item)) return null;
+        const row = withNullDefaults(item as Record<string, unknown>, ["options", "explanation"]);
+        const question = ensureMinText(row.question, 10, "Pregunta de examen del material");
+        const answer = ensureMinText(row.answer, 1, "Sí");
+        const type = sanitizeEnum(row.type, [
+          "opcion_multiple",
+          "verdadero_falso",
+          "caso_practico",
+        ] as const);
+        if (!question || !answer || !type) return null;
+        return {
+          question,
+          answer,
+          type,
+          options: Array.isArray(row.options)
+            ? row.options.filter((opt): opt is string => typeof opt === "string" && opt.trim().length > 0)
+            : null,
+          explanation:
+            typeof row.explanation === "string" && row.explanation.trim()
+              ? row.explanation.trim()
+              : null,
+        };
+      })
+      .filter(Boolean)
+      .slice(0, MAX_EXAM_QUESTIONS);
+    next.examQuestions = examQuestions.length ? examQuestions : null;
+  }
+
+  if (Array.isArray(source.keyConcepts)) {
+    const keyConcepts = source.keyConcepts
+      .filter((item): item is string => typeof item === "string" && item.trim().length >= 3)
+      .map((item) => item.trim())
+      .slice(0, MAX_KEY_CONCEPTS);
+    next.keyConcepts = keyConcepts.length ? keyConcepts : null;
+  }
+
+  if (!next.questions && !next.examQuestions && !next.keyConcepts) {
+    return null;
+  }
+
+  return next;
+}
+
+function sanitizeFlowProcess(flow: unknown): Record<string, unknown> | null {
+  if (!flow || typeof flow !== "object" || Array.isArray(flow)) return null;
+  const source = flow as Record<string, unknown>;
+  const title = ensureMinText(source.title, 3, "Proceso jurídico");
+  if (!title) return null;
+
+  const nodes = Array.isArray(source.nodes)
+    ? source.nodes
+        .map((item) => {
+          if (!item || typeof item !== "object" || Array.isArray(item)) return null;
+          const row = withNullDefaults(item as Record<string, unknown>, [
+            "group",
+            "explanation",
+            "legalBasis",
+            "example",
+            "relatedConcepts",
+          ]);
+          const id = ensureMinText(row.id, 1, "n");
+          const label = ensureMinText(row.label, 2, "Paso");
+          if (!id || !label) return null;
+          const explanation =
+            row.explanation == null
+              ? null
+              : ensureMinText(row.explanation, 10, "Explicación del paso según el material.");
+          return {
+            id,
+            label,
+            group: typeof row.group === "string" ? row.group.trim() || null : null,
+            explanation,
+            legalBasis: typeof row.legalBasis === "string" ? row.legalBasis.trim() || null : null,
+            example: typeof row.example === "string" ? row.example.trim() || null : null,
+            relatedConcepts: Array.isArray(row.relatedConcepts)
+              ? row.relatedConcepts.filter(
+                  (concept): concept is string => typeof concept === "string" && concept.trim().length > 0,
+                )
+              : null,
+          };
+        })
+        .filter(Boolean)
+        .slice(0, MAX_FLOW_NODES)
+    : [];
+
+  const edges = Array.isArray(source.edges)
+    ? source.edges
+        .map((item) => {
+          if (!item || typeof item !== "object" || Array.isArray(item)) return null;
+          const row = withNullDefaults(item as Record<string, unknown>, ["label"]);
+          const from = ensureMinText(row.from, 1, "a");
+          const to = ensureMinText(row.to, 1, "b");
+          if (!from || !to) return null;
+          return {
+            from,
+            to,
+            label: typeof row.label === "string" ? row.label.trim() || null : null,
+          };
+        })
+        .filter(Boolean)
+    : [];
+
+  if (nodes.length < 2 || edges.length < 1) return null;
+  return { title, nodes, edges };
+}
+
+function sanitizeVisualSummary(summary: unknown): Record<string, unknown> | null {
+  if (!summary || typeof summary !== "object" || Array.isArray(summary)) return null;
+  const source = summary as Record<string, unknown>;
+  const next: Record<string, unknown> = {};
+
+  if (Array.isArray(source.conceptCards)) {
+    const conceptCards = source.conceptCards
+      .map((item) => {
+        if (!item || typeof item !== "object" || Array.isArray(item)) return null;
+        const row = item as Record<string, unknown>;
+        const title = ensureMinText(row.title, 2, "Concepto");
+        const description = ensureMinText(
+          row.description,
+          10,
+          "Definición basada en el material de estudio.",
+        );
+        if (!title || !description) return null;
+        return { title, description };
+      })
+      .filter(Boolean)
+      .slice(0, MAX_KEY_CONCEPTS);
+    if (conceptCards.length) next.conceptCards = conceptCards;
+  }
+
+  if (Array.isArray(source.comparisons)) {
+    const comparisons = source.comparisons
+      .map((item) => {
+        if (!item || typeof item !== "object" || Array.isArray(item)) return null;
+        const row = item as Record<string, unknown>;
+        const title = ensureMinText(row.title, 2, "Comparación");
+        const left = ensureMinText(row.left, 5, "Elemento A del material");
+        const right = ensureMinText(row.right, 5, "Elemento B del material");
+        if (!title || !left || !right) return null;
+        return { title, left, right };
+      })
+      .filter(Boolean)
+      .slice(0, 4);
+    if (comparisons.length) next.comparisons = comparisons;
+  }
+
+  return Object.keys(next).length ? next : null;
+}
+
+function sanitizeFlashcards(cards: unknown): unknown[] | null {
+  if (!Array.isArray(cards)) return null;
+  const sanitized = cards
+    .map((item) => {
+      if (!item || typeof item !== "object" || Array.isArray(item)) return null;
+      const row = withNullDefaults(item as Record<string, unknown>, ["difficulty"]);
+      const question = ensureMinText(row.question, 5, "¿Qué concepto estudia este material?");
+      const answer = ensureMinText(row.answer, 5, "Según el contenido del PDF.");
+      if (!question || !answer) return null;
+      return {
+        question,
+        answer,
+        difficulty: sanitizeEnum(row.difficulty, ["basico", "intermedio", "avanzado"] as const),
+      };
+    })
+    .filter(Boolean)
+    .slice(0, MAX_FLASHCARDS);
+  return sanitized.length >= 2 ? sanitized : null;
+}
+
 /** Gemini y otros proveedores omiten campos null; Zod nullable() exige null explícito. */
 function coerceProviderNullables(raw: unknown): unknown {
   if (Array.isArray(raw)) {
@@ -357,23 +584,121 @@ export function preprocessOrganizerPayload(raw: unknown): unknown {
         : null;
   }
 
-  const flashcards = Array.isArray(output.flashcards)
-    ? output.flashcards.slice(0, MAX_FLASHCARDS)
-    : null;
-  output.flashcards = flashcards && flashcards.length >= 2 ? flashcards : null;
+  output.flashcards = sanitizeFlashcards(output.flashcards);
 
-  const reviewQuestions = truncateStrings(output.reviewQuestions, MAX_REVIEW_QUESTIONS);
+  const reviewQuestions = truncateStrings(output.reviewQuestions, MAX_REVIEW_QUESTIONS).filter(
+    (item) => item.length >= 10,
+  );
   output.reviewQuestions = reviewQuestions.length >= 2 ? reviewQuestions : null;
 
   if (output.simplifiedExplanation === "" || output.simplifiedExplanation === undefined) {
     output.simplifiedExplanation = null;
+  } else if (typeof output.simplifiedExplanation === "string") {
+    const simplified = output.simplifiedExplanation.trim();
+    output.simplifiedExplanation =
+      simplified.length >= 20 ? simplified : null;
+  }
+
+  if (output.reviewBundle) {
+    output.reviewBundle = sanitizeReviewBundle(output.reviewBundle);
+  }
+
+  if (output.flowProcess) {
+    output.flowProcess = sanitizeFlowProcess(output.flowProcess);
+  }
+
+  if (output.visualSummary) {
+    output.visualSummary = sanitizeVisualSummary(output.visualSummary);
+  }
+
+  if (output.aiAnalysis && typeof output.aiAnalysis === "object" && !Array.isArray(output.aiAnalysis)) {
+    const analysis = { ...(output.aiAnalysis as Record<string, unknown>) };
+    analysis.difficulty = sanitizeEnum(analysis.difficulty, [
+      "basico",
+      "intermedio",
+      "avanzado",
+    ] as const);
+    analysis.conceptsDetected = Array.isArray(analysis.conceptsDetected)
+      ? analysis.conceptsDetected.filter(
+          (item): item is string => typeof item === "string" && item.trim().length > 0,
+        )
+      : null;
+    analysis.relationsFound = Array.isArray(analysis.relationsFound)
+      ? analysis.relationsFound.filter(
+          (item): item is string => typeof item === "string" && item.trim().length > 0,
+        )
+      : null;
+    analysis.recommendations = Array.isArray(analysis.recommendations)
+      ? analysis.recommendations.filter(
+          (item): item is string => typeof item === "string" && item.trim().length > 0,
+        )
+      : null;
+    analysis.studyFocus =
+      typeof analysis.studyFocus === "string" && analysis.studyFocus.trim()
+        ? analysis.studyFocus.trim()
+        : null;
+    output.aiAnalysis = analysis;
+  }
+
+  if (typeof output.summary === "string") {
+    const summary = output.summary.trim();
+    output.summary =
+      summary.length >= 20
+        ? summary
+        : ensureMinText(summary, 20, "Resumen del material jurídico para estudio.");
   }
 
   return output;
 }
 
+export function buildMinimalOrganizerFromRaw(raw: unknown): OrganizerContentOutput | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const record = preprocessOrganizerPayload(raw) as Record<string, unknown>;
+  const summary = ensureMinText(
+    record.summary,
+    20,
+    "Resumen del material jurídico generado a partir del PDF.",
+  );
+  if (!summary) return null;
+
+  const minimal: Record<string, unknown> = {
+    summary,
+    simplifiedExplanation: null,
+    conceptMap: null,
+    hierarchy: null,
+    timeline: null,
+    flowChart: null,
+    flowProcess: null,
+    visualSummary: null,
+    reviewBundle: null,
+    aiAnalysis: null,
+    flashcards: null,
+    reviewQuestions: null,
+  };
+
+  const flashcards = sanitizeFlashcards(record.flashcards);
+  if (flashcards) minimal.flashcards = flashcards;
+
+  const reviewBundle = sanitizeReviewBundle(record.reviewBundle);
+  if (reviewBundle) minimal.reviewBundle = reviewBundle;
+
+  if (record.aiAnalysis && typeof record.aiAnalysis === "object" && !Array.isArray(record.aiAnalysis)) {
+    minimal.aiAnalysis = record.aiAnalysis;
+  }
+
+  const parsed = organizerContentSchema.safeParse(minimal);
+  return parsed.success ? parsed.data : null;
+}
+
 export function parseOrganizerContent(raw: unknown): OrganizerContentOutput {
-  return organizerContentSchema.parse(preprocessOrganizerPayload(raw));
+  const preprocessed = preprocessOrganizerPayload(raw);
+  const parsed = organizerContentSchema.safeParse(preprocessed);
+  if (parsed.success) return parsed.data;
+
+  const minimal = buildMinimalOrganizerFromRaw(preprocessed);
+  if (minimal) return minimal;
+
+  throw parsed.error;
 }
 
 export function normalizeOrganizerContent(content: OrganizerContentOutput): StoredOrganizerContent {
