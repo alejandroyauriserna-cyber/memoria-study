@@ -43,7 +43,6 @@ export function OrganizerStudioView({
   const parsed = parseOrganizerContent(content);
   const conceptNodes = parsed.conceptMap?.nodes?.filter(Boolean) ?? [];
   const hasConceptMap = Boolean(parsed.conceptMap?.title || conceptNodes.length);
-  const showMap = activeTab === "interactive" && hasConceptMap;
 
   function handleContentUpdate(next: unknown) {
     setContent(next);
@@ -109,16 +108,7 @@ export function OrganizerStudioView({
       ) : null}
 
       <div className="organizer-canvas-stage flex min-h-0 flex-1 flex-col overflow-hidden">
-        {showMap ? (
-          <OrganizerContentView
-            content={content}
-            loading={loading}
-            studio
-            deckKey={organizer.id}
-            organizerId={organizer.id}
-            onContentUpdate={readOnly ? undefined : handleContentUpdate}
-          />
-        ) : (
+        {activeTab === "infographic" ? (
           <div className="flex min-h-0 flex-1 overflow-auto p-4 sm:p-6">
             <AcademicInfographicPanel
               organizerId={organizer.id}
@@ -127,6 +117,15 @@ export function OrganizerStudioView({
               onGenerated={readOnly ? undefined : handleContentUpdate}
             />
           </div>
+        ) : (
+          <OrganizerContentView
+            content={content}
+            loading={loading}
+            studio
+            deckKey={organizer.id}
+            organizerId={organizer.id}
+            onContentUpdate={readOnly ? undefined : handleContentUpdate}
+          />
         )}
       </div>
     </motion.div>

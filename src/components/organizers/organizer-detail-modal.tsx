@@ -171,14 +171,12 @@ export function OrganizerDetailModal({
               </div>
 
               <div className="organizer-modal-tabs flex shrink-0 gap-1 border-b px-4 py-2 sm:px-6">
-                {hasConceptMap ? (
-                  <StudioTab
-                    active={activeTab === "interactive"}
-                    onClick={() => setActiveTab("interactive")}
-                    icon={Map}
-                    label="Mapa"
-                  />
-                ) : null}
+                <StudioTab
+                  active={activeTab === "interactive"}
+                  onClick={() => setActiveTab("interactive")}
+                  icon={Map}
+                  label={hasConceptMap ? "Mapa" : "Estudio"}
+                />
                 <StudioTab
                   active={activeTab === "infographic"}
                   onClick={() => setActiveTab("infographic")}
@@ -196,7 +194,14 @@ export function OrganizerDetailModal({
               ) : null}
 
               <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-                {activeTab === "interactive" && hasConceptMap ? (
+                {activeTab === "infographic" ? (
+                  <AcademicInfographicPanel
+                    organizerId={organizer.id}
+                    organizerTitle={organizer.title}
+                    academicInfographic={parsed.academicInfographic}
+                    onGenerated={readOnly ? undefined : handleContentUpdate}
+                  />
+                ) : (
                   <OrganizerContentView
                     content={content}
                     loading={loading}
@@ -204,13 +209,6 @@ export function OrganizerDetailModal({
                     deckKey={organizer.id}
                     organizerId={organizer.id}
                     onContentUpdate={readOnly ? undefined : handleContentUpdate}
-                  />
-                ) : (
-                  <AcademicInfographicPanel
-                    organizerId={organizer.id}
-                    organizerTitle={organizer.title}
-                    academicInfographic={parsed.academicInfographic}
-                    onGenerated={readOnly ? undefined : handleContentUpdate}
                   />
                 )}
               </div>
