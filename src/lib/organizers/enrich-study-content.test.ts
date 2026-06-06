@@ -59,4 +59,19 @@ describe("enrichOrganizerStudySurfaces", () => {
     expect(enriched.aiAnalysis?.conceptsDetected?.length).toBeGreaterThanOrEqual(5);
     expect(enriched.reviewBundle?.questions?.length).toBeGreaterThanOrEqual(5);
   });
+
+  it("adds corroborated timeline when dates exist in summary", () => {
+    const input = {
+      summary:
+        "El Código Civil italiano de 1942 y el Código peruano de 1984 son referencias para la interpretación contractual.",
+      conceptMap: {
+        title: "Interpretación",
+        nodes: ["Literal", "Sistemática", "Teleológica", "Histórica"],
+      },
+    };
+
+    const enriched = enrichOrganizerStudySurfaces(input);
+
+    expect(enriched.timeline?.events?.length).toBeGreaterThanOrEqual(2);
+  });
 });

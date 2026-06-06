@@ -1,3 +1,5 @@
+import { extractCorroboratedTimeline } from "@/lib/organizers/extract-corroborated-timeline";
+
 const MAX_CONCEPT_NODES = 14;
 const MAX_KEY_CONCEPTS = 8;
 const MIN_STUDY_FLASHCARDS = 8;
@@ -44,6 +46,7 @@ type StudyOrganizerContent = {
     answer?: string;
     difficulty?: "basico" | "intermedio" | "avanzado";
   }>;
+  timeline?: { events?: Array<{ date?: string | null; label?: string }> };
 };
 
 function normalizeConceptLabel(raw: string) {
@@ -217,12 +220,25 @@ function synthesizeReviewQuestions(
   }));
 }
 
+function applyCorroboratedTimeline<T extends StudyOrganizerContent>(content: T): T {
+  const events = extractCorroboratedTimeline(content);
+  if (!events.length) {
+    if (content.timeline?.events?.length) {
+      const next = { ...content } as T;
+      delete (next as StudyOrganizerContent).timeline;
+      return next;
+    }
+    return content;
+  }
+  return { ...content, timeline: { events } } as T;
+}
+
 /**
- * Aligns concept map, repaso, flujo, ruta, estudio y resumen con los mismos conceptos del PDF.
+ * Aligns concept map, repaso, flujo, ruta, estudio, resumen y línea de tiempo con el PDF.
  */
 export function enrichOrganizerStudySurfaces<T extends StudyOrganizerContent>(content: T): T {
   const concepts = collectStudyConceptLabels(content);
-  if (concepts.length < 2) return content;
+  if (concepts.length < 2) return applyCorroboratedTimeline(content);
 
   const next = { ...content } as T & StudyOrganizerContent;
   const mapTitle = defaultConceptMapTitle(next);
@@ -363,5 +379,5 @@ export function enrichOrganizerStudySurfaces<T extends StudyOrganizerContent>(co
     questions: mergedQuestions.length ? mergedQuestions : synthesizedQuestions,
   };
 
-  return next;
+  return applyCorroboratedTimeline(next);
 }

@@ -6,10 +6,15 @@ import { OrganizerFloatPanel } from "@/components/organizers/sections/organizer-
 
 type TimelineEvent = { date?: string; label: string };
 
-export function TimelineModern({ events }: { events: TimelineEvent[] }) {
-  return (
-    <OrganizerFloatPanel title="Línea de tiempo" hint="Desliza en móvil" icon={<Clock3 size={17} />} span={6}>
-      <div className="timeline-modern -mx-1 overflow-x-auto pb-1">
+export function TimelineModern({
+  events,
+  bare = false,
+}: {
+  events: TimelineEvent[];
+  bare?: boolean;
+}) {
+  const track = (
+    <div className="timeline-modern -mx-1 overflow-x-auto pb-1">
         <div className="flex min-w-max gap-3 px-1">
           {events.map((event, index) => (
             <motion.div
@@ -36,6 +41,13 @@ export function TimelineModern({ events }: { events: TimelineEvent[] }) {
           ))}
         </div>
       </div>
+  );
+
+  if (bare) return track;
+
+  return (
+    <OrganizerFloatPanel title="Línea de tiempo" hint="Desliza en móvil" icon={<Clock3 size={17} />} span={6}>
+      {track}
     </OrganizerFloatPanel>
   );
 }

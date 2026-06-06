@@ -157,11 +157,21 @@ export function OrganizerContentView({
               <EasyExplanationBlock explanation={parsed.simplifiedExplanation} />
             </div>
           ) : null}
+        </OrganizerFloatSheet>
+
+        <OrganizerFloatSheet
+          open={activePanel === "timeline"}
+          title="Línea de tiempo"
+          wide
+          onClose={() => setActivePanel(null)}
+        >
           {timelineEvents.length ? (
-            <div className="mt-4">
-              <TimelineModern events={timelineEvents} />
-            </div>
-          ) : null}
+            <TimelineModern events={timelineEvents} bare />
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No hay fechas o hitos cronológicos corroborados en este material.
+            </p>
+          )}
         </OrganizerFloatSheet>
 
         <OrganizerFloatSheet

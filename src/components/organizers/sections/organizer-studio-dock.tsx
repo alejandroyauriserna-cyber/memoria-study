@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import {
   BookOpen,
+  Clock3,
   GitBranch,
   HelpCircle,
   Layers,
@@ -17,6 +18,7 @@ export type StudioPanelId =
   | "summary"
   | "flow"
   | "tree"
+  | "timeline"
   | "flashcards"
   | "review"
   | "visualMap"
@@ -27,6 +29,7 @@ const items = [
   { id: "summary" as const, label: "Resumen", icon: BookOpen },
   { id: "flow" as const, label: "Flujo", icon: Workflow },
   { id: "tree" as const, label: "Ruta", icon: GitBranch },
+  { id: "timeline" as const, label: "Tiempo", icon: Clock3 },
   { id: "visualMap" as const, label: "Mapa visual", icon: Sparkles, pro: true, locked: true },
   { id: "visualPrompt" as const, label: "Atlas IA", icon: Palette },
   { id: "flashcards" as const, label: "Estudio", icon: Layers },
