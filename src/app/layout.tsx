@@ -9,6 +9,7 @@ import "./auth-modern.css";
 import "./organizers-2026.css";
 import "./organizer-studio-panel.css";
 import "./organizer-studio-experience.css";
+import "./atlas-ia-panel.css";
 import { env } from "@/lib/env";
 
 const appUrl = env.appUrl.replace(/\/$/, "");

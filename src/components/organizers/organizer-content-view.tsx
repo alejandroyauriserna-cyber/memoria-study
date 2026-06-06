@@ -204,6 +204,7 @@ export function OrganizerContentView({
                 organizerId={organizerId}
                 visualMindMap={parsed.visualMindMap}
                 onGenerated={onContentUpdate}
+                onOpenAtlas={() => setActivePanel("visualPrompt")}
               />
             ) : null}
           </div>

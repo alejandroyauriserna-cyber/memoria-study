@@ -21,8 +21,9 @@ export const PREMIUM_FEATURES: Record<PremiumFeatureId, PremiumFeature> = {
   },
   "gemini-visual-map": {
     id: "gemini-visual-map",
-    title: "Mapa mental con imágenes IA",
-    description: "Nodos visuales generados por imagen para cada concepto del organizador.",
+    title: "Mapa visual con imágenes IA",
+    description:
+      "Generación directa de mapas visuales con Gemini Image dentro de la web. Requiere plan de pago; usa Atlas IA con prompts optimizados mientras tanto.",
     badge: "Pro",
   },
   "gemini-ocr-scanned": {

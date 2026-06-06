@@ -271,16 +271,16 @@ export function VisualPremiumPromptPanel({
   }, []);
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-[#060b10]">
+    <div className="atlas-ia-panel flex h-full min-h-0 flex-col">
       {/* Header fijo */}
-      <header className="z-20 shrink-0 border-b border-[#F59E0B]/20 bg-[#060b10]/95 px-4 py-3 backdrop-blur-xl sm:px-6">
+      <header className="atlas-ia-panel__header z-20 shrink-0 px-4 py-3 sm:px-6">
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
-          <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#FBBF24]">
+          <p className="atlas-ia-kicker flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em]">
             <Sparkles size={12} />
             {ATLAS_JURIDICO_MODULE_TITLE}
           </p>
-          <p className="mt-0.5 truncate text-sm text-[#F5F7FA]/60">
+          <p className="atlas-ia-text-muted mt-0.5 truncate text-sm">
             {ATLAS_JURIDICO_MODULE_SUBTITLE}
           </p>
           </div>
@@ -290,7 +290,7 @@ export function VisualPremiumPromptPanel({
               <button
                 type="button"
                 onClick={onClose}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-[#F5F7FA]/70 transition hover:border-[#F59E0B]/40 hover:bg-[#F59E0B]/10 hover:text-[#FBBF24]"
+                className="atlas-ia-close-btn flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition"
                 aria-label="Cerrar"
               >
                 <X size={18} />
@@ -309,10 +309,8 @@ export function VisualPremiumPromptPanel({
                 key={item.id}
                 type="button"
                 onClick={() => scrollToSection(item.id)}
-                className={`shrink-0 rounded-full px-3 py-1.5 text-[11px] font-semibold transition ${
-                  active
-                    ? "bg-[#F59E0B]/20 text-[#FBBF24]"
-                    : "bg-white/[0.04] text-[#F5F7FA]/55 hover:text-[#F5F7FA]/80"
+                className={`atlas-ia-nav-chip shrink-0 rounded-full px-3 py-1.5 text-[11px] font-semibold transition${
+                  active ? " is-active" : ""
                 }`}
               >
                 ● {item.label}
@@ -328,7 +326,7 @@ export function VisualPremiumPromptPanel({
           {/* Nav lateral */}
           <nav className="hidden w-40 shrink-0 lg:block xl:w-44">
             <div className="sticky top-6 space-y-1">
-              <p className="mb-3 text-[10px] font-bold uppercase tracking-wider text-[#F5F7FA]/40">
+              <p className="mb-3 text-[10px] font-bold uppercase tracking-wider atlas-ia-text-faint">
                 Progreso
               </p>
               {NAV_ITEMS.map((item) => {
@@ -339,15 +337,13 @@ export function VisualPremiumPromptPanel({
                     key={item.id}
                     type="button"
                     onClick={() => scrollToSection(item.id)}
-                    className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-medium transition ${
-                      active
-                        ? "bg-[#F59E0B]/15 text-[#FBBF24]"
-                        : "text-[#F5F7FA]/55 hover:bg-white/[0.04] hover:text-[#F5F7FA]/85"
+                    className={`atlas-ia-side-nav flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-medium transition${
+                      active ? " is-active" : ""
                     }`}
                   >
                     <span
-                      className={`h-2 w-2 shrink-0 rounded-full ${
-                        active ? "bg-[#F59E0B]" : "bg-[#F5F7FA]/25"
+                      className={`atlas-ia-dot h-2 w-2 shrink-0 rounded-full${
+                        active ? " is-active" : ""
                       }`}
                     />
                     {item.label}
@@ -362,7 +358,7 @@ export function VisualPremiumPromptPanel({
 
             {/* PASO 1 — Nivel académico */}
             <StepSection id={SECTION_IDS.tipo} step={1} title="Nivel académico de la imagen">
-              <p className="mb-3 text-sm text-[#F5F7FA]/60">
+              <p className="mb-3 text-sm atlas-ia-text-muted">
                 Este parámetro modifica radicalmente densidad, estructura y profundidad del prompt.
               </p>
               <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
@@ -379,8 +375,8 @@ export function VisualPremiumPromptPanel({
                           : "border-white/10 bg-white/[0.02] hover:border-white/20"
                       }`}
                     >
-                      <span className="block text-sm font-bold text-[#F5F7FA]">{item.label}</span>
-                      <span className="mt-1 block text-[11px] leading-snug text-[#F5F7FA]/55">
+                      <span className="block text-sm font-bold atlas-ia-text">{item.label}</span>
+                      <span className="mt-1 block text-[11px] leading-snug atlas-ia-text-soft">
                         {item.description}
                       </span>
                     </button>
@@ -391,23 +387,23 @@ export function VisualPremiumPromptPanel({
                 <div className="mt-4 space-y-3">
                   <div className="rounded-xl border border-[#4285F4]/30 bg-[#4285F4]/10 px-4 py-3">
                     <p className="text-xs font-semibold text-[#93C5FD]">Ideal para:</p>
-                    <p className="mt-1 text-sm text-[#F5F7FA]/85">{selectedAcademicLevel.idealFor}</p>
+                    <p className="mt-1 text-sm atlas-ia-text">{selectedAcademicLevel.idealFor}</p>
                   </div>
                   <div className="rounded-xl border border-[#A855F7]/30 bg-[#A855F7]/10 px-4 py-3">
                     <p className="text-xs font-semibold text-[#C4B5FD]">Resultado esperado:</p>
-                    <p className="mt-1 text-sm text-[#F5F7FA]/85">
+                    <p className="mt-1 text-sm atlas-ia-text">
                       {selectedAcademicLevel.expectedResult}
                     </p>
                   </div>
                   <div className="rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3">
-                    <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-[#F5F7FA]/45">
+                    <p className="mb-2 text-[10px] font-bold uppercase tracking-wider atlas-ia-text-faint">
                       Incluye
                     </p>
                     <ul className="grid gap-1.5 sm:grid-cols-2">
                       {selectedAcademicLevel.expectedHighlights.map((item) => (
                         <li
                           key={item}
-                          className="flex items-start gap-2 text-xs text-[#F5F7FA]/75"
+                          className="flex items-start gap-2 text-xs atlas-ia-text-muted"
                         >
                           <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-[#4285F4]" />
                           {item}
@@ -435,10 +431,10 @@ export function VisualPremiumPromptPanel({
                           : "border-white/10 bg-white/[0.02] hover:border-white/20"
                       }`}
                     >
-                      <span className="flex items-center gap-2 text-sm font-bold text-[#F5F7FA]">
+                      <span className="flex items-center gap-2 text-sm font-bold atlas-ia-text">
                         {item.label}
                       </span>
-                      <span className="mt-1 block text-[11px] leading-snug text-[#F5F7FA]/55">
+                      <span className="mt-1 block text-[11px] leading-snug atlas-ia-text-soft">
                         {item.description}
                       </span>
                     </button>
@@ -449,17 +445,17 @@ export function VisualPremiumPromptPanel({
                 <div className="mt-4 space-y-3">
                   <div className="rounded-xl border border-[#A855F7]/30 bg-[#A855F7]/10 px-4 py-3">
                     <p className="text-xs font-semibold text-[#C4B5FD]">Resultado esperado:</p>
-                    <p className="mt-1 text-sm text-[#F5F7FA]/85">{selectedMode.expectedResult}</p>
+                    <p className="mt-1 text-sm atlas-ia-text">{selectedMode.expectedResult}</p>
                   </div>
                   <div className="rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3">
-                    <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-[#F5F7FA]/45">
+                    <p className="mb-2 text-[10px] font-bold uppercase tracking-wider atlas-ia-text-faint">
                       Incluye
                     </p>
                     <ul className="grid gap-1.5 sm:grid-cols-2">
                       {selectedMode.expectedHighlights.map((item) => (
                         <li
                           key={item}
-                          className="flex items-start gap-2 text-xs text-[#F5F7FA]/75"
+                          className="flex items-start gap-2 text-xs atlas-ia-text-muted"
                         >
                           <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-[#F59E0B]" />
                           {item}
@@ -473,7 +469,7 @@ export function VisualPremiumPromptPanel({
 
             {/* PASO 3 — Rúbrica */}
             <StepSection id={SECTION_IDS.rubrica} step={3} title="Adjuntar rúbrica">
-              <p className="mb-3 text-sm text-[#F5F7FA]/60">
+              <p className="mb-3 text-sm atlas-ia-text-muted">
                 Opcional. La IA analizará criterios, puntajes y formato para adaptar el prompt.
               </p>
               <div className="flex flex-wrap items-center gap-3">
@@ -492,15 +488,15 @@ export function VisualPremiumPromptPanel({
                   <FileUp size={16} />
                   Subir rúbrica
                 </button>
-                <span className="text-xs text-[#F5F7FA]/45">PDF · DOCX · JPG · PNG</span>
+                <span className="text-xs atlas-ia-text-faint">PDF · DOCX · JPG · PNG</span>
                 {rubricFile ? (
-                  <span className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs text-[#F5F7FA]/80">
+                  <span className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs atlas-ia-text-muted">
                     <Paperclip size={12} />
                     {rubricFile.name}
                     <button
                       type="button"
                       onClick={() => setRubricFile(null)}
-                      className="text-[#F5F7FA]/50 hover:text-red-400"
+                      className="atlas-ia-text-faint hover:text-red-400"
                       aria-label="Quitar rúbrica"
                     >
                       <X size={12} />
@@ -517,7 +513,7 @@ export function VisualPremiumPromptPanel({
               title="Personalización adicional"
             >
               <div className="mb-6">
-                <label className="mb-2 block text-sm font-medium text-[#F5F7FA]/80">
+                <label className="mb-2 block text-sm font-medium atlas-ia-text-muted">
                   Título de la imagen (opcional)
                 </label>
                 <input
@@ -525,22 +521,22 @@ export function VisualPremiumPromptPanel({
                   value={imageTitle}
                   onChange={(event) => setImageTitle(event.target.value)}
                   placeholder="Ej.: Acto Jurídico, Nulidad del Acto Jurídico, Obligaciones Civiles…"
-                  className="w-full rounded-xl border border-white/10 bg-[#0a1018] px-4 py-3 text-sm text-[#F5F7FA] placeholder:text-[#F5F7FA]/30 focus:border-[#F59E0B]/40 focus:outline-none focus:ring-1 focus:ring-[#F59E0B]/25"
+                  className="atlas-ia-input w-full rounded-xl px-4 py-3 text-sm focus:border-[#F59E0B]/40 focus:outline-none focus:ring-1 focus:ring-[#F59E0B]/25"
                 />
-                <p className="mt-1.5 text-[11px] text-[#F5F7FA]/45">
+                <p className="mt-1.5 text-[11px] atlas-ia-text-faint">
                   Si lo dejas vacío, la IA genera un título automático a partir del PDF.
                 </p>
               </div>
 
               <div className="mb-2 flex items-center justify-between gap-3">
-                <label className="text-sm font-medium text-[#F5F7FA]/80">
+                <label className="text-sm font-medium atlas-ia-text-muted">
                   ¿Qué deseas agregar al prompt?
                 </label>
                 <button
                   type="button"
                   onClick={clearPersonalization}
                   disabled={!personalization.trim()}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-[11px] font-medium text-[#F5F7FA]/65 transition hover:border-red-400/40 hover:bg-red-400/10 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-[11px] font-medium atlas-ia-text-muted transition hover:border-red-400/40 hover:bg-red-400/10 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   <Trash2 size={12} />
                   Limpiar
@@ -551,7 +547,7 @@ export function VisualPremiumPromptPanel({
                 onChange={(event) => setPersonalization(event.target.value)}
                 placeholder={PERSONALIZATION_PLACEHOLDER}
                 rows={5}
-                className="w-full resize-y rounded-xl border border-white/10 bg-[#0a1018] px-4 py-3 text-sm leading-relaxed text-[#F5F7FA] placeholder:text-[#F5F7FA]/30 focus:border-[#F59E0B]/40 focus:outline-none focus:ring-1 focus:ring-[#F59E0B]/25"
+                className="atlas-ia-input w-full resize-y rounded-xl px-4 py-3 text-sm leading-relaxed focus:border-[#F59E0B]/40 focus:outline-none focus:ring-1 focus:ring-[#F59E0B]/25"
               />
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {PERSONALIZATION_QUICK_CHIPS.map((chip) => (
@@ -559,7 +555,7 @@ export function VisualPremiumPromptPanel({
                     key={chip.label}
                     type="button"
                     onClick={() => appendChip(chip.text)}
-                    className="rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-[11px] font-medium text-[#F5F7FA]/75 transition hover:border-[#F59E0B]/35 hover:bg-[#F59E0B]/10 hover:text-[#FBBF24]"
+                    className="rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-[11px] font-medium atlas-ia-text-muted transition hover:border-[#F59E0B]/35 hover:bg-[#F59E0B]/10 hover:text-[#FBBF24]"
                   >
                     {chip.label}
                   </button>
@@ -567,7 +563,7 @@ export function VisualPremiumPromptPanel({
               </div>
 
               <div className="mt-6">
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#F5F7FA]/50">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wider atlas-ia-text-faint">
                   Nivel de creatividad editorial
                 </p>
                 <div className="grid gap-2 sm:grid-cols-2">
@@ -591,10 +587,10 @@ export function VisualPremiumPromptPanel({
                           className="mt-0.5"
                         />
                         <span>
-                          <span className="block text-xs font-bold text-[#F5F7FA]">
+                          <span className="block text-xs font-bold atlas-ia-text">
                             {level.label}
                           </span>
-                          <span className="mt-0.5 block text-[10px] leading-snug text-[#F5F7FA]/55">
+                          <span className="mt-0.5 block text-[10px] leading-snug atlas-ia-text-soft">
                             {level.description}
                           </span>
                         </span>
@@ -659,7 +655,7 @@ export function VisualPremiumPromptPanel({
                 <button
                   type="button"
                   onClick={() => setShowPromptDetails((prev) => !prev)}
-                  className="mt-4 flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-left text-xs font-medium text-[#F5F7FA]/70 transition hover:border-white/20"
+                  className="mt-4 flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-left text-xs font-medium atlas-ia-text-muted transition hover:border-white/20"
                 >
                   <span>Ver construcción del prompt (base + personalización)</span>
                   <ChevronDown
@@ -697,10 +693,10 @@ export function VisualPremiumPromptPanel({
                 <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#F59E0B]/20 to-[#A855F7]/20 text-[#FBBF24]">
                   <Sparkles size={24} />
                 </div>
-                <p className="mt-4 text-sm font-semibold text-[#F5F7FA]">
+                <p className="mt-4 text-sm font-semibold atlas-ia-text">
                   Tu prompt aparecerá aquí cuando lo generes
                 </p>
-                <p className="mt-1 text-xs text-[#F5F7FA]/55">
+                <p className="mt-1 text-xs atlas-ia-text-soft">
                   Configura el atlas, pulsa «Generar atlas para Gemini» y el prompt completo
                   aparecerá en esta sección.
                 </p>
@@ -726,9 +722,9 @@ export function VisualPremiumPromptPanel({
       </div>
 
       {/* Footer fijo */}
-      <footer className="z-20 shrink-0 border-t border-[#F59E0B]/25 bg-[#060b10]/95 px-4 py-3 backdrop-blur-xl sm:px-6">
+      <footer className="atlas-ia-panel__footer z-20 shrink-0 px-4 py-3 sm:px-6">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3">
-          <p className="text-xs text-[#F5F7FA]/55">
+          <p className="text-xs atlas-ia-text-soft">
             {copied ? (
               <span className="font-semibold text-[#22C55E]">✓ Prompt copiado correctamente</span>
             ) : generationStatus === "ready" ? (
@@ -769,7 +765,7 @@ export function VisualPremiumPromptPanel({
         <button
           type="button"
           onClick={() => scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" })}
-          className="fixed bottom-24 right-5 z-30 flex items-center gap-1.5 rounded-full border border-white/15 bg-[#0a1018]/95 px-4 py-2.5 text-xs font-semibold text-[#F5F7FA]/85 shadow-xl backdrop-blur-md transition hover:border-[#F59E0B]/40 hover:text-[#FBBF24] sm:right-8"
+          className="atlas-ia-back-top fixed bottom-24 right-5 z-30 flex items-center gap-1.5 rounded-full px-4 py-2.5 text-xs font-semibold shadow-xl transition sm:right-8"
         >
           <ArrowUp size={14} />
           Volver arriba
@@ -786,17 +782,14 @@ function GenerationStatusBadge({
 }) {
   const config = {
     idle: {
-      dot: "bg-[#F5F7FA]/35",
       label: "Sin generar",
-      text: "text-[#F5F7FA]/55",
+      text: "atlas-ia-text-soft",
     },
     generating: {
-      dot: "bg-[#FBBF24] animate-pulse",
       label: "Generando prompt…",
       text: "text-[#FBBF24]",
     },
     ready: {
-      dot: "bg-[#22C55E]",
       label: "Prompt listo",
       text: "text-[#22C55E]",
     },
@@ -804,9 +797,9 @@ function GenerationStatusBadge({
 
   return (
     <span
-      className={`inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-[11px] font-semibold ${config.text}`}
+      className={`atlas-ia-status-badge inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-semibold ${config.text}`}
     >
-      <span className={`h-2 w-2 rounded-full ${config.dot}`} />
+      <span className={`h-2 w-2 rounded-full ${status === "generating" ? "animate-pulse bg-[#FBBF24]" : status === "ready" ? "bg-[#22C55E]" : "bg-[var(--atlas-text-faint)]"}`} />
       {config.label}
     </span>
   );
@@ -815,12 +808,12 @@ function GenerationStatusBadge({
 function InfoCard() {
   return (
     <div className="rounded-2xl border border-[#4285F4]/25 bg-gradient-to-br from-[#4285F4]/10 to-transparent p-5">
-      <p className="text-sm font-bold text-[#F5F7FA]">{WHAT_MEMORIASTUDY_DOES.title}</p>
+      <p className="text-sm font-bold atlas-ia-text">{WHAT_MEMORIASTUDY_DOES.title}</p>
       <ol className="mt-3 grid gap-2 sm:grid-cols-2">
         {WHAT_MEMORIASTUDY_DOES.steps.map((step, index) => (
           <li
             key={step}
-            className="flex items-start gap-2 text-xs text-[#F5F7FA]/75"
+            className="flex items-start gap-2 text-xs atlas-ia-text-muted"
           >
             <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#4285F4]/20 text-[10px] font-bold text-[#93C5FD]">
               {index + 1}
@@ -853,7 +846,7 @@ function StepSection({
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#F59E0B] to-[#F97316] text-sm font-bold text-[#1a1005]">
           {step}
         </span>
-        <h2 className="text-lg font-bold text-[#F5F7FA]">{title}</h2>
+        <h2 className="text-lg font-bold atlas-ia-text">{title}</h2>
       </div>
       {children}
     </section>
@@ -880,7 +873,7 @@ function PremiumPromptCard({
   return (
     <div className="relative overflow-hidden rounded-2xl p-[1px] shadow-[0_0_60px_rgba(66,133,244,0.15)]">
       <div className="absolute inset-0 bg-gradient-to-br from-[#F59E0B] via-[#A855F7] to-[#4285F4]" />
-      <div className="relative rounded-2xl bg-[#080d14]">
+      <div className="atlas-ia-card-inner relative rounded-2xl">
         <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/8 px-5 py-4">
           <div className="flex items-start gap-3">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#4285F4] to-[#A855F7] shadow-lg">
@@ -890,18 +883,18 @@ function PremiumPromptCard({
               <p className="text-[10px] font-bold uppercase tracking-wider text-[#93C5FD]">
                 Atlas jurídico final · Gemini Image
               </p>
-              <h3 className="text-base font-bold text-[#F5F7FA]">{title}</h3>
-              <p className="text-[11px] text-[#F5F7FA]/45">
+              <h3 className="text-base font-bold atlas-ia-text">{title}</h3>
+              <p className="text-[11px] atlas-ia-text-faint">
                 Modo: {modeLabel} · Nivel: {levelLabel}
               </p>
             </div>
           </div>
-          <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-medium text-[#F5F7FA]/60">
+          <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-medium atlas-ia-text-muted">
             {content.length.toLocaleString("es-PE")} caracteres
           </span>
         </div>
 
-        <pre className="whitespace-pre-wrap px-5 py-4 text-[13px] leading-relaxed text-[#F5F7FA]/90">
+        <pre className="whitespace-pre-wrap px-5 py-4 text-[13px] leading-relaxed atlas-ia-text-muted">
           {content}
         </pre>
 
@@ -930,9 +923,9 @@ function PremiumPromptCard({
 
 function DetailBlock({ title, content }: { title: string; content: string }) {
   return (
-    <div className="rounded-xl border border-white/8 bg-[#0a1018] px-4 py-3">
-      <p className="text-xs font-semibold text-[#F5F7FA]/70">{title}</p>
-      <pre className="mt-2 whitespace-pre-wrap text-[11px] leading-relaxed text-[#F5F7FA]/65">
+    <div className="atlas-ia-input rounded-xl px-4 py-3">
+      <p className="text-xs font-semibold atlas-ia-text-muted">{title}</p>
+      <pre className="mt-2 whitespace-pre-wrap text-[11px] leading-relaxed atlas-ia-text-muted">
         {content}
       </pre>
     </div>
@@ -950,7 +943,7 @@ function ExplanationBlock({
     <div className="rounded-2xl border border-[#22C55E]/25 bg-[#22C55E]/8 p-5">
       <ul className="space-y-2.5">
         {lines.map((line) => (
-          <li key={line} className="flex items-start gap-2 text-sm text-[#F5F7FA]/85">
+          <li key={line} className="flex items-start gap-2 text-sm atlas-ia-text">
             <Check size={14} className="mt-0.5 shrink-0 text-[#22C55E]" />
             <span>{line}</span>
           </li>
@@ -972,7 +965,7 @@ function RubricPreview({
 }) {
   return (
     <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
-      <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-[#F5F7FA]/50">
+      <p className="mb-2 text-[10px] font-bold uppercase tracking-wider atlas-ia-text-faint">
         Rúbrica analizada
         {analysis.fileName ? ` · ${analysis.fileName}` : ""}
       </p>
@@ -982,7 +975,7 @@ function RubricPreview({
         </p>
       ) : null}
       {analysis.evaluationCriteria.length ? (
-        <ul className="mt-2 space-y-1 text-[11px] text-[#F5F7FA]/70">
+        <ul className="mt-2 space-y-1 text-[11px] atlas-ia-text-muted">
           {analysis.evaluationCriteria.slice(0, 5).map((c) => (
             <li key={c}>• {c}</li>
           ))}
@@ -1008,7 +1001,7 @@ function AnalysisSummary({
 
   return (
     <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
-      <p className="mb-3 text-[10px] font-bold uppercase tracking-wider text-[#F5F7FA]/50">
+      <p className="mb-3 text-[10px] font-bold uppercase tracking-wider atlas-ia-text-faint">
         Análisis del documento
       </p>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -1017,8 +1010,8 @@ function AnalysisSummary({
             key={item.label}
             className="rounded-lg border border-white/8 bg-white/[0.02] px-3 py-2"
           >
-            <p className="text-[10px] text-[#F5F7FA]/45">{item.label}</p>
-            <p className="text-sm font-semibold text-[#F5F7FA]/85">
+            <p className="text-[10px] atlas-ia-text-faint">{item.label}</p>
+            <p className="text-sm font-semibold atlas-ia-text">
               {typeof item.value === "number" ? item.value : item.value}
             </p>
           </div>
