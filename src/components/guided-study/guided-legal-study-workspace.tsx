@@ -81,7 +81,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
   const [showIndex, setShowIndex] = useState(false);
   const [examOnly, setExamOnly] = useState(false);
   const [practiceExam, setPracticeExam] = useState(false);
-  const [mobilePanel, setMobilePanel] = useState<"pdf" | "tutor" | "split">("split");
+  const [mobilePanel, setMobilePanel] = useState<"pdf" | "tutor" | "split">("tutor");
   const [analysisVersion, setAnalysisVersion] = useState(GUIDED_STUDY_ANALYSIS_VERSION);
   const [activeHighlightId, setActiveHighlightId] = useState<string | null>(null);
   const [sourceSettings, setSourceSettings] = useState<LegalSourcesSettings | null>(null);
@@ -101,6 +101,17 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
   useEffect(() => {
     initialAnalysisDone.current = false;
   }, [materialId]);
+
+  useEffect(() => {
+    function clampSplitOnPhone() {
+      if (window.matchMedia("(max-width: 639px)").matches && mobilePanel === "split") {
+        setMobilePanel("tutor");
+      }
+    }
+    clampSplitOnPhone();
+    window.addEventListener("resize", clampSplitOnPhone);
+    return () => window.removeEventListener("resize", clampSplitOnPhone);
+  }, [mobilePanel]);
 
   useEffect(() => {
     const local = loadGuidedStudySession(materialId);
@@ -525,7 +536,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
   }
 
   return (
-    <div className="flex h-[calc(100dvh-4.5rem)] min-h-[32rem] flex-col gap-2">
+    <div className="gs-workspace">
       <header className="flex shrink-0 flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-card px-3 py-2">
         <div className="min-w-0 flex-1">
           <p className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-accent">
@@ -584,9 +595,9 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
       <div className="flex gap-1 px-2 lg:hidden" role="tablist" aria-label="Vista de estudio">
         {(
           [
-            { id: "split" as const, label: "Ambos" },
-            { id: "pdf" as const, label: "PDF" },
             { id: "tutor" as const, label: "Profesor IA" },
+            { id: "pdf" as const, label: "PDF" },
+            { id: "split" as const, label: "Ambos", phoneHidden: true },
           ] as const
         ).map((tab) => (
           <button
@@ -595,7 +606,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
             role="tab"
             aria-selected={mobilePanel === tab.id}
             onClick={() => setMobilePanel(tab.id)}
-            className={`flex-1 rounded-lg px-3 py-2 text-xs font-semibold ${mobilePanel === tab.id ? "bg-accent-soft text-accent" : "bg-muted text-muted-foreground"}`}
+            className={`flex-1 rounded-lg px-3 py-2 text-xs font-semibold ${"phoneHidden" in tab && tab.phoneHidden ? "hidden sm:flex sm:flex-1 sm:items-center sm:justify-center" : ""} ${mobilePanel === tab.id ? "bg-accent-soft text-accent" : "bg-muted text-muted-foreground"}`}
           >
             {tab.label}
           </button>

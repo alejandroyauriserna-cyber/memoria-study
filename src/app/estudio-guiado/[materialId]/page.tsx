@@ -37,7 +37,7 @@ export default async function GuidedStudyPage({
 
   return (
     <AppShell>
-      <section className="mx-auto max-w-[1600px] px-2 py-2 sm:px-3 lg:px-4">
+      <section className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col px-2 py-2 sm:px-3 lg:px-4">
         <GuidedStudyLoader materialId={materialId} />
       </section>
     </AppShell>

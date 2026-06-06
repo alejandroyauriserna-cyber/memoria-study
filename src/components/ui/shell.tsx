@@ -28,10 +28,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isHome = pathname === "/";
   const isCuaderno = pathname === "/cuaderno" || pathname.startsWith("/cuaderno/");
+  const isGuidedStudy =
+    pathname === "/estudio-guiado" || pathname.startsWith("/estudio-guiado/");
 
   return (
     <div
-      className={`relative flex min-h-[100dvh] flex-col text-foreground${isHome ? " shell--home" : ""}${isCuaderno ? " shell--cuaderno" : ""}`}
+      className={`relative flex min-h-[100dvh] flex-col text-foreground${isHome ? " shell--home" : ""}${isCuaderno ? " shell--cuaderno" : ""}${isGuidedStudy ? " shell--guided-study" : ""}`}
     >
       <AppThemeProvider />
       <a
@@ -115,11 +117,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <main id="main-content" className="relative z-[1] flex-1 overflow-x-hidden">
+      <main
+        id="main-content"
+        className={`relative z-[1] flex-1 overflow-x-hidden${isGuidedStudy ? " flex min-h-0 flex-col" : ""}`}
+      >
         {children}
       </main>
 
-      {!isHome ? (
+      {!isHome && !isGuidedStudy ? (
         <footer className="relative z-[1] shrink-0 border-t border-[var(--border)] px-4 py-5 text-center text-xs text-muted-foreground">
           MemoriaStudy · Plataforma inteligente para el estudio jurídico
         </footer>

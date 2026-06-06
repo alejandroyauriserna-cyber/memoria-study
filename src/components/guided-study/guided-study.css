@@ -1,3 +1,26 @@
+/* Móvil: ocupa el main sin altura fija. Desktop (lg+): layout pro sin cambios. */
+.gs-workspace {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+@media (min-width: 1024px) {
+  .gs-workspace {
+    height: calc(100dvh - 4.5rem);
+    min-height: 32rem;
+    flex: none;
+    padding-bottom: 0;
+  }
+}
+
+.shell--guided-study #main-content > section {
+  min-height: 0;
+}
+
 .gs-panel-shell {
   border-radius: 1rem;
   border: 1px solid var(--border);

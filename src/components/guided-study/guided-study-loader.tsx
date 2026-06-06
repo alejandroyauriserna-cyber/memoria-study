@@ -17,5 +17,9 @@ const GuidedLegalStudyWorkspace = dynamic(
 );
 
 export function GuidedStudyLoader({ materialId }: { materialId: string }) {
-  return <GuidedLegalStudyWorkspace materialId={materialId} />;
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <GuidedLegalStudyWorkspace materialId={materialId} />
+    </div>
+  );
 }
