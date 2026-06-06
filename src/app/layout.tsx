@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import "./loading-progress.css";
 import "./home-2026.css";
 import "./library-modern.css";
 import "./favorites-modern.css";

@@ -112,7 +112,7 @@ export function UserMenu() {
           <div className="mb-4 rounded-3xl bg-muted p-4">
             <p className="text-xs uppercase tracking-[0.24em] text-accent">Ciclo actual</p>
             <p className="mt-2 text-sm font-semibold text-foreground">
-              {profile?.current_cycle_label ?? "Ciclo V"}
+              {profile?.current_cycle_label ?? "Sin ciclo configurado"}
             </p>
             {profile?.email ? (
               <p className="mt-1 truncate text-[10px] text-muted-foreground">{profile.email}</p>

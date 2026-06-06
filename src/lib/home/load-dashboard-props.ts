@@ -1,7 +1,6 @@
 import { buildAiSuggestions } from "@/lib/home/build-suggestions";
 import { buildRecentContinueItems } from "@/lib/home/build-recent-items";
 import type { MemoriaDashboardProps } from "@/lib/home/dashboard-types";
-import { parseCycleNumberFromLabel } from "@/lib/home/greeting";
 import { getCoursesForCycle } from "@/lib/academic/helpers";
 import { normalizeAcademicForWrite } from "@/lib/academic/normalize-academic";
 import { UNT_DERECHO } from "@/lib/academic/unt-derecho";
@@ -9,6 +8,7 @@ import { recordToMaterial } from "@/lib/materials/mapper";
 import { formatStudyHours } from "@/lib/profile/aggregate-learning-stats";
 import { estimateStudyMinutesFromServer } from "@/lib/profile/estimate-study-minutes";
 import { isNewUser } from "@/lib/profile/is-new-user";
+import { resolveUserCycle } from "@/lib/profile/resolve-user-cycle";
 import { fetchServerLearningStats } from "@/lib/profile/server-learning-stats";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { User } from "@supabase/supabase-js";
@@ -62,9 +62,10 @@ export async function loadMemoriaDashboardProps(user: User): Promise<MemoriaDash
   ]);
 
   const profileName = profileData?.full_name ?? user.user_metadata?.full_name ?? "Estudiante";
-  const currentCycle = profileData?.current_cycle_label ?? "Ciclo V";
-  const currentCycleNumber =
-    profileData?.current_cycle_number ?? parseCycleNumberFromLabel(currentCycle);
+  const { cycleLabel: currentCycle, cycleNumber: currentCycleNumber } = resolveUserCycle(
+    profileData,
+    user.user_metadata,
+  );
 
   const studyHistory = (historyData ?? [])
     .map((item) => {
@@ -119,7 +120,7 @@ export async function loadMemoriaDashboardProps(user: User): Promise<MemoriaDash
     title: m.title as string,
     description: (m.description as string) ?? "",
     materialType: (m.material_type as string) ?? "pdf",
-    courseName: (m as { course_name?: string }).course_name ?? currentCycle,
+    courseName: (m as { course_name?: string }).course_name ?? currentCycle ?? UNT_DERECHO.career,
   }));
 
   return {
@@ -127,7 +128,7 @@ export async function loadMemoriaDashboardProps(user: User): Promise<MemoriaDash
     currentCycle,
     currentCycleNumber,
     career: UNT_DERECHO.career,
-    activeCoursesCount: getCoursesForCycle(currentCycleNumber).length,
+    activeCoursesCount: currentCycleNumber ? getCoursesForCycle(currentCycleNumber).length : 0,
     materialsThisWeek: weeklyMaterialsCount ?? 0,
     studyHoursLabel: formatStudyHours(estimateStudyMinutesFromServer(learningStats)),
     totalShared: materialsCount ?? 0,

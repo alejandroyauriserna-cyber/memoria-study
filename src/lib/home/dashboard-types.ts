@@ -24,8 +24,8 @@ export type AiSuggestion = {
 
 export type MemoriaDashboardProps = {
   profileName: string;
-  currentCycle: string;
-  currentCycleNumber: number;
+  currentCycle: string | null;
+  currentCycleNumber: number | null;
   career: string;
   activeCoursesCount: number;
   materialsThisWeek: number;

@@ -55,7 +55,7 @@ type CourseStudyCount = { courseName: string; count: number };
 type Props = {
   email?: string | null;
   fullName: string;
-  currentCycleLabel: string;
+  currentCycleLabel: string | null;
   currentCycleNumber?: number | null;
   organizersCount: number;
   serverStats: ServerLearningStats;
@@ -567,7 +567,7 @@ export function LearningHub({
             <ProfileForm
               fullName={fullName}
               currentCycle={
-                currentCycleNumber && currentCycleLabel
+                currentCycleNumber != null && currentCycleLabel
                   ? { cycleNumber: currentCycleNumber, cycleLabel: currentCycleLabel }
                   : null
               }

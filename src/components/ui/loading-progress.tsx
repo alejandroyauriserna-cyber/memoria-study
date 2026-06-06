@@ -25,16 +25,13 @@ export function LoadingProgress({
     return (
       <div className={`space-y-1.5 ${className}`} role="status" aria-live="polite">
         <div className="flex items-center justify-between gap-2 text-xs">
-          <span className="font-medium text-[#F5F7FA]/80">{stageLabel ?? "Cargando"}</span>
-          <span className="font-bold tabular-nums text-[#00FFD5]">{safePercent}%</span>
+          <span className="ms-loading-progress-inline__stage">{stageLabel ?? "Cargando"}</span>
+          <span className="ms-loading-progress-inline__percent">{safePercent}%</span>
         </div>
-        <div className="h-1 overflow-hidden rounded-full bg-[rgba(255,255,255,0.08)]">
-          <div
-            className="h-full rounded-full bg-[#00FFD5] transition-all duration-500 ease-out"
-            style={{ width: `${safePercent}%` }}
-          />
+        <div className="ms-loading-progress__track ms-loading-progress__track--sm">
+          <div className="ms-loading-progress__bar" style={{ width: `${safePercent}%` }} />
         </div>
-        <p className="text-[11px] text-muted-foreground">{message}</p>
+        <p className="ms-loading-progress__message ms-loading-progress__message--sm">{message}</p>
       </div>
     );
   }
@@ -46,20 +43,19 @@ export function LoadingProgress({
         role="status"
         aria-live="polite"
       >
-        <div className="w-full max-w-sm rounded-2xl border border-[rgba(0,255,213,0.2)] bg-[rgba(7,19,26,0.85)] p-5 shadow-[0_0_40px_rgba(0,255,213,0.08)]">
-          <div className="flex items-center justify-between gap-3 text-sm">
-            <span className="font-semibold text-[#00FFD5]">{stageLabel ?? "Cargando"}</span>
-            <span className="text-2xl font-bold tabular-nums text-[#F5F7FA]">{safePercent}%</span>
+        <div className="ms-loading-progress-overlay__card">
+          <div className="ms-loading-progress__head">
+            <span className="ms-loading-progress__label">{stageLabel ?? "Cargando"}</span>
+            <span className="ms-loading-progress__percent ms-loading-progress__percent--lg">
+              {safePercent}%
+            </span>
           </div>
-          <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-[rgba(255,255,255,0.08)]">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-[#00BFFF] to-[#00FFD5] transition-all duration-500 ease-out"
-              style={{ width: `${safePercent}%` }}
-            />
+          <div className="ms-loading-progress__track ms-loading-progress__track--lg">
+            <div className="ms-loading-progress__bar" style={{ width: `${safePercent}%` }} />
           </div>
-          <p className="mt-4 text-sm leading-6 text-muted-foreground">{message}</p>
+          <p className="ms-loading-progress__message">{message}</p>
           {totalChunks && totalChunks > 1 ? (
-            <p className="mt-2 text-xs font-medium text-muted-foreground">
+            <p className="ms-loading-progress__meta">
               Parte {currentChunk ?? 0} de {totalChunks}
             </p>
           ) : null}
@@ -69,27 +65,20 @@ export function LoadingProgress({
   }
 
   return (
-    <div
-      className={`rounded-xl border border-[rgba(0,255,213,0.2)] bg-[rgba(7,19,26,0.55)] p-4 ${className}`}
-      role="status"
-      aria-live="polite"
-    >
-      <div className="flex items-center justify-between gap-3 text-sm">
-        <span className="font-semibold text-[#00FFD5]">{stageLabel ?? "Procesando"}</span>
-        <span className="text-lg font-bold tabular-nums text-[#F5F7FA]">{safePercent}%</span>
+    <div className={`ms-loading-progress ${className}`} role="status" aria-live="polite">
+      <div className="ms-loading-progress__head">
+        <span className="ms-loading-progress__label">{stageLabel ?? "Procesando"}</span>
+        <span className="ms-loading-progress__percent">{safePercent}%</span>
       </div>
 
-      <div className="mt-3 h-2 overflow-hidden rounded-full bg-[rgba(255,255,255,0.08)]">
-        <div
-          className="h-full rounded-full bg-gradient-to-r from-[#00BFFF] to-[#00FFD5] transition-all duration-500 ease-out"
-          style={{ width: `${safePercent}%` }}
-        />
+      <div className="ms-loading-progress__track ms-loading-progress__track--md">
+        <div className="ms-loading-progress__bar" style={{ width: `${safePercent}%` }} />
       </div>
 
-      <p className="mt-3 text-sm text-muted-foreground">{message}</p>
+      <p className="ms-loading-progress__message">{message}</p>
 
       {totalChunks && totalChunks > 1 ? (
-        <p className="mt-1 text-xs font-medium text-muted-foreground">
+        <p className="ms-loading-progress__meta">
           Parte {currentChunk ?? 0} de {totalChunks}
         </p>
       ) : null}

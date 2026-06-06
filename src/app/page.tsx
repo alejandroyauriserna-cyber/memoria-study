@@ -88,7 +88,7 @@ export default async function Home() {
               {isAuthenticated ? (
                 <TimeGreetingText
                   name={firstName}
-                  suffix={dashboardProps?.currentCycle ?? UNT_DERECHO.career}
+                  suffix={dashboardProps?.currentCycle ?? undefined}
                 />
               ) : (
                 `${UNT_DERECHO.university} / ${UNT_DERECHO.career}`

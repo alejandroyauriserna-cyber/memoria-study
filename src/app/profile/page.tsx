@@ -10,6 +10,7 @@ import {
   type ProfileStudySettings,
   type ProfileTheme,
 } from "@/lib/profile/study-preferences-storage";
+import { resolveUserCycle } from "@/lib/profile/resolve-user-cycle";
 
 function aggregateCourseCounts(
   rows: Array<{ materials: { course_name: string } | null }>,
@@ -67,14 +68,10 @@ export default async function ProfilePage() {
   const profile = profileData ?? null;
   const fullName =
     profile?.full_name ?? (user.user_metadata?.full_name as string | undefined) ?? "Estudiante UNT";
-  const currentCycleLabel =
-    profile?.current_cycle_label ??
-    (user.user_metadata?.current_cycle_label as string | undefined) ??
-    "Ciclo V";
-  const currentCycleNumber =
-    profile?.current_cycle_number ??
-    (user.user_metadata?.current_cycle_number as number | undefined) ??
-    null;
+  const { cycleLabel: currentCycleLabel, cycleNumber: currentCycleNumber } = resolveUserCycle(
+    profile,
+    user.user_metadata,
+  );
 
   const topCourses = aggregateCourseCounts(
     (studyHistory ?? []).map((row) => {

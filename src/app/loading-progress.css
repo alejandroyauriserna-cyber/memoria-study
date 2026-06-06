@@ -1,0 +1,129 @@
+/* Theme-aware loading progress (Fuentes, perfil, estudio, etc.) */
+
+:root {
+  --ms-load-bg: rgba(7, 19, 26, 0.55);
+  --ms-load-border: rgba(0, 255, 213, 0.2);
+  --ms-load-track: rgba(255, 255, 255, 0.08);
+  --ms-load-accent: #00ffd5;
+  --ms-load-accent-secondary: #00bfff;
+  --ms-load-label: #00ffd5;
+  --ms-load-percent: #f5f7fa;
+  --ms-load-stage: rgba(245, 247, 250, 0.8);
+}
+
+html:not(.dark) {
+  --ms-load-bg: rgba(255, 255, 255, 0.96);
+  --ms-load-border: rgba(15, 23, 42, 0.1);
+  --ms-load-track: rgba(15, 23, 42, 0.08);
+  --ms-load-accent: #0f766e;
+  --ms-load-accent-secondary: #0891b2;
+  --ms-load-label: #0f766e;
+  --ms-load-percent: #0f172a;
+  --ms-load-stage: rgba(15, 23, 42, 0.72);
+}
+
+.ms-loading-progress {
+  border-radius: 0.75rem;
+  border: 1px solid var(--ms-load-border);
+  background: var(--ms-load-bg);
+  padding: 1rem;
+}
+
+html:not(.dark) .ms-loading-progress {
+  box-shadow: 0 14px 40px rgba(15, 23, 42, 0.08);
+}
+
+.ms-loading-progress__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.ms-loading-progress__label {
+  font-weight: 600;
+  color: var(--ms-load-label);
+}
+
+.ms-loading-progress__percent {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ms-load-percent);
+}
+
+.ms-loading-progress__percent--lg {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.ms-loading-progress__track {
+  overflow: hidden;
+  border-radius: 9999px;
+  background: var(--ms-load-track);
+}
+
+.ms-loading-progress__track--sm {
+  height: 0.25rem;
+  margin-top: 0.375rem;
+}
+
+.ms-loading-progress__track--md {
+  height: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.ms-loading-progress__track--lg {
+  height: 0.625rem;
+  margin-top: 1rem;
+}
+
+.ms-loading-progress__bar {
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, var(--ms-load-accent-secondary), var(--ms-load-accent));
+  transition: width 0.5s ease-out;
+}
+
+.ms-loading-progress__message {
+  margin-top: 0.75rem;
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+
+.ms-loading-progress__message--sm {
+  margin-top: 0.25rem;
+  font-size: 0.6875rem;
+}
+
+.ms-loading-progress__meta {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+}
+
+.ms-loading-progress-inline__stage {
+  font-weight: 500;
+  color: var(--ms-load-stage);
+}
+
+.ms-loading-progress-inline__percent {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ms-load-accent);
+}
+
+.ms-loading-progress-overlay__card {
+  width: 100%;
+  max-width: 24rem;
+  border-radius: 1rem;
+  border: 1px solid var(--ms-load-border);
+  background: var(--ms-load-bg);
+  padding: 1.25rem;
+  box-shadow: 0 0 40px rgba(0, 255, 213, 0.08);
+}
+
+html:not(.dark) .ms-loading-progress-overlay__card {
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.1);
+}

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Flame, Bookmark, Clock, GraduationCap } from "lucide-react";
 import { UNT_DERECHO } from "@/lib/academic/unt-derecho";
 import { formatStudyHours, type AggregatedLearningStats } from "@/lib/profile/aggregate-learning-stats";
@@ -14,7 +15,7 @@ type StudyLevel = {
 
 type Props = {
   fullName: string;
-  currentCycleLabel: string;
+  currentCycleLabel: string | null;
   stats: AggregatedLearningStats | null;
   favoritesCount: number;
   level: StudyLevel | null;
@@ -45,21 +46,25 @@ export function ProfileHero({
       label: "Racha de estudio",
       value: stats ? `${stats.studyStreakDays} días` : "—",
       icon: Flame,
+      href: null as string | null,
     },
     {
       label: "Horas estudiadas",
       value: stats ? formatStudyHours(stats.studyMinutes) : "—",
       icon: Clock,
+      href: null,
     },
     {
       label: "Materiales guardados",
-      value: stats ? String(favoritesCount || stats.materialsOpened) : "—",
+      value: String(favoritesCount),
       icon: Bookmark,
+      href: "/favorites",
     },
     {
       label: "Progreso académico",
       value: level ? `${level.progress}%` : "—",
       icon: GraduationCap,
+      href: null,
     },
   ];
 
@@ -81,7 +86,8 @@ export function ProfileHero({
 
         <h1 className="profile-name mt-6">{fullName}</h1>
         <p className="profile-career">
-          {UNT_DERECHO.career} · UNT · {currentCycleLabel}
+          {UNT_DERECHO.career} · UNT
+          {currentCycleLabel ? ` · ${currentCycleLabel}` : ""}
         </p>
 
         <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
@@ -98,11 +104,30 @@ export function ProfileHero({
         <div className="profile-stats w-full">
           {heroStats.map((item) => {
             const Icon = item.icon;
-            return (
-              <article key={item.label} className="profile-stat">
+            const content = (
+              <>
                 <Icon size={16} className="mx-auto mb-2 text-accent opacity-80" />
                 <p className="profile-stat-value">{item.value}</p>
                 <p className="profile-stat-label">{item.label}</p>
+              </>
+            );
+
+            if (item.href) {
+              return (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  className="profile-stat profile-stat--link"
+                  aria-label={`${item.label}: ${item.value}. Ir a favoritos`}
+                >
+                  {content}
+                </Link>
+              );
+            }
+
+            return (
+              <article key={item.label} className="profile-stat">
+                {content}
               </article>
             );
           })}

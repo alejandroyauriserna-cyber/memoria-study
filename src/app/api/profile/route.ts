@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import type { User } from "@supabase/supabase-js";
 import { sanitizeAcademicSelectionForWrite } from "@/lib/academic/helpers";
+import { resolveUserCycle } from "@/lib/profile/resolve-user-cycle";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/env";
@@ -76,20 +77,43 @@ function profileFromAuthUser(user: User): ProfileShape {
 function buildProfilePayload(
   user: User,
   body: z.infer<typeof bodySchema>,
+  existing?: ProfileShape | null,
 ): ProfileShape & { user_id: string } {
+  const preserved = resolveUserCycle(existing, user.user_metadata);
+
   return {
     user_id: user.id,
-    email: user.email ?? body.email ?? null,
+    email: user.email ?? body.email ?? existing?.email ?? null,
     academic_context: body.academic ?? undefined,
-    full_name: body.fullName ?? (user.user_metadata?.full_name as string | undefined) ?? null,
+    full_name:
+      body.fullName ??
+      existing?.full_name ??
+      (user.user_metadata?.full_name as string | undefined) ??
+      null,
     current_cycle_number:
-      body.currentCycle?.cycleNumber ??
-      (user.user_metadata?.current_cycle_number as number | undefined) ??
-      null,
+      body.currentCycle?.cycleNumber ?? preserved.cycleNumber ?? null,
     current_cycle_label:
-      body.currentCycle?.cycleLabel ??
-      (user.user_metadata?.current_cycle_label as string | undefined) ??
-      null,
+      body.currentCycle?.cycleLabel ?? preserved.cycleLabel ?? null,
+  };
+}
+
+function enrichProfileResponse(
+  profile: ProfileShape | null | undefined,
+  metadata?: Record<string, unknown> | null,
+): ProfileShape {
+  const base = profile ?? {
+    full_name: null,
+    current_cycle_number: null,
+    current_cycle_label: null,
+    academic_context: {},
+    email: null,
+  };
+  const resolved = resolveUserCycle(base, metadata);
+
+  return {
+    ...base,
+    current_cycle_number: resolved.cycleNumber,
+    current_cycle_label: resolved.cycleLabel,
   };
 }
 
@@ -147,10 +171,14 @@ export async function GET() {
       .maybeSingle();
 
     if (error) {
-      return NextResponse.json({ profile: profileFromAuthUser(user) });
+      return NextResponse.json({
+        profile: enrichProfileResponse(profileFromAuthUser(user), user.user_metadata),
+      });
     }
 
-    return NextResponse.json({ profile: data ?? profileFromAuthUser(user) });
+    return NextResponse.json({
+      profile: enrichProfileResponse(data ?? profileFromAuthUser(user), user.user_metadata),
+    });
   } catch (caught) {
     return NextResponse.json(
       { error: caught instanceof Error ? caught.message : "Error al leer perfil." },
@@ -197,17 +225,21 @@ export async function POST(request: Request) {
       sanitizedAcademic = normalized;
     }
 
-    const profilePayload = buildProfilePayload(user, {
-      ...body,
-      academic: sanitizedAcademic,
-    });
     const admin = createAdminClient();
-
     const { data: existingProfile } = await admin
       .from("user_profiles")
-      .select("academic_context")
+      .select("full_name, current_cycle_number, current_cycle_label, academic_context, email")
       .eq("user_id", user.id)
       .maybeSingle();
+
+    const profilePayload = buildProfilePayload(
+      user,
+      {
+        ...body,
+        academic: sanitizedAcademic,
+      },
+      existingProfile,
+    );
 
     const priorContext =
       existingProfile?.academic_context && typeof existingProfile.academic_context === "object"
@@ -231,16 +263,17 @@ export async function POST(request: Request) {
       onConflict: "user_id",
     });
 
-    if (error) {
-      await saveProfileToUserMetadata(
-        admin,
-        user,
-        { ...body, academic: sanitizedAcademic },
-        profilePayload,
-      );
-    }
+    await saveProfileToUserMetadata(
+      admin,
+      user,
+      { ...body, academic: sanitizedAcademic },
+      profilePayload,
+    );
 
-    return NextResponse.json({ saved: true, profile: profilePayload });
+    return NextResponse.json({
+      saved: true,
+      profile: enrichProfileResponse(profilePayload, user.user_metadata),
+    });
   } catch (caught) {
     return NextResponse.json(
       { error: caught instanceof Error ? caught.message : "No se pudo guardar el perfil." },

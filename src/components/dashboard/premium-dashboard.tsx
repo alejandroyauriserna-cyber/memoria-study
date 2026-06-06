@@ -83,7 +83,7 @@ export function PremiumDashboard({
         <div>
           <p className="dash-home__kicker">
             <Sparkles size={13} />
-            {UNT_DERECHO.university} / {currentCycle}
+            {currentCycle ? `${UNT_DERECHO.university} / ${currentCycle}` : UNT_DERECHO.university}
           </p>
           <h1 className="dash-home__greeting">
             {greeting}, {firstName}

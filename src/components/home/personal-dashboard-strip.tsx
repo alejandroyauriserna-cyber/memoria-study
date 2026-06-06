@@ -14,7 +14,7 @@ import { useTimeGreeting } from "@/lib/home/use-time-greeting";
 
 type PersonalDashboardStripProps = {
   profileName: string;
-  currentCycle: string;
+  currentCycle: string | null;
   activeCoursesCount: number;
   materialsThisWeek: number;
   studyHoursLabel: string;
@@ -84,7 +84,7 @@ export function PersonalDashboardStrip({
             {greeting}, {firstName}
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Derecho UNT · {currentCycle}
+            Derecho UNT{currentCycle ? ` · ${currentCycle}` : ""}
           </p>
         </div>
         <Link

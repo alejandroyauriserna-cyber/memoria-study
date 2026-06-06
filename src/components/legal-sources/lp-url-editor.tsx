@@ -57,12 +57,12 @@ export function LpUrlEditor({
 
   return (
     <div
-      className={`rounded-lg border border-[rgba(0,191,255,0.15)] bg-[rgba(0,0,0,0.22)] ${
+      className={`fuentes-lp-url-editor rounded-lg border ${
         compact ? "mt-1.5 space-y-2 px-2 py-2" : "space-y-2.5 px-2.5 py-2.5"
       }`}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+        <p className="fuentes-lp-url-editor__label text-[10px] font-semibold uppercase tracking-wide">
           {urlLabel}
         </p>
         {catalogUrl ? (
@@ -78,13 +78,13 @@ export function LpUrlEditor({
       </div>
 
       {allowedHostsHint ? (
-        <p className="text-[10px] leading-4 text-muted-foreground">
+        <p className="fuentes-lp-url-editor__hint text-[10px] leading-4">
           Dominios permitidos: {allowedHostsHint}
         </p>
       ) : null}
 
       {catalogUrl ? (
-        <p className="text-[10px] leading-4 text-muted-foreground">
+        <p className="fuentes-lp-url-editor__hint text-[10px] leading-4">
           URL sugerida:{" "}
           <span className="break-all font-mono text-[#00BFFF]/80">{catalogUrl}</span>
         </p>
@@ -106,7 +106,7 @@ export function LpUrlEditor({
                   placeholder={
                     index === 0 ? "https://..." : "URL adicional relacionada"
                   }
-                  className={`min-w-0 flex-1 rounded-lg border bg-[rgba(0,0,0,0.25)] px-2.5 py-2 font-mono text-[10px] text-[#F5F7FA] outline-none focus:border-[rgba(0,255,213,0.35)] ${
+                  className={`fuentes-lp-url-input min-w-0 flex-1 rounded-lg border px-2.5 py-2 font-mono text-[10px] outline-none focus:border-[rgba(0,255,213,0.35)] ${
                     valid
                       ? "border-[rgba(0,191,255,0.2)]"
                       : "border-[rgba(248,113,113,0.45)]"

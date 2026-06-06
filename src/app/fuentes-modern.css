@@ -654,3 +654,79 @@ html:not(.dark) .fuentes-page-content .text-\[\#F5F7FA\]\/90 {
 html:not(.dark) .fuentes-page-content .bg-\[rgba\(0\,0\,0\,0\.25\)\] {
   background: rgba(255, 255, 255, 0.92) !important;
 }
+
+.fuentes-lp-url-editor {
+  border-color: rgba(0, 191, 255, 0.15);
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.fuentes-lp-url-editor__label,
+.fuentes-lp-url-editor__hint {
+  color: rgba(245, 247, 250, 0.62);
+}
+
+.fuentes-lp-url-input {
+  border-color: rgba(0, 191, 255, 0.2);
+  background: rgba(0, 0, 0, 0.25);
+  color: #f5f7fa;
+}
+
+.fuentes-lp-url-input::placeholder {
+  color: rgba(148, 163, 184, 0.75);
+}
+
+html:not(.dark) .fuentes-lp-url-editor {
+  border-color: color-mix(in srgb, var(--accent-secondary) 22%, transparent);
+  background: rgba(248, 250, 252, 0.96);
+}
+
+html:not(.dark) .fuentes-lp-url-editor__label,
+html:not(.dark) .fuentes-lp-url-editor__hint {
+  color: var(--muted-foreground);
+}
+
+html:not(.dark) .fuentes-lp-url-input {
+  border-color: color-mix(in srgb, var(--accent) 18%, transparent);
+  background: #ffffff;
+  color: var(--foreground);
+}
+
+html:not(.dark) .fuentes-lp-url-input::placeholder {
+  color: color-mix(in srgb, var(--muted-foreground) 75%, transparent);
+}
+
+html:not(.dark) .fuentes-page-content .text-\[\#86EFAC\] {
+  color: #15803d !important;
+}
+
+html:not(.dark) .fuentes-alert.is-info-green {
+  border-color: rgba(22, 163, 74, 0.22);
+  background: rgba(240, 253, 244, 0.95);
+  color: #166534;
+}
+
+html:not(.dark) .fuentes-alert.is-warning {
+  border-color: rgba(180, 83, 9, 0.22);
+  background: #fff7ed;
+  color: #9a3412;
+}
+
+html:not(.dark) .fuentes-alert.is-info-red,
+html:not(.dark) .fuentes-alert.is-error {
+  border-color: rgba(220, 38, 38, 0.18);
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+html:not(.dark) .fuentes-juris-card {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+html:not(.dark) .fuentes-preset-card .text-\[\#00BFFF\] {
+  color: #0369a1 !important;
+}
+
+html:not(.dark) .fuentes-preset-card [class*="191,255,0.15"] {
+  background: rgba(224, 242, 254, 0.95) !important;
+  color: #0369a1 !important;
+}
