@@ -25,6 +25,7 @@ import {
   formatOrganizerDate,
   wasOrganizerRegenerated,
 } from "@/lib/organizers/format";
+import { OrganizerCardMeta } from "@/components/organizers/organizer-card-meta";
 import { OrganizerTypeBadge } from "@/components/organizers/organizer-type-badge";
 import {
   OrganizerCardPreviewEmpty,
@@ -137,30 +138,32 @@ function CardMapPreview({ content }: { content: unknown }) {
   const { nodes: layoutNodes, cx, cy, w, h } = preview.layout;
 
   return (
-    <div className="study-map-viewport relative h-full overflow-hidden">
+    <div className="study-map-viewport organizer-map-preview relative h-full overflow-hidden">
       <svg viewBox={`0 0 ${w} ${h}`} className="h-full w-full" aria-hidden>
         {layoutNodes.map((node, index) => {
           const branch = branchForId(node.branchId);
           return (
             <path
               key={`${node.label}-${index}`}
+              className="organizer-map-edge"
               d={studyBezierPath(cx, cy, node.x, node.y)}
               fill="none"
               stroke={branch.color}
-              strokeWidth={1.2}
-              strokeOpacity={0.4}
+              strokeWidth={1.4}
+              strokeOpacity={0.45}
             />
           );
         })}
-        <circle cx={cx} cy={cy} r={20} fill="rgba(0,255,213,0.25)" />
+        <circle className="organizer-map-center" cx={cx} cy={cy} r={20} fill="rgba(0,255,213,0.25)" />
         {layoutNodes.map((node, index) => (
           <circle
             key={`n-${index}`}
+            className="organizer-map-node"
             cx={node.x}
             cy={node.y}
             r={9}
             fill={branchForId(node.branchId).color}
-            fillOpacity={0.85}
+            fillOpacity={0.9}
           />
         ))}
       </svg>
@@ -196,8 +199,8 @@ function OrganizerCardItem({
       <motion.article
         layout
         id={`organizer-${organizer.id}`}
-        className={`organizer-card group flex gap-4 p-3 sm:p-4 ${
-          highlighted ? "ring-2 ring-accent/30" : ""
+        className={`organizer-card group flex gap-4 p-3 sm:p-4${
+          highlighted ? " is-highlighted ring-2 ring-accent/30" : ""
         }`}
       >
         <button type="button" onClick={onView} className="w-36 shrink-0 overflow-hidden sm:w-44">
@@ -206,10 +209,21 @@ function OrganizerCardItem({
         <div className="flex min-w-0 flex-1 flex-col justify-between">
           <button type="button" onClick={onView} className="text-left">
             <OrganizerTypeBadge type={organizer.organizer_type} />
-            <h2 className="organizer-card-title line-clamp-1 text-foreground">{organizer.title}</h2>
-            <p className="organizer-card-description line-clamp-2 text-xs">{organizer.description}</p>
+            <OrganizerCardMeta
+              content={organizer.content}
+              courseName={organizer.course_name}
+              cycleLabel={organizer.cycle_label}
+            />
+            <h2 className="organizer-card-title organizer-card-title--compact line-clamp-1 text-foreground">
+              {organizer.title}
+            </h2>
+            {organizer.description ? (
+              <p className="organizer-card-description line-clamp-2 text-xs">{organizer.description}</p>
+            ) : null}
             <p className="mt-2 text-[11px] text-muted-foreground">
-              {organizer.course_name} · {regenerated ? `Regenerado ${formatOrganizerDate(organizer.updated_at)}` : formatOrganizerDate(organizer.created_at)}
+              {regenerated
+                ? `Regenerado ${formatOrganizerDate(organizer.updated_at)}`
+                : formatOrganizerDate(organizer.created_at)}
             </p>
           </button>
           <CardActionBar
@@ -231,33 +245,36 @@ function OrganizerCardItem({
     <motion.article
       layout
       id={`organizer-${organizer.id}`}
-      className={`organizer-card group relative flex h-full flex-col ${
-        highlighted ? "ring-2 ring-accent/35 shadow-[0_0_60px_-12px_rgba(31,107,67,0.45)]" : ""
-      }`}
+        className={`organizer-card group relative flex h-full flex-col${
+          highlighted ? " is-highlighted ring-2 ring-accent/35" : ""
+        }`}
     >
-      <button type="button" onClick={onView} className="relative block text-left">
-        <div className="relative h-32 overflow-hidden border-b border-white/10 sm:h-36">
+      <button type="button" onClick={onView} className="relative z-[1] block text-left">
+        <div className="relative z-[1] h-36 overflow-hidden border-b border-border/60 sm:h-40">
           <CardMapPreview content={organizer.content} />
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#09161f]/90 via-transparent to-transparent" />
+          <div className="organizer-card-preview-fade pointer-events-none absolute inset-0" />
         </div>
-        <div className="organizer-card-header">
+        <div className="organizer-card-header relative z-[1]">
           <OrganizerTypeBadge type={organizer.organizer_type} />
-          <div className="mt-2 flex flex-wrap items-center gap-2">
+          <OrganizerCardMeta
+            content={organizer.content}
+            courseName={organizer.course_name}
+            cycleLabel={organizer.cycle_label}
+          />
+          <div className="mt-1.5 flex flex-wrap items-center gap-2">
             {regenerated ? (
               <span className="rounded-md bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent">
                 Regenerado
               </span>
             ) : null}
-            <span className="text-[10px] text-muted-foreground">{organizer.cycle_label}</span>
           </div>
-          <h2 className="organizer-card-title line-clamp-2 text-foreground">
+          <h2 className="organizer-card-title organizer-card-title--compact line-clamp-2 text-foreground">
             {organizer.title}
           </h2>
-          <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">{organizer.course_name}</p>
         </div>
       </button>
 
-      <div className="absolute inset-x-0 bottom-0 translate-y-full border-t border-white/10 bg-[rgba(8,18,25,0.85)] p-2 backdrop-blur-xl transition duration-300 group-hover:translate-y-0">
+      <div className="organizer-card-actions card-action-hover absolute inset-x-0 bottom-0 translate-y-full border-t p-2 backdrop-blur-xl transition duration-300 group-hover:translate-y-0">
         <CardActionBar
           regenerating={regenerating}
           regenerateLabel={regenerateLabel}
@@ -488,28 +505,23 @@ export function OrganizersWorkspace({
 
   return (
     <>
-      <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[rgba(0,255,213,0.2)] bg-[rgba(0,255,213,0.08)] px-3 py-1 text-xs font-medium text-[#00FFD5]">
-            <Sparkles size={12} /> MemoriaStudy
-          </div>
-          <h1 className="text-[#F5F7FA]">
-            Organizadores visuales
-          </h1>
-          <p className="mt-1 max-w-lg text-sm text-muted-foreground">
-            {organizers.length} organizador{organizers.length === 1 ? "" : "es"} · mapas conceptuales generados por IA
+      <div className="organizers-workspace-header mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="organizers-workspace-title">Organizadores visuales</h1>
+          <p className="organizers-workspace-subtitle text-sm text-muted-foreground">
+            {organizers.length} organizador{organizers.length === 1 ? "" : "es"} · mapas con IA
             {filtered.length !== organizers.length ? ` · ${filtered.length} visibles` : ""}
           </p>
         </div>
         <Link
           href="/library"
-          className="tron-btn-primary inline-flex h-11 shrink-0 items-center gap-2 rounded-xl px-5 text-sm font-semibold"
+          className="tron-btn-primary inline-flex h-9 shrink-0 items-center gap-2 rounded-xl px-4 text-sm font-semibold"
         >
-          <BookOpen size={16} /> Nuevo desde biblioteca
+          <BookOpen size={15} /> Nuevo
         </Link>
       </div>
 
-      <div className="organizer-glass mb-5 flex flex-col gap-3 rounded-[22px] p-3 sm:flex-row sm:items-center">
+      <div className="organizer-glass organizers-filter-bar mb-3 flex flex-col gap-3 p-3 sm:flex-row sm:items-center">
         <label className="relative min-w-0 flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={15} />
           <input
@@ -543,7 +555,7 @@ export function OrganizersWorkspace({
             </option>
           ))}
         </select>
-        <div className="flex rounded-xl bg-foreground/[0.04] p-1">
+        <div className="organizers-view-toggle flex rounded-xl p-1">
           <button
             type="button"
             onClick={() => setViewMode("grid")}
@@ -640,7 +652,7 @@ export function OrganizersWorkspace({
 
 function OrganizersEmptyState() {
   return (
-    <div className="organizer-glass relative overflow-hidden rounded-[28px] px-8 py-16 text-center">
+    <div className="organizers-empty organizer-glass relative overflow-hidden px-8 py-16 text-center">
       <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-indigo-500/10 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-accent/15 blur-3xl" />
       <div className="relative mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-accent to-emerald-600 text-white shadow-xl shadow-accent/25">
@@ -652,7 +664,7 @@ function OrganizersEmptyState() {
       </p>
       <Link
         href="/library"
-        className="relative mt-8 inline-flex h-11 items-center rounded-2xl bg-foreground px-6 text-sm font-semibold text-background"
+        className="tron-btn-primary relative mt-8 inline-flex h-11 items-center rounded-2xl px-6 text-sm font-semibold"
       >
         Ir a biblioteca
       </Link>

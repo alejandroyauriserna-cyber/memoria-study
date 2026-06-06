@@ -4,11 +4,13 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Crosshair,
+  Home,
   Map as MapIcon,
   Maximize2,
   Minus,
   Plus,
   RotateCcw,
+  Search,
 } from "lucide-react";
 import { ConceptMapBranchStudyModal } from "@/components/organizers/sections/concept-map-branch-study";
 import {
@@ -260,8 +262,14 @@ export function ConceptMapCanvas({
 
       <div ref={viewportRef} onWheel={onWheel} className={`study-map-viewport relative overflow-hidden rounded-2xl ${viewportHeight}`}>
         {(hero || fullscreen) && (
-          <div className="absolute left-3 top-3 z-20">
-            <MapControls onZoom={zoom} onResetLayout={resetLayout} onCenter={centerMap} onFit={applyFitView} />
+          <div className="map-controls-floating absolute left-3 top-1/2 z-20 -translate-y-1/2">
+            <MapControls
+              onZoom={zoom}
+              onResetLayout={resetLayout}
+              onCenter={centerMap}
+              onFit={applyFitView}
+              floating
+            />
           </div>
         )}
 
@@ -343,10 +351,11 @@ export function ConceptMapCanvas({
                 className="absolute z-20 -translate-x-1/2 -translate-y-1/2"
                 style={{ left: toPercent(cx, w), top: toPercent(cy, h) }}
               >
-                <div className="relative">
-                  <div className="absolute -inset-10 rounded-full bg-[rgba(0,255,213,0.18)] blur-3xl" />
+                <div className="relative flex items-center justify-center">
+                  <div className="organizer-map-center-halo absolute -inset-14 rounded-full" aria-hidden />
+                  <div className="organizer-map-center-ring absolute -inset-5 rounded-full" aria-hidden />
                   <div
-                    className="study-map-node tron-node-core relative flex items-center justify-center rounded-full text-center font-bold leading-tight text-[#07131A] shadow-[0_0_40px_rgba(0,255,213,0.35)]"
+                    className="study-map-node tron-node-core organizer-map-center-node relative flex items-center justify-center rounded-full text-center font-bold leading-tight text-[#07131A]"
                     style={{
                       minWidth: CENTER_NODE_SIZE,
                       minHeight: CENTER_NODE_SIZE,
@@ -355,7 +364,8 @@ export function ConceptMapCanvas({
                       fontSize: title.length > 28 ? "11px" : "13px",
                     }}
                   >
-                    {title}
+                    <span className="organizer-map-center-node__shine absolute inset-0 rounded-full" aria-hidden />
+                    <span className="relative z-[1]">{title}</span>
                   </div>
                 </div>
               </div>
@@ -460,13 +470,34 @@ function MapControls({
   onCenter,
   onFit,
   compact = false,
+  floating = false,
 }: {
   onZoom: (delta: number) => void;
   onResetLayout: () => void;
   onCenter: () => void;
   onFit: () => void;
   compact?: boolean;
+  floating?: boolean;
 }) {
+  if (floating) {
+    return (
+      <div className="map-controls-floating__rail flex flex-col gap-1 rounded-2xl p-1.5">
+        <IconBtn onClick={onFit} label="Ajustar vista" floating>
+          <Home size={15} />
+        </IconBtn>
+        <IconBtn onClick={onCenter} label="Centrar mapa" floating>
+          <Crosshair size={15} />
+        </IconBtn>
+        <IconBtn onClick={onResetLayout} label="Restablecer layout" floating>
+          <RotateCcw size={14} />
+        </IconBtn>
+        <IconBtn onClick={() => onZoom(0.12)} label="Acercar" floating>
+          <Search size={15} />
+        </IconBtn>
+      </div>
+    );
+  }
+
   if (compact) {
     return (
       <div className="flex items-center gap-1 rounded-xl border border-[rgba(0,255,213,0.2)] bg-[rgba(16,39,48,0.9)] p-1 backdrop-blur-md">
@@ -504,17 +535,24 @@ function IconBtn({
   children,
   onClick,
   label,
+  floating = false,
 }: {
   children: React.ReactNode;
   onClick: () => void;
   label: string;
+  floating?: boolean;
 }) {
   return (
     <button
       type="button"
       aria-label={label}
+      title={label}
       onClick={onClick}
-      className="flex h-8 w-8 items-center justify-center rounded-lg text-[#F5F7FA] transition hover:bg-[rgba(0,255,213,0.1)] hover:text-[#00FFD5]"
+      className={
+        floating
+          ? "map-controls-floating__btn flex h-9 w-9 items-center justify-center rounded-xl transition"
+          : "flex h-8 w-8 items-center justify-center rounded-lg text-[#F5F7FA] transition hover:bg-[rgba(0,255,213,0.1)] hover:text-[#00FFD5]"
+      }
     >
       {children}
     </button>

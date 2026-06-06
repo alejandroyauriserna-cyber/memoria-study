@@ -1,5 +1,6 @@
 import type { OrganizerContent } from "@/lib/organizers/parse-content";
 import type { OrganizerTypeBadgeVariant } from "@/lib/organizers/type-badge";
+import { layoutStudyMapNodes } from "@/lib/organizers/concept-map-study";
 
 export type OrganizerCardPreviewStats = {
   label: string;
@@ -127,4 +128,33 @@ export function resolveOrganizerCardPreview(
 export function previewBlockFill(count: number, blocks = 8) {
   const normalized = Math.min(count, 64);
   return Math.min(blocks, Math.max(2, Math.ceil((normalized / 64) * blocks)));
+}
+
+export type OrganizerCardMeta = {
+  conceptCount: number;
+  branchCount: number;
+  hasConceptMap: boolean;
+};
+
+export function resolveOrganizerCardMeta(parsed: OrganizerContent): OrganizerCardMeta {
+  const rawNodes = parsed.conceptMap?.nodes?.filter(Boolean) ?? [];
+
+  if (rawNodes.length > 0) {
+    const layout = layoutStudyMapNodes(parsed.conceptMap?.title, rawNodes);
+    const branchIds = new Set(layout.nodes.map((node) => node.branchId));
+
+    return {
+      conceptCount: rawNodes.length,
+      branchCount: branchIds.size,
+      hasConceptMap: true,
+    };
+  }
+
+  let branchCount = parsed.hierarchy?.branches?.filter(Boolean).length ?? 0;
+
+  return {
+    conceptCount: 0,
+    branchCount,
+    hasConceptMap: false,
+  };
 }
