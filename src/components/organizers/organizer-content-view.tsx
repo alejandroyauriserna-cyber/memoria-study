@@ -93,6 +93,10 @@ export function OrganizerContentView({
       ?.filter((event): event is { date?: string; label: string } => Boolean(event.label))
       ?? [];
   const hierarchyBranches = parsed.hierarchy?.branches?.filter(Boolean) ?? [];
+  const identifiedTopics =
+    parsed.aiAnalysis?.conceptsDetected?.filter(Boolean) ??
+    parsed.reviewBundle?.keyConcepts?.filter(Boolean) ??
+    conceptNodes;
 
   const flowProcess =
     parsed.flowProcess?.nodes?.length && parsed.flowProcess.edges?.length
@@ -144,7 +148,8 @@ export function OrganizerContentView({
               summary={parsed.summary}
               visualSummary={parsed.visualSummary}
               centralConcept={parsed.hierarchy?.root ?? parsed.conceptMap?.title}
-              axiomLabels={parsed.hierarchy?.branches}
+              axiomLabels={parsed.hierarchy?.branches ?? conceptNodes}
+              identifiedTopics={identifiedTopics}
             />
           ) : null}
           {parsed.simplifiedExplanation ? (
@@ -268,7 +273,8 @@ export function OrganizerContentView({
           summary={parsed.summary}
           visualSummary={parsed.visualSummary}
           centralConcept={parsed.hierarchy?.root ?? parsed.conceptMap?.title}
-          axiomLabels={parsed.hierarchy?.branches}
+          axiomLabels={parsed.hierarchy?.branches ?? conceptNodes}
+          identifiedTopics={identifiedTopics}
         />
       ) : null}
       {parsed.simplifiedExplanation ? (

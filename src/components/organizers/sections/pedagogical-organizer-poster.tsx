@@ -21,20 +21,26 @@ export function PedagogicalOrganizerPoster({
   visualSummary,
   centralConcept,
   axiomLabels,
+  identifiedTopics,
 }: {
   title: string;
   summary: string;
   visualSummary?: VisualSummary;
   centralConcept?: string;
   axiomLabels?: string[];
+  identifiedTopics?: string[];
 }) {
   const conceptCards = visualSummary?.conceptCards ?? [];
   const comparisons = visualSummary?.comparisons ?? [];
   const legalTables = visualSummary?.legalTables ?? [];
+  const topicChips =
+    identifiedTopics?.length
+      ? identifiedTopics
+      : conceptCards.map((card) => card.title);
   const chainItems =
     axiomLabels?.length
       ? axiomLabels
-      : conceptCards.slice(0, 8).map((card) => card.title);
+      : topicChips.slice(0, 12);
 
   return (
     <article className="pedagogical-poster">
@@ -46,10 +52,10 @@ export function PedagogicalOrganizerPoster({
               Ideas clave
             </p>
             <ul>
-              {conceptCards.slice(0, 4).map((card) => (
-                <li key={card.title}>{card.title}</li>
+              {topicChips.slice(0, 8).map((topic) => (
+                <li key={topic}>{topic}</li>
               ))}
-              {!conceptCards.length ? <li>{summary.slice(0, 120)}…</li> : null}
+              {!topicChips.length ? <li>{summary.slice(0, 120)}…</li> : null}
             </ul>
           </div>
         </div>
@@ -75,6 +81,22 @@ export function PedagogicalOrganizerPoster({
           ))}
         </div>
       </header>
+
+      {topicChips.length ? (
+        <section className="pedagogical-poster__topics">
+          <p className="pedagogical-poster__section-label">
+            <Lightbulb size={14} />
+            Temas identificados para estudio
+          </p>
+          <div className="pedagogical-poster__topic-chips">
+            {topicChips.map((topic) => (
+              <span key={topic} className="pedagogical-poster__topic-chip">
+                {topic}
+              </span>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {chainItems.length ? (
         <section className="pedagogical-poster__chain">

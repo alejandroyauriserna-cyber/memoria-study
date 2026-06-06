@@ -58,6 +58,29 @@ function hashLabel(label: string) {
   return label.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0);
 }
 
+/** Asigna rama semántica (icono/color) según el tipo jurídico del concepto. */
+export function inferBranchIdForLabel(label: string): number {
+  const text = label.toLowerCase();
+
+  if (/acto|parte|voluntad|intenci[oó]n|actor|proferentem|buena fe|común intenci/.test(text)) {
+    return 3;
+  }
+  if (/c[oó]digo|norma|ley|supletoria|imperativa|italiano|peruano|legalidad|derecho/.test(text)) {
+    return 1;
+  }
+  if (/interpretaci|sistem[aá]tic|teleol|literal|hermen|negocio|contrato|calificaci/.test(text)) {
+    return 0;
+  }
+  if (/aplicaci|proceso|jurisdic|proced|tribunal/.test(text)) {
+    return 2;
+  }
+  if (/instituci|[oó]rgano|juez|estado/.test(text)) {
+    return 4;
+  }
+
+  return hashLabel(label) % STUDY_BRANCHES.length;
+}
+
 function nodeCollisionRadius(label: string) {
   return Math.max(72, Math.min(110, 56 + label.length * 2.2));
 }

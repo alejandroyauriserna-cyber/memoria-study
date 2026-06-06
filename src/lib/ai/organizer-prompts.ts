@@ -37,13 +37,15 @@ Requisitos por sección:
   * conceptCards: 4-8 tarjetas con título corto + definición clara (colores distintos por concepto).
   * comparisons: 2-4 comparaciones con title + left + right (ej. mera legalidad vs estricta legalidad).
   * legalTables: tablas con headers y rows cuando el PDF lo permita.
-- flowProcess: mapa de proceso con nodes (id, label, explanation, legalBasis, example, relatedConcepts) y edges conectados. Proceso REAL del documento.
-- reviewBundle: keyConcepts (mínimo 4 si el PDF lo permite) + questions (respuestas de al menos 10 caracteres) + examQuestions.
-- conceptMap: OBLIGATORIO cuando el PDF tiene varios temas. nodes debe listar los mismos conceptos clave que keyConcepts y conceptCards (mínimo 4, máximo 14).
-- keyConcepts, conceptMap.nodes y visualSummary.conceptCards deben referir los MISMOS conceptos del PDF (sin duplicar con nombres distintos).
+- flowProcess: OBLIGATORIO cuando el PDF describe un proceso, método o cadena de razonamiento (interpretación, procedimiento, etapas). nodes (id, label, explanation, legalBasis, example, relatedConcepts) + edges conectados en orden lógico (mínimo 4 nodos).
+- hierarchy: OBLIGATORIO cuando hay varios temas. root = título central del material; branches = lista de 4-12 subtemas/conceptos del PDF (los mismos que conceptMap.nodes).
+- reviewBundle: keyConcepts (mínimo 4-8 si el PDF lo permite) + questions (una por concepto clave, respuestas de al menos 10 caracteres) + examQuestions.
+- conceptMap: OBLIGATORIO cuando el PDF tiene varios temas. nodes debe listar los mismos conceptos clave que keyConcepts, hierarchy.branches y conceptCards (mínimo 4, máximo 14).
+- aiAnalysis.conceptsDetected: lista explícita de 4-8 temas/conceptos identificados en el PDF (mismos nombres que keyConcepts y conceptMap.nodes).
+- keyConcepts, conceptMap.nodes, hierarchy.branches, visualSummary.conceptCards y aiAnalysis.conceptsDetected deben referir los MISMOS conceptos del PDF (sin duplicar con nombres distintos).
+- flashcards: OBLIGATORIO cuando hay suficiente contenido. Mínimo 8 tarjetas con question/answer de al menos 10 caracteres, cubriendo los conceptos principales del PDF.
+- timeline: solo si el PDF tiene fechas o cronología; si no, null.
 - Si una sección opcional no puede completarse con calidad, envía null en esa sección (no inventes datos cortos).
-- hierarchy, timeline, flashcards: solo si el PDF lo sustenta; si no, null.
-- flashcards: mínimo 4 tarjetas con question/answer de al menos 5 caracteres cuando el PDF tiene suficiente contenido.
 
 Texto fuente del PDF:
 ${input.text}
