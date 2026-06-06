@@ -224,7 +224,7 @@ export function ProfessorLessonView({
     : analysis.conceptCards;
 
   return (
-    <div className="space-y-4">
+    <div className="gs-tutor-content min-w-0 max-w-full space-y-4">
       {customReply ? (
         <div className="gs-custom-reply">
           <p className="gs-section-label">

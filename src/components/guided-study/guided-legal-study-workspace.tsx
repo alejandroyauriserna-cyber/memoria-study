@@ -613,9 +613,9 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
         ))}
       </div>
 
-      <div className="relative min-h-0 flex-1">
+      <div className="relative min-h-0 min-w-0 max-w-full flex-1 overflow-hidden">
         <div
-          className={`h-full gap-2 lg:grid lg:grid-cols-[7fr_3fr] ${
+          className={`h-full min-w-0 max-w-full gap-2 lg:grid lg:grid-cols-[7fr_3fr] ${
             mobilePanel === "split" ? "flex flex-col" : "grid"
           }`}
         >
@@ -638,7 +638,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
           </div>
 
           <div
-            className={`min-h-0 ${
+            className={`min-h-0 min-w-0 w-full max-w-full overflow-hidden ${
               mobilePanel === "pdf" ? "hidden lg:block" : mobilePanel === "split" ? "min-h-0 flex-1" : ""
             }`}
           >

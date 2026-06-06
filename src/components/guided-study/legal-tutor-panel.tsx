@@ -279,9 +279,9 @@ export function LegalTutorPanel({
   );
 
   return (
-    <div className="gs-panel-shell flex h-full min-h-0 flex-col overflow-hidden">
-      <div className="shrink-0 border-b border-border px-3 py-2.5">
-        <div className="flex items-center justify-between gap-2">
+    <div className="gs-panel-shell flex h-full min-h-0 w-full max-w-full flex-col overflow-hidden">
+      <div className="gs-tutor-toolbar shrink-0 border-b border-border px-3 py-2.5">
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
           <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-accent">
             Profesor IA
           </p>
@@ -403,7 +403,7 @@ export function LegalTutorPanel({
         </Link>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
+      <div className="gs-tutor-scroll px-3 py-3">
         {needsSetup && setupSteps?.length ? (
           <LibrarySetupChecklist steps={setupSteps} />
         ) : null}
@@ -468,7 +468,7 @@ export function LegalTutorPanel({
           <motion.div
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            className="space-y-3"
+            className="gs-tutor-content space-y-3"
           >
             {customReply ? (
               <div className="gs-custom-reply">
@@ -525,7 +525,7 @@ export function LegalTutorPanel({
         )}
       </div>
 
-      <div className="shrink-0 border-t border-border px-3 py-2">
+      <div className="gs-tutor-footer shrink-0 border-t border-border px-3 py-2">
         <button
           type="button"
           onClick={onMarkUnderstood}

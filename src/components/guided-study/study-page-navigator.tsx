@@ -51,20 +51,20 @@ export function StudyPageNavigator({
 
   return (
     <div className="gs-page-nav shrink-0 rounded-xl border border-border bg-card px-3 py-2">
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="flex min-w-0 flex-1 items-center justify-center gap-1 sm:justify-start">
+      <div className="gs-page-nav-inner">
+        <div className="gs-page-nav-pager">
           <button
             type="button"
             onClick={goPrev}
             disabled={currentPage <= 1}
-            className="gs-page-nav-btn"
+            className="gs-page-nav-btn shrink-0"
             aria-label="Página anterior"
           >
             <ChevronLeft size={18} />
             <span className="hidden sm:inline">Anterior</span>
           </button>
 
-          <div className="gs-page-nav-center">
+          <div className="gs-page-nav-center shrink-0">
             <label className="sr-only" htmlFor="study-page-input">
               Número de página
             </label>
@@ -84,7 +84,7 @@ export function StudyPageNavigator({
               }}
               className="gs-page-nav-input"
             />
-            <span className="text-sm text-muted-foreground">/ {totalPages}</span>
+            <span className="whitespace-nowrap text-sm text-muted-foreground">/ {totalPages}</span>
             {pageUnderstood ? (
               <span className="gs-page-nav-understood" title="Página comprendida">
                 ✓
@@ -96,7 +96,7 @@ export function StudyPageNavigator({
             type="button"
             onClick={goNext}
             disabled={currentPage >= totalPages}
-            className="gs-page-nav-btn"
+            className="gs-page-nav-btn shrink-0"
             aria-label="Página siguiente"
           >
             <span className="hidden sm:inline">Siguiente</span>
@@ -104,7 +104,9 @@ export function StudyPageNavigator({
           </button>
         </div>
 
-        <div className="flex flex-wrap items-center gap-1.5">
+        <div
+          className={`gs-page-nav-actions${showExplainChapter && onExplainChapter ? "" : " gs-page-nav-actions--solo"}`}
+        >
           <button
             type="button"
             onClick={onGenerate}
@@ -113,13 +115,15 @@ export function StudyPageNavigator({
           >
             {loading ? (
               <>
-                <Loader2 size={15} className="animate-spin" />
-                Explicando {loadingPercent != null ? `${loadingPercent}%` : ""}
+                <Loader2 size={15} className="animate-spin shrink-0" />
+                <span className="truncate">
+                  Explicando {loadingPercent != null ? `${loadingPercent}%` : ""}
+                </span>
               </>
             ) : (
               <>
-                <Sparkles size={15} />
-                Explicar página
+                <Sparkles size={15} className="shrink-0" />
+                <span>Explicar página</span>
               </>
             )}
           </button>
@@ -130,8 +134,8 @@ export function StudyPageNavigator({
               disabled={loading}
               className="gs-page-nav-chapter"
             >
-              <Sparkles size={14} />
-              Explicar capítulo
+              <Sparkles size={14} className="shrink-0" />
+              <span>Explicar capítulo</span>
             </button>
           ) : null}
         </div>
