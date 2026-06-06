@@ -9,7 +9,7 @@ type TimelineEvent = { date?: string; label: string };
 export function TimelineModern({ events }: { events: TimelineEvent[] }) {
   return (
     <OrganizerFloatPanel title="Línea de tiempo" hint="Desliza en móvil" icon={<Clock3 size={17} />} span={6}>
-      <div className="-mx-1 overflow-x-auto pb-1">
+      <div className="timeline-modern -mx-1 overflow-x-auto pb-1">
         <div className="flex min-w-max gap-3 px-1">
           {events.map((event, index) => (
             <motion.div

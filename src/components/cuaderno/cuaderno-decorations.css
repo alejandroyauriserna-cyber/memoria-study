@@ -968,22 +968,35 @@
   cursor: pointer;
 }
 
-/* —— Diseñador IA (modal) —— */
-.cn-sticker-designer-backdrop {
+/* —— Diseñador IA (modal → body) —— */
+.cn-sticker-designer-root {
   position: fixed;
   inset: 0;
+  z-index: 10055;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  pointer-events: auto;
+}
+
+.cn-sticker-designer-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: default;
   background: rgba(15, 23, 42, 0.5);
-  z-index: 160;
+  pointer-events: auto;
 }
 
 .cn-sticker-designer {
-  position: fixed;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
+  position: relative;
+  z-index: 1;
   width: min(440px, 94vw);
-  max-height: 85vh;
-  z-index: 161;
+  max-height: min(85vh, 720px);
   display: flex;
   flex-direction: column;
   background: #fff;
@@ -1189,6 +1202,10 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.cn-sticker-ia-loading {
+  margin: 0;
 }
 
 .cn-side-rail-icon-svg {

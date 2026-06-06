@@ -391,7 +391,7 @@ function MindMapNodeBubble({
         ) : null}
 
         <div
-          className={`relative overflow-hidden backdrop-blur-xl transition-all duration-300 ${
+          className={`visual-node relative overflow-hidden backdrop-blur-xl transition-all duration-300 ${
             isCenter ? "rounded-full" : "rounded-[28px]"
           }`}
           style={{

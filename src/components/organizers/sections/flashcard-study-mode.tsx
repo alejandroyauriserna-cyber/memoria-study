@@ -198,7 +198,7 @@ export function FlashcardStudyMode({
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -8 }}
-          className={`rounded-2xl border border-[rgba(0,255,213,0.2)] bg-[rgba(16,39,48,0.65)] p-6 md:p-8 ${
+          className={`flashcard-premium p-6 md:p-8 ${
             quizlet ? "min-h-[min(48vh,380px)]" : "min-h-56"
           } flex flex-col items-center justify-center text-center`}
         >

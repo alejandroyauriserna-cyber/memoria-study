@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, X } from "lucide-react";
 import { LoadingState } from "@/components/ui/loading-state";
@@ -40,13 +41,27 @@ export function CuadernoStickerDesigner({
   const [preview, setPreview] = useState<{ src: string; label: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [gateDismissed, setGateDismissed] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const stickerProgress = useLoadingProgress(loading, "sticker");
   const stickerProAvailable = isPremiumFeatureAvailable("ai-sticker-packs");
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (open && initialPrompt) setPrompt(initialPrompt);
     if (open) setGateDismissed(false);
   }, [open, initialPrompt]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
 
   async function generateImage(userPrompt: string) {
     setLoading(true);
@@ -98,22 +113,34 @@ Responde en 2 frases: 1) idea visual del sticker 2) prompt corto en inglés para
     }
   }
 
-  return (
+  if (!mounted || !open) return null;
+
+  return createPortal(
     <AnimatePresence>
       {open ? (
-        <>
-          <motion.div
+        <motion.div
+          className="cn-sticker-designer-root"
+          role="presentation"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          <button
+            type="button"
             className="cn-sticker-designer-backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            aria-label="Cerrar diseñador"
             onClick={onClose}
           />
           <motion.div
             className="cn-sticker-designer"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Diseñador IA de stickers"
             initial={{ opacity: 0, scale: 0.96, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 12 }}
+            onPointerDown={(e) => e.stopPropagation()}
           >
             <header className="cn-sticker-designer-head">
               <Sparkles size={18} />
@@ -219,8 +246,9 @@ Responde en 2 frases: 1) idea visual del sticker 2) prompt corto en inglés para
               </>
             )}
           </motion.div>
-        </>
+        </motion.div>
       ) : null}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }

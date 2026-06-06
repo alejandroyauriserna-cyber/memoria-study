@@ -1,0 +1,225 @@
+/* =====================================================
+   MEMORIASTUDY ORGANIZER 2026
+   ULTRA PREMIUM STUDIO
+===================================================== */
+
+/* ===============================
+   STUDIO ROOT
+================================ */
+
+.organizers-studio {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    radial-gradient(circle at top left, rgba(0, 255, 213, 0.08), transparent 30%),
+    radial-gradient(circle at top right, rgba(0, 153, 255, 0.08), transparent 35%),
+    radial-gradient(circle at bottom center, rgba(139, 92, 246, 0.08), transparent 40%),
+    linear-gradient(180deg, #05070b, #081219);
+}
+
+.organizers-studio > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ===============================
+   AMBIENT LIGHT
+================================ */
+
+.organizers-studio::before {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(0, 255, 213, 0.08), transparent 40%);
+  filter: blur(120px);
+  opacity: 0.7;
+}
+
+/* ===============================
+   GLASS
+================================ */
+
+.organizers-studio .organizer-glass {
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+}
+
+/* ===============================
+   FLOAT CARDS
+================================ */
+
+.organizers-studio .organizer-float-card {
+  border-radius: 28px;
+  transition:
+    transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.35s ease;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.organizers-studio .organizer-float-card:hover {
+  transform: translateY(-8px);
+  box-shadow:
+    0 40px 100px rgba(0, 0, 0, 0.3),
+    0 0 40px rgba(0, 255, 213, 0.08);
+}
+
+/* ===============================
+   BENTO
+================================ */
+
+.organizers-studio .organizer-bento {
+  border-radius: 32px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* ===============================
+   NODOS MAPA
+================================ */
+
+.study-map-node,
+.concept-node,
+.visual-node {
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+  transition: all 0.25s ease;
+}
+
+.study-map-node:hover,
+.concept-node:hover,
+.visual-node:hover {
+  transform: scale(1.04);
+  box-shadow:
+    0 25px 70px rgba(0, 0, 0, 0.25),
+    0 0 35px rgba(0, 255, 213, 0.08);
+}
+
+/* ===============================
+   FLASHCARDS
+================================ */
+
+.flashcard-premium {
+  border-radius: 28px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+/* ===============================
+   TIMELINE
+================================ */
+
+.timeline-modern {
+  position: relative;
+}
+
+.timeline-modern::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, transparent, rgba(0, 255, 213, 0.4), transparent);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+/* ===============================
+   DOCK
+================================ */
+
+.organizer-studio-dock {
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  background: rgba(8, 12, 18, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.3);
+}
+
+/* ===============================
+   TITLES
+================================ */
+
+.organizers-studio h1 {
+  font-size: clamp(3rem, 5vw, 5rem);
+  font-weight: 900;
+  letter-spacing: -0.07em;
+  line-height: 0.9;
+}
+
+.organizers-studio h2 {
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+/* ===============================
+   PREMIUM SCROLL
+================================ */
+
+.organizers-studio ::-webkit-scrollbar {
+  width: 10px;
+}
+
+.organizers-studio ::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(0, 255, 213, 0.5), rgba(0, 153, 255, 0.4));
+}
+
+/* ===============================
+   LIGHT THEME
+================================ */
+
+html:not(.dark) .organizers-studio {
+  background:
+    radial-gradient(circle at top left, rgba(0, 255, 213, 0.12), transparent 32%),
+    radial-gradient(circle at top right, rgba(0, 153, 255, 0.1), transparent 36%),
+    radial-gradient(circle at bottom center, rgba(139, 92, 246, 0.06), transparent 42%),
+    linear-gradient(180deg, #f4f7fb, #e8eef5);
+}
+
+html:not(.dark) .organizers-studio::before {
+  background: radial-gradient(circle, rgba(0, 255, 213, 0.12), transparent 42%);
+  opacity: 0.55;
+}
+
+html:not(.dark) .organizers-studio .organizer-glass {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.78));
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
+}
+
+html:not(.dark) .organizers-studio .organizer-bento {
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+html:not(.dark) .organizer-studio-dock {
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 25px 80px rgba(15, 23, 42, 0.1);
+}
+
+html:not(.dark) .study-map-node,
+html:not(.dark) .concept-node,
+html:not(.dark) .visual-node {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.88));
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.08);
+}
+
+html:not(.dark) .flashcard-premium {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.9));
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
+}

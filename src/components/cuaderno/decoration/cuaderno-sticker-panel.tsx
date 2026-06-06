@@ -20,6 +20,7 @@ import type { JuridicoPackId } from "@/lib/cuaderno/sticker-juridico-packs";
 import type { PngStickerItem } from "@/lib/cuaderno/sticker-png-packs";
 import { CuadernoStickerDesigner } from "@/components/cuaderno/decoration/cuaderno-sticker-designer";
 import { CuadernoStickerImportPanel } from "@/components/cuaderno/decoration/cuaderno-sticker-import-modal";
+import { LoadingState } from "@/components/ui/loading-state";
 import type { UserStickerRecord } from "@/types/cuaderno-stickers";
 import { STICKER_LIBRARY_ADDED_EVENT } from "@/lib/cuaderno/paste-image-ingest";
 
@@ -85,8 +86,9 @@ export function CuadernoStickerPanel({
   useEffect(() => {
     if (!open) return;
     const onPointerDown = (e: PointerEvent) => {
-      const t = e.target as Node;
+      const t = e.target as HTMLElement;
       if (panelRef.current?.contains(t)) return;
+      if (t.closest(".cn-sticker-designer-root")) return;
       onClose();
     };
     window.addEventListener("pointerdown", onPointerDown, true);
@@ -355,6 +357,14 @@ export function CuadernoStickerPanel({
                     <p className="cn-sticker-section-lead">
                       Describe un sticker jurídico en PNG transparente. Ej: balanza dorada, código civil, pergamino.
                     </p>
+                    {aiLoading ? (
+                      <LoadingState
+                        active
+                        preset="sticker"
+                        variant="inline"
+                        className="cn-sticker-ia-loading"
+                      />
+                    ) : null}
                     <button
                       type="button"
                       className="cn-sticker-create-ai"

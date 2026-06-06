@@ -346,7 +346,7 @@ export function ConceptMapCanvas({
                 <div className="relative">
                   <div className="absolute -inset-10 rounded-full bg-[rgba(0,255,213,0.18)] blur-3xl" />
                   <div
-                    className="tron-node-core relative flex items-center justify-center rounded-full text-center font-bold leading-tight text-[#07131A] shadow-[0_0_40px_rgba(0,255,213,0.35)]"
+                    className="study-map-node tron-node-core relative flex items-center justify-center rounded-full text-center font-bold leading-tight text-[#07131A] shadow-[0_0_40px_rgba(0,255,213,0.35)]"
                     style={{
                       minWidth: CENTER_NODE_SIZE,
                       minHeight: CENTER_NODE_SIZE,
@@ -389,7 +389,7 @@ export function ConceptMapCanvas({
                   }}
                 >
                   <div
-                    className={`tron-node-glass relative w-[min(148px,38vw)] cursor-grab rounded-xl px-3 py-2.5 active:cursor-grabbing ${
+                    className={`study-map-node concept-node tron-node-glass relative w-[min(148px,38vw)] cursor-grab rounded-xl px-3 py-2.5 active:cursor-grabbing ${
                       selected || dragging
                         ? "ring-2 ring-[#00FFD5] shadow-[0_0_32px_rgba(0,255,213,0.5)]"
                         : "hover:shadow-[0_0_24px_rgba(0,255,213,0.3)]"

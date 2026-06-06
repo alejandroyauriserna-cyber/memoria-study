@@ -70,7 +70,7 @@ export function OrganizerDetailModal({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="organizers-studio fixed inset-0 z-50 flex h-[100dvh] max-h-[100dvh] flex-col bg-[#07131A]"
+          className="organizers-studio fixed inset-0 z-50 flex h-[100dvh] max-h-[100dvh] flex-col"
           role="dialog"
           aria-modal="true"
           aria-label={organizer.title}

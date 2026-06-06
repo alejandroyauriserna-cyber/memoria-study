@@ -25,6 +25,12 @@ import {
   formatOrganizerDate,
   wasOrganizerRegenerated,
 } from "@/lib/organizers/format";
+import { OrganizerTypeBadge } from "@/components/organizers/organizer-type-badge";
+import {
+  OrganizerCardPreviewEmpty,
+  OrganizerCardPreviewFallback,
+} from "@/components/organizers/organizer-card-preview";
+import { resolveOrganizerCardPreview } from "@/lib/organizers/card-preview-stats";
 import { parseOrganizerContent } from "@/lib/organizers/parse-content";
 import {
   layoutStudyMapNodes,
@@ -103,23 +109,35 @@ function ConfirmDialog({
 }
 
 function CardMapPreview({ content }: { content: unknown }) {
-  const parsed = parseOrganizerContent(content);
-  const title = parsed.conceptMap?.title;
-  const nodes = parsed.conceptMap?.nodes?.filter(Boolean).slice(0, 8) ?? [];
+  const preview = useMemo(() => {
+    const parsed = parseOrganizerContent(content);
+    const title = parsed.conceptMap?.title;
+    const nodes = parsed.conceptMap?.nodes?.filter(Boolean).slice(0, 8) ?? [];
 
-  if (!nodes.length) {
-    return (
-      <div className="study-map-viewport flex h-full min-h-[100px] items-center justify-center rounded-xl">
-        <Sparkles className="text-[#00FFD5]/50" size={28} />
-      </div>
-    );
+    if (nodes.length) {
+      return { kind: "map" as const, layout: layoutStudyMapNodes(title, nodes) };
+    }
+
+    const fallback = resolveOrganizerCardPreview(parsed);
+    if (fallback) {
+      return { kind: "fallback" as const, stats: fallback };
+    }
+
+    return { kind: "empty" as const };
+  }, [content]);
+
+  if (preview.kind === "fallback") {
+    return <OrganizerCardPreviewFallback stats={preview.stats} />;
   }
 
-  const layout = layoutStudyMapNodes(title, nodes);
-  const { nodes: layoutNodes, cx, cy, w, h } = layout;
+  if (preview.kind === "empty") {
+    return <OrganizerCardPreviewEmpty />;
+  }
+
+  const { nodes: layoutNodes, cx, cy, w, h } = preview.layout;
 
   return (
-    <div className="study-map-viewport relative h-full min-h-[100px] overflow-hidden rounded-xl">
+    <div className="study-map-viewport relative h-full overflow-hidden">
       <svg viewBox={`0 0 ${w} ${h}`} className="h-full w-full" aria-hidden>
         {layoutNodes.map((node, index) => {
           const branch = branchForId(node.branchId);
@@ -178,18 +196,18 @@ function OrganizerCardItem({
       <motion.article
         layout
         id={`organizer-${organizer.id}`}
-        whileHover={{ x: 4 }}
-        className={`organizer-float-card organizer-glass group flex gap-4 rounded-[22px] p-3 sm:p-4 ${
+        className={`organizer-card group flex gap-4 p-3 sm:p-4 ${
           highlighted ? "ring-2 ring-accent/30" : ""
         }`}
       >
-        <button type="button" onClick={onView} className="w-36 shrink-0 overflow-hidden rounded-xl sm:w-44">
+        <button type="button" onClick={onView} className="w-36 shrink-0 overflow-hidden sm:w-44">
           <CardMapPreview content={organizer.content} />
         </button>
         <div className="flex min-w-0 flex-1 flex-col justify-between">
           <button type="button" onClick={onView} className="text-left">
-            <h2 className="line-clamp-1 text-base font-semibold text-foreground">{organizer.title}</h2>
-            <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">{organizer.description}</p>
+            <OrganizerTypeBadge type={organizer.organizer_type} />
+            <h2 className="organizer-card-title line-clamp-1 text-foreground">{organizer.title}</h2>
+            <p className="organizer-card-description line-clamp-2 text-xs">{organizer.description}</p>
             <p className="mt-2 text-[11px] text-muted-foreground">
               {organizer.course_name} · {regenerated ? `Regenerado ${formatOrganizerDate(organizer.updated_at)}` : formatOrganizerDate(organizer.created_at)}
             </p>
@@ -213,43 +231,42 @@ function OrganizerCardItem({
     <motion.article
       layout
       id={`organizer-${organizer.id}`}
-      className={`group relative overflow-hidden rounded-[24px] ${
+      className={`organizer-card group relative flex h-full flex-col ${
         highlighted ? "ring-2 ring-accent/35 shadow-[0_0_60px_-12px_rgba(31,107,67,0.45)]" : ""
       }`}
     >
-      <div className="organizer-float-card organizer-glass relative flex h-full flex-col overflow-hidden rounded-[24px]">
-        <button type="button" onClick={onView} className="relative block text-left">
-          <div className="relative h-32 overflow-hidden border-b border-white/30 sm:h-36">
-            <CardMapPreview content={organizer.content} />
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-white/90 via-transparent to-transparent dark:from-[#0b1220]/90" />
-          </div>
-          <div className="p-4">
-            <div className="flex items-center gap-2">
-              {regenerated ? (
-                <span className="rounded-md bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent">
-                  Regenerado
-                </span>
-              ) : null}
-              <span className="text-[10px] text-muted-foreground">{organizer.cycle_label}</span>
-            </div>
-            <h2 className="mt-2 line-clamp-2 text-sm font-semibold leading-snug text-foreground">
-              {organizer.title}
-            </h2>
-            <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">{organizer.course_name}</p>
-          </div>
-        </button>
-
-        <div className="absolute inset-x-0 bottom-0 translate-y-full border-t border-white/20 bg-white/80 p-2 backdrop-blur-xl transition duration-300 group-hover:translate-y-0 dark:bg-black/50">
-          <CardActionBar
-            regenerating={regenerating}
-            regenerateLabel={regenerateLabel}
-            hasMaterial={Boolean(organizer.material_id)}
-            onView={onView}
-            onRegenerate={onRegenerate}
-            onDelete={onDelete}
-            onShare={onShare}
-          />
+      <button type="button" onClick={onView} className="relative block text-left">
+        <div className="relative h-32 overflow-hidden border-b border-white/10 sm:h-36">
+          <CardMapPreview content={organizer.content} />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#09161f]/90 via-transparent to-transparent" />
         </div>
+        <div className="organizer-card-header">
+          <OrganizerTypeBadge type={organizer.organizer_type} />
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            {regenerated ? (
+              <span className="rounded-md bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent">
+                Regenerado
+              </span>
+            ) : null}
+            <span className="text-[10px] text-muted-foreground">{organizer.cycle_label}</span>
+          </div>
+          <h2 className="organizer-card-title line-clamp-2 text-foreground">
+            {organizer.title}
+          </h2>
+          <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">{organizer.course_name}</p>
+        </div>
+      </button>
+
+      <div className="absolute inset-x-0 bottom-0 translate-y-full border-t border-white/10 bg-[rgba(8,18,25,0.85)] p-2 backdrop-blur-xl transition duration-300 group-hover:translate-y-0">
+        <CardActionBar
+          regenerating={regenerating}
+          regenerateLabel={regenerateLabel}
+          hasMaterial={Boolean(organizer.material_id)}
+          onView={onView}
+          onRegenerate={onRegenerate}
+          onDelete={onDelete}
+          onShare={onShare}
+        />
       </div>
     </motion.article>
   );
@@ -476,7 +493,7 @@ export function OrganizersWorkspace({
           <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[rgba(0,255,213,0.2)] bg-[rgba(0,255,213,0.08)] px-3 py-1 text-xs font-medium text-[#00FFD5]">
             <Sparkles size={12} /> MemoriaStudy
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-[#F5F7FA] sm:text-4xl">
+          <h1 className="text-[#F5F7FA]">
             Organizadores visuales
           </h1>
           <p className="mt-1 max-w-lg text-sm text-muted-foreground">

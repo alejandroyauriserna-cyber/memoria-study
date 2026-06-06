@@ -437,23 +437,6 @@ textarea.ms-input {
 }
 
 /* ——— Organizers / study map ——— */
-.organizers-studio {
-  position: relative;
-  isolation: isolate;
-}
-
-.organizer-float-card {
-  transition:
-    transform 280ms cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 280ms ease,
-    border-color 280ms ease;
-}
-
-.organizer-float-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 0 40px var(--glow);
-}
-
 .organizer-bento {
   display: grid;
   gap: 1rem;
@@ -662,4 +645,448 @@ html:not(.dark) .hover\:bg-\[rgba\(0\,255\,213\,0\.08\)\]:hover {
 
 html:not(.dark) .hover\:bg-\[rgba\(0\,255\,213\,0\.05\)\]:hover {
   background: color-mix(in srgb, var(--accent) 8%, #fff) !important;
+}
+
+/* =====================================================
+   ORGANIZERS 2026
+   AI LEARNING LAB
+===================================================== */
+
+/* =====================================
+   HERO
+===================================== */
+
+.organizers-workspace-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 40px;
+  padding: 3rem;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(0, 255, 213, 0.14), transparent 35%),
+    radial-gradient(circle at 90% 10%, rgba(59, 130, 246, 0.12), transparent 35%),
+    radial-gradient(circle at 50% 100%, rgba(168, 85, 247, 0.12), transparent 45%),
+    linear-gradient(180deg, #07131a, #09161f);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 40px 140px rgba(0, 0, 0, 0.35);
+}
+
+/* =====================================
+   HERO GRID
+===================================== */
+
+.organizers-workspace-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 42px 42px;
+  pointer-events: none;
+}
+
+/* =====================================
+   ORGANIZER CARD
+===================================== */
+
+.organizer-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 32px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.22);
+}
+
+.organizer-card:hover {
+  transform: translateY(-10px);
+  box-shadow:
+    0 40px 100px rgba(0, 0, 0, 0.3),
+    0 0 60px rgba(0, 255, 213, 0.08);
+}
+
+/* =====================================
+   MINI MAPA
+===================================== */
+
+.study-map-viewport {
+  position: relative;
+  border-radius: 24px;
+  overflow: hidden;
+  min-height: 240px;
+  background:
+    radial-gradient(circle at center, rgba(0, 255, 213, 0.05), transparent 70%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
+}
+
+/* Glow */
+
+.study-map-viewport::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, rgba(0, 255, 213, 0.06), transparent 50%);
+  pointer-events: none;
+}
+
+/* =====================================
+   NODOS
+===================================== */
+
+.study-map-node {
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(18px);
+  transition: all 0.25s ease;
+}
+
+.study-map-node:hover {
+  transform: scale(1.05);
+  box-shadow:
+    0 15px 40px rgba(0, 0, 0, 0.2),
+    0 0 20px rgba(0, 255, 213, 0.12);
+}
+
+/* =====================================
+   FILTER BAR
+===================================== */
+
+.organizers-filter-bar {
+  border-radius: 24px;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(24px);
+}
+
+/* =====================================
+   SEARCH
+===================================== */
+
+.organizers-search {
+  height: 56px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(16px);
+}
+
+/* =====================================
+   EMPTY STATE
+===================================== */
+
+.organizers-empty {
+  padding: 5rem 2rem;
+  text-align: center;
+  border-radius: 36px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* =====================================
+   FLOATING AI EFFECT
+===================================== */
+
+.organizers-empty::before {
+  content: "🧠";
+  display: block;
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  opacity: 0.9;
+}
+
+/* =========================================
+   ORGANIZER CARD ULTRA PREMIUM
+========================================= */
+
+.organizer-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 32px;
+  backdrop-filter: blur(28px);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 0 20px 70px rgba(0, 0, 0, 0.25);
+}
+
+.organizer-card:hover {
+  transform: translateY(-10px);
+  box-shadow:
+    0 45px 120px rgba(0, 0, 0, 0.35),
+    0 0 50px rgba(0, 255, 213, 0.08);
+}
+
+/* Glow ambiental */
+
+.organizer-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at top right, rgba(0, 255, 213, 0.08), transparent 35%);
+  pointer-events: none;
+}
+
+/* =========================================
+   CARD HEADER
+========================================= */
+
+.organizer-card-header {
+  padding: 1.25rem 1.25rem 0.75rem;
+}
+
+/* =========================================
+   ORGANIZER TYPE
+========================================= */
+
+.organizer-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+  background: rgba(0, 255, 213, 0.08);
+  border: 1px solid rgba(0, 255, 213, 0.18);
+  color: #00ffd5;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* =========================================
+   TITLE
+========================================= */
+
+.organizer-card-title {
+  margin-top: 0.9rem;
+  font-size: 1.15rem;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -0.04em;
+}
+
+/* =========================================
+   DESCRIPTION
+========================================= */
+
+.organizer-card-description {
+  margin-top: 0.6rem;
+  color: rgba(255, 255, 255, 0.65);
+  line-height: 1.6;
+}
+
+/* =========================================
+   PREVIEW
+========================================= */
+
+.study-map-viewport {
+  min-height: 160px !important;
+  height: 160px;
+  border-radius: 22px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at center, rgba(0, 255, 213, 0.05), transparent 60%),
+    rgba(255, 255, 255, 0.02);
+}
+
+/* =========================================
+   ACTION BAR
+========================================= */
+
+.organizer-actions {
+  display: flex;
+  gap: 0.5rem;
+  padding: 1rem;
+}
+
+.organizer-actions button {
+  border-radius: 14px;
+}
+
+/* =========================================
+   MOBILE FIX
+========================================= */
+
+@media (max-width: 1024px) {
+  .organizer-card .card-action-hover {
+    transform: none !important;
+    opacity: 1 !important;
+    position: relative !important;
+  }
+}
+
+/* Variantes por tipo de organizador */
+
+.organizer-type-badge--mapa {
+  background: rgba(139, 92, 246, 0.12);
+  border-color: rgba(167, 139, 250, 0.35);
+  color: #c4b5fd;
+}
+
+.organizer-type-badge--flashcards {
+  background: rgba(59, 130, 246, 0.12);
+  border-color: rgba(96, 165, 250, 0.35);
+  color: #93c5fd;
+}
+
+.organizer-type-badge--ruta {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(52, 211, 153, 0.35);
+  color: #6ee7b7;
+}
+
+.organizer-type-badge--timeline {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(251, 191, 36, 0.35);
+  color: #fcd34d;
+}
+
+.organizer-type-badge--juridico {
+  background: rgba(0, 255, 213, 0.08);
+  border-color: rgba(0, 255, 213, 0.22);
+  color: #00ffd5;
+}
+
+.organizer-type-badge--repaso {
+  background: rgba(244, 63, 94, 0.12);
+  border-color: rgba(251, 113, 133, 0.35);
+  color: #fda4af;
+}
+
+html:not(.dark) .organizer-type-badge--mapa {
+  background: rgba(139, 92, 246, 0.1);
+  color: #6d28d9;
+}
+
+html:not(.dark) .organizer-type-badge--flashcards {
+  background: rgba(59, 130, 246, 0.1);
+  color: #1d4ed8;
+}
+
+html:not(.dark) .organizer-type-badge--ruta {
+  background: rgba(16, 185, 129, 0.1);
+  color: #047857;
+}
+
+html:not(.dark) .organizer-type-badge--timeline {
+  background: rgba(245, 158, 11, 0.12);
+  color: #b45309;
+}
+
+html:not(.dark) .organizer-type-badge--juridico {
+  background: rgba(13, 148, 136, 0.1);
+  color: #0f766e;
+}
+
+html:not(.dark) .organizer-type-badge--repaso {
+  background: rgba(244, 63, 94, 0.1);
+  color: #be123c;
+}
+
+html:not(.dark) .organizer-card-description {
+  color: rgba(15, 23, 42, 0.65);
+}
+
+/* =========================================
+   CARD CONTENT PREVIEW (sin mapa)
+========================================= */
+
+.organizer-card-preview {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 1rem 1.1rem;
+}
+
+.organizer-card-preview__label {
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.organizer-card-preview__count {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #f8fafc;
+}
+
+.organizer-preview-blocks {
+  display: flex;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+}
+
+.organizer-preview-block {
+  flex: 1;
+  height: 0.55rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.organizer-preview-block.is-on.organizer-preview-block--flashcards {
+  background: linear-gradient(180deg, #60a5fa, #3b82f6);
+}
+
+.organizer-preview-block.is-on.organizer-preview-block--timeline {
+  background: linear-gradient(180deg, #fcd34d, #f59e0b);
+}
+
+.organizer-preview-block.is-on.organizer-preview-block--ruta {
+  background: linear-gradient(180deg, #6ee7b7, #10b981);
+}
+
+.organizer-preview-block.is-on.organizer-preview-block--repaso {
+  background: linear-gradient(180deg, #fda4af, #f43f5e);
+}
+
+.organizer-preview-block.is-on.organizer-preview-block--mapa {
+  background: linear-gradient(180deg, #c4b5fd, #8b5cf6);
+}
+
+.organizer-preview-block.is-on.organizer-preview-block--juridico {
+  background: linear-gradient(180deg, #5eead4, #00ffd5);
+}
+
+.organizer-card-preview--flashcards .organizer-card-preview__count {
+  color: #93c5fd;
+}
+
+.organizer-card-preview--timeline .organizer-card-preview__count {
+  color: #fcd34d;
+}
+
+.organizer-card-preview--ruta .organizer-card-preview__count {
+  color: #6ee7b7;
+}
+
+.organizer-card-preview--repaso .organizer-card-preview__count {
+  color: #fda4af;
+}
+
+.organizer-card-preview--mapa .organizer-card-preview__count {
+  color: #c4b5fd;
+}
+
+.organizer-card-preview--juridico .organizer-card-preview__count {
+  color: #00ffd5;
+}
+
+html:not(.dark) .organizer-card-preview__label {
+  color: rgba(15, 23, 42, 0.45);
+}
+
+html:not(.dark) .organizer-card-preview__count {
+  color: #0f172a;
+}
+
+html:not(.dark) .organizer-preview-block {
+  background: rgba(15, 23, 42, 0.08);
 }

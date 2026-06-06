@@ -40,7 +40,7 @@ export function OrganizerStudioDock({
 }) {
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-4 z-30 flex justify-center px-4">
-      <div className="pointer-events-auto flex flex-wrap items-center justify-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--shell-dock-bg)] p-2 shadow-[0_0_32px_var(--glow)] backdrop-blur-xl">
+      <div className="organizer-studio-dock pointer-events-auto flex flex-wrap items-center justify-center gap-2 p-2">
         {items.map((item) => {
           const Icon = item.icon;
           const selected = active === item.id;
