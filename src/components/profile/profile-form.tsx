@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CycleSelector } from "@/components/auth/cycle-selector";
 import { UNT_DERECHO } from "@/lib/academic/unt-derecho";
+import { validateSignupFullName } from "@/lib/profile/display-name";
 
 type CurrentCycle = {
   cycleNumber: number;
@@ -33,6 +34,9 @@ export function ProfileForm({ fullName = "", currentCycle = null, compact = fals
     setMessage("");
 
     try {
+      const nameError = validateSignupFullName(name);
+      if (nameError) throw new Error(nameError);
+
       const response = await fetch("/api/profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -76,10 +80,15 @@ export function ProfileForm({ fullName = "", currentCycle = null, compact = fals
             type="text"
             value={name}
             onChange={(event) => setName(event.target.value)}
-            placeholder="Tu nombre"
+            placeholder="Ej.: Alejandro Yauri Sernaque"
             className={inputClass}
+            maxLength={80}
+            autoComplete="name"
             required
           />
+          <span className="mt-1 block text-[11px] text-muted-foreground">
+            Solo nombre y apellidos, sin usuario ni contraseña.
+          </span>
         </label>
 
         <div>

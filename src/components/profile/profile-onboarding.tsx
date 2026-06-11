@@ -37,23 +37,23 @@ const STEPS = [
 export function ProfileOnboarding({ compact = false }: { compact?: boolean }) {
   if (compact) {
     return (
-      <div>
-        <p className="text-sm font-semibold text-foreground">Primera sesión</p>
-        <p className="mt-0.5 text-xs text-muted-foreground">
+      <div className="ms-home-onboarding">
+        <p className="ms-home-onboarding__title">Primera sesión</p>
+        <p className="ms-home-onboarding__lead">
           Cuatro pasos para activar tu espacio de estudio.
         </p>
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="ms-home-onboarding__pills">
           {STEPS.map((step) => {
             const Icon = step.icon;
             return (
               <Link
                 key={step.href}
                 href={step.href}
-                className="premium-dash__pill"
+                className="ms-home-onboarding__pill"
               >
-                <Icon size={12} />
+                <Icon size={12} aria-hidden />
                 {step.label}
-                <ArrowRight size={11} />
+                <ArrowRight size={11} aria-hidden />
               </Link>
             );
           })}

@@ -7,7 +7,7 @@ import { UNT_DERECHO } from "@/lib/academic/unt-derecho";
 import { recordToMaterial } from "@/lib/materials/mapper";
 import { formatStudyHours } from "@/lib/profile/aggregate-learning-stats";
 import { estimateStudyMinutesFromServer } from "@/lib/profile/estimate-study-minutes";
-import { isNewUser } from "@/lib/profile/is-new-user";
+import { sanitizeProfileDisplayName } from "@/lib/profile/display-name";
 import { resolveUserCycle } from "@/lib/profile/resolve-user-cycle";
 import { fetchServerLearningStats } from "@/lib/profile/server-learning-stats";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -61,7 +61,9 @@ export async function loadMemoriaDashboardProps(user: User): Promise<MemoriaDash
     fetchServerLearningStats(user.id),
   ]);
 
-  const profileName = profileData?.full_name ?? user.user_metadata?.full_name ?? "Estudiante";
+  const profileName = sanitizeProfileDisplayName(
+    profileData?.full_name ?? (user.user_metadata?.full_name as string | undefined),
+  );
   const { cycleLabel: currentCycle, cycleNumber: currentCycleNumber } = resolveUserCycle(
     profileData,
     user.user_metadata,

@@ -4,6 +4,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Bookmark, ChevronDown, FileText, LogOut, UserCircle2 } from "lucide-react";
 import { signOutUser } from "@/lib/auth/sign-out";
+import {
+  formatProfileShortName,
+  sanitizeProfileDisplayName,
+} from "@/lib/profile/display-name";
 
 type ProfilePayload = {
   full_name?: string | null;
@@ -59,13 +63,16 @@ export function UserMenu() {
     };
   }, []);
 
+  const displayName = sanitizeProfileDisplayName(profile?.full_name);
+  const shortName = formatProfileShortName(profile?.full_name, 2);
+
   const initials = useMemo(() => {
-    const name = profile?.full_name?.trim() ?? "Estudiante";
+    const name = displayName;
     const parts = name.split(" ");
     return parts.length > 1
       ? `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase()
       : name.slice(0, 2).toUpperCase();
-  }, [profile]);
+  }, [displayName]);
 
   if (!signedIn) {
     return (
@@ -79,10 +86,10 @@ export function UserMenu() {
     );
   }
 
-  const menuLabel = profile?.full_name ?? "usuario";
+  const menuLabel = shortName;
 
   return (
-    <div ref={menuRef} className="relative">
+    <div ref={menuRef} className="relative shrink-0">
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
@@ -90,16 +97,18 @@ export function UserMenu() {
         aria-haspopup="menu"
         aria-controls={menuId}
         aria-label={`Menú de ${menuLabel}`}
-        className="inline-flex items-center gap-3 rounded-3xl border border-border bg-card px-3 py-2 text-sm font-medium text-foreground shadow-sm transition hover:-translate-y-0.5 hover:border-accent"
+        className="inline-flex max-w-[min(100%,13.5rem)] items-center gap-2 rounded-3xl border border-border bg-card px-2.5 py-2 text-sm font-medium text-foreground shadow-sm transition hover:-translate-y-0.5 hover:border-accent sm:max-w-[15rem] sm:gap-3 sm:px-3"
       >
-        <span className="grid h-10 w-10 items-center justify-center rounded-full bg-accent text-sm font-semibold text-accent-foreground shadow-sm">
+        <span className="grid h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-semibold text-accent-foreground shadow-sm sm:h-10 sm:w-10">
           {initials}
         </span>
-        <span className="hidden sm:block text-left">
+        <span className="hidden min-w-0 text-left md:block">
           <span className="block text-xs text-muted-foreground">Bienvenido</span>
-          <span className="block text-sm font-semibold">{profile?.full_name ?? "Estudiante"}</span>
+          <span className="block truncate text-sm font-semibold" title={displayName}>
+            {shortName}
+          </span>
         </span>
-        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+        <ChevronDown className="hidden h-4 w-4 shrink-0 text-muted-foreground md:block" />
       </button>
 
       {open ? (
@@ -110,15 +119,14 @@ export function UserMenu() {
           className="absolute right-0 z-50 mt-3 w-64 overflow-hidden rounded-3xl border border-border bg-card p-4 shadow-2xl"
         >
           <div className="mb-4 rounded-3xl bg-muted p-4">
-            <p className="text-xs uppercase tracking-[0.24em] text-accent">Ciclo actual</p>
-            <p className="mt-2 text-sm font-semibold text-foreground">
-              {profile?.current_cycle_label ?? "Sin ciclo configurado"}
-            </p>
+            <p className="text-xs uppercase tracking-[0.24em] text-accent">Cuenta</p>
+            <p className="mt-2 text-sm font-semibold leading-snug text-foreground">{displayName}</p>
             {profile?.email ? (
               <p className="mt-1 truncate text-[10px] text-muted-foreground">{profile.email}</p>
-            ) : (
-              <p className="mt-1 text-xs text-muted-foreground">Nivel: Estudiante</p>
-            )}
+            ) : null}
+            <p className="mt-2 text-xs text-muted-foreground">
+              {profile?.current_cycle_label ?? "Sin ciclo configurado"}
+            </p>
           </div>
 
           <nav className="space-y-2" aria-label="Enlaces de cuenta">

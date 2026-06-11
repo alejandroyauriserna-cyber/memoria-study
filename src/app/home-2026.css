@@ -8,6 +8,88 @@
   gap: 1.5rem;
 }
 
+.ms-home-onboarding {
+  position: relative;
+  border-radius: 1rem;
+  border: 1px dashed rgba(0, 255, 213, 0.22);
+  background: rgba(0, 255, 213, 0.05);
+  padding: 1rem 1.15rem 1.1rem;
+}
+
+.ms-home-onboarding--dismissible {
+  padding-right: 2.75rem;
+}
+
+.ms-home-onboarding__close {
+  position: absolute;
+  right: 0.65rem;
+  top: 0.65rem;
+  border: none;
+  background: transparent;
+  border-radius: 0.5rem;
+  padding: 0.25rem;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.ms-home-onboarding__close:hover {
+  color: var(--foreground);
+}
+
+.ms-home-onboarding__title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.ms-home-onboarding__lead {
+  margin-top: 0.2rem;
+  font-size: 0.78rem;
+  color: var(--muted-foreground);
+}
+
+.ms-home-onboarding__pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.ms-home-onboarding__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 255, 213, 0.18);
+  background: rgba(7, 19, 26, 0.45);
+  padding: 0.45rem 0.85rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--foreground);
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.ms-home-onboarding__pill:hover {
+  border-color: rgba(0, 255, 213, 0.35);
+  background: rgba(0, 255, 213, 0.08);
+}
+
+html:not(.dark) .ms-home-onboarding {
+  background: rgba(13, 148, 136, 0.06);
+  border-color: rgba(13, 148, 136, 0.22);
+}
+
+html:not(.dark) .ms-home-onboarding__pill {
+  background: #fff;
+  border-color: rgba(15, 23, 42, 0.12);
+}
+
+html:not(.dark) .ms-home-onboarding__pill:hover {
+  border-color: rgba(13, 148, 136, 0.35);
+  background: rgba(13, 148, 136, 0.06);
+}
+
 .ms-home-landing {
   position: relative;
   display: grid;

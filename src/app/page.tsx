@@ -17,6 +17,7 @@ import { DashboardOnboarding } from "@/components/dashboard/dashboard-onboarding
 import { LegalAiHero } from "@/components/home/legal-ai-hero";
 import { TimeGreetingText } from "@/components/home/time-greeting-text";
 import { loadMemoriaDashboardProps } from "@/lib/home/load-dashboard-props";
+import { formatProfileFirstName } from "@/lib/profile/display-name";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/env";
 import { UNT_DERECHO } from "@/lib/academic/unt-derecho";
@@ -69,7 +70,9 @@ export default async function Home() {
   }
 
   const isAuthenticated = Boolean(dashboardProps);
-  const firstName = dashboardProps?.profileName.split(/\s+/)[0] ?? "Estudiante";
+  const firstName = dashboardProps
+    ? formatProfileFirstName(dashboardProps.profileName)
+    : "Estudiante";
   const focal = dashboardProps?.recentItems[0] ?? null;
   const sessionTitle = focal?.title ?? "Derecho Constitucional";
   const sessionSubtitle = focal?.subtitle ?? "Tu proxima sesion de estudio";
@@ -82,7 +85,7 @@ export default async function Home() {
     <AppShell>
       <div className="ms-home mx-auto w-full max-w-7xl px-4 pb-12 pt-6 sm:px-6 lg:px-8">
         {dashboardProps?.showOnboarding ? (
-          <div className="mb-2">
+          <div className="mb-4">
             <DashboardOnboarding show />
           </div>
         ) : null}

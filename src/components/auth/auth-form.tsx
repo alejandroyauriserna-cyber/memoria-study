@@ -9,6 +9,7 @@ import { useLoadingProgress } from "@/hooks/use-loading-progress";
 import { CycleSelector } from "@/components/auth/cycle-selector";
 import { authCallbackUrl, authPageUrl } from "@/lib/auth/redirect-urls";
 import { humanizeAuthError } from "@/lib/auth/humanize-auth-error";
+import { validateSignupFullName } from "@/lib/profile/display-name";
 import { createClient } from "@/lib/supabase/browser";
 import { UNT_DERECHO } from "@/lib/academic/unt-derecho";
 
@@ -96,6 +97,9 @@ export function AuthForm({ pendingConfirmEmail = "" }: { pendingConfirmEmail?: s
         if (!fullName.trim() || !password.trim()) {
           throw new Error("Completa nombre, correo y contraseña.");
         }
+
+        const nameError = validateSignupFullName(fullName);
+        if (nameError) throw new Error(nameError);
 
         const { error } = await supabase.auth.signUp({
           email: email.trim(),
@@ -220,15 +224,20 @@ export function AuthForm({ pendingConfirmEmail = "" }: { pendingConfirmEmail?: s
         {mode === "signup" ? (
           <div className="auth-field-block space-y-4">
             <label className="block">
-              <span className="auth-label">Nombre completo</span>
+              <span className="auth-label">Nombre y apellidos</span>
               <input
                 type="text"
                 value={fullName}
                 onChange={(event) => setFullName(event.target.value)}
-                placeholder="Tu nombre completo"
+                placeholder="Ej.: Alejandro Yauri Sernaque"
                 className="auth-input"
+                maxLength={80}
+                autoComplete="name"
                 required
               />
+              <span className="mt-1 block text-[11px] text-muted-foreground">
+                Solo tu nombre real — no escribas usuario ni contraseña aquí.
+              </span>
             </label>
             <CycleSelector value={currentCycle} onChange={setCurrentCycle} />
             <p className="text-[11px] text-muted-foreground">

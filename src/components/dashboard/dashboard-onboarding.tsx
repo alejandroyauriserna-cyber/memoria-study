@@ -15,14 +15,14 @@ export function DashboardOnboarding({ show }: { show: boolean }) {
   if (!show || dismissed) return null;
 
   return (
-    <div className="relative pr-8">
+    <div className="ms-home-onboarding ms-home-onboarding--dismissible">
       <button
         type="button"
         onClick={() => {
           window.localStorage.setItem(DISMISS_KEY, "1");
           setDismissed(true);
         }}
-        className="absolute right-0 top-0 rounded-lg p-1 text-muted-foreground transition hover:text-foreground"
+        className="ms-home-onboarding__close"
         aria-label="Ocultar guía de inicio"
       >
         <X size={16} />

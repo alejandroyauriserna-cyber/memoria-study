@@ -13,8 +13,8 @@ import { JurisprudenceAdminNavLink } from "@/components/jurisprudence/jurisprude
 
 const NAV = [
   { href: "/", label: "Inicio" },
-  { href: "/library", label: "Biblioteca" },
-  { href: "/biblioteca-juridica", label: "Biblioteca Jurídica" },
+  { href: "/library", label: "Materiales" },
+  { href: "/biblioteca-juridica", label: "Jurisprudencia" },
   { href: "/favorites", label: "Favoritos" },
   { href: "/organizers", label: "Organizadores" },
   { href: "/cuaderno", label: "Cuaderno IA" },
@@ -51,13 +51,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         className="sticky top-0 z-40 shrink-0 border-b border-[var(--border)] bg-[var(--shell-header-bg)] backdrop-blur-xl"
       >
         <div
-          className={`relative mx-auto flex items-center justify-between gap-4 px-4 sm:px-6 lg:px-8 ${
-            isHome ? "max-w-[1080px] py-2.5" : "max-w-7xl py-3"
+          className={`relative mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8 ${
+            isHome ? "py-2.5" : "py-3"
           }`}
         >
           <Link
             href="/"
-            className={`group flex items-center gap-2.5 transition ${
+            className={`group flex shrink-0 items-center gap-2.5 transition ${
               isHome
                 ? "rounded-lg px-1 py-1 hover:opacity-80"
                 : "rounded-xl border border-[var(--border)] bg-[var(--shell-card-bg)] px-3 py-2 hover:border-[color-mix(in_srgb,var(--accent)_35%,transparent)]"
@@ -82,7 +82,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
           </Link>
 
-          <nav className="hidden items-center gap-1 md:flex" aria-label="Navegación principal">
+          <nav className="hidden min-w-0 flex-1 items-center justify-center gap-0.5 overflow-x-auto md:flex lg:gap-1" aria-label="Navegación principal">
             {NAV.map((item) => (
               <Link
                 key={item.href}
@@ -96,7 +96,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <JurisprudenceAdminNavLink />
           </nav>
 
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
             <ThemePicker />
             <ThemeToggle />
             <UserMenu />

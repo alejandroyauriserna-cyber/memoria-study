@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { User } from "@supabase/supabase-js";
 import { sanitizeAcademicSelectionForWrite } from "@/lib/academic/helpers";
 import { resolveUserCycle } from "@/lib/profile/resolve-user-cycle";
+import { sanitizeProfileDisplayName, validateSignupFullName } from "@/lib/profile/display-name";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/env";
@@ -86,7 +87,7 @@ function buildProfilePayload(
     email: user.email ?? body.email ?? existing?.email ?? null,
     academic_context: body.academic ?? undefined,
     full_name:
-      body.fullName ??
+      (body.fullName ? sanitizeProfileDisplayName(body.fullName) : undefined) ??
       existing?.full_name ??
       (user.user_metadata?.full_name as string | undefined) ??
       null,
@@ -112,6 +113,7 @@ function enrichProfileResponse(
 
   return {
     ...base,
+    full_name: sanitizeProfileDisplayName(base.full_name),
     current_cycle_number: resolved.cycleNumber,
     current_cycle_label: resolved.cycleLabel,
   };
@@ -223,6 +225,13 @@ export async function POST(request: Request) {
         );
       }
       sanitizedAcademic = normalized;
+    }
+
+    if (body.fullName) {
+      const nameError = validateSignupFullName(body.fullName);
+      if (nameError) {
+        return NextResponse.json({ error: nameError }, { status: 400 });
+      }
     }
 
     const admin = createAdminClient();

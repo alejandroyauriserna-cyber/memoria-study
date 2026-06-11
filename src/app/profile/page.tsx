@@ -11,6 +11,7 @@ import {
   type ProfileTheme,
 } from "@/lib/profile/study-preferences-storage";
 import { resolveUserCycle } from "@/lib/profile/resolve-user-cycle";
+import { sanitizeProfileDisplayName } from "@/lib/profile/display-name";
 
 function aggregateCourseCounts(
   rows: Array<{ materials: { course_name: string } | null }>,
@@ -66,8 +67,9 @@ export default async function ProfilePage() {
     ]);
 
   const profile = profileData ?? null;
-  const fullName =
-    profile?.full_name ?? (user.user_metadata?.full_name as string | undefined) ?? "Estudiante UNT";
+  const fullName = sanitizeProfileDisplayName(
+    profile?.full_name ?? (user.user_metadata?.full_name as string | undefined),
+  );
   const { cycleLabel: currentCycleLabel, cycleNumber: currentCycleNumber } = resolveUserCycle(
     profile,
     user.user_metadata,
