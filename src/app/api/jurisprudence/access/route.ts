@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { resolveUserEmail } from "@/lib/auth/user-email";
 import { hasSupabaseEnv } from "@/lib/env";
 import {
-  getJurisprudenceModeratorEmails,
+  getAllModeratorEmails,
   getModeratorAccessHint,
   getUntAccessDenialMessage,
   getUntEmailDomains,
@@ -44,7 +44,8 @@ export async function GET() {
   const email = resolveUserEmail(user) ?? "";
   const isUnt = isUntInstitutionalEmail(email);
   const emailConfirmed = isEmailConfirmed(user);
-  const isModerator = isJurisprudenceModerator(email);
+  const isModerator = await isJurisprudenceModerator(email);
+  const moderators = await getAllModeratorEmails();
 
   return NextResponse.json({
     authenticated: true,
@@ -52,8 +53,8 @@ export async function GET() {
     emailConfirmed,
     canContribute: isUnt && emailConfirmed,
     isModerator,
-    moderatorsConfigured: getJurisprudenceModeratorEmails().length,
-    moderatorHint: isModerator ? null : getModeratorAccessHint(email),
+    moderatorsConfigured: moderators.length,
+    moderatorHint: isModerator ? null : await getModeratorAccessHint(email),
     untDomains: getUntEmailDomains(),
     denialMessage: !isUnt
       ? getUntAccessDenialMessage()

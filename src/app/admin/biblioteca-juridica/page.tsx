@@ -23,7 +23,7 @@ export default async function JurisprudenceAdminPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user || !isJurisprudenceModerator(resolveUserEmail(user))) {
+  if (!user || !(await isJurisprudenceModerator(resolveUserEmail(user)))) {
     redirect("/biblioteca-juridica");
   }
 

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/env";
+import { resolveUserEmail } from "@/lib/auth/user-email";
 import { deleteJurisprudenceContribution } from "@/lib/jurisprudence/delete-contribution";
 import type { JurisprudenceDocumentRow } from "@/lib/jurisprudence/mapper";
 import {
@@ -27,11 +28,16 @@ export async function DELETE(
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user?.email) {
+    if (!user) {
       return NextResponse.json({ error: "Debes iniciar sesión." }, { status: 401 });
     }
 
-    if (!isUntInstitutionalEmail(user.email)) {
+    const email = resolveUserEmail(user);
+    if (!email) {
+      return NextResponse.json({ error: "Debes iniciar sesión." }, { status: 401 });
+    }
+
+    if (!isUntInstitutionalEmail(email)) {
       return NextResponse.json({ error: getUntAccessDenialMessage() }, { status: 403 });
     }
 
@@ -48,7 +54,7 @@ export async function DELETE(
 
     const document = row as JurisprudenceDocumentRow;
     const isOwner = document.submitted_by === user.id;
-    const isModerator = isJurisprudenceModerator(user.email);
+    const isModerator = await isJurisprudenceModerator(email);
 
     if (!isOwner && !isModerator) {
       return NextResponse.json(

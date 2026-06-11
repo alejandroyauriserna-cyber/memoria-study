@@ -22,7 +22,7 @@ export async function requireJurisprudenceModerator(): Promise<
     return NextResponse.json({ error: "Debes iniciar sesión." }, { status: 401 });
   }
 
-  if (!isJurisprudenceModerator(email)) {
+  if (!(await isJurisprudenceModerator(email))) {
     return NextResponse.json({ error: "No tienes permiso de administración." }, { status: 403 });
   }
 

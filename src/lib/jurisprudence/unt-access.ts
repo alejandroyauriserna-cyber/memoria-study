@@ -1,4 +1,4 @@
-import { readServerEnv, readServerEnvList } from "@/lib/env/runtime";
+import { readServerEnvList } from "@/lib/env/runtime";
 
 const DEFAULT_UNT_DOMAINS = ["unitru.edu.pe"];
 
@@ -33,37 +33,10 @@ export function getUntAccessDenialMessage(): string {
   return `Solo cuentas institucionales UNT (${domains}) pueden aportar o retirar sentencias. Inicia sesión con tu correo universitario.`;
 }
 
-export function getJurisprudenceModeratorEmails(): string[] {
-  return parseEmailList(readServerEnv("JURISPRUDENCE_MODERATOR_EMAILS"));
-}
-
-export function getModeratorAccessHint(email: string | null | undefined): string | null {
-  const normalized = email?.trim().toLowerCase();
-  const moderators = getJurisprudenceModeratorEmails();
-
-  if (!normalized) {
-    return "Inicia sesión con el correo que configuraste en JURISPRUDENCE_MODERATOR_EMAILS.";
-  }
-
-  if (moderators.length === 0) {
-    return "JURISPRUDENCE_MODERATOR_EMAILS no está configurada en el servidor. Añádela y redeploy.";
-  }
-
-  if (moderators.includes(normalized)) return null;
-
-  return `Tu sesión usa ${normalized}. Debe coincidir exactamente con JURISPRUDENCE_MODERATOR_EMAILS en el servidor (Vercel/hosting), no solo en .env.local.`;
-}
-
-/**
- * Moderación de aportes: emails en JURISPRUDENCE_MODERATOR_EMAILS (mismo correo de sesión).
- * En desarrollo, si la lista está vacía, cualquier usuario autenticado puede moderar.
- */
-export function isJurisprudenceModerator(email: string | null | undefined): boolean {
-  const normalized = email?.trim().toLowerCase();
-  if (!normalized) return false;
-
-  const moderators = getJurisprudenceModeratorEmails();
-  if (moderators.includes(normalized)) return true;
-
-  return process.env.NODE_ENV === "development" && moderators.length === 0;
-}
+export {
+  getAllModeratorEmails,
+  getEnvModeratorEmails,
+  getJurisprudenceModeratorEmails,
+  getModeratorAccessHint,
+  isJurisprudenceModerator,
+} from "@/lib/jurisprudence/moderator-emails";

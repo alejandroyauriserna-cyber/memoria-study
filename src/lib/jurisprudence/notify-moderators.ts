@@ -1,6 +1,6 @@
 import { env } from "@/lib/env";
 import { readServerEnv } from "@/lib/env/runtime";
-import { getJurisprudenceModeratorEmails, getUntEmailDomains } from "@/lib/jurisprudence/unt-access";
+import { getAllModeratorEmails, getUntEmailDomains } from "@/lib/jurisprudence/unt-access";
 
 export async function notifyJurisprudenceModerators(input: {
   documentId: string;
@@ -8,7 +8,7 @@ export async function notifyJurisprudenceModerators(input: {
   submitterEmail?: string | null;
   autoPublished?: boolean;
 }): Promise<void> {
-  const moderators = getJurisprudenceModeratorEmails();
+  const moderators = await getAllModeratorEmails();
   if (!moderators.length) return;
 
   const appUrl = env.appUrl.replace(/\/$/, "");
