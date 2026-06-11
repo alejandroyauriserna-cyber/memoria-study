@@ -4,7 +4,18 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { BookOpen, Gavel, Library, PlusCircle } from "lucide-react";
+import {
+  BookOpen,
+  BrainCircuit,
+  Command,
+  DatabaseZap,
+  FileSearch,
+  Gavel,
+  Library,
+  PlusCircle,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
 import { LoadingState } from "@/components/ui/loading-state";
 import { useLoadingProgress } from "@/hooks/use-loading-progress";
 import { JurisprudenceFilters } from "@/components/jurisprudence/jurisprudence-filters";
@@ -204,12 +215,25 @@ export function JurisprudenceWorkspace() {
             <BookOpen size={14} />
             Biblioteca Jurídica
           </p>
-          <h1>Encuentra jurisprudencia en segundos</h1>
+          <h1>Jurisprudencia peruana con precision de estudio.</h1>
           <p className="ms-home-lead">
-            Casaciones, sentencias, resoluciones y precedentes — sin perder tiempo en Google,
-            LP Pasión por el Derecho o portales del Poder Judicial. Los aportes los revisan
-            moderadores UNT antes de publicarse.
+            Busca casaciones, sentencias, resoluciones y precedentes en una interfaz pensada para
+            estudiar, citar y guardar hallazgos sin perderte entre portales.
           </p>
+          <div className="bj-hero__signals" aria-label="Capacidades de la biblioteca juridica">
+            <span>
+              <ShieldCheck size={15} />
+              Curada UNT
+            </span>
+            <span>
+              <BrainCircuit size={15} />
+              Busqueda asistida
+            </span>
+            <span>
+              <Sparkles size={15} />
+              Citas rapidas
+            </span>
+          </div>
           {access.canContribute ? (
             <button
               type="button"
@@ -229,24 +253,47 @@ export function JurisprudenceWorkspace() {
           )}
         </div>
 
-        <div className="bj-hero__stats">
-          <div className="bj-hero__stat">
-            <span className="bj-hero__stat-icon">
-              <Gavel size={18} />
-            </span>
+        <div className="bj-hero__console" aria-label="Resumen de jurisprudencia">
+          <div className="bj-hero__console-top">
             <span>
-              <strong>{total || items.length}</strong>
-              <em>Resoluciones</em>
+              <Command size={14} />
+              Legal research OS
             </span>
+            <em>2026</em>
           </div>
-          <div className="bj-hero__stat">
-            <span className="bj-hero__stat-icon is-purple">
-              <Library size={18} />
-            </span>
-            <span>
-              <strong>{favoriteIds.length}</strong>
-              <em>Guardadas</em>
-            </span>
+          <div className="bj-hero__query-card">
+            <FileSearch size={20} />
+            <span>casacion laboral, precedente vinculante, tutela...</span>
+            <kbd>Ctrl K</kbd>
+          </div>
+          <div className="bj-hero__stats">
+            <div className="bj-hero__stat">
+              <span className="bj-hero__stat-icon">
+                <Gavel size={18} />
+              </span>
+              <span>
+                <strong>{total || items.length}</strong>
+                <em>Resoluciones</em>
+              </span>
+            </div>
+            <div className="bj-hero__stat">
+              <span className="bj-hero__stat-icon is-purple">
+                <Library size={18} />
+              </span>
+              <span>
+                <strong>{favoriteIds.length}</strong>
+                <em>Guardadas</em>
+              </span>
+            </div>
+            <div className="bj-hero__stat">
+              <span className="bj-hero__stat-icon is-blue">
+                <DatabaseZap size={18} />
+              </span>
+              <span>
+                <strong>{organos.length || "Multi"}</strong>
+                <em>Organos</em>
+              </span>
+            </div>
           </div>
         </div>
 
