@@ -8,6 +8,7 @@ import { recordToMaterial } from "@/lib/materials/mapper";
 import { formatStudyHours } from "@/lib/profile/aggregate-learning-stats";
 import { estimateStudyMinutesFromServer } from "@/lib/profile/estimate-study-minutes";
 import { sanitizeProfileDisplayName } from "@/lib/profile/display-name";
+import { isNewUser } from "@/lib/profile/is-new-user";
 import { resolveUserCycle } from "@/lib/profile/resolve-user-cycle";
 import { fetchServerLearningStats } from "@/lib/profile/server-learning-stats";
 import { createAdminClient } from "@/lib/supabase/admin";
