@@ -213,6 +213,96 @@
   line-height: 1.65;
 }
 
+.fuentes-panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.fuentes-panel-add-btn {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 255, 213, 0.28);
+  background: rgba(0, 255, 213, 0.1);
+  color: #00ffd5;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.45rem 0.85rem;
+  cursor: pointer;
+  transition:
+    border-color 200ms ease,
+    background 200ms ease,
+    transform 200ms ease;
+}
+
+.fuentes-panel-add-btn:hover {
+  border-color: rgba(0, 255, 213, 0.42);
+  background: rgba(0, 255, 213, 0.16);
+  transform: translateY(-1px);
+}
+
+.fuentes-source-title {
+  color: #f5f7fa;
+}
+
+.fuentes-source-add-row {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: 0.9rem;
+  border: 1px dashed rgba(0, 255, 213, 0.22);
+  background: rgba(0, 255, 213, 0.04);
+  padding: 0.65rem 0.75rem;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 200ms ease,
+    background 200ms ease,
+    transform 200ms ease;
+}
+
+.fuentes-source-add-row:hover {
+  border-color: rgba(0, 255, 213, 0.38);
+  background: rgba(0, 255, 213, 0.08);
+  transform: translateY(-1px);
+}
+
+.fuentes-source-add-icon {
+  display: grid;
+  height: 2rem;
+  width: 2rem;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 0.65rem;
+  border: 1px solid rgba(0, 255, 213, 0.28);
+  background: rgba(0, 255, 213, 0.1);
+  color: #00ffd5;
+}
+
+.fuentes-source-add-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.fuentes-source-add-copy strong {
+  color: #f5f7fa;
+  font-size: 0.84rem;
+  font-weight: 650;
+}
+
+.fuentes-source-add-copy em {
+  color: rgba(245, 247, 250, 0.52);
+  font-size: 0.72rem;
+  font-style: normal;
+}
+
 .fuentes-section-label {
   margin-bottom: 0.75rem;
   color: rgba(245, 247, 250, 0.52);
@@ -729,4 +819,40 @@ html:not(.dark) .fuentes-preset-card .text-\[\#00BFFF\] {
 html:not(.dark) .fuentes-preset-card [class*="191,255,0.15"] {
   background: rgba(224, 242, 254, 0.95) !important;
   color: #0369a1 !important;
+}
+
+html:not(.dark) .fuentes-panel-add-btn {
+  border-color: rgba(13, 148, 136, 0.28);
+  background: rgba(13, 148, 136, 0.1);
+  color: #0f766e;
+}
+
+html:not(.dark) .fuentes-panel-add-btn:hover {
+  border-color: rgba(13, 148, 136, 0.4);
+  background: rgba(13, 148, 136, 0.14);
+}
+
+html:not(.dark) .fuentes-source-title,
+html:not(.dark) .fuentes-source-add-copy strong {
+  color: var(--foreground);
+}
+
+html:not(.dark) .fuentes-source-add-row {
+  border-color: rgba(13, 148, 136, 0.28);
+  background: rgba(13, 148, 136, 0.05);
+}
+
+html:not(.dark) .fuentes-source-add-row:hover {
+  border-color: rgba(13, 148, 136, 0.4);
+  background: rgba(13, 148, 136, 0.1);
+}
+
+html:not(.dark) .fuentes-source-add-icon {
+  border-color: rgba(13, 148, 136, 0.28);
+  background: rgba(13, 148, 136, 0.1);
+  color: #0f766e;
+}
+
+html:not(.dark) .fuentes-source-add-copy em {
+  color: var(--muted-foreground);
 }

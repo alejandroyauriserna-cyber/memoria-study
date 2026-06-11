@@ -5,6 +5,7 @@ import {
   JURISPRUDENCE_MATERIA_LABELS,
   JURISPRUDENCE_TIPO_LABELS,
 } from "@/lib/jurisprudence/labels";
+import { hasUsableJurisprudencePdfUrl } from "@/lib/jurisprudence/pdf-url";
 import { Bookmark, ExternalLink, Scale } from "lucide-react";
 
 type Props = {
@@ -14,6 +15,8 @@ type Props = {
 };
 
 export function JurisprudenceResultCard({ record, saved, onToggleSave }: Props) {
+  const hasPdf = hasUsableJurisprudencePdfUrl(record.pdfUrl);
+
   return (
     <article className="bj-card">
       <div className="bj-card__head">
@@ -46,15 +49,21 @@ export function JurisprudenceResultCard({ record, saved, onToggleSave }: Props) 
       <p className="bj-card__summary">{record.summary}</p>
 
       <div className="bj-card__actions">
-        <a
-          href={record.pdfUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="bj-card__btn bj-card__btn--primary"
-        >
-          <ExternalLink size={15} />
-          Abrir PDF
-        </a>
+        {hasPdf ? (
+          <a
+            href={record.pdfUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bj-card__btn bj-card__btn--primary"
+          >
+            <ExternalLink size={15} />
+            Abrir PDF
+          </a>
+        ) : (
+          <span className="bj-card__btn bj-card__btn--disabled" aria-disabled="true">
+            PDF no disponible
+          </span>
+        )}
         <button
           type="button"
           className={`bj-card__btn bj-card__btn--ghost${saved ? " is-saved" : ""}`}

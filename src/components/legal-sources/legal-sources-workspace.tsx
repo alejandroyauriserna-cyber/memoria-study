@@ -494,6 +494,31 @@ export function LegalSourcesWorkspace() {
     setError(null);
   }
 
+  function openAddSource(mode: "manual" | "upload" | "link" | "web" = "upload") {
+    setAddMode(mode);
+    setShowAdd(true);
+    setError(null);
+    requestAnimationFrame(() => {
+      document.getElementById("fuentes-add-section")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  }
+
+  const displayManageableSources = useMemo(
+    () =>
+      manageableSources.filter(
+        (source) => source.title?.trim() || source.lpPresetId || source.webTemplateId,
+      ),
+    [manageableSources],
+  );
+
+  const enabledDisplayCount = useMemo(
+    () => displayManageableSources.filter((source) => source.enabled).length,
+    [displayManageableSources],
+  );
+
   if (loading || !settings) {
     return (
       <div className="fuentes-page-content py-8">
@@ -641,21 +666,50 @@ export function LegalSourcesWorkspace() {
         ) : null}
       </header>
 
-      {manageableSources.length ? (
-        <section className="fuentes-panel">
-          <p className="fuentes-panel-title">
-            <BookOpen size={16} className="text-[#86EFAC]" />
-            Activar fuentes para el tutor
-          </p>
-          <p className="fuentes-panel-copy">
-            {enabledSources.length} de {manageableSources.length} activa
-            {enabledSources.length === 1 ? "" : "s"}. Los cambios se sincronizan con el estudio guiado.
-          </p>
-          <div className="mt-3 space-y-2">
-            {manageableSources.map((source) => renderSourceRow(source))}
+      <section className="fuentes-panel">
+        <div className="fuentes-panel-head">
+          <div>
+            <p className="fuentes-panel-title">
+              <BookOpen size={16} className="text-[#86EFAC]" />
+              Activar fuentes para el tutor
+            </p>
+            <p className="fuentes-panel-copy">
+              {displayManageableSources.length
+                ? `${enabledDisplayCount} de ${displayManageableSources.length} activa${enabledDisplayCount === 1 ? "" : "s"}.`
+                : "Aún no tienes fuentes listas."}{" "}
+              Los cambios se sincronizan con el estudio guiado.
+            </p>
           </div>
-        </section>
-      ) : null}
+          <button
+            type="button"
+            onClick={() => openAddSource()}
+            className="fuentes-panel-add-btn"
+            aria-label="Agregar fuente para el tutor"
+            title="Agregar fuente"
+          >
+            <Plus size={18} />
+            <span>Agregar</span>
+          </button>
+        </div>
+
+        <div className="mt-3 space-y-2">
+          {displayManageableSources.map((source) => renderSourceRow(source))}
+
+          <button
+            type="button"
+            onClick={() => openAddSource()}
+            className="fuentes-source-add-row"
+          >
+            <span className="fuentes-source-add-icon" aria-hidden>
+              <Plus size={18} />
+            </span>
+            <span className="fuentes-source-add-copy">
+              <strong>Agregar otra fuente</strong>
+              <em>PDF, material de biblioteca, URL web o metadatos</em>
+            </span>
+          </button>
+        </div>
+      </section>
 
       {usesStudyCategory(settings, "normativa") ? (
       <section className="fuentes-panel">
@@ -752,7 +806,7 @@ export function LegalSourcesWorkspace() {
       />
       ) : null}
 
-      <div className="fuentes-panel">
+      <div id="fuentes-add-section" className="fuentes-panel">
         <p className="fuentes-section-label">Agregar otra fuente</p>
         {!showAdd ? (
           <div className="flex flex-wrap gap-2">
@@ -1045,7 +1099,7 @@ function SourceRow({
       </button>
 
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-[#F5F7FA]">{source.title}</p>
+        <p className="fuentes-source-title truncate text-sm font-medium">{source.title}</p>
         <div className="flex flex-wrap items-center gap-2">
           {source.author ? (
             <p className="truncate text-[10px] text-muted-foreground">{source.author}</p>
