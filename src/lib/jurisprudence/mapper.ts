@@ -21,7 +21,9 @@ export type JurisprudenceDocumentRow = {
   is_public?: boolean | null;
   submitted_by?: string | null;
   status?: "published" | "pending" | "rejected" | null;
+  rejection_reason?: string | null;
   file_name?: string | null;
+  extracted_text?: string | null;
   created_at?: string;
   updated_at?: string;
 };
@@ -42,6 +44,8 @@ export function jurisprudenceRowToRecord(row: JurisprudenceDocumentRow): Jurispr
     isCommunityContribution: Boolean(row.submitted_by),
     submittedBy: row.submitted_by ?? undefined,
     status: row.status ?? undefined,
+    rejectionReason: row.rejection_reason ?? undefined,
+    embeddingReady: Boolean(row.extracted_text && row.extracted_text.length > 200),
   };
 }
 

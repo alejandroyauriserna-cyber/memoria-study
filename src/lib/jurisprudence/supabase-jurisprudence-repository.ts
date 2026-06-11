@@ -9,7 +9,12 @@ import {
   getDistinctYears,
   searchJurisprudenceRecords,
 } from "@/lib/jurisprudence/search";
+import { hasUsableJurisprudencePdfUrl } from "@/lib/jurisprudence/pdf-url";
 import type { JurisprudenceRepository } from "@/lib/jurisprudence/repository-types";
+
+function browsableRecords(records: JurisprudenceRecord[]): JurisprudenceRecord[] {
+  return records.filter((record) => hasUsableJurisprudencePdfUrl(record.pdfUrl));
+}
 
 /**
  * Repositorio fase 2 — lee desde `public.jurisprudence_documents`.
@@ -27,7 +32,9 @@ export class SupabaseJurisprudenceRepository implements JurisprudenceRepository 
       .order("year", { ascending: false });
 
     if (error) throw new Error(error.message);
-    return (data as JurisprudenceDocumentRow[]).map(jurisprudenceRowToRecord);
+    return browsableRecords(
+      (data as JurisprudenceDocumentRow[]).map(jurisprudenceRowToRecord),
+    );
   }
 
   async getById(id: string): Promise<JurisprudenceRecord | null> {
@@ -71,11 +78,21 @@ export class SupabaseJurisprudenceRepository implements JurisprudenceRepository 
       query = query.in("id", filters.favoriteIds);
     }
 
+    const textQuery = filters.query?.trim();
+    if (textQuery) {
+      query = query.textSearch("search_vector", textQuery, {
+        config: "spanish",
+        type: "websearch",
+      });
+    }
+
     const { data, error } = await query.order("year", { ascending: false });
 
     if (error) throw new Error(error.message);
 
-    const catalog = (data as JurisprudenceDocumentRow[]).map(jurisprudenceRowToRecord);
+    const catalog = browsableRecords(
+      (data as JurisprudenceDocumentRow[]).map(jurisprudenceRowToRecord),
+    );
     return searchJurisprudenceRecords(catalog, filters);
   }
 

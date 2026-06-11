@@ -128,7 +128,7 @@ const ACTION_DIRECTIVES: Record<GuidedStudyTutorAction, string> = {
   real_case:
     "Enfoca example en casos reales o hipotéticos verosímiles peruanos con desenlace jurídico.",
   jurisprudence:
-    "Cita SOLO jurisprudencia presente en FUENTES AUTORIZADAS. Si no hay fallo verificable, indícalo explícitamente en examImportance sin inventar números de expediente.",
+    "Cita SOLO jurisprudencia del bloque BIBLIOTECA JURÍDICA y fuentes autorizadas. Si no hay fallo verificable, indícalo en examImportance sin inventar expedientes.",
   civil_code:
     "Enriquece peruLaw y citations con Código Civil peruano de la base oficial indexada.",
   custom:
@@ -148,6 +148,7 @@ export function buildTutorUserPrompt(input: {
   chapterMode?: boolean;
   legalBaseBlock: string;
   sourcesBlock?: string;
+  jurisprudenceBlock?: string;
   strictNormativeMode?: boolean;
   structured?: boolean;
 }): string {
@@ -172,6 +173,8 @@ export function buildTutorUserPrompt(input: {
     "",
     input.sourcesBlock ?? "",
     input.sourcesBlock ? "" : null,
+    input.jurisprudenceBlock ?? "",
+    input.jurisprudenceBlock ? "" : null,
     "BASE JURÍDICA INDEXADA (ÚNICA fuente permitida para números de artículo):",
     input.legalBaseBlock,
     input.strictNormativeMode

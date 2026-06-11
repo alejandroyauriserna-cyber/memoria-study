@@ -12,6 +12,10 @@ import {
 import { processNormativeAnalysis } from "@/lib/guided-study/validate-citations";
 import { buildLegalSourcesPromptBlock } from "@/lib/legal-sources/prompt";
 import { buildNormativeIndexForUser } from "@/lib/legal-sources/server";
+import {
+  findRelevantJurisprudenceForTutor,
+  formatJurisprudenceForTutorPrompt,
+} from "@/lib/jurisprudence/search-for-tutor";
 import { getEnabledSources } from "@/lib/legal-sources/storage";
 import type { LegalSourceAttribution, LegalSourcesSettings } from "@/types/legal-sources";
 import type {
@@ -161,6 +165,21 @@ export async function askLegalStudyTutor(input: {
     normativeIndex,
   );
   const indexedNormativeBlock = formatLegalBaseForPrompt(relevantArticles);
+  const includeJurisprudence =
+    input.action === "jurisprudence" ||
+    input.action === "peru_law" ||
+    input.action === "real_case";
+  const jurisprudenceRecords = includeJurisprudence
+    ? await findRelevantJurisprudenceForTutor({
+        pageText: input.pageText,
+        chapterTitle: input.chapterTitle,
+        customPrompt: input.customPrompt,
+        userId: input.userId,
+      })
+    : [];
+  const jurisprudenceBlock = includeJurisprudence
+    ? formatJurisprudenceForTutorPrompt(jurisprudenceRecords)
+    : "";
   const structured = usesStructuredResponse(input.action) || input.action === "custom";
   const teachingActions: GuidedStudyTutorAction[] = [
     "analyze_page",
@@ -182,6 +201,7 @@ export async function askLegalStudyTutor(input: {
         ...input,
         legalBaseBlock: indexedNormativeBlock,
         sourcesBlock: sourcesBlock || undefined,
+        jurisprudenceBlock: jurisprudenceBlock || undefined,
         strictNormativeMode,
         structured,
       })}`,

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
+import { requireAuth } from "@/lib/api/require-auth";
 import { hasSupabaseEnv } from "@/lib/env";
 import {
   buildJurisprudenceDocumentId,
@@ -10,7 +10,20 @@ import {
   parseKeywordsInput,
   sanitizePdfFileName,
 } from "@/lib/jurisprudence/build-document-id";
-import { jurisprudenceRowToRecord } from "@/lib/jurisprudence/mapper";
+import { jurisprudenceRowToRecord, type JurisprudenceDocumentRow } from "@/lib/jurisprudence/mapper";
+import { isAllowedDocumentWebUrl, normalizeWebUrlInput } from "@/lib/legal-sources/allowed-url-domains";
+import {
+  getUntAccessDenialMessage,
+  isUntInstitutionalEmail,
+} from "@/lib/jurisprudence/unt-access";
+import { findJurisprudenceDuplicates } from "@/lib/jurisprudence/find-duplicates";
+import {
+  getEmailConfirmationMessage,
+  isEmailConfirmed,
+} from "@/lib/jurisprudence/require-confirmed-email";
+import { isTrustedJurisprudenceContributor } from "@/lib/jurisprudence/trusted-contributor";
+import { notifyJurisprudenceModerators } from "@/lib/jurisprudence/notify-moderators";
+import { extractAndStoreJurisprudenceText } from "@/lib/jurisprudence/extract-document-text";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -34,16 +47,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Supabase no está configurado." }, { status: 503 });
     }
 
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const auth = await requireAuth(request, { rateLimit: { limit: 5, windowMs: 86_400_000 } });
+    if (auth instanceof NextResponse) return auth;
+    const user = auth.user;
 
-    if (!user) {
-      return NextResponse.json(
-        { error: "Inicia sesión para aportar sentencias a la biblioteca." },
-        { status: 401 },
-      );
+    if (!isUntInstitutionalEmail(user.email)) {
+      return NextResponse.json({ error: getUntAccessDenialMessage() }, { status: 403 });
+    }
+
+    if (!isEmailConfirmed(user)) {
+      return NextResponse.json({ error: getEmailConfirmationMessage() }, { status: 403 });
     }
 
     const formData = await request.formData();
@@ -104,7 +117,34 @@ export async function POST(request: Request) {
       }
     }
 
+    if (pdfUrlExternal) {
+      const normalizedUrl = normalizeWebUrlInput(pdfUrlExternal);
+      if (!isAllowedDocumentWebUrl(normalizedUrl)) {
+        return NextResponse.json(
+          {
+            error:
+              "Solo se admiten enlaces oficiales (PJ, TC, SUNAT, SPIJ o LP Pasión por el Derecho).",
+          },
+          { status: 400 },
+        );
+      }
+    }
+
     const admin = createAdminClient();
+
+    const duplicate = await findJurisprudenceDuplicates(admin, { title, expediente });
+    if (duplicate) {
+      const detail =
+        duplicate.reason === "expediente"
+          ? `Ya existe una resolución con expediente ${duplicate.expediente ?? duplicate.id}.`
+          : `Ya existe una resolución con título muy similar: «${duplicate.title}».`;
+      return NextResponse.json({ error: detail, duplicateId: duplicate.id }, { status: 409 });
+    }
+
+    const trusted = await isTrustedJurisprudenceContributor(admin, user.id);
+    const initialStatus = trusted ? "published" : "pending";
+    const initialPublic = trusted;
+
     let pdfUrl = pdfUrlExternal ?? "";
     let fileName: string | null = null;
 
@@ -150,8 +190,8 @@ export async function POST(request: Request) {
       source_url: pdfUrlExternal,
       file_name: fileName,
       submitted_by: user.id,
-      status: "published" as const,
-      is_public: true,
+      status: initialStatus,
+      is_public: initialPublic,
     };
 
     let { data: row, error: insertError } = await admin
@@ -180,8 +220,21 @@ export async function POST(request: Request) {
 
     const record = jurisprudenceRowToRecord(row);
 
+    if (trusted) {
+      void extractAndStoreJurisprudenceText(admin, row as JurisprudenceDocumentRow);
+    }
+
+    void notifyJurisprudenceModerators({
+      documentId: record.id,
+      title: record.title,
+      submitterEmail: user.email,
+      autoPublished: trusted,
+    });
+
     return NextResponse.json({
       ok: true,
+      pending: !trusted,
+      autoPublished: trusted,
       document: {
         ...record,
         isCommunityContribution: true,

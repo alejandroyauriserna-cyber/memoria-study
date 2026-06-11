@@ -29,6 +29,16 @@ export const env = {
   supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
   supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+
+  /** Dominios de correo UNT permitidos para aportes (coma-separados). */
+  jurisprudenceUntEmailDomains: process.env.JURISPRUDENCE_UNT_EMAIL_DOMAINS,
+  /** Moderadores de Biblioteca Jurídica (emails completos, coma-separados). */
+  jurisprudenceModeratorEmails: process.env.JURISPRUDENCE_MODERATOR_EMAILS,
+  /** Aportes aprobados para auto-publicar sin moderación (default 3). */
+  jurisprudenceTrustedApprovals: process.env.JURISPRUDENCE_TRUSTED_APPROVALS,
+  /** Resend — aviso a moderadores cuando hay aportes pending. */
+  resendApiKey: process.env.RESEND_API_KEY,
+  jurisprudenceNotifyFromEmail: process.env.JURISPRUDENCE_NOTIFY_FROM_EMAIL,
 };
 
 export function hasSupabaseEnv() {

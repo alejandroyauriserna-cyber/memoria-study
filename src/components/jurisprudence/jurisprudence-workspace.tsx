@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { BookOpen, Gavel, Library, PlusCircle } from "lucide-react";
 import { LoadingState } from "@/components/ui/loading-state";
@@ -10,7 +12,11 @@ import { JurisprudenceResultCard } from "@/components/jurisprudence/jurisprudenc
 import { JurisprudenceSearchBar } from "@/components/jurisprudence/jurisprudence-search-bar";
 import { JurisprudenceContributePanel } from "@/components/jurisprudence/jurisprudence-contribute-panel";
 import {
-  EMPTY_JURISPRUDENCE_FILTERS,
+  JurisprudenceMyContributions,
+} from "@/components/jurisprudence/jurisprudence-contributions-panel";
+import {
+  buildBibliotecaShareUrl,
+  filterStateFromSearchParams,
   filterStateToSearchParams,
   type JurisprudenceFilterState,
 } from "@/lib/jurisprudence/filters";
@@ -46,10 +52,27 @@ function buildSearchUrl(filters: JurisprudenceFilterState, query: string, sugges
   return `/api/jurisprudence/search?${params.toString()}`;
 }
 
+type AccessState = {
+  authenticated: boolean;
+  canContribute: boolean;
+  isModerator: boolean;
+  emailConfirmed?: boolean;
+  denialMessage?: string | null;
+  untDomains?: string[];
+};
+
 export function JurisprudenceWorkspace() {
-  const [query, setQuery] = useState("");
-  const [committedQuery, setCommittedQuery] = useState("");
-  const [filters, setFilters] = useState<JurisprudenceFilterState>(EMPTY_JURISPRUDENCE_FILTERS);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialUrl = useMemo(
+    () => filterStateFromSearchParams(new URLSearchParams(searchParams.toString())),
+    [searchParams],
+  );
+
+  const [query, setQuery] = useState(initialUrl.query);
+  const [committedQuery, setCommittedQuery] = useState(initialUrl.query);
+  const [filters, setFilters] = useState<JurisprudenceFilterState>(initialUrl.filters);
+  const [highlightDocId, setHighlightDocId] = useState<string | null>(initialUrl.docId);
   const [items, setItems] = useState<JurisprudenceRecord[]>([]);
   const [total, setTotal] = useState(0);
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -62,13 +85,41 @@ export function JurisprudenceWorkspace() {
   const [error, setError] = useState("");
   const [filtersCollapsed, setFiltersCollapsed] = useState(false);
   const [contributeOpen, setContributeOpen] = useState(false);
+  const [access, setAccess] = useState<AccessState>({
+    authenticated: false,
+    canContribute: false,
+    isModerator: false,
+  });
   const searchProgress = useLoadingProgress(isLoading, "search");
   const committedQueryRef = useRef(committedQuery);
   committedQueryRef.current = committedQuery;
 
+  const syncShareUrl = useCallback(
+    (term: string, nextFilters: JurisprudenceFilterState, docId?: string | null) => {
+      const path = buildBibliotecaShareUrl(nextFilters, term, docId ?? highlightDocId);
+      router.replace(path, { scroll: false });
+    },
+    [highlightDocId, router],
+  );
+
+  useEffect(() => {
+    if (!highlightDocId) return;
+    const timer = window.setTimeout(() => {
+      document.getElementById(`doc-${highlightDocId}`)?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }, 400);
+    return () => window.clearTimeout(timer);
+  }, [highlightDocId, items]);
+
   useEffect(() => {
     setFavoriteIds(getJurisprudenceFavoriteIds());
     void syncJurisprudenceFavoritesFromApi().then(setFavoriteIds);
+    void fetch("/api/jurisprudence/access")
+      .then((res) => res.json())
+      .then((payload: AccessState) => setAccess(payload))
+      .catch(() => undefined);
   }, []);
 
   const runSearch = useCallback(
@@ -98,6 +149,9 @@ export function JurisprudenceWorkspace() {
         setPreviewItems([]);
         setCommittedQuery(term);
         setHasSearched(Boolean(term.trim()));
+        if (!suggest) {
+          syncShareUrl(term, nextFilters);
+        }
 
         if (payload.filterOptions) {
           setOrganos(payload.filterOptions.organos);
@@ -115,8 +169,12 @@ export function JurisprudenceWorkspace() {
         }
       }
     },
-    [filters],
+    [filters, syncShareUrl],
   );
+
+  useEffect(() => {
+    syncShareUrl(committedQueryRef.current, filters);
+  }, [filters, syncShareUrl]);
 
   useEffect(() => {
     void runSearch(committedQueryRef.current, filters, false);
@@ -147,17 +205,26 @@ export function JurisprudenceWorkspace() {
           <h1>Encuentra jurisprudencia en segundos</h1>
           <p className="ms-home-lead">
             Casaciones, sentencias, resoluciones y precedentes — sin perder tiempo en Google,
-            LP Pasión por el Derecho o portales del Poder Judicial. También puedes aportar
-            resoluciones para nutrir la biblioteca.
+            LP Pasión por el Derecho o portales del Poder Judicial. Los aportes los revisan
+            moderadores UNT antes de publicarse.
           </p>
-          <button
-            type="button"
-            className="bj-hero__contribute"
-            onClick={() => setContributeOpen(true)}
-          >
-            <PlusCircle size={16} />
-            Aportar sentencia
-          </button>
+          {access.canContribute ? (
+            <button
+              type="button"
+              className="bj-hero__contribute"
+              onClick={() => setContributeOpen(true)}
+            >
+              <PlusCircle size={16} />
+              Aportar sentencia
+            </button>
+          ) : access.authenticated ? (
+            <p className="bj-hero__access-note">{access.denialMessage}</p>
+          ) : (
+            <Link href="/auth" className="bj-hero__contribute">
+              <PlusCircle size={16} />
+              Inicia sesión con @unitru.edu.pe
+            </Link>
+          )}
         </div>
 
         <div className="bj-hero__stats">
@@ -194,6 +261,18 @@ export function JurisprudenceWorkspace() {
           />
         </div>
       </header>
+
+      {access.canContribute ? (
+        <JurisprudenceMyContributions
+          onChanged={() => void runSearch(committedQueryRef.current, filters, false)}
+        />
+      ) : null}
+
+      {access.isModerator ? (
+        <Link href="/admin/biblioteca-juridica" className="bj-admin-banner">
+          Panel de administración — moderar aportes y reportes
+        </Link>
+      ) : null}
 
       <div className="bj-layout">
         <JurisprudenceFilters
@@ -276,6 +355,8 @@ export function JurisprudenceWorkspace() {
                       <JurisprudenceResultCard
                         record={record}
                         saved={favoriteSet.has(record.id)}
+                        canReport={access.canContribute}
+                        highlighted={highlightDocId === record.id}
                         onToggleSave={handleToggleSave}
                       />
                     </motion.div>
@@ -288,7 +369,7 @@ export function JurisprudenceWorkspace() {
       </div>
 
       <JurisprudenceContributePanel
-        open={contributeOpen}
+        open={contributeOpen && access.canContribute}
         onClose={() => setContributeOpen(false)}
         onSubmitted={() => {
           void runSearch(committedQueryRef.current, filters, false);

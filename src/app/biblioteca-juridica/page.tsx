@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { AppShell } from "@/components/ui/shell";
 import { JurisprudenceWorkspace } from "@/components/jurisprudence/jurisprudence-workspace";
 
@@ -13,7 +14,9 @@ export default function BibliotecaJuridicaPage() {
   return (
     <AppShell>
       <div className="ms-home bj-page-wrap mx-auto w-full max-w-7xl px-4 pb-12 pt-6 sm:px-6 lg:px-8">
-        <JurisprudenceWorkspace />
+        <Suspense fallback={null}>
+          <JurisprudenceWorkspace />
+        </Suspense>
       </div>
     </AppShell>
   );

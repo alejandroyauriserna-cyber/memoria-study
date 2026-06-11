@@ -84,7 +84,11 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
         throw new Error(payload.error ?? "No se pudo publicar el aporte.");
       }
 
-      setSuccess("¡Gracias! Tu resolución ya está disponible en la biblioteca.");
+      setSuccess(
+        payload.autoPublished
+          ? "Publicado. Tu historial de aportes aprobados permite publicación automática."
+          : "Recibido. Tu aporte está pendiente de revisión por un moderador UNT.",
+      );
       onSubmitted(payload.document as JurisprudenceRecord);
       setTimeout(() => handleClose(), 1400);
     } catch (caught) {
@@ -106,7 +110,8 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
             </p>
             <h2 id="bj-contribute-title">Comparte una sentencia o resolución</h2>
             <p className="bj-contribute-lead">
-              Sube el PDF o pega el enlace oficial. La biblioteca crece con aportes de toda la comunidad UNT.
+              Solo cuentas @unitru.edu.pe con correo confirmado. Sube el PDF o pega un enlace oficial (PJ, TC, SUNAT, SPIJ o LP).
+              Los primeros aportes pasan por moderación; tras varios aprobados se publican automáticamente.
             </p>
           </div>
           <button type="button" className="bj-contribute-close" onClick={handleClose} aria-label="Cerrar">
@@ -268,7 +273,7 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
                   Publicando…
                 </>
               ) : (
-                "Publicar en la biblioteca"
+                "Enviar a revisión"
               )}
             </button>
           </div>

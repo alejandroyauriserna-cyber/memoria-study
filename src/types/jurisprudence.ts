@@ -37,6 +37,7 @@ export type JurisprudenceRecord = {
   isCommunityContribution?: boolean;
   submittedBy?: string;
   status?: "published" | "pending" | "rejected";
+  rejectionReason?: string;
   /** Preparado para búsqueda semántica futura — no usado en fase 1. */
   embeddingReady?: boolean;
 };

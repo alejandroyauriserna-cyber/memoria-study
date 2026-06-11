@@ -89,3 +89,41 @@ export function parseOrganosParam(value: string | null): string[] {
     .map((v) => v.trim())
     .filter(Boolean);
 }
+
+export function filterStateFromSearchParams(params: URLSearchParams): {
+  filters: JurisprudenceFilterState;
+  query: string;
+  docId: string | null;
+} {
+  return {
+    query: params.get("q")?.trim() ?? "",
+    docId: params.get("doc")?.trim() || null,
+    filters: {
+      materias: parseMateriaParam(params.get("materia")),
+      tipos: parseTipoParam(params.get("tipo")),
+      years: parseYearsParam(params.get("year")),
+      organos: parseOrganosParam(params.get("organo")),
+      favoritesOnly: params.get("favorites") === "1",
+    },
+  };
+}
+
+export function buildBibliotecaShareUrl(
+  filters: JurisprudenceFilterState,
+  query: string,
+  docId?: string | null,
+): string {
+  const params = new URLSearchParams();
+  const searchFilters = filterStateToSearchParams(filters, query);
+
+  if (searchFilters.query) params.set("q", searchFilters.query);
+  if (searchFilters.materias?.length) params.set("materia", searchFilters.materias.join(","));
+  if (searchFilters.tipos?.length) params.set("tipo", searchFilters.tipos.join(","));
+  if (searchFilters.years?.length) params.set("year", searchFilters.years.join(","));
+  if (searchFilters.organos?.length) params.set("organo", searchFilters.organos.join("|"));
+  if (searchFilters.favoritesOnly) params.set("favorites", "1");
+  if (docId) params.set("doc", docId);
+
+  const qs = params.toString();
+  return qs ? `/biblioteca-juridica?${qs}` : "/biblioteca-juridica";
+}

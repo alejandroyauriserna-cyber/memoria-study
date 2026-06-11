@@ -9,6 +9,7 @@ import { ThemePicker } from "@/components/theme-picker";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserMenu } from "@/components/ui/user-menu";
 import { OfflineSyncBanner } from "@/components/ui/offline-sync-banner";
+import { JurisprudenceAdminNavLink } from "@/components/jurisprudence/jurisprudence-admin-nav-link";
 
 const NAV = [
   { href: "/", label: "Inicio" },
@@ -92,6 +93,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 {item.label}
               </Link>
             ))}
+            <JurisprudenceAdminNavLink />
           </nav>
 
           <div className="flex items-center gap-2">
@@ -113,6 +115,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   {item.label}
                 </Link>
               ))}
+              <JurisprudenceAdminNavLink />
             </nav>
           </details>
         </div>

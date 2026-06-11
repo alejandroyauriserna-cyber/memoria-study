@@ -38,8 +38,15 @@ on public.jurisprudence_documents for insert
 to authenticated
 with check (
   submitted_by = auth.uid()
-  and status in ('published', 'pending')
+  and status = 'pending'
+  and is_public = false
 );
+
+drop policy if exists "Authors delete own jurisprudence" on public.jurisprudence_documents;
+create policy "Authors delete own jurisprudence"
+on public.jurisprudence_documents for delete
+to authenticated
+using (submitted_by = auth.uid());
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values (

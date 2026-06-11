@@ -41,6 +41,7 @@ export async function GET(request: Request) {
     const limit = Math.min(50, Math.max(1, Number(url.searchParams.get("limit") ?? (suggest ? 8 : 30))));
 
     const favoriteIds = favoritesOnly ? await loadFavoriteIds() : undefined;
+    const docId = url.searchParams.get("doc")?.trim() || undefined;
 
     const repo = getJurisprudenceRepository();
     const filterOptions = await repo.getFilterOptions();
@@ -55,6 +56,14 @@ export async function GET(request: Request) {
       favoriteIds,
       limit: suggest ? 6 : limit,
     });
+
+    if (docId && !suggest) {
+      const doc = await repo.getById(docId);
+      if (doc && !result.items.some((item) => item.id === docId)) {
+        result.items = [doc, ...result.items];
+        result.total += 1;
+      }
+    }
 
     if (suggest) {
       return NextResponse.json({
