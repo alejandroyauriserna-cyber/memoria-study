@@ -33,9 +33,20 @@ export function getUntAccessDenialMessage(): string {
   return `Solo cuentas institucionales UNT (${domains}) pueden aportar o retirar sentencias. Inicia sesión con tu correo universitario.`;
 }
 
+export function getJurisprudenceModeratorEmails(): string[] {
+  return parseEmailList(env.jurisprudenceModeratorEmails);
+}
+
+/**
+ * Moderación de aportes: emails en JURISPRUDENCE_MODERATOR_EMAILS (mismo correo de sesión).
+ * En desarrollo, si la lista está vacía, cualquier usuario autenticado puede moderar.
+ */
 export function isJurisprudenceModerator(email: string | null | undefined): boolean {
   const normalized = email?.trim().toLowerCase();
   if (!normalized) return false;
-  const moderators = parseEmailList(env.jurisprudenceModeratorEmails);
-  return moderators.includes(normalized);
+
+  const moderators = getJurisprudenceModeratorEmails();
+  if (moderators.includes(normalized)) return true;
+
+  return process.env.NODE_ENV === "development" && moderators.length === 0;
 }

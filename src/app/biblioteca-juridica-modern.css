@@ -1440,6 +1440,38 @@ html:not(.dark) .bj-moderation__item {
   background: #f8fafc;
 }
 
+html:not(.dark) .bj-status.is-pending {
+  color: #b45309;
+}
+
+html:not(.dark) .bj-status.is-published {
+  color: #047857;
+}
+
+html:not(.dark) .bj-status.is-rejected {
+  color: #b91c1c;
+}
+
+html:not(.dark) .bj-my-contributions__reason {
+  color: #b91c1c;
+}
+
+html:not(.dark) .bj-my-contributions__delete {
+  border-color: rgba(15, 23, 42, 0.12);
+  color: #64748b;
+}
+
+html:not(.dark) .bj-my-contributions__delete:hover {
+  color: #b91c1c;
+  border-color: rgba(220, 38, 38, 0.25);
+}
+
+html:not(.dark) .bj-hero__copy .ms-home-kicker {
+  border-color: rgba(13, 148, 136, 0.28);
+  background: rgba(13, 148, 136, 0.1);
+  color: #0f766e;
+}
+
 /* ——— Admin panel ——— */
 .bj-admin-banner {
   display: block;
@@ -1773,4 +1805,79 @@ html:not(.dark) .bj-admin__modal-card textarea {
   background: #fff;
   color: #0f172a;
   border-color: rgba(15, 23, 42, 0.12);
+}
+
+html:not(.dark) .bj-admin__back {
+  color: #0f766e;
+}
+
+html:not(.dark) .bj-admin__stat {
+  color: #0f766e;
+}
+
+html:not(.dark) .bj-admin__stat.is-warn {
+  color: #b45309;
+}
+
+html:not(.dark) .bj-admin__materias > p {
+  color: #64748b;
+}
+
+html:not(.dark) .bj-admin__chip {
+  border-color: rgba(13, 148, 136, 0.25);
+  background: rgba(13, 148, 136, 0.08);
+  color: #0f766e;
+}
+
+html:not(.dark) .bj-admin__tabs button {
+  border-color: rgba(15, 23, 42, 0.1);
+  color: #475569;
+}
+
+html:not(.dark) .bj-admin__tabs button.is-active {
+  border-color: rgba(13, 148, 136, 0.35);
+  background: rgba(13, 148, 136, 0.1);
+  color: #0f766e;
+}
+
+html:not(.dark) .bj-admin__loading,
+html:not(.dark) .bj-admin__empty {
+  color: #64748b;
+}
+
+html:not(.dark) .bj-admin__item-copy p {
+  color: #334155;
+}
+
+html:not(.dark) .bj-admin__icon-btn {
+  border-color: rgba(15, 23, 42, 0.1);
+  color: #64748b;
+}
+
+html:not(.dark) .bj-admin__icon-btn.is-approve {
+  color: #047857;
+}
+
+html:not(.dark) .bj-admin__icon-btn.is-reject,
+html:not(.dark) .bj-admin__icon-btn.is-delete {
+  color: #b91c1c;
+}
+
+html:not(.dark) .bj-admin__modal-card p {
+  color: #64748b;
+}
+
+html:not(.dark) .bj-admin__modal-actions button {
+  border-color: rgba(15, 23, 42, 0.12);
+  color: #475569;
+}
+
+html:not(.dark) .bj-admin__modal-actions button.is-reject {
+  border-color: rgba(220, 38, 38, 0.3);
+  background: rgba(254, 226, 226, 0.85);
+  color: #b91c1c;
+}
+
+html:not(.dark) .bj-card__reported {
+  color: #047857;
 }
