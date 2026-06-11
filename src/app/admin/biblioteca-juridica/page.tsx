@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { AppShell } from "@/components/ui/shell";
 import { JurisprudenceAdminWorkspace } from "@/components/jurisprudence/jurisprudence-admin-workspace";
+import { resolveUserEmail } from "@/lib/auth/user-email";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/env";
 import { isJurisprudenceModerator } from "@/lib/jurisprudence/unt-access";
@@ -22,7 +23,7 @@ export default async function JurisprudenceAdminPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user?.email || !isJurisprudenceModerator(user.email)) {
+  if (!user || !isJurisprudenceModerator(resolveUserEmail(user))) {
     redirect("/biblioteca-juridica");
   }
 

@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { resolveUserEmail } from "@/lib/auth/user-email";
 import { hasSupabaseEnv } from "@/lib/env";
 import {
+  getJurisprudenceModeratorEmails,
+  getModeratorAccessHint,
   getUntAccessDenialMessage,
   getUntEmailDomains,
   isJurisprudenceModerator,
@@ -38,16 +41,19 @@ export async function GET() {
     });
   }
 
-  const email = user.email ?? "";
+  const email = resolveUserEmail(user) ?? "";
   const isUnt = isUntInstitutionalEmail(email);
   const emailConfirmed = isEmailConfirmed(user);
+  const isModerator = isJurisprudenceModerator(email);
 
   return NextResponse.json({
     authenticated: true,
     email,
     emailConfirmed,
     canContribute: isUnt && emailConfirmed,
-    isModerator: isJurisprudenceModerator(email),
+    isModerator,
+    moderatorsConfigured: getJurisprudenceModeratorEmails().length,
+    moderatorHint: isModerator ? null : getModeratorAccessHint(email),
     untDomains: getUntEmailDomains(),
     denialMessage: !isUnt
       ? getUntAccessDenialMessage()

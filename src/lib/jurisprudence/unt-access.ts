@@ -2,16 +2,29 @@ import { env } from "@/lib/env";
 
 const DEFAULT_UNT_DOMAINS = ["unitru.edu.pe"];
 
+function normalizeListEntry(raw: string): string {
+  return raw.trim().replace(/^["']|["']$/g, "").toLowerCase();
+}
+
 function parseEmailList(raw: string | undefined): string[] {
   if (!raw?.trim()) return [];
   return raw
     .split(",")
-    .map((entry) => entry.trim().toLowerCase())
+    .map(normalizeListEntry)
     .filter(Boolean);
 }
 
+/** Lee JURISPRUDENCE_MODERATOR_EMAILS en runtime (evita quedar congelado en el build de Vercel). */
+function readModeratorEmailsEnv(): string | undefined {
+  return process.env.JURISPRUDENCE_MODERATOR_EMAILS;
+}
+
+function readUntDomainsEnv(): string | undefined {
+  return process.env.JURISPRUDENCE_UNT_EMAIL_DOMAINS ?? env.jurisprudenceUntEmailDomains;
+}
+
 export function getUntEmailDomains(): string[] {
-  const configured = parseEmailList(env.jurisprudenceUntEmailDomains);
+  const configured = parseEmailList(readUntDomainsEnv());
   return configured.length ? configured : DEFAULT_UNT_DOMAINS;
 }
 
@@ -34,7 +47,24 @@ export function getUntAccessDenialMessage(): string {
 }
 
 export function getJurisprudenceModeratorEmails(): string[] {
-  return parseEmailList(env.jurisprudenceModeratorEmails);
+  return parseEmailList(readModeratorEmailsEnv());
+}
+
+export function getModeratorAccessHint(email: string | null | undefined): string | null {
+  const normalized = email?.trim().toLowerCase();
+  const moderators = getJurisprudenceModeratorEmails();
+
+  if (!normalized) {
+    return "Inicia sesión con el correo que configuraste en JURISPRUDENCE_MODERATOR_EMAILS.";
+  }
+
+  if (moderators.length === 0) {
+    return "JURISPRUDENCE_MODERATOR_EMAILS no está configurada en el servidor. Añádela y redeploy.";
+  }
+
+  if (moderators.includes(normalized)) return null;
+
+  return `Tu sesión usa ${normalized}. Debe coincidir exactamente con JURISPRUDENCE_MODERATOR_EMAILS en el servidor (Vercel/hosting), no solo en .env.local.`;
 }
 
 /**

@@ -1,14 +1,5 @@
 import { env } from "@/lib/env";
-import { getUntEmailDomains } from "@/lib/jurisprudence/unt-access";
-
-function parseModeratorEmails(): string[] {
-  const raw = env.jurisprudenceModeratorEmails;
-  if (!raw?.trim()) return [];
-  return raw
-    .split(",")
-    .map((entry) => entry.trim())
-    .filter(Boolean);
-}
+import { getJurisprudenceModeratorEmails, getUntEmailDomains } from "@/lib/jurisprudence/unt-access";
 
 export async function notifyJurisprudenceModerators(input: {
   documentId: string;
@@ -16,7 +7,7 @@ export async function notifyJurisprudenceModerators(input: {
   submitterEmail?: string | null;
   autoPublished?: boolean;
 }): Promise<void> {
-  const moderators = parseModeratorEmails();
+  const moderators = getJurisprudenceModeratorEmails();
   if (!moderators.length) return;
 
   const appUrl = env.appUrl.replace(/\/$/, "");
