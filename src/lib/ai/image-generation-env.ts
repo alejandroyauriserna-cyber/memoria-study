@@ -1,4 +1,5 @@
 import { resolveAllImageProviderChains, resolveImageProviderChain } from "@/lib/ai/image-providers/resolve-chain";
+import type { ImageProviderId } from "@/lib/ai/image-generation-types";
 import { env } from "@/lib/env";
 
 const DEFAULT_FLUX_MODEL = "black-forest-labs/FLUX.1-schnell";
@@ -9,11 +10,11 @@ export type ImageGenerationEnvStatus = {
   hfImageModel: string;
   hfImageModelFromEnv: boolean;
   geminiImageConfigured: boolean;
-  providerChain: string[];
+  providerChain: ImageProviderId[];
   providerChainFromEnv: boolean;
   providerChainsByFormat: Record<
     string,
-    { chain: string[]; fromEnv: boolean }
+    { chain: ImageProviderId[]; fromEnv: boolean }
   >;
 };
 
