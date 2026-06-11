@@ -8,15 +8,19 @@ import {
   ChevronRight,
   Clock,
   Filter,
+  FileText,
   Folder,
   FolderOpen,
   GraduationCap,
+  Grid3X3,
+  Lightbulb,
   PlayCircle,
   Search,
   Star,
   Upload,
   X,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { MaterialCardDetail } from "@/components/library/material-card-detail";
 import { MaterialFileRow } from "@/components/library/material-file-row";
 import {
@@ -622,8 +626,32 @@ function LibraryWelcomePanel({
 }) {
   return (
     <div className="library-welcome flex h-full flex-col items-center justify-center px-6 py-12 text-center">
-      <div className="library-welcome-icon flex h-16 w-16 items-center justify-center text-[#07131A]">
-        <BookOpen size={28} />
+      <div className="library-welcome-stage" aria-hidden>
+        <div className="library-welcome-stage__panel library-welcome-stage__panel--main">
+          <div className="library-welcome-stage__bar">
+            <span />
+            <span />
+            <span />
+          </div>
+          <div className="library-welcome-stage__search">
+            <Search size={15} />
+            <span>Derecho constitucional</span>
+          </div>
+          <div className="library-welcome-stage__rows">
+            <i />
+            <i />
+            <i />
+          </div>
+        </div>
+        <div className="library-welcome-stage__panel library-welcome-stage__panel--card">
+          <FileText size={22} />
+          <strong>{matchCount}</strong>
+          <span>materiales</span>
+        </div>
+        <div className="library-welcome-stage__panel library-welcome-stage__panel--ai">
+          <Lightbulb size={18} />
+          <span>IA lista</span>
+        </div>
       </div>
       <h2 className="mt-6 text-2xl font-bold tracking-tight text-foreground">
         {hasActiveSearch ? `${matchCount} materiales encontrados` : "Biblioteca académica UNT"}
@@ -635,9 +663,9 @@ function LibraryWelcomePanel({
       </p>
 
       <div className="library-stat-grid mt-8 grid grid-cols-3 gap-4">
-        <StatPill label="Materiales" value={String(matchCount)} />
-        <StatPill label="Ciclos" value={String(cycleCount)} />
-        <StatPill label="Favoritos" value={isLoggedIn ? String(favoritesCount) : "—"} />
+        <StatPill icon={Grid3X3} label="Materiales" value={String(matchCount)} />
+        <StatPill icon={BookOpen} label="Ciclos" value={String(cycleCount)} />
+        <StatPill icon={Star} label="Favoritos" value={isLoggedIn ? String(favoritesCount) : "--"} />
       </div>
 
       <div className="mt-8 flex flex-wrap justify-center gap-3">
@@ -669,9 +697,18 @@ function LibraryWelcomePanel({
   );
 }
 
-function StatPill({ label, value }: { label: string; value: string }) {
+function StatPill({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+}) {
   return (
     <div className="library-stat-pill px-4 py-3">
+      <Icon size={15} className="library-stat-pill-icon" aria-hidden />
       <p className="text-xl font-bold tabular-nums text-accent">{value}</p>
       <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
         {label}

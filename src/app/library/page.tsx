@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookOpen, Layers3, LibraryBig, Search, Sparkles } from "lucide-react";
+import { BookOpen, BrainCircuit, Command, Layers3, LibraryBig, ScanSearch, Search, Sparkles } from "lucide-react";
 import { AppShell } from "@/components/ui/shell";
 import { LibraryPremiumWorkspace } from "@/components/library/library-premium-workspace";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -113,49 +113,73 @@ export default async function LibraryHomePage() {
             <p className="ms-home-kicker">
               <Sparkles size={14} /> Biblioteca academica inteligente
             </p>
-            <h1>Todo tu conocimiento juridico, perfectamente organizado.</h1>
+            <h1>Biblioteca juridica viva para estudiar en 2026.</h1>
             <p className="ms-home-lead">
               Explora la malla oficial por ciclo y curso, encuentra materiales al instante y abre cada
-              recurso en un espacio de estudio enfocado.
+              recurso en un espacio de estudio con IA, favoritos y continuidad.
             </p>
+            <div className="library-hero-actions" aria-label="Acciones rapidas de biblioteca">
+              <Link href="/upload-material" className="library-hero-action library-hero-action--primary">
+                <Sparkles size={16} />
+                Subir material
+              </Link>
+              <Link href="/favorites" className="library-hero-action">
+                <BookOpen size={16} />
+                Mis favoritos
+              </Link>
+            </div>
           </div>
 
-          <div className="library-page-stats" aria-label="Resumen de la biblioteca">
-            <div className="library-page-stat">
-              <span className="library-page-stat-icon">
-                <LibraryBig size={18} />
-              </span>
+          <div className="library-hero-console" aria-label="Resumen visual de la biblioteca">
+            <div className="library-hero-console-top">
               <span>
-                <strong>{materials.length}</strong>
-                <em>Materiales</em>
+                <Command size={14} />
+                Centro academico
               </span>
+              <em>Live</em>
             </div>
-            <div className="library-page-stat">
-              <span className="library-page-stat-icon">
-                <Layers3 size={18} />
-              </span>
-              <span>
-                <strong>10</strong>
-                <em>Ciclos UNT</em>
-              </span>
+            <div className="library-hero-search">
+              <ScanSearch size={18} />
+              <span>Buscar curso, tema, caso o resumen...</span>
+              <kbd>Ctrl K</kbd>
             </div>
-            <div className="library-page-stat">
-              <span className="library-page-stat-icon">
-                <Search size={18} />
-              </span>
-              <span>
-                <strong>Instantanea</strong>
-                <em>Busqueda</em>
-              </span>
-            </div>
-            <div className="library-page-stat">
-              <span className="library-page-stat-icon">
-                <BookOpen size={18} />
-              </span>
-              <span>
-                <strong>2021</strong>
-                <em>Malla oficial</em>
-              </span>
+            <div className="library-page-stats" aria-label="Resumen de la biblioteca">
+              <div className="library-page-stat">
+                <span className="library-page-stat-icon">
+                  <LibraryBig size={18} />
+                </span>
+                <span>
+                  <strong>{materials.length}</strong>
+                  <em>Materiales</em>
+                </span>
+              </div>
+              <div className="library-page-stat">
+                <span className="library-page-stat-icon">
+                  <Layers3 size={18} />
+                </span>
+                <span>
+                  <strong>10</strong>
+                  <em>Ciclos UNT</em>
+                </span>
+              </div>
+              <div className="library-page-stat">
+                <span className="library-page-stat-icon">
+                  <Search size={18} />
+                </span>
+                <span>
+                  <strong>Instantanea</strong>
+                  <em>Busqueda</em>
+                </span>
+              </div>
+              <div className="library-page-stat">
+                <span className="library-page-stat-icon">
+                  <BrainCircuit size={18} />
+                </span>
+                <span>
+                  <strong>IA lista</strong>
+                  <em>Estudio guiado</em>
+                </span>
+              </div>
             </div>
           </div>
         </header>
