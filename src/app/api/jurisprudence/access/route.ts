@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { resolveUserEmail } from "@/lib/auth/user-email";
 import { hasSupabaseEnv } from "@/lib/env";
@@ -47,12 +48,23 @@ export async function GET() {
   const isModerator = await isJurisprudenceModerator(email);
   const moderators = await getAllModeratorEmails();
 
+  let pendingCount = 0;
+  if (isModerator) {
+    const admin = createAdminClient();
+    const { count } = await admin
+      .from("jurisprudence_documents")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "pending");
+    pendingCount = count ?? 0;
+  }
+
   return NextResponse.json({
     authenticated: true,
     email,
     emailConfirmed,
     canContribute: isUnt && emailConfirmed,
     isModerator,
+    pendingCount,
     moderatorsConfigured: moderators.length,
     moderatorHint: isModerator
       ? null

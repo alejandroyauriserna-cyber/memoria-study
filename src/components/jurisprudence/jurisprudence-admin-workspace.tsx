@@ -9,12 +9,16 @@ import {
   Check,
   Command,
   ExternalLink,
+  Eye,
+  EyeOff,
   Flag,
   Loader2,
+  Mail,
   ShieldCheck,
   Sparkles,
   Trash2,
   Upload,
+  UserPlus,
   Users,
   X,
 } from "lucide-react";
@@ -45,6 +49,11 @@ type AdminReport = {
   createdAt: string;
 };
 
+type ModeratorRow = {
+  email: string;
+  created_at: string;
+};
+
 type TabId = "pending" | "published" | "rejected" | "reports";
 
 export function JurisprudenceAdminWorkspace() {
@@ -61,6 +70,10 @@ export function JurisprudenceAdminWorkspace() {
   const [importPublish, setImportPublish] = useState(false);
   const [importBusy, setImportBusy] = useState(false);
   const [importResult, setImportResult] = useState("");
+  const [previewDocId, setPreviewDocId] = useState<string | null>(null);
+  const [moderators, setModerators] = useState<ModeratorRow[]>([]);
+  const [moderatorEmail, setModeratorEmail] = useState("");
+  const [moderatorBusy, setModeratorBusy] = useState(false);
 
   const loadStats = useCallback(async () => {
     const response = await fetch("/api/jurisprudence/admin/stats");
@@ -83,18 +96,27 @@ export function JurisprudenceAdminWorkspace() {
     return payload.items ?? [];
   }, []);
 
+  const loadModerators = useCallback(async () => {
+    const response = await fetch("/api/jurisprudence/admin/moderators");
+    if (!response.ok) throw new Error("No se pudieron cargar los moderadores.");
+    const payload = (await response.json()) as { items: ModeratorRow[] };
+    return payload.items ?? [];
+  }, []);
+
   const refresh = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const [nextStats, docs, reps] = await Promise.all([
+      const [nextStats, docs, reps, mods] = await Promise.all([
         loadStats(),
         tab === "reports" ? Promise.resolve([]) : loadDocuments(tab),
-        tab === "reports" ? loadReports() : loadReports(),
+        loadReports(),
+        loadModerators(),
       ]);
       setStats(nextStats);
       setDocuments(docs);
       setReports(reps);
+      setModerators(mods);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Error al cargar el panel.");
     } finally {
@@ -172,6 +194,48 @@ export function JurisprudenceAdminWorkspace() {
     } finally {
       setImportBusy(false);
       if (importRef.current) importRef.current.value = "";
+    }
+  }
+
+  async function addModerator(event: React.FormEvent) {
+    event.preventDefault();
+    const email = moderatorEmail.trim();
+    if (!email) return;
+    setModeratorBusy(true);
+    setError("");
+    try {
+      const response = await fetch("/api/jurisprudence/admin/moderators", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const payload = (await response.json()) as { error?: string };
+      if (!response.ok) throw new Error(payload.error ?? "No se pudo añadir moderador.");
+      setModeratorEmail("");
+      setModerators(await loadModerators());
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Error al añadir moderador.");
+    } finally {
+      setModeratorBusy(false);
+    }
+  }
+
+  async function removeModerator(email: string) {
+    if (!window.confirm(`¿Quitar a ${email} como moderador?`)) return;
+    setModeratorBusy(true);
+    setError("");
+    try {
+      const response = await fetch(
+        `/api/jurisprudence/admin/moderators?email=${encodeURIComponent(email)}`,
+        { method: "DELETE" },
+      );
+      const payload = (await response.json()) as { error?: string };
+      if (!response.ok) throw new Error(payload.error ?? "No se pudo quitar moderador.");
+      setModerators(await loadModerators());
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Error al quitar moderador.");
+    } finally {
+      setModeratorBusy(false);
     }
   }
 
@@ -340,6 +404,54 @@ export function JurisprudenceAdminWorkspace() {
           {importResult ? <p className="bj-admin__import-result">{importResult}</p> : null}
         </section>
 
+        <section className="bj-admin__moderators">
+          <div className="bj-admin__import-head">
+            <div>
+              <h2>Moderadores</h2>
+              <p>
+                Añade correos UNT con permiso de revisión sin tocar Vercel ni SQL manual.
+                También se respetan los de <code>JURISPRUDENCE_MODERATOR_EMAILS</code>.
+              </p>
+            </div>
+            <Users size={22} aria-hidden />
+          </div>
+          <form className="bj-admin__moderators-form" onSubmit={(e) => void addModerator(e)}>
+            <Mail size={16} aria-hidden />
+            <input
+              type="email"
+              value={moderatorEmail}
+              onChange={(e) => setModeratorEmail(e.target.value)}
+              placeholder="docente@unitru.edu.pe"
+              disabled={moderatorBusy}
+            />
+            <button type="submit" disabled={moderatorBusy || !moderatorEmail.trim()}>
+              {moderatorBusy ? <Loader2 size={14} className="animate-spin" /> : <UserPlus size={14} />}
+              Añadir
+            </button>
+          </form>
+          <ul className="bj-admin__moderators-list">
+            {moderators.length === 0 ? (
+              <li className="bj-admin__moderators-empty">
+                Sin moderadores en base de datos — usa variables de entorno o añade uno arriba.
+              </li>
+            ) : (
+              moderators.map((row) => (
+                <li key={row.email}>
+                  <span>{row.email}</span>
+                  <button
+                    type="button"
+                    disabled={moderatorBusy}
+                    onClick={() => void removeModerator(row.email)}
+                    aria-label={`Quitar ${row.email}`}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </li>
+              ))
+            )}
+          </ul>
+        </section>
+
         <div className="bj-admin__tabs" role="tablist" aria-label="Secciones de moderación">
           {tabs.map((item) => (
             <button
@@ -369,7 +481,20 @@ export function JurisprudenceAdminWorkspace() {
         {!loading && tab !== "reports" ? (
           <ul className="bj-admin__list">
             {documents.length === 0 ? (
-              <li className="bj-admin__empty">No hay documentos en esta categoría.</li>
+              <li className="bj-admin__empty">
+                {tab === "pending" ? (
+                  <>
+                    No hay aportes pendientes.{" "}
+                    <button type="button" onClick={() => setTab("published")}>
+                      Ver publicados
+                    </button>
+                  </>
+                ) : tab === "rejected" ? (
+                  "No hay documentos rechazados."
+                ) : (
+                  "No hay documentos en esta categoría."
+                )}
+              </li>
             ) : (
               documents.map((doc) => (
                 <li key={doc.id} className="bj-admin__item">
@@ -383,18 +508,37 @@ export function JurisprudenceAdminWorkspace() {
                     {doc.rejectionReason ? (
                       <p className="bj-admin__reject-reason">Motivo: {doc.rejectionReason}</p>
                     ) : null}
+                    {previewDocId === doc.id && doc.pdfUrl ? (
+                      <iframe
+                        title={`Vista previa: ${doc.title}`}
+                        src={doc.pdfUrl}
+                        className="bj-admin__pdf-preview"
+                      />
+                    ) : null}
                   </div>
                   <div className="bj-admin__item-actions">
                     {doc.pdfUrl ? (
-                      <a
-                        href={doc.pdfUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="bj-admin__icon-btn"
-                        aria-label="Ver PDF"
-                      >
-                        <ExternalLink size={14} />
-                      </a>
+                      <>
+                        <button
+                          type="button"
+                          className="bj-admin__icon-btn"
+                          aria-label={previewDocId === doc.id ? "Ocultar PDF" : "Vista previa PDF"}
+                          onClick={() =>
+                            setPreviewDocId((current) => (current === doc.id ? null : doc.id))
+                          }
+                        >
+                          {previewDocId === doc.id ? <EyeOff size={14} /> : <Eye size={14} />}
+                        </button>
+                        <a
+                          href={doc.pdfUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="bj-admin__icon-btn"
+                          aria-label="Abrir PDF en pestaña nueva"
+                        >
+                          <ExternalLink size={14} />
+                        </a>
+                      </>
                     ) : null}
                     {tab === "pending" ? (
                       <>

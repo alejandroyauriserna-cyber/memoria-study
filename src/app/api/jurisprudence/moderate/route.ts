@@ -4,6 +4,8 @@ import { deleteJurisprudenceContribution } from "@/lib/jurisprudence/delete-cont
 import { jurisprudenceRowToRecord, type JurisprudenceDocumentRow } from "@/lib/jurisprudence/mapper";
 import { requireJurisprudenceModerator } from "@/lib/jurisprudence/require-moderator";
 import { extractAndStoreJurisprudenceText } from "@/lib/jurisprudence/extract-document-text";
+import { notifyJurisprudenceContributor } from "@/lib/jurisprudence/notify-contributor";
+import { resolveSubmitterEmail } from "@/lib/jurisprudence/resolve-submitter-email";
 
 export const runtime = "nodejs";
 
@@ -58,6 +60,17 @@ export async function POST(request: Request) {
 
       void extractAndStoreJurisprudenceText(admin, updated as JurisprudenceDocumentRow);
 
+      if (document.submitted_by) {
+        const submitterEmail = await resolveSubmitterEmail(admin, document.submitted_by);
+        if (submitterEmail) {
+          void notifyJurisprudenceContributor({
+            toEmail: submitterEmail,
+            title: document.title,
+            action: "approved",
+          });
+        }
+      }
+
       return NextResponse.json({
         ok: true,
         document: jurisprudenceRowToRecord(updated as JurisprudenceDocumentRow),
@@ -79,6 +92,18 @@ export async function POST(request: Request) {
 
       if (error || !updated) {
         return NextResponse.json({ error: "No se pudo rechazar el aporte." }, { status: 500 });
+      }
+
+      if (document.submitted_by) {
+        const submitterEmail = await resolveSubmitterEmail(admin, document.submitted_by);
+        if (submitterEmail) {
+          void notifyJurisprudenceContributor({
+            toEmail: submitterEmail,
+            title: document.title,
+            action: "rejected",
+            rejectionReason,
+          });
+        }
       }
 
       return NextResponse.json({

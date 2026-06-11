@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -35,6 +35,7 @@ import {
 } from "@/lib/library/library-tree";
 import { getAllCycles } from "@/lib/academic/helpers";
 import type { Material } from "@/types/material";
+import { useCommandK } from "@/hooks/use-command-k";
 
 function formatRelativeTime(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -69,6 +70,9 @@ export function LibraryPremiumWorkspace({
     () => new Set(initialFavoriteIds),
   );
   const [showFilters, setShowFilters] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useCommandK(searchInputRef);
 
   const { tree, expandedIds, matchCount } = useMemo(
     () =>
@@ -177,6 +181,7 @@ export function LibraryPremiumWorkspace({
           <label className="library-search-field relative mt-3 block">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#00FFD5]" />
             <input
+              ref={searchInputRef}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Buscar en toda la biblioteca…"

@@ -1,21 +1,72 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Loader2, Trash2 } from "lucide-react";
+import { Check, Clock, Loader2, PlusCircle, Send, Trash2, XCircle } from "lucide-react";
 import type { JurisprudenceRecord } from "@/types/jurisprudence";
 import { JURISPRUDENCE_TIPO_LABELS } from "@/lib/jurisprudence/labels";
 
-const STATUS_LABELS: Record<string, string> = {
-  pending: "Pendiente de revisión",
-  published: "Publicado",
-  rejected: "Rechazado",
-};
+type ContributionStatus = "pending" | "published" | "rejected";
 
 type Props = {
   onChanged: () => void;
+  onContribute?: () => void;
 };
 
-export function JurisprudenceMyContributions({ onChanged }: Props) {
+function ContributionStepper({ status }: { status: ContributionStatus }) {
+  const steps = [
+    { id: "sent", label: "Enviado", done: true },
+    {
+      id: "review",
+      label: "En revisión",
+      done: status !== "pending",
+      active: status === "pending",
+    },
+    {
+      id: "result",
+      label: status === "rejected" ? "Rechazado" : "Publicado",
+      done: status === "published" || status === "rejected",
+      active: status === "published" || status === "rejected",
+      rejected: status === "rejected",
+    },
+  ];
+
+  return (
+    <ol className="bj-contribution-stepper" aria-label="Estado del aporte">
+      {steps.map((step, index) => (
+        <li
+          key={step.id}
+          className={[
+            step.done ? "is-done" : "",
+            step.active ? "is-active" : "",
+            step.rejected ? "is-rejected" : "",
+          ]
+            .filter(Boolean)
+            .join(" ")}
+        >
+          <span className="bj-contribution-stepper__dot" aria-hidden>
+            {step.rejected && step.active ? (
+              <XCircle size={12} />
+            ) : step.done && step.id === "result" && !step.rejected ? (
+              <Check size={12} />
+            ) : step.active ? (
+              <Clock size={12} />
+            ) : step.done ? (
+              <Check size={12} />
+            ) : (
+              <Send size={10} />
+            )}
+          </span>
+          <span className="bj-contribution-stepper__label">{step.label}</span>
+          {index < steps.length - 1 ? (
+            <span className="bj-contribution-stepper__line" aria-hidden />
+          ) : null}
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+export function JurisprudenceMyContributions({ onChanged, onContribute }: Props) {
   const [items, setItems] = useState<JurisprudenceRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -59,39 +110,54 @@ export function JurisprudenceMyContributions({ onChanged }: Props) {
   }
 
   if (loading) return null;
-  if (!items.length && !error) return null;
 
   return (
     <section className="bj-my-contributions">
       <p className="bj-my-contributions__title">Mis aportes UNT</p>
       {error ? <p className="bj-results__error">{error}</p> : null}
-      <ul className="bj-my-contributions__list">
-        {items.map((item) => (
-          <li key={item.id} className="bj-my-contributions__item">
-            <div className="bj-my-contributions__copy">
-              <strong>{item.title}</strong>
-              <span>
-                {JURISPRUDENCE_TIPO_LABELS[item.tipo]} ·{" "}
-                <em className={`bj-status is-${item.status ?? "pending"}`}>
-                  {STATUS_LABELS[item.status ?? "pending"]}
-                </em>
-              </span>
-              {item.rejectionReason ? (
-                <span className="bj-my-contributions__reason">{item.rejectionReason}</span>
-              ) : null}
-            </div>
-            <button
-              type="button"
-              className="bj-my-contributions__delete"
-              disabled={busyId === item.id}
-              onClick={() => void handleDelete(item.id)}
-              aria-label="Retirar aporte"
-            >
-              {busyId === item.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+
+      {!items.length && !error ? (
+        <div className="bj-my-contributions__empty">
+          <p>Aún no has aportado sentencias a la biblioteca.</p>
+          {onContribute ? (
+            <button type="button" className="bj-my-contributions__cta" onClick={onContribute}>
+              <PlusCircle size={16} />
+              Aportar mi primera sentencia
             </button>
-          </li>
-        ))}
-      </ul>
+          ) : null}
+        </div>
+      ) : (
+        <ul className="bj-my-contributions__list">
+          {items.map((item) => {
+            const status = (item.status ?? "pending") as ContributionStatus;
+            return (
+              <li key={item.id} className="bj-my-contributions__item">
+                <div className="bj-my-contributions__copy">
+                  <strong>{item.title}</strong>
+                  <span>{JURISPRUDENCE_TIPO_LABELS[item.tipo]}</span>
+                  <ContributionStepper status={status} />
+                  {item.rejectionReason ? (
+                    <span className="bj-my-contributions__reason">{item.rejectionReason}</span>
+                  ) : null}
+                </div>
+                <button
+                  type="button"
+                  className="bj-my-contributions__delete"
+                  disabled={busyId === item.id}
+                  onClick={() => void handleDelete(item.id)}
+                  aria-label="Retirar aporte"
+                >
+                  {busyId === item.id ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    <Trash2 size={14} />
+                  )}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </section>
   );
 }

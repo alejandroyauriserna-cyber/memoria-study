@@ -2087,3 +2087,15 @@ html:not(.dark) .library-welcome-stage__panel--card strong {
     transition: none;
   }
 }
+
+button.library-hero-search {
+  width: 100%;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+button.library-hero-search:hover {
+  filter: brightness(1.06);
+}

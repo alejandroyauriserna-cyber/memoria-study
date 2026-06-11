@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BookOpen, BrainCircuit, Command, Layers3, LibraryBig, ScanSearch, Search, Sparkles } from "lucide-react";
 import { AppShell } from "@/components/ui/shell";
+import { LibraryFocusSearchTrigger } from "@/components/library/library-focus-search-trigger";
 import { LibraryPremiumWorkspace } from "@/components/library/library-premium-workspace";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -138,11 +139,11 @@ export default async function LibraryHomePage() {
               </span>
               <em>Live</em>
             </div>
-            <div className="library-hero-search">
+            <LibraryFocusSearchTrigger className="library-hero-search">
               <ScanSearch size={18} />
               <span>Buscar curso, tema, caso o resumen...</span>
               <kbd>Ctrl K</kbd>
-            </div>
+            </LibraryFocusSearchTrigger>
             <div className="library-page-stats" aria-label="Resumen de la biblioteca">
               <div className="library-page-stat">
                 <span className="library-page-stat-icon">

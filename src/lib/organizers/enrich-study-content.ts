@@ -236,7 +236,9 @@ function applyCorroboratedTimeline<T extends StudyOrganizerContent>(content: T):
 /**
  * Aligns concept map, repaso, flujo, ruta, estudio, resumen y línea de tiempo con el PDF.
  */
-export function enrichOrganizerStudySurfaces<T extends StudyOrganizerContent>(content: T): T {
+export function enrichOrganizerStudySurfaces<T extends StudyOrganizerContent>(
+  content: T,
+): T & StudyOrganizerContent {
   const concepts = collectStudyConceptLabels(content);
   if (concepts.length < 2) return applyCorroboratedTimeline(content);
 

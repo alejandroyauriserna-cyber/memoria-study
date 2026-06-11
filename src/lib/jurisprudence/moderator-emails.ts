@@ -7,6 +7,11 @@ const CACHE_MS = 60_000;
 let dbModeratorEmails: string[] = [];
 let dbModeratorsFetchedAt = 0;
 
+export function invalidateModeratorCache() {
+  dbModeratorEmails = [];
+  dbModeratorsFetchedAt = 0;
+}
+
 function parseEmailList(raw: string | undefined): string[] {
   if (!raw?.trim()) return [];
   return raw

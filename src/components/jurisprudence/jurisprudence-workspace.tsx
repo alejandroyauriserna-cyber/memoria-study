@@ -17,6 +17,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { LoadingState } from "@/components/ui/loading-state";
+import { useCommandK, dispatchFocusSearch } from "@/hooks/use-command-k";
 import { useLoadingProgress } from "@/hooks/use-loading-progress";
 import { JurisprudenceFilters } from "@/components/jurisprudence/jurisprudence-filters";
 import { JurisprudenceResultCard } from "@/components/jurisprudence/jurisprudence-result-card";
@@ -67,6 +68,7 @@ type AccessState = {
   authenticated: boolean;
   canContribute: boolean;
   isModerator: boolean;
+  pendingCount?: number;
   email?: string;
   emailConfirmed?: boolean;
   denialMessage?: string | null;
@@ -105,7 +107,10 @@ export function JurisprudenceWorkspace() {
   });
   const searchProgress = useLoadingProgress(isLoading, "search");
   const committedQueryRef = useRef(committedQuery);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   committedQueryRef.current = committedQuery;
+
+  useCommandK(searchInputRef);
 
   const syncShareUrl = useCallback(
     (term: string, nextFilters: JurisprudenceFilterState, docId?: string | null) => {
@@ -261,11 +266,16 @@ export function JurisprudenceWorkspace() {
             </span>
             <em>2026</em>
           </div>
-          <div className="bj-hero__query-card">
+          <button
+            type="button"
+            className="bj-hero__query-card"
+            aria-label="Enfocar búsqueda (Ctrl+K)"
+            onClick={dispatchFocusSearch}
+          >
             <FileSearch size={20} />
             <span>casacion laboral, precedente vinculante, tutela...</span>
             <kbd>Ctrl K</kbd>
-          </div>
+          </button>
           <div className="bj-hero__stats">
             <div className="bj-hero__stat">
               <span className="bj-hero__stat-icon">
@@ -299,6 +309,7 @@ export function JurisprudenceWorkspace() {
 
         <div className="bj-hero__search">
           <JurisprudenceSearchBar
+            ref={searchInputRef}
             query={query}
             onQueryChange={setQuery}
             onSuggest={(term) => runSearch(term, filters, true)}
@@ -314,12 +325,20 @@ export function JurisprudenceWorkspace() {
       {access.canContribute ? (
         <JurisprudenceMyContributions
           onChanged={() => void runSearch(committedQueryRef.current, filters, false)}
+          onContribute={() => setContributeOpen(true)}
         />
       ) : null}
 
       {access.isModerator ? (
         <Link href="/admin/biblioteca-juridica" className="bj-admin-banner">
-          Panel de administración — moderar aportes y reportes
+          {access.pendingCount ? (
+            <>
+              Tienes <strong>{access.pendingCount}</strong> casación
+              {access.pendingCount === 1 ? "" : "es"} por revisar — ir al panel de moderación
+            </>
+          ) : (
+            <>Panel de administración — moderar aportes y reportes</>
+          )}
         </Link>
       ) : null}
 
@@ -369,23 +388,48 @@ export function JurisprudenceWorkspace() {
               {items.length === 0 ? (
                 <div className="bj-empty">
                   <Gavel size={28} strokeWidth={1.5} />
-                  <h2>Sin resultados</h2>
-                  <p>Prueba con otro término o ajusta los filtros laterales.</p>
-                  <div className="bj-empty__chips">
-                    {JURISPRUDENCE_SEARCH_EXAMPLES.slice(0, 4).map((example) => (
+                  <h2>{committedQuery || hasSearched ? "Sin resultados" : "Catálogo vacío"}</h2>
+                  <p>
+                    {committedQuery || hasSearched
+                      ? "Prueba con otro término o ajusta los filtros laterales."
+                      : "Aún no hay resoluciones publicadas. Si tienes cuenta UNT, puedes ser el primero en aportar."}
+                  </p>
+                  <div className="bj-empty__actions">
+                    {access.canContribute && !committedQuery ? (
                       <button
-                        key={example}
                         type="button"
-                        className="bj-empty__chip"
-                        onClick={() => {
-                          setQuery(example);
-                          void runSearch(example, filters, false);
-                        }}
+                        className="bj-empty__cta"
+                        onClick={() => setContributeOpen(true)}
                       >
-                        {example}
+                        <PlusCircle size={16} />
+                        Aportar sentencia
                       </button>
-                    ))}
+                    ) : null}
+                    <button
+                      type="button"
+                      className="bj-empty__cta bj-empty__cta--ghost"
+                      onClick={dispatchFocusSearch}
+                    >
+                      Buscar con Ctrl+K
+                    </button>
                   </div>
+                  {committedQuery || hasSearched ? (
+                    <div className="bj-empty__chips">
+                      {JURISPRUDENCE_SEARCH_EXAMPLES.slice(0, 4).map((example) => (
+                        <button
+                          key={example}
+                          type="button"
+                          className="bj-empty__chip"
+                          onClick={() => {
+                            setQuery(example);
+                            void runSearch(example, filters, false);
+                          }}
+                        >
+                          {example}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
               ) : (
                 <motion.div

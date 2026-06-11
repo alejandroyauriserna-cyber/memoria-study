@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, Search, Sparkles } from "lucide-react";
 import {
@@ -22,20 +22,33 @@ type Props = {
   hasSearched: boolean;
 };
 
-export function JurisprudenceSearchBar({
-  query,
-  onQueryChange,
-  onSuggest,
-  onCommit,
-  suggestions,
-  previewItems,
-  isLoading,
-  hasSearched,
-}: Props) {
+export const JurisprudenceSearchBar = forwardRef<HTMLInputElement, Props>(function JurisprudenceSearchBar(
+  {
+    query,
+    onQueryChange,
+    onSuggest,
+    onCommit,
+    suggestions,
+    previewItems,
+    isLoading,
+    hasSearched,
+  },
+  forwardedRef,
+) {
   const [open, setOpen] = useState(false);
   const [exampleIndex, setExampleIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const localInputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<number | null>(null);
+
+  const setInputRef = useCallback(
+    (node: HTMLInputElement | null) => {
+      localInputRef.current = node;
+      if (typeof forwardedRef === "function") forwardedRef(node);
+      else if (forwardedRef) forwardedRef.current = node;
+    },
+    [forwardedRef],
+  );
 
   const trimmed = query.trim();
 
@@ -91,6 +104,7 @@ export function JurisprudenceSearchBar({
           <Search size={20} strokeWidth={1.75} />
         </div>
         <input
+          ref={setInputRef}
           type="search"
           value={query}
           onChange={(e) => handleChange(e.target.value)}
@@ -166,4 +180,4 @@ export function JurisprudenceSearchBar({
       </AnimatePresence>
     </div>
   );
-}
+});
