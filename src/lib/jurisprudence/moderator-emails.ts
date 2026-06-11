@@ -69,21 +69,17 @@ export async function isJurisprudenceModerator(
 
 export async function getModeratorAccessHint(
   email: string | null | undefined,
+  options?: { isUntInstitutional?: boolean },
 ): Promise<string | null> {
+  if (!options?.isUntInstitutional) return null;
+
   const normalized = email?.trim().toLowerCase();
+  if (!normalized) return null;
+
   const moderators = await getAllModeratorEmails();
+  if (moderators.includes(normalized) || moderators.length === 0) return null;
 
-  if (!normalized) {
-    return "Inicia sesión con tu correo @unitru.edu.pe de moderador.";
-  }
-
-  if (moderators.length === 0) {
-    return "Sin moderadores en el servidor. Añade JURISPRUDENCE_MODERATOR_EMAILS en Vercel y redeploy, o inserta tu correo en Supabase → tabla jurisprudence_moderators.";
-  }
-
-  if (moderators.includes(normalized)) return null;
-
-  return `Tu sesión usa ${normalized}. Debe estar en JURISPRUDENCE_MODERATOR_EMAILS (Vercel) o en jurisprudence_moderators (Supabase).`;
+  return "Tu cuenta UNT aún no tiene permiso para moderar aportes. Si administras la biblioteca, contacta al equipo técnico.";
 }
 
 /** Solo env — preferir getAllModeratorEmails para notificaciones. */

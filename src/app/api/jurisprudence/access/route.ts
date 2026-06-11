@@ -54,7 +54,9 @@ export async function GET() {
     canContribute: isUnt && emailConfirmed,
     isModerator,
     moderatorsConfigured: moderators.length,
-    moderatorHint: isModerator ? null : await getModeratorAccessHint(email),
+    moderatorHint: isModerator
+      ? null
+      : await getModeratorAccessHint(email, { isUntInstitutional: isUnt }),
     untDomains: getUntEmailDomains(),
     denialMessage: !isUnt
       ? getUntAccessDenialMessage()

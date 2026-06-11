@@ -59,7 +59,6 @@ type AccessState = {
   email?: string;
   emailConfirmed?: boolean;
   denialMessage?: string | null;
-  moderatorHint?: string | null;
   moderatorsConfigured?: number;
   untDomains?: string[];
 };
@@ -275,10 +274,6 @@ export function JurisprudenceWorkspace() {
         <Link href="/admin/biblioteca-juridica" className="bj-admin-banner">
           Panel de administración — moderar aportes y reportes
         </Link>
-      ) : access.authenticated && access.moderatorHint ? (
-        <p className="bj-hero__access-note" role="status">
-          {access.moderatorHint}
-        </p>
       ) : null}
 
       <div className="bj-layout">
