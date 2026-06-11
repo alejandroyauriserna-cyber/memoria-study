@@ -62,6 +62,7 @@ export function JurisprudenceSearchBar({
       if (debounceRef.current) window.clearTimeout(debounceRef.current);
       if (!value.trim()) {
         setOpen(false);
+        onCommit("");
         return;
       }
       setOpen(true);
@@ -69,7 +70,7 @@ export function JurisprudenceSearchBar({
         onSuggest(value);
       }, DEBOUNCE_MS);
     },
-    [onQueryChange, onSuggest],
+    [onCommit, onQueryChange, onSuggest],
   );
 
   const commitSearch = (term: string) => {
