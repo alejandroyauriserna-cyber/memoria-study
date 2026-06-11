@@ -2,13 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { ChevronLeft, ImageIcon } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { OrganizerContentView } from "@/components/organizers/organizer-content-view";
-import { AcademicInfographicPanel } from "@/components/organizers/sections/academic-infographic-panel";
-import { parseOrganizerContent } from "@/lib/organizers/parse-content";
 import type { OrganizerRecord } from "@/types/organizer";
-
-export type OrganizerStudioTab = "interactive" | "infographic";
 
 export function OrganizerStudioView({
   organizer,
@@ -23,12 +19,10 @@ export function OrganizerStudioView({
   onBack: () => void;
   onContentUpdate?: (organizerId: string, content: unknown) => void;
 }) {
-  const [activeTab, setActiveTab] = useState<OrganizerStudioTab>("interactive");
   const [content, setContent] = useState<unknown>(organizer.content);
 
   useEffect(() => {
     setContent(organizer.content);
-    setActiveTab("interactive");
   }, [organizer.id, organizer.content]);
 
   useEffect(() => {
@@ -39,10 +33,6 @@ export function OrganizerStudioView({
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [onBack]);
-
-  const parsed = parseOrganizerContent(content);
-  const conceptNodes = parsed.conceptMap?.nodes?.filter(Boolean) ?? [];
-  const hasConceptMap = Boolean(parsed.conceptMap?.title || conceptNodes.length);
 
   function handleContentUpdate(next: unknown) {
     setContent(next);
@@ -74,31 +64,6 @@ export function OrganizerStudioView({
           </h2>
           <p className="truncate text-[11px] text-muted-foreground">{organizer.course_name}</p>
         </div>
-
-        {hasConceptMap ? (
-          <div className="organizers-studio-mode__tabs flex shrink-0 gap-1">
-            <button
-              type="button"
-              onClick={() => setActiveTab("interactive")}
-              className={`organizers-studio-mode__tab rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                activeTab === "interactive" ? "is-active" : ""
-              }`}
-            >
-              Mapa
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("infographic")}
-              className={`organizers-studio-mode__tab organizers-studio-mode__tab--alt rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                activeTab === "infographic" ? "is-active" : ""
-              }`}
-              title="Infografía IA"
-            >
-              <ImageIcon size={14} className="mr-1 inline" />
-              Infografía
-            </button>
-          </div>
-        ) : null}
       </header>
 
       {readOnly ? (
@@ -108,25 +73,15 @@ export function OrganizerStudioView({
       ) : null}
 
       <div className="organizer-canvas-stage flex min-h-0 flex-1 flex-col overflow-hidden">
-        {activeTab === "infographic" ? (
-          <div className="flex min-h-0 flex-1 overflow-auto p-4 sm:p-6">
-            <AcademicInfographicPanel
-              organizerId={organizer.id}
-              organizerTitle={organizer.title}
-              academicInfographic={parsed.academicInfographic}
-              onGenerated={readOnly ? undefined : handleContentUpdate}
-            />
-          </div>
-        ) : (
-          <OrganizerContentView
-            content={content}
-            loading={loading}
-            studio
-            deckKey={organizer.id}
-            organizerId={organizer.id}
-            onContentUpdate={readOnly ? undefined : handleContentUpdate}
-          />
-        )}
+        <OrganizerContentView
+          content={content}
+          loading={loading}
+          studio
+          deckKey={organizer.id}
+          organizerId={organizer.id}
+          organizerTitle={organizer.title}
+          onContentUpdate={readOnly ? undefined : handleContentUpdate}
+        />
       </div>
     </motion.div>
   );

@@ -20,6 +20,7 @@ import { EasyExplanationBlock } from "@/components/organizers/sections/organizer
 import { ReviewPremiumModule } from "@/components/organizers/sections/review-premium-module";
 import { TimelineModern } from "@/components/organizers/sections/timeline-modern";
 import { PedagogicalOrganizerPoster } from "@/components/organizers/sections/pedagogical-organizer-poster";
+import { VisualIaPanel } from "@/components/organizers/sections/visual-ia-panel";
 import { VisualMindMapPanel } from "@/components/organizers/sections/visual-mind-map-panel";
 import { VisualPremiumPromptPanel } from "@/components/organizers/sections/visual-premium-prompt-panel";
 import { OrganizerContentSkeleton } from "@/components/organizers/organizer-skeleton";
@@ -33,6 +34,7 @@ export function OrganizerContentView({
   studio = false,
   deckKey,
   organizerId,
+  organizerTitle,
   onContentUpdate,
 }: {
   content: unknown;
@@ -40,6 +42,7 @@ export function OrganizerContentView({
   studio?: boolean;
   deckKey?: string;
   organizerId?: string;
+  organizerTitle?: string;
   onContentUpdate?: (content: unknown) => void;
 }) {
   const [activePanel, setActivePanel] = useState<StudioPanelId>(null);
@@ -204,6 +207,29 @@ export function OrganizerContentView({
               studyContext={studyContext}
               bare
             />
+          ) : null}
+        </OrganizerFloatSheet>
+
+        <OrganizerFloatSheet
+          open={activePanel === "visualAi"}
+          title="Visual IA"
+          wide
+          onClose={() => setActivePanel(null)}
+        >
+          {organizerId ? (
+            <div className="-m-4 h-[min(82vh,780px)] sm:-m-5">
+              <VisualIaPanel
+                organizerId={organizerId}
+                organizerTitle={
+                  organizerTitle ??
+                  parsed.conceptMap?.title ??
+                  parsed.hierarchy?.root ??
+                  "Organizador"
+                }
+                content={parsed}
+                onGenerated={onContentUpdate}
+              />
+            </div>
           ) : null}
         </OrganizerFloatSheet>
 

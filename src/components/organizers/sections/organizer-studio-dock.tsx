@@ -6,6 +6,7 @@ import {
   Clock3,
   GitBranch,
   HelpCircle,
+  ImageIcon,
   Layers,
   Lock,
   Palette,
@@ -19,6 +20,7 @@ export type StudioPanelId =
   | "flow"
   | "tree"
   | "timeline"
+  | "visualAi"
   | "flashcards"
   | "review"
   | "visualMap"
@@ -30,7 +32,8 @@ const items = [
   { id: "flow" as const, label: "Flujo", icon: Workflow },
   { id: "tree" as const, label: "Ruta", icon: GitBranch },
   { id: "timeline" as const, label: "Tiempo", icon: Clock3 },
-  { id: "visualMap" as const, label: "Mapa visual", icon: Sparkles, pro: true, locked: true },
+  { id: "visualAi" as const, label: "Visual IA", icon: Sparkles },
+  { id: "visualMap" as const, label: "Mapa visual", icon: ImageIcon, pro: true, locked: true },
   { id: "visualPrompt" as const, label: "Atlas IA", icon: Palette },
   { id: "flashcards" as const, label: "Estudio", icon: Layers },
   { id: "review" as const, label: "Repaso", icon: HelpCircle },

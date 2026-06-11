@@ -83,7 +83,7 @@ export async function POST(_request: Request, context: RouteContext) {
       const prompt = node.imagePrompt ?? `Educational legal concept: ${node.label}`;
       const { buffer, mimeType, source } = await generateConceptImage(prompt, node.label);
 
-      if (source === "gemini") {
+      if (source === "flux" || source === "gemini") {
         imagesGenerated += 1;
       }
 

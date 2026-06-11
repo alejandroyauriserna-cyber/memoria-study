@@ -1,6 +1,7 @@
 import type { VisualMindMap } from "@/lib/organizers/visual-mind-map-types";
 import type { AcademicInfographic } from "@/lib/organizers/academic-infographic-types";
 import type { VisualPremiumPrompt } from "@/lib/organizers/visual-prompt-types";
+import type { VisualAiOutputsCache } from "@/lib/organizers/visual-ai-types";
 import { enrichOrganizerStudySurfaces } from "@/lib/organizers/enrich-study-content";
 
 export type OrganizerFlashcard = {
@@ -74,6 +75,7 @@ export type OrganizerContent = {
   simplifiedExplanation?: string;
   visualMindMap?: VisualMindMap;
   academicInfographic?: AcademicInfographic;
+  visualAiOutputs?: VisualAiOutputsCache;
   visualPremiumPrompt?: VisualPremiumPrompt;
 };
 

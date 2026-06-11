@@ -181,13 +181,24 @@ export function PremiumDashboard({
           </Link>
         </motion.div>
 
-        {/* 3. Biblioteca jurídica — destacada */}
+        {/* 3. Biblioteca jurídica — materiales académicos */}
         <motion.div {...fade(4)}>
           <Link href="/library" className="dash-home__glass dash-home__library">
             <LibraryBig size={22} className="dash-home__library-icon" strokeWidth={1.5} />
-            <h3 className="dash-home__library-title">Biblioteca jurídica</h3>
+            <h3 className="dash-home__library-title">Materiales académicos</h3>
             <p className="dash-home__library-copy">
-              Materiales por ciclo y curso con progreso real de estudio guiado.
+              PDFs y apuntes por ciclo y curso con progreso real de estudio guiado.
+            </p>
+          </Link>
+        </motion.div>
+
+        {/* Biblioteca Jurídica — jurisprudencia */}
+        <motion.div {...fade(4)}>
+          <Link href="/biblioteca-juridica" className="dash-home__glass dash-home__library">
+            <Gavel size={22} className="dash-home__library-icon" strokeWidth={1.5} />
+            <h3 className="dash-home__library-title">Biblioteca Jurídica</h3>
+            <p className="dash-home__library-copy">
+              Casaciones, sentencias y resoluciones — encuentra jurisprudencia en segundos.
             </p>
           </Link>
         </motion.div>

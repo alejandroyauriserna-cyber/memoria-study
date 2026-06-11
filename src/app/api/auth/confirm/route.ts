@@ -2,11 +2,13 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { env } from "@/lib/env";
 
+import { humanizeAuthError } from "@/lib/auth/humanize-auth-error";
+
 function redirectWithError(request: NextRequest, message: string) {
   const url = request.nextUrl.clone();
   url.pathname = "/auth";
   url.search = "";
-  url.searchParams.set("auth_error", message);
+  url.searchParams.set("auth_error", humanizeAuthError(message));
   return NextResponse.redirect(url);
 }
 
@@ -20,6 +22,12 @@ export async function GET(request: NextRequest) {
   const token = request.nextUrl.searchParams.get("token");
   const type = request.nextUrl.searchParams.get("type");
   const email = request.nextUrl.searchParams.get("email");
+  const rawError = request.nextUrl.searchParams.get("error_description")
+    ?? request.nextUrl.searchParams.get("error");
+
+  if (rawError) {
+    return redirectWithError(request, rawError);
+  }
 
   if (!code && !tokenHash && !(token && type)) {
     return redirectWithError(request, "Enlace de acceso inválido o expirado.");

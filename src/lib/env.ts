@@ -16,6 +16,11 @@ export const env = {
   geminiModel: process.env.GEMINI_MODEL ?? "gemini-2.5-flash",
   geminiImageModel: process.env.GEMINI_IMAGE_MODEL,
 
+  // HUGGING FACE (Flux — imágenes de organizadores)
+  hfToken: process.env.HF_TOKEN,
+  hfImageModel:
+    process.env.HF_IMAGE_MODEL ?? "black-forest-labs/FLUX.1-schnell",
+
   // XAI
   xaiApiKey: process.env.XAI_API_KEY,
   xaiModel: process.env.XAI_MODEL ?? "grok-4-fast-reasoning",

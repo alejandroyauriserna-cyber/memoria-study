@@ -35,6 +35,12 @@ const FEATURE_CARDS = [
     href: "/library",
   },
   {
+    icon: Scale,
+    title: "Biblioteca Juridica — Jurisprudencia",
+    copy: "Casaciones, sentencias y resoluciones en segundos, sin buscar en Google.",
+    href: "/biblioteca-juridica",
+  },
+  {
     icon: Network,
     title: "Organizadores visuales",
     copy: "Mapas, lineas de tiempo y rutas para convertir teoria densa en estructura clara.",

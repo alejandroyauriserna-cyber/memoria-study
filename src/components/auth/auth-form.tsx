@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { LoadingState } from "@/components/ui/loading-state";
 import { useLoadingProgress } from "@/hooks/use-loading-progress";
 import { CycleSelector } from "@/components/auth/cycle-selector";
-import { authPageUrl } from "@/lib/auth/redirect-urls";
+import { authCallbackUrl, authPageUrl } from "@/lib/auth/redirect-urls";
+import { humanizeAuthError } from "@/lib/auth/humanize-auth-error";
 import { createClient } from "@/lib/supabase/browser";
 import { UNT_DERECHO } from "@/lib/academic/unt-derecho";
 
@@ -25,7 +26,7 @@ function safeRedirectPath(next: string | null): string {
   return next;
 }
 
-export function AuthForm() {
+export function AuthForm({ pendingConfirmEmail = "" }: { pendingConfirmEmail?: string }) {
   const searchParams = useSearchParams();
   const initialMode = (searchParams.get("mode") as AuthMode | null) ?? "signin";
   const redirectTo = safeRedirectPath(searchParams.get("next"));
@@ -33,7 +34,7 @@ export function AuthForm() {
   const [mode, setMode] = useState<AuthMode>(
     initialMode === "recovery" ? "recovery" : initialMode === "signup" ? "signup" : "signin",
   );
-  const [email, setEmail] = useState(searchParams.get("email") ?? "");
+  const [email, setEmail] = useState(searchParams.get("email") ?? pendingConfirmEmail);
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [currentCycle, setCurrentCycle] = useState<CurrentCycle>({
@@ -43,6 +44,13 @@ export function AuthForm() {
   const [status, setStatus] = useState<"idle" | "loading" | "sent" | "error">("idle");
   const [message, setMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    if (pendingConfirmEmail) {
+      setEmail(pendingConfirmEmail);
+      setMode("signin");
+    }
+  }, [pendingConfirmEmail]);
 
   useEffect(() => {
     if (searchParams.get("mode") === "recovery") {
@@ -93,7 +101,7 @@ export function AuthForm() {
           email: email.trim(),
           password,
           options: {
-            emailRedirectTo: authPageUrl(),
+            emailRedirectTo: authCallbackUrl(),
             data: {
               full_name: fullName.trim(),
               current_cycle_number: currentCycle.cycleNumber,
@@ -106,7 +114,7 @@ export function AuthForm() {
 
         setStatus("sent");
         setMessage(
-          "Revisa tu correo para confirmar la cuenta. Luego ingresa con tu correo y contraseña.",
+          "Revisa tu correo para confirmar la cuenta. Abre el enlace en el mismo navegador donde te registraste (Chrome o Edge). Luego ingresa con tu correo y contraseña.",
         );
         return;
       }
@@ -131,9 +139,43 @@ export function AuthForm() {
     } catch (caught) {
       setStatus("error");
       setMessage(
-        caught instanceof Error
-          ? caught.message
-          : "Configura las variables de Supabase en .env.local para habilitar el acceso.",
+        humanizeAuthError(
+          caught instanceof Error
+            ? caught.message
+            : "Configura las variables de Supabase en .env.local para habilitar el acceso.",
+        ),
+      );
+    }
+  }
+
+  async function handleResendConfirmation() {
+    if (!email.trim()) {
+      setStatus("error");
+      setMessage("Ingresa tu correo para reenviar la confirmación.");
+      return;
+    }
+
+    setStatus("loading");
+    setMessage("");
+
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: email.trim(),
+        options: { emailRedirectTo: authCallbackUrl() },
+      });
+
+      if (error) throw error;
+
+      setStatus("sent");
+      setMessage("Te enviamos un nuevo correo de confirmación. Ábrelo en este mismo navegador.");
+    } catch (caught) {
+      setStatus("error");
+      setMessage(
+        humanizeAuthError(
+          caught instanceof Error ? caught.message : "No se pudo reenviar el correo.",
+        ),
       );
     }
   }
@@ -310,6 +352,16 @@ export function AuthForm() {
             <p className={`text-sm ${status === "error" ? "text-red-500" : "text-accent"}`}>
               {message}
             </p>
+          ) : null}
+
+          {status === "error" && email.trim() ? (
+            <button
+              type="button"
+              onClick={() => void handleResendConfirmation()}
+              className="auth-link w-full text-center text-sm"
+            >
+              Reenviar correo de confirmación
+            </button>
           ) : null}
         </div>
       </form>

@@ -14,15 +14,22 @@ export function parseAuthUrl(url: string | URL = typeof window !== "undefined" ?
   const search = new URLSearchParams(parsed.search);
   const hash = new URLSearchParams(parsed.hash.replace(/^#/, ""));
 
+  const authError =
+    search.get("auth_error") ??
+    search.get("error_description") ??
+    search.get("error") ??
+    hash.get("error_description") ??
+    hash.get("error");
+
   return {
     search,
     hash,
     type: search.get("type") ?? hash.get("type"),
     code: search.get("code"),
-    tokenHash: search.get("token_hash"),
+    tokenHash: search.get("token_hash") ?? hash.get("token_hash"),
     token: search.get("token"),
     email: search.get("email"),
-    authError: search.get("auth_error"),
+    authError,
   };
 }
 

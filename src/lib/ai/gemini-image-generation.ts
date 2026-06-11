@@ -1,4 +1,10 @@
 import { env } from "@/lib/env";
+import type {
+  ImageGenerationOptions,
+  ImageGenerationResult,
+} from "@/lib/ai/image-generation-types";
+
+export type { GeminiImageResult, ImageGenerationResult } from "@/lib/ai/image-generation-types";
 
 /** Modelos Nano Banana / Gemini Image (2025–2026). */
 export const GEMINI_IMAGE_MODELS = [
@@ -7,17 +13,7 @@ export const GEMINI_IMAGE_MODELS = [
   "gemini-3-pro-image-preview",
 ] as const;
 
-export type GeminiImageResult = {
-  buffer: Buffer;
-  mimeType: string;
-  source: "gemini" | "fallback";
-  model?: string;
-  warning?: string;
-};
-
-export type GeminiImageOptions = {
-  aspectRatio?: "16:9" | "1:1" | "4:3";
-};
+export type GeminiImageOptions = ImageGenerationOptions;
 
 function extractImageFromPayload(payload: unknown): { data: string; mimeType: string } | null {
   const parts =
@@ -53,7 +49,7 @@ function errorMessage(payload: unknown, status: number): string {
 export async function generateGeminiImage(
   prompt: string,
   options: GeminiImageOptions = {},
-): Promise<{ ok: true; result: GeminiImageResult } | { ok: false; lastError: string }> {
+): Promise<{ ok: true; result: ImageGenerationResult } | { ok: false; lastError: string }> {
   if (!env.geminiApiKey) {
     return { ok: false, lastError: "GEMINI_API_KEY no configurada." };
   }

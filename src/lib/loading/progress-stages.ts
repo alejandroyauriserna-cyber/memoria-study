@@ -71,6 +71,12 @@ export const PROGRESS_PRESETS = {
     { label: "Generando infografía", percent: 55, message: "Gemini diseña la infografía académica..." },
     { label: "Renderizando", percent: 82, message: "Preparando imagen de alta calidad..." },
   ],
+  visualAi: [
+    { label: "Preparando", percent: 12, message: "Construyendo prompt académico especializado..." },
+    { label: "Generando con FLUX", percent: 48, message: "FLUX renderiza tu lámina visual..." },
+    { label: "Refinando", percent: 72, message: "Aplicando composición y detalle editorial..." },
+    { label: "Finalizando", percent: 92, message: "Optimizando imagen para entrega universitaria..." },
+  ],
   mindMap: [
     { label: "Analizando", percent: 25, message: "Identificando conceptos clave..." },
     { label: "Generando mapa", percent: 60, message: "Construyendo el mapa visual..." },

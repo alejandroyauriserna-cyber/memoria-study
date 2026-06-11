@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { PDFDocument } from "pdf-lib";
 import {
   Download,
@@ -20,6 +20,9 @@ import {
 import { PremiumBadge } from "@/components/ui/premium-badge";
 import { PremiumGateCard } from "@/components/ui/premium-gate-card";
 import { PremiumGateDismissed } from "@/components/ui/premium-gate-dismissed";
+import { ImageGenerationDiagnosticsPanel } from "@/components/organizers/sections/image-generation-diagnostics-panel";
+import { ImageGenerationSummary } from "@/components/organizers/sections/image-generation-summary";
+import type { ImageGenerationDiagnostics } from "@/lib/ai/image-generation-types";
 
 const INFOGRAPHIC_FEATURE = getPremiumFeature("gemini-infographic");
 
@@ -79,11 +82,15 @@ export function AcademicInfographicPanel({
   organizerTitle,
   academicInfographic,
   onGenerated,
+  autoGenerateOnMount = false,
+  embedded = false,
 }: {
   organizerId: string;
   organizerTitle: string;
   academicInfographic?: AcademicInfographic | null;
   onGenerated?: (content: unknown) => void;
+  autoGenerateOnMount?: boolean;
+  embedded?: boolean;
 }) {
   const [gateDismissed, setGateDismissed] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -91,6 +98,8 @@ export function AcademicInfographicPanel({
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [local, setLocal] = useState<AcademicInfographic | null>(academicInfographic ?? null);
+  const [imageDiagnostics, setImageDiagnostics] = useState<ImageGenerationDiagnostics | null>(null);
+  const autoGenerateTriggered = useRef(false);
   const generateProgress = useLoadingProgress(generating, "infographic");
 
   useEffect(() => {
@@ -99,7 +108,7 @@ export function AcademicInfographicPanel({
 
   const infographic = local ?? academicInfographic;
 
-  async function handleGenerate() {
+  const handleGenerate = useCallback(async () => {
     setGenerating(true);
     setError(null);
 
@@ -114,20 +123,38 @@ export function AcademicInfographicPanel({
       }
 
       const next = payload.academicInfographic as AcademicInfographic;
+      const diagnostics = (payload.imageDiagnostics as ImageGenerationDiagnostics | null) ?? null;
       setLocal(next);
+      setImageDiagnostics(diagnostics);
       onGenerated?.(payload.organizer?.content);
+      const hasSummaryFallback =
+        Boolean(diagnostics?.usedFallback || diagnostics?.userMessage) ||
+        next.source === "fallback";
+
       setNotice(
-        (payload.warning as string | undefined) ??
-          (next.source === "fallback"
-            ? "Se mostró una vista previa local. Gemini imagen no respondió — revisa cuota en Google AI Studio."
-            : null),
+        hasSummaryFallback
+          ? null
+          : ((payload.userNotice as string | undefined) ??
+              (payload.warning as string | undefined) ??
+              null),
       );
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Error al generar la infografía.");
     } finally {
       setGenerating(false);
     }
-  }
+  }, [onGenerated, organizerId]);
+
+  useEffect(() => {
+    if (!autoGenerateOnMount) return;
+    if (autoGenerateTriggered.current) return;
+    if (infographic) return;
+    if (!onGenerated) return;
+    if (!isPremiumFeatureAvailable("gemini-infographic")) return;
+
+    autoGenerateTriggered.current = true;
+    void handleGenerate();
+  }, [autoGenerateOnMount, infographic, onGenerated, handleGenerate]);
 
   const downloadPng = useCallback(async () => {
     if (!infographic?.imageUrl) return;
@@ -248,6 +275,23 @@ export function AcademicInfographicPanel({
       );
     }
 
+    if (autoGenerateOnMount || generating) {
+      return (
+        <div className="flex h-full flex-col items-center justify-center gap-4 px-6 py-16 text-center">
+          <LoadingState
+            active
+            preset="infographic"
+            percent={generateProgress.percent}
+            message={generateProgress.message}
+            stageLabel={generateProgress.stageLabel}
+            className="max-w-sm"
+          />
+          <p className="text-sm text-muted-foreground">Generando infografía con FLUX…</p>
+          {error ? <p className="text-sm text-red-400">{error}</p> : null}
+        </div>
+      );
+    }
+
     return (
       <div className="flex h-full flex-col items-center justify-center gap-6 px-6 py-16 text-center">
         <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-[#A78BFA] to-[#00BFFF] text-white shadow-[0_0_40px_rgba(167,139,250,0.4)]">
@@ -259,8 +303,7 @@ export function AcademicInfographicPanel({
             <PremiumBadge />
           </div>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            Gemini Nano Banana genera un póster educativo 16:9 — ilustraciones, iconos y colores
-            por categoría, como un atlas jurídico universitario.
+            Póster educativo 16:9 generado con FLUX — ilustraciones, iconos y colores por categoría.
           </p>
         </div>
         <button
@@ -279,72 +322,101 @@ export function AcademicInfographicPanel({
           )}
         </button>
         {error ? <p className="text-sm text-red-400">{error}</p> : null}
-        {generating ? (
-          <LoadingState
-            active
-            preset="infographic"
-            percent={generateProgress.percent}
-            message={generateProgress.message}
-            stageLabel={generateProgress.stageLabel}
-            className="max-w-sm"
-          />
-        ) : null}
       </div>
     );
   }
 
+  const toolbar = embedded ? (
+    <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-[rgba(0,255,213,0.1)] px-4 py-3 sm:px-5">
+      <div className="min-w-0 space-y-1">
+        <h3 className="truncate text-sm font-bold text-[#F5F7FA]">{infographic.centralTopic}</h3>
+        <ImageGenerationSummary
+          source={infographic.source}
+          model={infographic.model}
+          diagnostics={imageDiagnostics}
+        />
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <ExportBtn
+          icon={FileImage}
+          label="Descargar PNG"
+          loading={exporting === "png"}
+          onClick={downloadPng}
+        />
+        <button
+          type="button"
+          onClick={handleGenerate}
+          disabled={generating}
+          className="inline-flex items-center gap-1.5 rounded-xl border border-[rgba(167,139,250,0.35)] bg-[rgba(167,139,250,0.1)] px-3 py-2 text-[11px] font-semibold text-[#A78BFA] transition hover:bg-[rgba(167,139,250,0.18)] disabled:opacity-50"
+        >
+          {generating ? (
+            <>
+              <Loader2 size={12} className="animate-spin" />
+              Regenerar {generateProgress.percent}%
+            </>
+          ) : (
+            <>
+              <Sparkles size={12} />
+              Regenerar
+            </>
+          )}
+        </button>
+      </div>
+    </div>
+  ) : (
+    <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-[rgba(0,255,213,0.1)] px-4 py-3 sm:px-6">
+      <div className="min-w-0">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#A78BFA]">
+          Infografía académica IA
+        </p>
+        <h3 className="truncate text-sm font-bold text-[#F5F7FA]">{infographic.centralTopic}</h3>
+        <ImageGenerationSummary
+          source={infographic.source}
+          model={infographic.model}
+          diagnostics={imageDiagnostics}
+        />
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <ExportBtn
+          icon={FileImage}
+          label="Descargar PNG"
+          loading={exporting === "png"}
+          onClick={downloadPng}
+        />
+        <ExportBtn
+          icon={Download}
+          label="PDF"
+          loading={exporting === "pdf"}
+          onClick={downloadPdf}
+        />
+        <ExportBtn
+          icon={Share2}
+          label="Compartir"
+          loading={exporting === "share"}
+          onClick={shareInfographic}
+        />
+        <button
+          type="button"
+          onClick={handleGenerate}
+          disabled={generating}
+          className="inline-flex items-center gap-1.5 rounded-xl border border-[rgba(167,139,250,0.35)] bg-[rgba(167,139,250,0.1)] px-3 py-2 text-[11px] font-semibold text-[#A78BFA] transition hover:bg-[rgba(167,139,250,0.18)] disabled:opacity-50"
+        >
+          {generating ? (
+            `Regenerar ${generateProgress.percent}%`
+          ) : (
+            <>
+              <Sparkles size={12} />
+              Regenerar
+            </>
+          )}
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-[rgba(0,255,213,0.1)] px-4 py-3 sm:px-6">
-        <div className="min-w-0">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#A78BFA]">
-            Infografía académica IA
-          </p>
-          <h3 className="truncate text-sm font-bold text-[#F5F7FA]">{infographic.centralTopic}</h3>
-          {infographic.source === "gemini" ? (
-            <p className="text-[10px] text-[#00FFD5]">
-              Generada con Gemini{infographic.model ? ` · ${infographic.model}` : ""}
-            </p>
-          ) : (
-            <p className="text-[10px] text-amber-400/90">Vista previa local · Gemini imagen no disponible</p>
-          )}
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <ExportBtn
-            icon={FileImage}
-            label="PNG"
-            loading={exporting === "png"}
-            onClick={downloadPng}
-          />
-          <ExportBtn
-            icon={Download}
-            label="PDF"
-            loading={exporting === "pdf"}
-            onClick={downloadPdf}
-          />
-          <ExportBtn
-            icon={Share2}
-            label="Compartir"
-            loading={exporting === "share"}
-            onClick={shareInfographic}
-          />
-          <button
-            type="button"
-            onClick={handleGenerate}
-            disabled={generating}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-[rgba(167,139,250,0.35)] bg-[rgba(167,139,250,0.1)] px-3 py-2 text-[11px] font-semibold text-[#A78BFA] transition hover:bg-[rgba(167,139,250,0.18)] disabled:opacity-50"
-          >
-            {generating ? (
-              `Regenerar ${generateProgress.percent}%`
-            ) : (
-              <>
-                <Sparkles size={12} />
-                Regenerar
-              </>
-            )}
-          </button>
-        </div>
-      </div>
+      {toolbar}
 
       {generating ? (
         <LoadingState
@@ -389,6 +461,8 @@ export function AcademicInfographicPanel({
               ))}
             </div>
           ) : null}
+
+          <ImageGenerationDiagnosticsPanel diagnostics={imageDiagnostics} />
         </div>
       </div>
     </div>

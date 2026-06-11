@@ -40,6 +40,9 @@ export const PREMIUM_FEATURES: Record<PremiumFeatureId, PremiumFeature> = {
   },
 };
 
+/** Habilitar más flags en .env.local: NEXT_PUBLIC_PREMIUM_FEATURES=gemini-infographic,gemini-visual-map */
+const DEFAULT_PREMIUM_FEATURES: PremiumFeatureId[] = ["gemini-infographic"];
+
 /** Habilitar en .env.local: NEXT_PUBLIC_PREMIUM_FEATURES=gemini-infographic,gemini-visual-map */
 export function isPremiumFeatureAvailable(featureId: PremiumFeatureId): boolean {
   const raw = process.env.NEXT_PUBLIC_PREMIUM_FEATURES ?? "";
@@ -47,7 +50,8 @@ export function isPremiumFeatureAvailable(featureId: PremiumFeatureId): boolean 
     .split(",")
     .map((item) => item.trim())
     .filter(Boolean);
-  return enabled.includes(featureId);
+  const effective = enabled.length > 0 ? enabled : DEFAULT_PREMIUM_FEATURES;
+  return effective.includes(featureId);
 }
 
 export function getPremiumFeature(featureId: PremiumFeatureId): PremiumFeature {

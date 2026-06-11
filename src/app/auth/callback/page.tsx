@@ -1,22 +1,20 @@
-import { redirect } from "next/navigation";
+import { Suspense } from "react";
+import { AppShell } from "@/components/ui/shell";
+import { AuthCallbackClient } from "@/components/auth/auth-callback-client";
 
-/** Enlaces antiguos: el intercambio del código ocurre en el servidor. */
-export default async function AuthCallbackPage({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
-  const params = await searchParams;
-  const query = new URLSearchParams();
+function AuthCallbackFallback() {
+  return <p className="text-sm text-muted-foreground">Completando acceso…</p>;
+}
 
-  for (const [key, value] of Object.entries(params)) {
-    if (typeof value === "string") {
-      query.set(key, value);
-    } else if (Array.isArray(value) && value[0]) {
-      query.set(key, value[0]);
-    }
-  }
-
-  const suffix = query.toString();
-  redirect(suffix ? `/api/auth/confirm?${suffix}` : "/auth");
+/** Intercambio de tokens/código en el cliente — conserva el hash del correo de confirmación. */
+export default function AuthCallbackPage() {
+  return (
+    <AppShell>
+      <div className="mx-auto max-w-lg px-4 py-16">
+        <Suspense fallback={<AuthCallbackFallback />}>
+          <AuthCallbackClient />
+        </Suspense>
+      </div>
+    </AppShell>
+  );
 }

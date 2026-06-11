@@ -1,0 +1,536 @@
+/* ========================================
+   VISUAL AI DIAGRAM ENGINE — MemoriaStudy
+======================================== */
+
+.organizers-studio,
+.organizers-studio-mode {
+  --dia-surface: rgba(255, 255, 255, 0.92);
+  --dia-surface-elevated: rgba(248, 252, 255, 0.95);
+  --dia-accent: #0d9488;
+  --dia-accent-glow: rgba(0, 255, 213, 0.18);
+  --dia-foreground: #0f172a;
+  --dia-muted: #64748b;
+  --dia-border: rgba(0, 255, 213, 0.18);
+  --dia-canvas-shadow: rgba(15, 23, 42, 0.08);
+  --dia-canvas-bg-top: rgba(255, 255, 255, 0.98);
+  --dia-canvas-bg-bottom: rgba(240, 250, 255, 0.95);
+  --dia-ambient: rgba(0, 255, 213, 0.12);
+}
+
+html:not(.dark) .organizers-studio,
+html:not(.dark) .organizers-studio-mode {
+  --dia-surface: rgba(255, 255, 255, 0.92);
+  --dia-surface-elevated: rgba(248, 252, 255, 0.95);
+  --dia-accent: #0d9488;
+  --dia-foreground: #0f172a;
+}
+
+html.dark .organizers-studio,
+html.dark .organizers-studio-mode,
+.dark .organizers-studio,
+.dark .organizers-studio-mode {
+  --dia-surface: rgba(10, 22, 40, 0.9);
+  --dia-surface-elevated: rgba(17, 31, 51, 0.94);
+  --dia-accent: #00ffd5;
+  --dia-accent-glow: rgba(0, 255, 213, 0.22);
+  --dia-foreground: #f5f7fa;
+  --dia-muted: #94a3b8;
+  --dia-border: rgba(0, 255, 213, 0.2);
+  --dia-canvas-shadow: rgba(0, 0, 0, 0.28);
+  --dia-canvas-bg-top: #07131a;
+  --dia-canvas-bg-bottom: #040d12;
+  --dia-ambient: rgba(0, 255, 213, 0.1);
+}
+
+.visual-ai-canvas {
+  position: relative;
+  overflow: hidden;
+  border-radius: 32px;
+  isolation: isolate;
+  background:
+    radial-gradient(circle at top left, rgba(0, 255, 213, 0.08), transparent 35%),
+    radial-gradient(circle at bottom right, rgba(0, 191, 255, 0.08), transparent 40%),
+    var(--dia-surface-elevated);
+  box-shadow:
+    0 30px 100px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+html.dark .organizers-studio .visual-ai-canvas,
+html.dark .organizers-studio-mode .visual-ai-canvas,
+.dark .organizers-studio .visual-ai-canvas,
+.dark .organizers-studio-mode .visual-ai-canvas {
+  box-shadow:
+    0 30px 100px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.visual-ai-canvas::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0, 255, 213, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 213, 0.025) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+html:not(.dark) .organizers-studio .visual-ai-canvas::before,
+html:not(.dark) .organizers-studio-mode .visual-ai-canvas::before {
+  background-image:
+    linear-gradient(rgba(13, 148, 136, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(13, 148, 136, 0.04) 1px, transparent 1px);
+}
+
+.visual-ai-canvas__viewport {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  display: block;
+}
+
+.visual-ai-canvas__viewport svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.visual-ai-node {
+  border-radius: 24px;
+  background: linear-gradient(180deg, var(--dia-surface-elevated), var(--dia-surface));
+  border: 1px solid var(--dia-border);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow:
+    0 8px 30px var(--dia-canvas-shadow),
+    0 1px 0 rgba(255, 255, 255, 0.35);
+  transition: all 0.25s ease;
+}
+
+.visual-ai-node:hover {
+  transform: translateY(-6px);
+  box-shadow:
+    0 18px 45px var(--dia-accent-glow),
+    0 10px 24px var(--dia-canvas-shadow);
+}
+
+.visual-ai-node--root {
+  border-radius: 28px;
+  border: 1px solid rgba(0, 255, 213, 0.25);
+  background: linear-gradient(180deg, rgba(0, 255, 213, 0.12), rgba(0, 191, 255, 0.06));
+  box-shadow:
+    0 0 60px rgba(0, 255, 213, 0.18),
+    0 20px 50px rgba(15, 23, 42, 0.12);
+  transform: scale(1.08);
+}
+
+html:not(.dark) .organizers-studio .visual-ai-node--root,
+html:not(.dark) .organizers-studio-mode .visual-ai-node--root {
+  border-color: rgba(13, 148, 136, 0.28);
+  background: linear-gradient(180deg, rgba(13, 148, 136, 0.1), rgba(14, 165, 233, 0.05));
+  box-shadow:
+    0 0 48px rgba(13, 148, 136, 0.14),
+    0 20px 50px rgba(15, 23, 42, 0.08);
+}
+
+.visual-ai-diagram-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.visual-ai-diagram-toolbar button {
+  border-radius: 12px;
+  border: 1px solid var(--dia-border);
+  background: var(--dia-surface);
+  color: var(--dia-foreground);
+  padding: 0.45rem 0.85rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  transition: border-color 0.2s, transform 0.2s;
+  cursor: pointer;
+}
+
+.visual-ai-diagram-toolbar button:hover:not(:disabled) {
+  border-color: var(--dia-accent);
+  transform: translateY(-1px);
+}
+
+.visual-ai-diagram-toolbar button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ===== INTERACTIVE STUDIO ===== */
+
+.interactive-diagram-studio {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.interactive-diagram-toolbar-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0 0.25rem;
+}
+
+.interactive-diagram-toolbar-top__kicker {
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--dia-accent);
+}
+
+.interactive-diagram-toolbar-top__title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--dia-foreground);
+}
+
+.interactive-diagram-toolbar-top__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.interactive-diagram-notice {
+  font-size: 0.75rem;
+  color: var(--dia-accent);
+  padding: 0 0.25rem;
+}
+
+.interactive-diagram-workspace {
+  position: relative;
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  gap: 0;
+}
+
+.interactive-diagram-viewport {
+  min-height: 420px;
+  flex: 1;
+  cursor: grab;
+  touch-action: none;
+}
+
+.interactive-diagram-viewport:active {
+  cursor: grabbing;
+}
+
+.interactive-diagram-world {
+  position: relative;
+  transform-origin: 0 0;
+  width: max-content;
+}
+
+.interactive-diagram-edges {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.interactive-diagram-edge {
+  fill: none;
+  stroke: var(--dia-accent);
+  stroke-width: 2.5;
+  opacity: 0.75;
+  filter: drop-shadow(0 0 6px var(--dia-accent-glow));
+  transition: stroke-width 0.2s ease, opacity 0.2s ease;
+}
+
+.interactive-diagram-edge:hover {
+  stroke-width: 3.5;
+  opacity: 1;
+}
+
+.interactive-diagram-node {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.85rem 1rem;
+  color: var(--dia-foreground);
+  cursor: grab;
+  user-select: none;
+}
+
+.interactive-diagram-node:active {
+  cursor: grabbing;
+}
+
+.interactive-diagram-node.is-selected {
+  border-color: var(--dia-accent);
+  box-shadow:
+    0 0 0 2px var(--dia-accent-glow),
+    0 18px 45px var(--dia-accent-glow);
+}
+
+.interactive-diagram-node--root {
+  transform: scale(1.08);
+}
+
+.interactive-diagram-node__icon {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--dia-ambient);
+  color: var(--dia-accent);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.interactive-diagram-node__label {
+  flex: 1;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.interactive-diagram-node__collapse {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  border: 1px solid var(--dia-border);
+  background: var(--dia-surface);
+  color: var(--dia-muted);
+  cursor: pointer;
+}
+
+.interactive-diagram-minimap {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  z-index: 5;
+  border-radius: 14px;
+  border: 1px solid var(--dia-border);
+  background: var(--dia-surface-elevated);
+  padding: 0.45rem;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 12px 32px var(--dia-canvas-shadow);
+}
+
+.interactive-diagram-minimap__label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.35rem;
+  font-size: 0.5625rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dia-muted);
+}
+
+.interactive-diagram-minimap__node {
+  fill: var(--dia-accent);
+  opacity: 0.45;
+}
+
+.interactive-diagram-minimap__node--root {
+  opacity: 0.9;
+}
+
+.diagram-study-panel,
+.interactive-diagram-panel {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  bottom: 16px;
+  z-index: 6;
+  width: min(380px, 42vw);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 30px 90px rgba(15, 23, 42, 0.12);
+  overflow: auto;
+}
+
+html.dark .organizers-studio .diagram-study-panel,
+html.dark .organizers-studio-mode .diagram-study-panel,
+html.dark .organizers-studio .interactive-diagram-panel,
+html.dark .organizers-studio-mode .interactive-diagram-panel,
+.dark .organizers-studio .diagram-study-panel,
+.dark .organizers-studio-mode .diagram-study-panel,
+.dark .organizers-studio .interactive-diagram-panel,
+.dark .organizers-studio-mode .interactive-diagram-panel {
+  background: rgba(12, 18, 24, 0.82);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.35);
+}
+
+.interactive-diagram-panel__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1.1rem 1.15rem;
+  border-bottom: 1px solid rgba(0, 255, 213, 0.1);
+}
+
+.interactive-diagram-panel__kicker {
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dia-muted);
+}
+
+.interactive-diagram-panel__title {
+  margin-top: 0.25rem;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--dia-foreground);
+}
+
+.interactive-diagram-panel__close {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  border: 1px solid var(--dia-border);
+  background: var(--dia-surface);
+  color: var(--dia-muted);
+  cursor: pointer;
+}
+
+.interactive-diagram-panel__body {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.interactive-diagram-panel__body section h4 {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dia-accent);
+}
+
+.interactive-diagram-panel__body section p {
+  margin-top: 0.45rem;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--dia-foreground);
+}
+
+.interactive-diagram-panel__pdf {
+  border-radius: 14px;
+  border: 1px solid var(--dia-border);
+  background: var(--dia-surface);
+  padding: 0.75rem;
+}
+
+.interactive-diagram-panel__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.45rem;
+}
+
+.interactive-diagram-panel__chips span {
+  border-radius: 999px;
+  border: 1px solid var(--dia-border);
+  background: var(--dia-ambient);
+  padding: 0.25rem 0.65rem;
+  font-size: 0.6875rem;
+  color: var(--dia-foreground);
+}
+
+.interactive-diagram-presentation {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+  background: rgba(4, 13, 18, 0.92);
+  backdrop-filter: blur(16px);
+  text-align: center;
+  color: #f5f7fa;
+}
+
+.interactive-diagram-presentation h2 {
+  max-width: 18ch;
+  font-size: clamp(1.75rem, 4vw, 3rem);
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.interactive-diagram-presentation p {
+  max-width: 52ch;
+  margin-top: 1rem;
+  font-size: 1rem;
+  line-height: 1.6;
+  opacity: 0.88;
+}
+
+.interactive-diagram-presentation__step {
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #00ffd5;
+}
+
+.interactive-diagram-presentation__close {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 255, 213, 0.25);
+  background: rgba(0, 255, 213, 0.08);
+  padding: 0.5rem 0.9rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #00ffd5;
+  cursor: pointer;
+}
+
+.interactive-diagram-presentation__nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.65rem;
+  margin-top: 1.5rem;
+}
+
+.interactive-diagram-presentation__nav button {
+  border-radius: 12px;
+  border: 1px solid rgba(0, 255, 213, 0.22);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 0.55rem 1rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #f5f7fa;
+  cursor: pointer;
+}
+
+.interactive-diagram-presentation__nav button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

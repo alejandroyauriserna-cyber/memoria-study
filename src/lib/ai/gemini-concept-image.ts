@@ -1,8 +1,7 @@
-import {
-  generateGeminiImage,
-  quotaHint,
-  type GeminiImageResult,
-} from "@/lib/ai/gemini-image-generation";
+import { generateOrganizerImageWithFallback } from "@/lib/ai/generate-image-with-fallback";
+import { fluxQuotaHint } from "@/lib/ai/hf-flux-image-provider";
+import { quotaHint } from "@/lib/ai/gemini-image-generation";
+import type { ImageGenerationResult } from "@/lib/ai/image-generation-types";
 
 function svgFallback(label: string): Buffer {
   const safe = label.replace(/[<>&"']/g, "").slice(0, 40);
@@ -23,19 +22,27 @@ function svgFallback(label: string): Buffer {
 export async function generateConceptImage(
   prompt: string,
   label: string,
-): Promise<GeminiImageResult> {
-  const gemini = await generateGeminiImage(prompt, { aspectRatio: "1:1" });
+): Promise<ImageGenerationResult> {
+  const generated = await generateOrganizerImageWithFallback(prompt, { aspectRatio: "1:1" });
 
-  if (gemini.ok) {
-    return gemini.result;
+  if (generated.ok) {
+    return generated.result;
   }
 
-  const hint = quotaHint(gemini.lastError);
+  const fluxError = generated.attempts.find((a) => a.provider === "flux")?.error;
+  const geminiError = generated.attempts.find((a) => a.provider === "gemini")?.error;
+  const hint = fluxQuotaHint(fluxError ?? "") ?? quotaHint(geminiError ?? generated.lastError);
+  const buffer = svgFallback(label);
+
   return {
-    buffer: svgFallback(label),
+    buffer,
     mimeType: "image/svg+xml",
     source: "fallback",
-    warning: hint ?? gemini.lastError.slice(0, 200),
+    warning: hint ?? generated.lastError.slice(0, 200),
+    diagnostics: {
+      ...generated.diagnostics,
+      imageSizeBytes: buffer.byteLength,
+    },
   };
 }
 

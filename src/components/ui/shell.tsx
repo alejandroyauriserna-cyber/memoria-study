@@ -13,6 +13,7 @@ import { OfflineSyncBanner } from "@/components/ui/offline-sync-banner";
 const NAV = [
   { href: "/", label: "Inicio" },
   { href: "/library", label: "Biblioteca" },
+  { href: "/biblioteca-juridica", label: "Biblioteca Jurídica" },
   { href: "/favorites", label: "Favoritos" },
   { href: "/organizers", label: "Organizadores" },
   { href: "/cuaderno", label: "Cuaderno IA" },

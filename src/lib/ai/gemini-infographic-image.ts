@@ -1,8 +1,7 @@
-import {
-  generateGeminiImage,
-  quotaHint,
-  type GeminiImageResult,
-} from "@/lib/ai/gemini-image-generation";
+import { generateOrganizerImageWithFallback } from "@/lib/ai/generate-image-with-fallback";
+import { fluxQuotaHint } from "@/lib/ai/hf-flux-image-provider";
+import { quotaHint } from "@/lib/ai/gemini-image-generation";
+import type { ImageGenerationResult } from "@/lib/ai/image-generation-types";
 
 function svgInfographicFallback(
   centralTopic: string,
@@ -64,20 +63,30 @@ export async function generateAcademicInfographicImage(
   prompt: string,
   centralTopic: string,
   subtopics: string[],
-): Promise<GeminiImageResult & { geminiError?: string }> {
-  const gemini = await generateGeminiImage(prompt, { aspectRatio: "16:9" });
+): Promise<ImageGenerationResult & { providerError?: string }> {
+  const generated = await generateOrganizerImageWithFallback(prompt, { aspectRatio: "16:9" });
 
-  if (gemini.ok) {
-    return gemini.result;
+  if (generated.ok) {
+    return generated.result;
   }
 
-  const hint = quotaHint(gemini.lastError);
+  const fluxError = generated.attempts.find((a) => a.provider === "flux")?.error;
+  const geminiError = generated.attempts.find((a) => a.provider === "gemini")?.error;
+  const hint = fluxQuotaHint(fluxError ?? "") ?? quotaHint(geminiError ?? generated.lastError);
+  const buffer = svgInfographicFallback(centralTopic, subtopics);
+
   return {
-    buffer: svgInfographicFallback(centralTopic, subtopics),
+    buffer,
     mimeType: "image/svg+xml",
     source: "fallback",
-    warning: hint ?? `Gemini imagen no disponible: ${gemini.lastError.slice(0, 200)}`,
-    geminiError: gemini.lastError,
+    warning:
+      hint ??
+      `Generación de imagen no disponible: ${generated.lastError.slice(0, 200)}`,
+    providerError: generated.lastError,
+    diagnostics: {
+      ...generated.diagnostics,
+      imageSizeBytes: buffer.byteLength,
+    },
   };
 }
 
