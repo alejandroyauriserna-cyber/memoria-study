@@ -1,4 +1,5 @@
 import { env } from "@/lib/env";
+import { readServerEnv } from "@/lib/env/runtime";
 import { getJurisprudenceModeratorEmails, getUntEmailDomains } from "@/lib/jurisprudence/unt-access";
 
 export async function notifyJurisprudenceModerators(input: {
@@ -30,8 +31,10 @@ export async function notifyJurisprudenceModerators(input: {
     .filter(Boolean)
     .join("\n");
 
-  const resendKey = env.resendApiKey;
-  const fromEmail = env.jurisprudenceNotifyFromEmail ?? "Biblioteca Jurídica <noreply@memoriastudy.local>";
+  const resendKey = readServerEnv("RESEND_API_KEY");
+  const fromEmail =
+    readServerEnv("JURISPRUDENCE_NOTIFY_FROM_EMAIL") ??
+    "Biblioteca Jurídica <noreply@memoriastudy.local>";
 
   if (!resendKey) {
     console.info("[jurisprudence/notify]", subject, bodyText);

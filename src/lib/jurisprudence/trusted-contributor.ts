@@ -1,10 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { env } from "@/lib/env";
+import { readServerEnv } from "@/lib/env/runtime";
 
 const DEFAULT_TRUSTED_THRESHOLD = 3;
 
 export function getTrustedApprovalThreshold(): number {
-  const raw = env.jurisprudenceTrustedApprovals;
+  const raw = readServerEnv("JURISPRUDENCE_TRUSTED_APPROVALS");
   const parsed = raw ? Number(raw) : DEFAULT_TRUSTED_THRESHOLD;
   if (!Number.isFinite(parsed) || parsed < 1) return DEFAULT_TRUSTED_THRESHOLD;
   return Math.floor(parsed);
