@@ -7,11 +7,15 @@ import {
   ArrowLeft,
   BarChart3,
   Check,
+  Command,
   ExternalLink,
   Flag,
   Loader2,
+  ShieldCheck,
+  Sparkles,
   Trash2,
   Upload,
+  Users,
   X,
 } from "lucide-react";
 import {
@@ -180,54 +184,110 @@ export function JurisprudenceAdminWorkspace() {
 
   return (
     <div className="bj-admin">
-      <header className="bj-admin__head">
-        <div>
+      <header className="bj-admin-hero bj-hero">
+        <div className="bj-hero__copy">
           <Link href="/biblioteca-juridica" className="bj-admin__back">
             <ArrowLeft size={14} />
             Volver a Biblioteca Jurídica
           </Link>
-          <h1>Administración · Biblioteca Jurídica</h1>
-          <p>Modera aportes UNT, revisa reportes y consulta estadísticas del catálogo.</p>
+          <p className="ms-home-kicker">
+            <ShieldCheck size={14} />
+            Moderación jurídica UNT
+          </p>
+          <h1>Centro de control de la Biblioteca Jurídica.</h1>
+          <p className="ms-home-lead">
+            Aprueba aportes estudiantiles, revisa reportes, importa catálogo CSV y mantén
+            la jurisprudencia curada para toda la comunidad.
+          </p>
+          <div className="bj-hero__signals" aria-label="Acciones de moderación">
+            <span>
+              <Check size={15} />
+              Aprobar aportes
+            </span>
+            <span>
+              <Flag size={15} />
+              Gestionar reportes
+            </span>
+            <span>
+              <Upload size={15} />
+              Importar CSV
+            </span>
+          </div>
+        </div>
+
+        <div className="bj-hero__console" aria-label="Resumen del panel admin">
+          <div className="bj-hero__console-top">
+            <span>
+              <Command size={14} />
+              Legal admin OS
+            </span>
+            <em>Live</em>
+          </div>
+
+          {stats ? (
+            <>
+              <div className="bj-admin__pulse">
+                <AlertTriangle size={18} />
+                <div>
+                  <strong>{stats.totals.pending}</strong>
+                  <span>aportes pendientes de revisión</span>
+                </div>
+              </div>
+              <div className="bj-admin__stats bj-admin__stats--console">
+                <div className="bj-admin__stat">
+                  <span className="bj-admin__stat-icon">
+                    <BarChart3 size={18} />
+                  </span>
+                  <span>
+                    <strong>{stats.totals.published}</strong>
+                    <em>Publicados</em>
+                  </span>
+                </div>
+                <div className="bj-admin__stat is-warn">
+                  <span className="bj-admin__stat-icon is-warn">
+                    <AlertTriangle size={18} />
+                  </span>
+                  <span>
+                    <strong>{stats.totals.pending}</strong>
+                    <em>Pendientes</em>
+                  </span>
+                </div>
+                <div className="bj-admin__stat">
+                  <span className="bj-admin__stat-icon is-purple">
+                    <Flag size={18} />
+                  </span>
+                  <span>
+                    <strong>{stats.totals.openReports}</strong>
+                    <em>Reportes</em>
+                  </span>
+                </div>
+                <div className="bj-admin__stat">
+                  <span className="bj-admin__stat-icon">
+                    <Users size={18} />
+                  </span>
+                  <span>
+                    <strong>{stats.totals.community}</strong>
+                    <em>Comunidad</em>
+                  </span>
+                </div>
+                <div className="bj-admin__stat">
+                  <span className="bj-admin__stat-icon is-blue">
+                    <Sparkles size={18} />
+                  </span>
+                  <span>
+                    <strong>{stats.totals.submissionsLast7Days}</strong>
+                    <em>Últimos 7 días</em>
+                  </span>
+                </div>
+              </div>
+            </>
+          ) : (
+            <p className="bj-admin__loading">
+              <Loader2 size={18} className="animate-spin" /> Cargando resumen…
+            </p>
+          )}
         </div>
       </header>
-
-      {stats ? (
-        <div className="bj-admin__stats">
-          <div className="bj-admin__stat">
-            <BarChart3 size={18} />
-            <span>
-              <strong>{stats.totals.published}</strong>
-              <em>Publicados</em>
-            </span>
-          </div>
-          <div className="bj-admin__stat is-warn">
-            <AlertTriangle size={18} />
-            <span>
-              <strong>{stats.totals.pending}</strong>
-              <em>Pendientes</em>
-            </span>
-          </div>
-          <div className="bj-admin__stat">
-            <Flag size={18} />
-            <span>
-              <strong>{stats.totals.openReports}</strong>
-              <em>Reportes abiertos</em>
-            </span>
-          </div>
-          <div className="bj-admin__stat">
-            <span>
-              <strong>{stats.totals.community}</strong>
-              <em>Aportes comunidad</em>
-            </span>
-          </div>
-          <div className="bj-admin__stat">
-            <span>
-              <strong>{stats.totals.submissionsLast7Days}</strong>
-              <em>Últimos 7 días</em>
-            </span>
-          </div>
-        </div>
-      ) : null}
 
       {stats?.topMaterias.length ? (
         <div className="bj-admin__materias">
@@ -244,166 +304,177 @@ export function JurisprudenceAdminWorkspace() {
         </div>
       ) : null}
 
-      <section className="bj-admin__import">
-        <h2>Importación masiva (CSV)</h2>
-        <p>
-          Cabeceras: title, tipo, materia, submateria, year, organo, summary, keywords, expediente,
-          pdfUrl. Docentes pueden preparar el archivo y tú decides si publicar al importar.
-        </p>
-        <div className="bj-admin__import-row">
-          <input
-            ref={importRef}
-            type="file"
-            accept=".csv,text/csv"
-            disabled={importBusy}
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              if (file) void handleBulkImport(file);
-            }}
-          />
-          <label>
+      <section className="bj-admin__panel">
+        <section className="bj-admin__import">
+          <div className="bj-admin__import-head">
+            <div>
+              <h2>Importación masiva (CSV)</h2>
+              <p>
+                Cabeceras: title, tipo, materia, submateria, year, organo, summary, keywords,
+                expediente, pdfUrl. Docentes preparan el archivo y tú decides si publicar al importar.
+              </p>
+            </div>
+            <Upload size={22} aria-hidden />
+          </div>
+          <div className="bj-admin__import-row">
             <input
-              type="checkbox"
-              checked={importPublish}
-              onChange={(event) => setImportPublish(event.target.checked)}
+              ref={importRef}
+              type="file"
+              accept=".csv,text/csv"
+              disabled={importBusy}
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) void handleBulkImport(file);
+              }}
             />
-            Publicar al importar
-          </label>
-          {importBusy ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+            <label>
+              <input
+                type="checkbox"
+                checked={importPublish}
+                onChange={(event) => setImportPublish(event.target.checked)}
+              />
+              Publicar al importar
+            </label>
+            {importBusy ? <Loader2 size={16} className="animate-spin" /> : null}
+          </div>
+          {importResult ? <p className="bj-admin__import-result">{importResult}</p> : null}
+        </section>
+
+        <div className="bj-admin__tabs" role="tablist" aria-label="Secciones de moderación">
+          {tabs.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              role="tab"
+              aria-selected={tab === item.id}
+              className={tab === item.id ? "is-active" : ""}
+              onClick={() => setTab(item.id)}
+            >
+              {item.label}
+              {item.count !== undefined ? (
+                <span className="bj-admin__tab-count">{item.count}</span>
+              ) : null}
+            </button>
+          ))}
         </div>
-        {importResult ? <p className="bj-admin__import-result">{importResult}</p> : null}
-      </section>
 
-      <div className="bj-admin__tabs">
-        {tabs.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            className={tab === item.id ? "is-active" : ""}
-            onClick={() => setTab(item.id)}
-          >
-            {item.label}
-            {item.count !== undefined ? ` (${item.count})` : ""}
-          </button>
-        ))}
-      </div>
+        {error ? <p className="bj-results__error">{error}</p> : null}
 
-      {error ? <p className="bj-results__error">{error}</p> : null}
+        {loading ? (
+          <p className="bj-admin__loading">
+            <Loader2 size={18} className="animate-spin" /> Cargando…
+          </p>
+        ) : null}
 
-      {loading ? (
-        <p className="bj-admin__loading">
-          <Loader2 size={18} className="animate-spin" /> Cargando…
-        </p>
-      ) : null}
+        {!loading && tab !== "reports" ? (
+          <ul className="bj-admin__list">
+            {documents.length === 0 ? (
+              <li className="bj-admin__empty">No hay documentos en esta categoría.</li>
+            ) : (
+              documents.map((doc) => (
+                <li key={doc.id} className="bj-admin__item">
+                  <div className="bj-admin__item-copy">
+                    <strong>{doc.title}</strong>
+                    <span>
+                      {JURISPRUDENCE_TIPO_LABELS[doc.tipo]} ·{" "}
+                      {JURISPRUDENCE_MATERIA_LABELS[doc.materia]} · {doc.year}
+                    </span>
+                    <p>{doc.summary}</p>
+                    {doc.rejectionReason ? (
+                      <p className="bj-admin__reject-reason">Motivo: {doc.rejectionReason}</p>
+                    ) : null}
+                  </div>
+                  <div className="bj-admin__item-actions">
+                    {doc.pdfUrl ? (
+                      <a
+                        href={doc.pdfUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="bj-admin__icon-btn"
+                        aria-label="Ver PDF"
+                      >
+                        <ExternalLink size={14} />
+                      </a>
+                    ) : null}
+                    {tab === "pending" ? (
+                      <>
+                        <button
+                          type="button"
+                          className="bj-admin__icon-btn is-approve"
+                          disabled={busyId === doc.id}
+                          onClick={() => void moderate(doc.id, "approve")}
+                          aria-label="Aprobar"
+                        >
+                          <Check size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          className="bj-admin__icon-btn is-reject"
+                          disabled={busyId === doc.id}
+                          onClick={() => {
+                            setRejectId(doc.id);
+                            setRejectReason("");
+                          }}
+                          aria-label="Rechazar"
+                        >
+                          <X size={14} />
+                        </button>
+                      </>
+                    ) : null}
+                    <button
+                      type="button"
+                      className="bj-admin__icon-btn is-delete"
+                      disabled={busyId === doc.id}
+                      onClick={() => {
+                        if (window.confirm("¿Eliminar permanentemente este documento?")) {
+                          void moderate(doc.id, "delete");
+                        }
+                      }}
+                      aria-label="Eliminar"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </li>
+              ))
+            )}
+          </ul>
+        ) : null}
 
-      {!loading && tab !== "reports" ? (
-        <ul className="bj-admin__list">
-          {documents.length === 0 ? (
-            <li className="bj-admin__empty">No hay documentos en esta categoría.</li>
-          ) : (
-            documents.map((doc) => (
-              <li key={doc.id} className="bj-admin__item">
-                <div className="bj-admin__item-copy">
-                  <strong>{doc.title}</strong>
-                  <span>
-                    {JURISPRUDENCE_TIPO_LABELS[doc.tipo]} ·{" "}
-                    {JURISPRUDENCE_MATERIA_LABELS[doc.materia]} · {doc.year}
-                  </span>
-                  <p>{doc.summary}</p>
-                  {doc.rejectionReason ? (
-                    <p className="bj-admin__reject-reason">Motivo: {doc.rejectionReason}</p>
-                  ) : null}
-                </div>
-                <div className="bj-admin__item-actions">
-                  {doc.pdfUrl ? (
-                    <a
-                      href={doc.pdfUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
+        {!loading && tab === "reports" ? (
+          <ul className="bj-admin__list">
+            {reports.length === 0 ? (
+              <li className="bj-admin__empty">No hay reportes abiertos.</li>
+            ) : (
+              reports.map((report) => (
+                <li key={report.id} className="bj-admin__item">
+                  <div className="bj-admin__item-copy">
+                    <strong>{report.documentTitle}</strong>
+                    <span>{new Date(report.createdAt).toLocaleString("es-PE")}</span>
+                    <p>{report.reason}</p>
+                  </div>
+                  <div className="bj-admin__item-actions">
+                    <Link
+                      href={`/biblioteca-juridica?q=${encodeURIComponent(report.documentTitle)}`}
                       className="bj-admin__icon-btn"
-                      aria-label="Ver PDF"
                     >
                       <ExternalLink size={14} />
-                    </a>
-                  ) : null}
-                  {tab === "pending" ? (
-                    <>
-                      <button
-                        type="button"
-                        className="bj-admin__icon-btn is-approve"
-                        disabled={busyId === doc.id}
-                        onClick={() => void moderate(doc.id, "approve")}
-                        aria-label="Aprobar"
-                      >
-                        <Check size={14} />
-                      </button>
-                      <button
-                        type="button"
-                        className="bj-admin__icon-btn is-reject"
-                        disabled={busyId === doc.id}
-                        onClick={() => {
-                          setRejectId(doc.id);
-                          setRejectReason("");
-                        }}
-                        aria-label="Rechazar"
-                      >
-                        <X size={14} />
-                      </button>
-                    </>
-                  ) : null}
-                  <button
-                    type="button"
-                    className="bj-admin__icon-btn is-delete"
-                    disabled={busyId === doc.id}
-                    onClick={() => {
-                      if (window.confirm("¿Eliminar permanentemente este documento?")) {
-                        void moderate(doc.id, "delete");
-                      }
-                    }}
-                    aria-label="Eliminar"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </li>
-            ))
-          )}
-        </ul>
-      ) : null}
-
-      {!loading && tab === "reports" ? (
-        <ul className="bj-admin__list">
-          {reports.length === 0 ? (
-            <li className="bj-admin__empty">No hay reportes abiertos.</li>
-          ) : (
-            reports.map((report) => (
-              <li key={report.id} className="bj-admin__item">
-                <div className="bj-admin__item-copy">
-                  <strong>{report.documentTitle}</strong>
-                  <span>{new Date(report.createdAt).toLocaleString("es-PE")}</span>
-                  <p>{report.reason}</p>
-                </div>
-                <div className="bj-admin__item-actions">
-                  <Link
-                    href={`/biblioteca-juridica?q=${encodeURIComponent(report.documentTitle)}`}
-                    className="bj-admin__icon-btn"
-                  >
-                    <ExternalLink size={14} />
-                  </Link>
-                  <button
-                    type="button"
-                    className="bj-admin__icon-btn is-approve"
-                    disabled={busyId === report.id}
-                    onClick={() => void resolveReport(report.id)}
-                  >
-                    <Check size={14} />
-                  </button>
-                </div>
-              </li>
-            ))
-          )}
-        </ul>
-      ) : null}
+                    </Link>
+                    <button
+                      type="button"
+                      className="bj-admin__icon-btn is-approve"
+                      disabled={busyId === report.id}
+                      onClick={() => void resolveReport(report.id)}
+                    >
+                      <Check size={14} />
+                    </button>
+                  </div>
+                </li>
+              ))
+            )}
+          </ul>
+        ) : null}
+      </section>
 
       {rejectId ? (
         <div className="bj-admin__modal" role="dialog" aria-modal="true">
