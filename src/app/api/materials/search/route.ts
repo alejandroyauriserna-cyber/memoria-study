@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/env";
-import { recordToMaterial } from "@/lib/materials/mapper";
+import { preparePublicMaterialCatalog } from "@/lib/materials/prepare-public-material-catalog";
 import {
   materialToSuggestion,
   organizerToSuggestion,
@@ -85,10 +85,20 @@ export async function GET(request: Request) {
       }
     });
 
-    const materials = (materialsData ?? [])
-      .map((record) => ({
-        ...recordToMaterial(record),
-        isFavorite: favoriteIds.has(record.id),
+    const { catalog: dedupedMaterials, redirects } = preparePublicMaterialCatalog(
+      (materialsData ?? []) as Parameters<typeof preparePublicMaterialCatalog>[0],
+    );
+
+    const materials = dedupedMaterials
+      .map((material) => ({
+        ...material,
+        isFavorite: material.id
+          ? favoriteIds.has(material.id) ||
+            Array.from(redirects.entries()).some(
+              ([duplicateId, winnerId]) =>
+                winnerId === material.id && favoriteIds.has(duplicateId),
+            )
+          : false,
       }))
       .filter((material) => !favoritesOnly || material.isFavorite);
 

@@ -1,3 +1,4 @@
+import { createHash } from "crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -5,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/env";
 import { normalizeAcademicForWrite } from "@/lib/academic/helpers";
 import { MAX_FILE_SIZE } from "@/lib/pdf/constants";
+import { findMaterialDuplicate } from "@/lib/materials/find-material-duplicate";
 import { materialInsertPayload, recordToMaterial } from "@/lib/materials/mapper";
 import type { MaterialRecord } from "@/types/material";
 
@@ -133,6 +135,35 @@ export async function POST(request: Request) {
     const admin = createAdminClient();
     const bucket = "shared-materials";
 
+    const fileBytes = Buffer.from(await file.arrayBuffer());
+    const fileHash = createHash("sha256").update(fileBytes).digest("hex");
+
+    const duplicate = await findMaterialDuplicate(admin, {
+      fileHash,
+      title: body.title,
+      courseId: body.courseId,
+      fileName: file.name,
+    });
+
+    if (duplicate) {
+      const duplicateMessages = {
+        file_hash: "Este PDF ya está publicado en la biblioteca.",
+        file_name: "Ya existe un material con el mismo archivo en este curso.",
+        title: "Ya existe un material muy similar en este curso.",
+      } as const;
+
+      const message = duplicateMessages[duplicate.reason];
+
+      return NextResponse.json(
+        {
+          error: `${message} Material existente: «${duplicate.title}».`,
+          duplicate: { id: duplicate.id, title: duplicate.title, reason: duplicate.reason },
+          fieldErrors: { file: message },
+        },
+        { status: 409 },
+      );
+    }
+
     const originalFileName = file.name;
     const sanitizedFileName = sanitizeFileName(originalFileName);
     const storagePath = `${user.id}/${crypto.randomUUID()}-${sanitizedFileName}`;
@@ -186,7 +217,7 @@ export async function POST(request: Request) {
 
     const { error: uploadError } = await admin.storage
       .from(bucket)
-      .upload(storagePath, file, { contentType: file.type, upsert: false });
+      .upload(storagePath, fileBytes, { contentType: file.type || "application/pdf", upsert: false });
 
     if (uploadError) {
       console.error("Storage upload failed:", uploadError);
@@ -227,6 +258,7 @@ export async function POST(request: Request) {
         views: 0,
         downloads: 0,
         likes: 0,
+        fileHash,
       },
       user.id,
     );

@@ -103,7 +103,13 @@ export function UploadMaterialForm() {
           if (payload?.fieldErrors) {
             setErrors(payload.fieldErrors);
             setStatus("error");
-            setMessage(payload.error ?? "Corrige los campos marcados.");
+            if (payload?.duplicate?.id) {
+              setMessage(
+                `${payload.error ?? "Este material ya existe en la biblioteca."} Puedes verlo en /materials/${payload.duplicate.id}.`,
+              );
+            } else {
+              setMessage(payload.error ?? "Corrige los campos marcados.");
+            }
             return;
           }
 

@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/env";
 import { findCourseById } from "@/lib/academic/helpers";
-import { recordToMaterial } from "@/lib/materials/mapper";
+import { preparePublicMaterialCatalog } from "@/lib/materials/prepare-public-material-catalog";
 import { MaterialCard } from "@/components/library/material-card";
 import type { MaterialRecord } from "@/types/material";
 
@@ -58,9 +58,16 @@ export default async function CourseLibraryPage({
     favoriteIds = new Set((favorites ?? []).map((favorite) => favorite.material_id as string));
   }
 
-  const materials = (data ?? []).map((record) => ({
-    ...recordToMaterial(record as MaterialRecord),
-    isFavorite: favoriteIds.has(record.id),
+  const { catalog, redirects } = preparePublicMaterialCatalog((data ?? []) as MaterialRecord[]);
+
+  const materials = catalog.map((material) => ({
+    ...material,
+    isFavorite: material.id
+      ? favoriteIds.has(material.id) ||
+        Array.from(redirects.entries()).some(
+          ([duplicateId, winnerId]) => winnerId === material.id && favoriteIds.has(duplicateId),
+        )
+      : false,
   }));
 
   return (

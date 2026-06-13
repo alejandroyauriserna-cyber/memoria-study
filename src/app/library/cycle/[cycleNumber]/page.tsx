@@ -4,7 +4,7 @@ import { MaterialCard } from "@/components/library/material-card";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getCycleByNumber } from "@/lib/academic/helpers";
-import { recordToMaterial } from "@/lib/materials/mapper";
+import { preparePublicMaterialCatalog } from "@/lib/materials/prepare-public-material-catalog";
 import type { MaterialRecord } from "@/types/material";
 
 export const dynamic = "force-dynamic";
@@ -56,9 +56,16 @@ export default async function Page({ params }: { params: any }) {
     favoriteIds = new Set((favorites ?? []).map((favorite) => favorite.material_id as string));
   }
 
-  const materials = (data ?? []).map((record) => ({
-    ...recordToMaterial(record as MaterialRecord),
-    isFavorite: favoriteIds.has(record.id),
+  const { catalog, redirects } = preparePublicMaterialCatalog((data ?? []) as MaterialRecord[]);
+
+  const materials = catalog.map((material) => ({
+    ...material,
+    isFavorite: material.id
+      ? favoriteIds.has(material.id) ||
+        Array.from(redirects.entries()).some(
+          ([duplicateId, winnerId]) => winnerId === material.id && favoriteIds.has(duplicateId),
+        )
+      : false,
   }));
 
   return (

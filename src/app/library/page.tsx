@@ -10,6 +10,11 @@ import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/env";
 import { normalizeAcademicForWrite } from "@/lib/academic/normalize-academic";
 import { recordToMaterial } from "@/lib/materials/mapper";
+import {
+  applyCatalogFavoriteIds,
+  dedupeStudyHistory,
+  preparePublicMaterialCatalog,
+} from "@/lib/materials/prepare-public-material-catalog";
 import type { MaterialRecord } from "@/types/material";
 
 function materialOnOfficialMalla(mat: ReturnType<typeof recordToMaterial>): boolean {
@@ -57,9 +62,8 @@ export default async function LibraryHomePage() {
     .eq("is_public", true)
     .order("created_at", { ascending: false });
 
-  const materials = (data ?? [])
-    .map((record) => recordToMaterial(record as MaterialRecord))
-    .filter(materialOnOfficialMalla);
+  const { catalog, redirects } = preparePublicMaterialCatalog((data ?? []) as MaterialRecord[]);
+  const materials = catalog.filter(materialOnOfficialMalla);
 
   let favoriteIds: string[] = [];
 
@@ -71,6 +75,7 @@ export default async function LibraryHomePage() {
       .eq("user_id", user.id);
 
     favoriteIds = (favData ?? []).map((item) => item.material_id as string);
+    favoriteIds = applyCatalogFavoriteIds(materials, favoriteIds, redirects);
   }
 
   const { data: historyData } = user
@@ -83,30 +88,33 @@ export default async function LibraryHomePage() {
         .limit(12)
     : { data: [] };
 
-  const studyHistory = (historyData ?? [])
-    .filter((item) => item.materials)
-    .map((item) => {
-      const materialsRow = item.materials as MaterialRecord | MaterialRecord[];
-      const record = Array.isArray(materialsRow) ? materialsRow[0] : materialsRow;
-      if (!record) return null;
-      const mat = recordToMaterial(record);
-      const official = normalizeAcademicForWrite({
-        courseId: mat.courseId,
-        courseName: mat.courseName,
-        cycleNumber: mat.cycleNumber,
-        cycleLabel: mat.cycleLabel,
-      });
-      if (!official) return null;
-      return {
-        ...mat,
-        courseId: official.courseId,
-        courseName: official.courseName,
-        cycleNumber: official.cycleNumber,
-        cycleLabel: official.cycleLabel,
-        lastOpenedAt: item.opened_at as string,
-      };
-    })
-    .filter((item): item is NonNullable<typeof item> => item !== null);
+  const studyHistory = dedupeStudyHistory(
+    (historyData ?? [])
+      .filter((item) => item.materials)
+      .map((item) => {
+        const materialsRow = item.materials as MaterialRecord | MaterialRecord[];
+        const record = Array.isArray(materialsRow) ? materialsRow[0] : materialsRow;
+        if (!record) return null;
+        const mat = recordToMaterial(record);
+        const official = normalizeAcademicForWrite({
+          courseId: mat.courseId,
+          courseName: mat.courseName,
+          cycleNumber: mat.cycleNumber,
+          cycleLabel: mat.cycleLabel,
+        });
+        if (!official) return null;
+        return {
+          ...mat,
+          courseId: official.courseId,
+          courseName: official.courseName,
+          cycleNumber: official.cycleNumber,
+          cycleLabel: official.cycleLabel,
+          lastOpenedAt: item.opened_at as string,
+        };
+      })
+      .filter((item): item is NonNullable<typeof item> => item !== null),
+    redirects,
+  );
 
   return (
     <AppShell>

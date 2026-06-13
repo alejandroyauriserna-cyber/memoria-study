@@ -25,11 +25,15 @@ export function recordToMaterial(record: MaterialRecord): Material {
     views: record.views,
     downloads: record.downloads,
     likes: record.likes,
+    fileHash: record.file_hash ?? null,
     createdAt: record.created_at,
   };
 }
 
-export function materialInsertPayload(material: Material, userId: string | null) {
+export function materialInsertPayload(
+  material: Material & { fileHash?: string | null },
+  userId: string | null,
+) {
   return {
     user_id: userId,
     author_name: material.authorName,
@@ -46,5 +50,6 @@ export function materialInsertPayload(material: Material, userId: string | null)
     downloads: material.downloads,
     likes: material.likes,
     is_public: true,
+    ...(material.fileHash ? { file_hash: material.fileHash } : {}),
   };
 }

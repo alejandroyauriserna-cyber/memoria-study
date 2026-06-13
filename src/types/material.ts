@@ -26,6 +26,7 @@ export type Material = {
   favoriteCreatedAt?: string;
   lastOpenedAt?: string;
   createdAt?: string;
+  fileHash?: string | null;
 };
 
 export type MaterialRecord = {
@@ -44,6 +45,7 @@ export type MaterialRecord = {
   views: number;
   downloads: number;
   likes: number;
+  file_hash?: string | null;
   created_at: string;
   updated_at: string;
 };
