@@ -1,7 +1,7 @@
 "use client";
 
 import { Sparkles } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { GraduationCap } from "lucide-react";
 import { SelectionCard, SelectionGroup } from "@/components/ui/selection-cards";
 import { sanitizeAcademicSelection } from "@/lib/academic/helpers";
@@ -31,8 +31,16 @@ function initialState() {
   };
 }
 
+function selectionKey(selection: AcademicSelection): string {
+  return `${selection.yearNumber}:${selection.cycleNumber}:${selection.courseId}:${selection.weekNumber}`;
+}
+
 export function AcademicNavigator({ value, onChange, detection, onApplyDetection }: Props) {
   const [state, setState] = useState(initialState);
+  const onChangeRef = useRef(onChange);
+  const lastEmittedKeyRef = useRef<string | null>(null);
+
+  onChangeRef.current = onChange;
 
   const year = useMemo(
     () => UNT_DERECHO.years.find((item) => item.number === state.yearNumber),
@@ -82,9 +90,14 @@ export function AcademicNavigator({ value, onChange, detection, onApplyDetection
 
   useEffect(() => {
     if (!selection) return;
+
+    const key = selectionKey(selection);
+    if (lastEmittedKeyRef.current === key) return;
+
+    lastEmittedKeyRef.current = key;
     saveAcademicSelection(selection);
-    onChange(selection);
-  }, [selection, onChange]);
+    onChangeRef.current(selection);
+  }, [selection]);
 
   const detectionMatches =
     detection &&

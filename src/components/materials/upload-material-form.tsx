@@ -44,6 +44,14 @@ export function UploadMaterialForm() {
     setMessage("");
   }, []);
 
+  const handleAcademicChange = useCallback(
+    (selection: AcademicSelection) => {
+      setAcademic(selection);
+      clearFieldError("course");
+    },
+    [clearFieldError],
+  );
+
   const handleSubmit = useCallback(
     async (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
@@ -147,13 +155,7 @@ export function UploadMaterialForm() {
         </div>
 
         <div className={`upload-academic-panel ${errors.course ? "rounded-xl ring-1 ring-red-400/60" : ""}`}>
-          <AcademicNavigator
-            value={academic}
-            onChange={(value) => {
-              setAcademic(value);
-              clearFieldError("course");
-            }}
-          />
+          <AcademicNavigator value={academic} onChange={handleAcademicChange} />
         </div>
         {errors.course ? <p className="upload-field__error">{errors.course}</p> : null}
       </section>
