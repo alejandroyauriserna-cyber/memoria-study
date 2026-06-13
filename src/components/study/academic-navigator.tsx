@@ -100,7 +100,7 @@ export function AcademicNavigator({ value, onChange, detection, onApplyDetection
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#00FFD5]">
             {UNT_DERECHO.university}
           </p>
-          <h2 className="text-lg font-semibold text-[#F5F7FA]">Contexto académico UNT</h2>
+          <h2 className="text-lg font-semibold text-foreground">Contexto académico UNT</h2>
         </div>
       </div>
 
@@ -112,7 +112,7 @@ export function AcademicNavigator({ value, onChange, detection, onApplyDetection
                 <Sparkles size={14} />
                 Sugerencia IA · {Math.round(detection.confidence * 100)}% confianza
               </p>
-              <p className="mt-2 text-sm font-semibold text-[#F5F7FA]">
+              <p className="mt-2 text-sm font-semibold text-foreground">
                 {detection.cycleLabel} · {detection.courseName}
               </p>
               {detection.matchedKeywords.length ? (
@@ -225,7 +225,7 @@ export function AcademicNavigator({ value, onChange, detection, onApplyDetection
       {(value ?? selection) ? (
         <p className="ms-input mt-5 rounded-lg px-3 py-2.5 text-sm text-muted-foreground">
           Ubicación:{" "}
-          <span className="font-semibold text-[#F5F7FA]">
+          <span className="font-semibold text-foreground">
             {(value ?? selection)?.yearLabel} · {(value ?? selection)?.cycleLabel} ·{" "}
             {(value ?? selection)?.courseName} · {(value ?? selection)?.weekTitle}
           </span>

@@ -37,8 +37,8 @@ export function SelectionCard({
       className={cn(
         "ms-selection-card border rounded-lg px-3.5 py-2 text-left text-sm font-medium transition-all duration-200",
         selected
-          ? "border-[#00FFD5] bg-[rgba(0,255,213,0.12)] text-[#F5F7FA] shadow-[0_0_16px_rgba(0,255,213,0.15)]"
-          : "border-[rgba(0,255,213,0.12)] bg-[rgba(7,19,26,0.5)] text-muted-foreground hover:border-[rgba(0,255,213,0.28)] hover:text-[#F5F7FA]",
+          ? "border-accent bg-accent/12 text-foreground shadow-[0_0_16px_color-mix(in_srgb,var(--accent)_18%,transparent)]"
+          : "border-border bg-muted/35 text-muted-foreground hover:border-accent/30 hover:bg-muted/50 hover:text-foreground",
         className,
       )}
     >

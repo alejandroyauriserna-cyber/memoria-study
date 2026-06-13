@@ -2,8 +2,7 @@
 
 import { useCallback, useState } from "react";
 import type { FormEvent } from "react";
-import { Upload } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { FileText, GraduationCap, Sparkles, Upload } from "lucide-react";
 import { LoadingState } from "@/components/ui/loading-state";
 import { useLoadingProgress } from "@/hooks/use-loading-progress";
 import { AcademicNavigator } from "@/components/study/academic-navigator";
@@ -78,19 +77,7 @@ export function UploadMaterialForm() {
       setErrors({});
       setMessage("");
 
-      if (!academic) {
-        setErrors({ course: "Debes seleccionar un curso." });
-        setStatus("error");
-        setMessage("Corrige los campos marcados.");
-        return;
-      }
-
-      if (!file) {
-        setErrors({ file: "Debes seleccionar un archivo PDF." });
-        setStatus("error");
-        setMessage("Corrige los campos marcados.");
-        return;
-      }
+      if (!academic || !file) return;
 
       try {
         const formData = new FormData();
@@ -140,116 +127,149 @@ export function UploadMaterialForm() {
   );
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5 rounded-lg border border-border bg-card p-5 shadow-sm">
-      <div className={errors.course ? "rounded-lg border border-red-500" : ""}>
-        <AcademicNavigator
-          value={academic}
-          onChange={(value) => {
-            setAcademic(value);
-            clearFieldError("course");
-          }}
-        />
-      </div>
-      {errors.course ? <p className="mt-2 text-sm text-red-500">{errors.course}</p> : null}
-      <div className="grid gap-4 sm:grid-cols-2">
-        <label className="block">
-          <span className="text-sm font-semibold">Título del material</span>
-          <input
-            type="text"
-            value={title}
-            onChange={(event) => {
-              setTitle(event.target.value);
-              clearFieldError("title");
+    <form onSubmit={handleSubmit} className="upload-page-workspace">
+      <section className="upload-page-panel">
+        <div className="upload-page-panel__head">
+          <div>
+            <h2>Contexto académico UNT</h2>
+            <p>Ubica el material en la malla oficial antes de subirlo.</p>
+          </div>
+          <span className="upload-page-panel__icon" aria-hidden>
+            <GraduationCap size={18} />
+          </span>
+        </div>
+
+        <div className={`upload-academic-panel ${errors.course ? "rounded-xl ring-1 ring-red-400/60" : ""}`}>
+          <AcademicNavigator
+            value={academic}
+            onChange={(value) => {
+              setAcademic(value);
+              clearFieldError("course");
             }}
-            placeholder="Título descriptivo"
-            className={`mt-2 h-11 w-full rounded-lg border px-3 text-sm outline-none ${
-              errors.title ? "border-red-500 focus:border-red-500" : "border-border bg-background focus:border-accent"
-            }`}
           />
-          {errors.title ? <p className="mt-2 text-sm text-red-500">{errors.title}</p> : null}
-        </label>
+        </div>
+        {errors.course ? <p className="upload-field__error">{errors.course}</p> : null}
+      </section>
 
-        <label className="block">
-          <span className="text-sm font-semibold">Tipo de material</span>
-          <select
-            value={materialType}
-            onChange={(event) => setMaterialType(event.target.value as MaterialType)}
-            className="mt-2 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm"
-          >
-            {materialTypes.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
+      <section className="upload-page-panel">
+        <div className="upload-page-panel__head">
+          <div>
+            <h2>Detalles del material</h2>
+            <p>Título, tipo y descripción para que otros estudiantes lo encuentren.</p>
+          </div>
+          <span className="upload-page-panel__icon" aria-hidden>
+            <FileText size={18} />
+          </span>
+        </div>
 
-      <label className="block">
-        <span className="text-sm font-semibold">Descripción</span>
-        <textarea
-          value={description}
-          onChange={(event) => {
-            setDescription(event.target.value);
-            clearFieldError("description");
-          }}
-          rows={4}
-          placeholder="Describe brevemente el contenido y utilidad del archivo."
-          className={`mt-2 w-full rounded-xl border px-3 py-3 text-sm outline-none ${
-            errors.description ? "border-red-500 focus:border-red-500" : "border-border bg-background focus:border-accent"
-          }`}
-          required
-        />
-        {errors.description ? <p className="mt-2 text-sm text-red-500">{errors.description}</p> : null}
-      </label>
+        <div className="upload-page-grid upload-page-grid--2">
+          <div className="upload-field">
+            <label>
+              <span>Título del material</span>
+              <input
+                type="text"
+                value={title}
+                onChange={(event) => {
+                  setTitle(event.target.value);
+                  clearFieldError("title");
+                }}
+                placeholder="Ej. Apuntes — Interpretación jurídica S1"
+                className={errors.title ? "is-error" : ""}
+              />
+            </label>
+            {errors.title ? <p className="upload-field__error">{errors.title}</p> : null}
+          </div>
 
-      <label className="block">
-        <span className="text-sm font-semibold">Archivo</span>
-        <div className="mt-2 flex items-center gap-3">
-          <label
-            className={`inline-flex cursor-pointer items-center gap-2 rounded-lg border border-dashed px-4 py-3 text-sm hover:border-accent ${
-              errors.file ? "border-red-500 bg-red-50" : "border-border bg-muted"
-            }`}
-          >
-            <Upload size={16} />
-            {file?.name ?? "Selecciona un archivo PDF"}
-            <input
-              type="file"
-              accept=".pdf"
-              className="sr-only"
+          <div className="upload-field">
+            <label>
+              <span>Tipo de material</span>
+              <select
+                value={materialType}
+                onChange={(event) => setMaterialType(event.target.value as MaterialType)}
+              >
+                {materialTypes.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <div className="upload-field mt-4">
+          <label>
+            <span>Descripción</span>
+            <textarea
+              value={description}
               onChange={(event) => {
-                const selected = event.target.files?.[0];
-                if (selected) {
-                  setFile(selected);
-                  clearFieldError("file");
-                }
+                setDescription(event.target.value);
+                clearFieldError("description");
               }}
+              rows={4}
+              placeholder="Describe brevemente el contenido, temas que cubre y para qué sirve en el curso."
+              className={errors.description ? "is-error" : ""}
             />
           </label>
+          {errors.description ? <p className="upload-field__error">{errors.description}</p> : null}
         </div>
-      </label>
+      </section>
 
-      <Button type="submit" disabled={status === "uploading"}>
-        <Upload size={16} />
-        {status === "uploading" ? `Subiendo… ${uploadProgress.percent}%` : "Compartir material"}
-      </Button>
+      <section className="upload-page-panel">
+        <div className="upload-page-panel__head">
+          <div>
+            <h2>Archivo PDF</h2>
+            <p>Solo se aceptan documentos PDF listos para estudiar.</p>
+          </div>
+          <span className="upload-page-panel__icon" aria-hidden>
+            <Upload size={18} />
+          </span>
+        </div>
 
-      {status === "uploading" ? (
-        <LoadingState
-          active
-          preset="upload"
-          percent={uploadProgress.percent}
-          message={uploadProgress.message}
-          stageLabel={uploadProgress.stageLabel}
-          className="mt-3"
-        />
-      ) : null}
+        <label className={`upload-dropzone ${errors.file ? "is-error" : ""}`}>
+          <Upload size={28} strokeWidth={1.5} />
+          <strong>{file?.name ?? "Arrastra o selecciona tu PDF"}</strong>
+          <span>{file ? "Toca para cambiar el archivo" : "Máximo un archivo · formato PDF"}</span>
+          <input
+            type="file"
+            accept=".pdf,application/pdf"
+            className="sr-only"
+            onChange={(event) => {
+              const selected = event.target.files?.[0];
+              if (selected) {
+                setFile(selected);
+                clearFieldError("file");
+              }
+            }}
+          />
+        </label>
+        {errors.file ? <p className="upload-field__error">{errors.file}</p> : null}
 
-      {message ? (
-        <p className={`mt-3 text-sm ${status === "error" ? "text-red-500" : "text-accent"}`}>
-          {message}
-        </p>
-      ) : null}
+        <div className="upload-submit-row">
+          <button type="submit" className="upload-submit-btn" disabled={status === "uploading"}>
+            <Sparkles size={16} />
+            {status === "uploading" ? `Subiendo… ${uploadProgress.percent}%` : "Compartir material"}
+          </button>
+          {message ? (
+            <p
+              className={`upload-status ${status === "error" ? "is-error" : status === "saved" ? "is-success" : ""}`}
+            >
+              {message}
+            </p>
+          ) : null}
+        </div>
+
+        {status === "uploading" ? (
+          <LoadingState
+            active
+            preset="upload"
+            percent={uploadProgress.percent}
+            message={uploadProgress.message}
+            stageLabel={uploadProgress.stageLabel}
+            className="mt-3"
+          />
+        ) : null}
+      </section>
     </form>
   );
 }

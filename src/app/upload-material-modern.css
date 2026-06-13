@@ -1,0 +1,351 @@
+/* Upload material — mismo lenguaje que library-page / ms-home 2026 */
+
+.ms-home.upload-page {
+  max-width: 1480px;
+  padding-top: clamp(1rem, 2vw, 1.75rem);
+}
+
+.upload-page-hero {
+  min-height: min(460px, calc(100vh - 9rem));
+}
+
+.upload-hero-steps {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.upload-hero-step {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 3rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(245, 247, 250, 0.62);
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
+.upload-hero-step svg {
+  color: rgba(0, 255, 213, 0.55);
+  flex-shrink: 0;
+}
+
+.upload-hero-step.is-active {
+  border-color: rgba(0, 255, 213, 0.28);
+  background: rgba(0, 255, 213, 0.08);
+  color: rgba(245, 247, 250, 0.92);
+}
+
+.upload-hero-step.is-active svg {
+  color: #00ffd5;
+}
+
+.upload-page-workspace {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.upload-page-panel {
+  border-radius: 26px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background:
+    linear-gradient(120deg, rgba(0, 255, 213, 0.06), transparent 26%),
+    linear-gradient(250deg, rgba(255, 138, 0, 0.05), transparent 30%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.02)),
+    rgba(5, 13, 18, 0.88);
+  box-shadow:
+    0 28px 90px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  padding: clamp(1rem, 2vw, 1.35rem);
+}
+
+.upload-page-panel__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.upload-page-panel__head h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 750;
+  color: rgba(245, 247, 250, 0.95);
+}
+
+.upload-page-panel__head p {
+  margin: 0.35rem 0 0;
+  font-size: 0.82rem;
+  color: rgba(245, 247, 250, 0.58);
+}
+
+.upload-page-panel__icon {
+  display: grid;
+  place-items: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 255, 213, 0.2);
+  background: rgba(0, 255, 213, 0.1);
+  color: #00ffd5;
+  flex-shrink: 0;
+}
+
+.upload-page-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .upload-page-grid--2 {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.upload-field label > span,
+.upload-field > span {
+  display: block;
+  margin-bottom: 0.45rem;
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(0, 255, 213, 0.78);
+}
+
+.upload-field input,
+.upload-field select,
+.upload-field textarea {
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 255, 213, 0.16);
+  background: rgba(7, 19, 26, 0.62);
+  color: rgba(245, 247, 250, 0.92);
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.upload-field input,
+.upload-field select {
+  height: 2.75rem;
+  padding: 0 0.85rem;
+}
+
+.upload-field textarea {
+  min-height: 7rem;
+  padding: 0.75rem 0.85rem;
+  resize: vertical;
+}
+
+.upload-field input:focus,
+.upload-field select:focus,
+.upload-field textarea:focus {
+  border-color: rgba(0, 255, 213, 0.42);
+  box-shadow: 0 0 0 3px rgba(0, 255, 213, 0.1);
+}
+
+.upload-field input.is-error,
+.upload-field select.is-error,
+.upload-field textarea.is-error {
+  border-color: rgba(255, 107, 107, 0.65);
+}
+
+.upload-field__error {
+  margin-top: 0.4rem;
+  font-size: 0.78rem;
+  color: #ff8a8a;
+}
+
+.upload-dropzone {
+  display: flex;
+  min-height: 8.5rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  border-radius: 18px;
+  border: 1px dashed rgba(0, 255, 213, 0.28);
+  background: rgba(0, 255, 213, 0.04);
+  padding: 1.25rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.upload-dropzone:hover {
+  border-color: rgba(0, 255, 213, 0.45);
+  background: rgba(0, 255, 213, 0.08);
+}
+
+.upload-dropzone.is-error {
+  border-color: rgba(255, 107, 107, 0.55);
+  background: rgba(255, 107, 107, 0.06);
+}
+
+.upload-dropzone svg {
+  color: #00ffd5;
+}
+
+.upload-dropzone strong {
+  font-size: 0.9rem;
+  color: rgba(245, 247, 250, 0.92);
+}
+
+.upload-dropzone span {
+  font-size: 0.78rem;
+  color: rgba(245, 247, 250, 0.55);
+}
+
+.upload-submit-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.upload-submit-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.85rem;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 255, 213, 0.42);
+  background: linear-gradient(135deg, #00ffd5, #00bfff);
+  padding: 0 1.15rem;
+  color: #041014;
+  font-size: 0.875rem;
+  font-weight: 800;
+  box-shadow: 0 22px 54px rgba(0, 255, 213, 0.22);
+  transition: transform 180ms ease, opacity 180ms ease;
+}
+
+.upload-submit-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.upload-submit-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.upload-status {
+  font-size: 0.82rem;
+}
+
+.upload-status.is-success {
+  color: #00ffd5;
+}
+
+.upload-status.is-error {
+  color: #ff8a8a;
+}
+
+.upload-page .upload-academic-panel {
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
+.upload-page .upload-academic-panel .ms-panel {
+  border-radius: 18px;
+  border-color: rgba(0, 255, 213, 0.12);
+  background: rgba(7, 19, 26, 0.45);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+/* Light mode */
+html:not(.dark) .upload-page-panel {
+  border-color: color-mix(in srgb, var(--accent) 18%, transparent);
+  background:
+    linear-gradient(140deg, color-mix(in srgb, var(--accent) 8%, #fff), transparent 32%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 251, 253, 0.92));
+  box-shadow:
+    0 0 0 1px rgba(15, 23, 42, 0.04),
+    0 20px 48px rgba(15, 23, 42, 0.08);
+}
+
+html:not(.dark) .upload-page-panel__head h2 {
+  color: var(--foreground);
+}
+
+html:not(.dark) .upload-page-panel__head p {
+  color: var(--muted-foreground);
+}
+
+html:not(.dark) .upload-hero-step {
+  border-color: rgba(15, 118, 110, 0.12);
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--muted-foreground);
+}
+
+html:not(.dark) .upload-hero-step.is-active {
+  border-color: color-mix(in srgb, var(--accent) 28%, transparent);
+  background: color-mix(in srgb, var(--accent) 10%, #fff);
+  color: var(--foreground);
+}
+
+html:not(.dark) .upload-field input,
+html:not(.dark) .upload-field select,
+html:not(.dark) .upload-field textarea {
+  border-color: color-mix(in srgb, var(--accent) 18%, transparent);
+  background: #fff;
+  color: var(--foreground);
+}
+
+html:not(.dark) .upload-dropzone {
+  border-color: color-mix(in srgb, var(--accent) 28%, transparent);
+  background: color-mix(in srgb, var(--accent) 6%, #fff);
+}
+
+html:not(.dark) .upload-dropzone strong {
+  color: var(--foreground);
+}
+
+html:not(.dark) .upload-dropzone span {
+  color: var(--muted-foreground);
+}
+
+html:not(.dark) .upload-page .upload-academic-panel .ms-panel {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: color-mix(in srgb, var(--accent) 15%, transparent);
+}
+
+html:not(.dark) .upload-page .ms-selection-card {
+  border-color: color-mix(in srgb, var(--accent) 16%, transparent);
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--muted-foreground);
+}
+
+html:not(.dark) .upload-page .ms-selection-card.border-accent {
+  border-color: var(--accent) !important;
+  background: color-mix(in srgb, var(--accent) 12%, #fff) !important;
+  color: var(--foreground) !important;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+html:not(.dark) .upload-page .upload-academic-panel h2,
+html:not(.dark) .upload-page .upload-academic-panel .font-semibold.text-\[\#F5F7FA\] {
+  color: var(--foreground) !important;
+}
+
+@media (max-width: 960px) {
+  .upload-page-hero {
+    min-height: unset;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .upload-submit-btn:hover:not(:disabled) {
+    transform: none;
+  }
+}
