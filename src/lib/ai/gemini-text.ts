@@ -17,6 +17,7 @@ export async function generateGeminiText(input: {
   model?: string;
   temperature?: number;
   json?: boolean;
+  timeoutMs?: number;
 }): Promise<string> {
   const apiKey = input.apiKey ?? env.geminiApiKey;
   if (!apiKey) {
@@ -36,7 +37,7 @@ export async function generateGeminiText(input: {
         ...(input.json ? { responseMimeType: "application/json" } : {}),
       },
     }),
-    timeoutMs: 50_000,
+    timeoutMs: input.timeoutMs ?? 50_000,
   });
 
   const payload = await response.json();

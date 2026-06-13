@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { GUIDED_STUDY_AI_PROVIDER_TIMEOUT_MS } from "@/lib/guided-study/timeouts";
 import { generateTextWithFallback } from "@/lib/ai/generate-text-with-fallback";
 import { GUIDED_STUDY_SYSTEM_ROLE } from "@/lib/guided-study/prompts";
 import {
@@ -69,6 +70,7 @@ Responde SOLO JSON válido:
       prompt,
       temperature: 0.35,
       json: true,
+      timeoutMs: GUIDED_STUDY_AI_PROVIDER_TIMEOUT_MS,
     });
 
     const parsed = TeachingFallbackSchema.parse(JSON.parse(raw));

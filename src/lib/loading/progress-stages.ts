@@ -29,15 +29,38 @@ export const PROGRESS_PRESETS = {
     { label: "Finalizando", percent: 94, message: "Guardando resultado..." },
   ],
   aiAnalyze: [
-    { label: "Leyendo página", percent: 20, message: "Extrayendo el contenido de la página..." },
-    { label: "Analizando", percent: 55, message: "El profesor IA prepara la explicación..." },
-    { label: "Citando fuentes", percent: 82, message: "Vinculando normativa y material autorizado..." },
-    { label: "Finalizando", percent: 94, message: "Completando la lección..." },
+    { label: "Leyendo página", percent: 15, message: "Extrayendo el contenido de la página..." },
+    { label: "Analizando", percent: 35, message: "El profesor IA prepara la explicación..." },
+    {
+      label: "Profundizando",
+      percent: 55,
+      message: "Elaborando una clase detallada — puede tardar un poco más para mayor rigor.",
+    },
+    {
+      label: "Citando fuentes",
+      percent: 72,
+      message: "Vinculando normativa peruana y material autorizado...",
+    },
+    {
+      label: "Enriqueciendo",
+      percent: 86,
+      message: "Completando ejemplos, distinciones y claves de examen...",
+    },
+    { label: "Finalizando", percent: 94, message: "Guardando la lección..." },
   ],
   guidedStudyInit: [
-    { label: "Cargando PDF", percent: 18, message: "Descargando el material de estudio..." },
-    { label: "Extrayendo páginas", percent: 48, message: "Preparando el documento página por página..." },
-    { label: "Analizando estructura", percent: 78, message: "Construyendo el índice del documento..." },
+    { label: "Cargando PDF", percent: 15, message: "Descargando el material de estudio..." },
+    { label: "Extrayendo páginas", percent: 40, message: "Preparando el documento página por página..." },
+    {
+      label: "Analizando estructura",
+      percent: 65,
+      message: "Construyendo el índice del documento — primera vez puede tardar más.",
+    },
+    {
+      label: "Indexando",
+      percent: 82,
+      message: "Organizando capítulos para estudio progresivo...",
+    },
     { label: "Finalizando", percent: 94, message: "Abriendo el estudio guiado..." },
   ],
   search: [

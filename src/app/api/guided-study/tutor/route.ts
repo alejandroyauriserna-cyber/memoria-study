@@ -16,10 +16,11 @@ import {
 } from "@/lib/guided-study/tutor-chat-server";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/env";
+import { GUIDED_STUDY_API_MAX_DURATION } from "@/lib/guided-study/timeouts";
 import type { DocumentStudyIndex, GuidedStudyTutorAction } from "@/types/guided-legal-study";
 
 export const runtime = "nodejs";
-export const maxDuration = 180;
+export const maxDuration = GUIDED_STUDY_API_MAX_DURATION;
 
 const VALID_ACTIONS = new Set<GuidedStudyTutorAction>([
   "analyze_page",

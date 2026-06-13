@@ -1,4 +1,7 @@
 import { z } from "zod";
+import {
+  GUIDED_STUDY_AI_PROVIDER_TIMEOUT_MS,
+} from "@/lib/guided-study/timeouts";
 import { generateTextWithFallback } from "@/lib/ai/generate-text-with-fallback";
 import {
   GUIDED_STUDY_SYSTEM_ROLE,
@@ -140,6 +143,7 @@ export async function analyzeDocumentForStudy(input: {
       })}`,
       temperature: 0.2,
       json: true,
+      timeoutMs: GUIDED_STUDY_AI_PROVIDER_TIMEOUT_MS,
     });
 
     const parsed = DocumentIndexSchema.parse(JSON.parse(raw));
@@ -262,6 +266,7 @@ export async function askLegalStudyTutor(input: {
       })}`,
       temperature,
       json: true,
+      timeoutMs: GUIDED_STUDY_AI_PROVIDER_TIMEOUT_MS,
     });
     raw = result.text;
     if (result.provider !== "gemini") {

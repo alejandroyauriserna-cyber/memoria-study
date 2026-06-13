@@ -15,9 +15,14 @@ import { LegalTutorPanel } from "@/components/guided-study/legal-tutor-panel";
 import { StudyPageNavigator } from "@/components/guided-study/study-page-navigator";
 import { LoadingState } from "@/components/ui/loading-state";
 import { useLoadingProgress } from "@/hooks/use-loading-progress";
+import {
+  GUIDED_STUDY_CLIENT_TIMEOUT_MS,
+  guidedStudyClientTimeoutSeconds,
+} from "@/lib/guided-study/timeouts";
 import { filterAnalysisForExamMode } from "@/lib/guided-study/legal-tutor";
 import {
   buildSourceFingerprint,
+  findPracticePageCache,
   loadTutorCache,
   saveTutorCache,
   type TutorCacheScope,
@@ -106,8 +111,16 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
   const [sourcesStale, setSourcesStale] = useState(false);
   const [chatMessages, setChatMessages] = useState<TutorChatMessage[]>([]);
   const initialAnalysisDone = useRef(false);
-  const initProgress = useLoadingProgress(phase === "loading", "guidedStudyInit");
-  const tutorProgress = useLoadingProgress(tutorLoading, "aiAnalyze");
+  const initProgress = useLoadingProgress(phase === "loading", "guidedStudyInit", {
+    stageIntervalMs: 5500,
+    tickMs: 800,
+    maxSimulatedPercent: 92,
+  });
+  const tutorProgress = useLoadingProgress(tutorLoading, "aiAnalyze", {
+    stageIntervalMs: 6000,
+    tickMs: 900,
+    maxSimulatedPercent: 92,
+  });
 
   useEffect(() => {
     initialAnalysisDone.current = false;
@@ -152,7 +165,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
       setError("");
 
       const controller = new AbortController();
-      const timeoutId = window.setTimeout(() => controller.abort(), 180_000);
+      const timeoutId = window.setTimeout(() => controller.abort(), GUIDED_STUDY_CLIENT_TIMEOUT_MS);
 
       try {
         const response = await fetch("/api/guided-study/analyze", {
@@ -181,7 +194,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
         if (!cancelled) {
           const message =
             caught instanceof Error && caught.name === "AbortError"
-              ? "El análisis del PDF tardó demasiado. Intenta de nuevo o usa un PDF más corto."
+              ? `El análisis del PDF superó ${guidedStudyClientTimeoutSeconds() / 60} minutos. Intenta de nuevo; la primera carga de un PDF largo puede tardar.`
               : caught instanceof Error
                 ? caught.message
                 : "Error desconocido.";
@@ -313,7 +326,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
       setActiveHighlightId(null);
 
       const controller = new AbortController();
-      const timeoutId = window.setTimeout(() => controller.abort(), 180_000);
+      const timeoutId = window.setTimeout(() => controller.abort(), GUIDED_STUDY_CLIENT_TIMEOUT_MS);
 
       try {
         const response = await fetch("/api/guided-study/tutor", {
@@ -359,7 +372,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
       } catch (caught) {
         const message =
           caught instanceof Error && caught.name === "AbortError"
-            ? "El profesor IA tardó demasiado. Comprueba tu conexión e inténtalo de nuevo."
+            ? `El profesor IA sigue procesando contenido denso. Espera hasta ${guidedStudyClientTimeoutSeconds() / 60} min o inténtalo de nuevo.`
             : caught instanceof Error
               ? caught.message
               : "Error consultando al profesor.";
@@ -419,7 +432,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
       setActiveHighlightId(null);
 
       const controller = new AbortController();
-      const timeoutId = window.setTimeout(() => controller.abort(), 180_000);
+      const timeoutId = window.setTimeout(() => controller.abort(), GUIDED_STUDY_CLIENT_TIMEOUT_MS);
 
       try {
         const response = await fetch("/api/guided-study/tutor", {
@@ -456,7 +469,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
       } catch (caught) {
         const message =
           caught instanceof Error && caught.name === "AbortError"
-            ? "El profesor IA tardó demasiado. Comprueba GEMINI_API_KEY u OPENROUTER_API_KEY en el servidor, tu conexión, y pulsa «Explicar página»."
+            ? `El profesor IA superó ${guidedStudyClientTimeoutSeconds() / 60} minutos. Las explicaciones profundas pueden tardar; inténtalo de nuevo.`
             : caught instanceof Error
               ? caught.message
               : "Error consultando al profesor.";
@@ -594,6 +607,13 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
     if (!tutorState.analysis) return null;
     return filterAnalysisForExamMode(tutorState.analysis, examOnly);
   }, [tutorState.analysis, examOnly]);
+
+  const practiceWhileLoading = useMemo(() => {
+    if (!tutorLoading) return null;
+    const settings = sourceSettings ?? loadLegalSourcesSettings();
+    const fingerprint = buildSourceFingerprint(settings);
+    return findPracticePageCache(materialId, currentPage, examOnly, fingerprint);
+  }, [tutorLoading, materialId, currentPage, examOnly, sourceSettings]);
 
   function handlePageChange(page: number) {
     const scope = { type: "page" as const, pageNumber: page };
@@ -809,6 +829,8 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
             loadingPercent={tutorProgress.percent}
             loadingMessage={tutorProgress.message}
             loadingStageLabel={tutorProgress.stageLabel}
+            currentPage={currentPage}
+            practiceWhileLoading={practiceWhileLoading}
             analysis={displayAnalysis}
             chatMessages={chatMessages}
             customReply={tutorState.customReply}

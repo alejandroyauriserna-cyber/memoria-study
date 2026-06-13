@@ -98,6 +98,7 @@ async function tryXaiText(input: {
   prompt: string;
   temperature?: number;
   json?: boolean;
+  timeoutMs?: number;
 }): Promise<TextGenerationResult> {
   if (!env.xaiApiKey) {
     throw new Error("XAI_API_KEY no configurada.");
@@ -115,7 +116,7 @@ async function tryXaiText(input: {
       messages: [{ role: "user", content: input.prompt }],
       ...(input.json ? { response_format: { type: "json_object" } } : {}),
     }),
-    timeoutMs: 45_000,
+    timeoutMs: input.timeoutMs ?? 45_000,
   });
 
   const raw = await response.text();
@@ -138,6 +139,7 @@ async function tryOpenAiText(input: {
   prompt: string;
   temperature?: number;
   json?: boolean;
+  timeoutMs?: number;
 }): Promise<TextGenerationResult> {
   if (!env.openAiApiKey) {
     throw new Error("OPENAI_API_KEY no configurada.");
@@ -155,7 +157,7 @@ async function tryOpenAiText(input: {
       messages: [{ role: "user", content: input.prompt }],
       ...(input.json ? { response_format: { type: "json_object" } } : {}),
     }),
-    timeoutMs: 45_000,
+    timeoutMs: input.timeoutMs ?? 45_000,
   });
 
   const raw = await response.text();
@@ -178,6 +180,7 @@ async function tryGeminiText(input: {
   prompt: string;
   temperature?: number;
   json?: boolean;
+  timeoutMs?: number;
 }): Promise<TextGenerationResult> {
   const text = await generateGeminiText(input);
   return { text, provider: "gemini", model: env.geminiModel };
@@ -191,7 +194,9 @@ export async function generateTextWithFallback(input: {
   prompt: string;
   temperature?: number;
   json?: boolean;
+  timeoutMs?: number;
 }): Promise<TextGenerationResult> {
+  const providerTimeoutMs = input.timeoutMs;
   const attempts: Array<{
     provider: TextGenerationProvider;
     run: () => Promise<TextGenerationResult>;
@@ -200,11 +205,19 @@ export async function generateTextWithFallback(input: {
     { provider: "gemini", run: () => tryGeminiText(input), enabled: Boolean(env.geminiApiKey) },
     {
       provider: "openrouter",
-      run: () => tryOpenRouterText(input),
+      run: () => tryOpenRouterText({ ...input, timeoutMs: providerTimeoutMs }),
       enabled: Boolean(env.openRouterApiKey),
     },
-    { provider: "xai", run: () => tryXaiText(input), enabled: Boolean(env.xaiApiKey) },
-    { provider: "openai", run: () => tryOpenAiText(input), enabled: Boolean(env.openAiApiKey) },
+    {
+      provider: "xai",
+      run: () => tryXaiText({ ...input, timeoutMs: providerTimeoutMs }),
+      enabled: Boolean(env.xaiApiKey),
+    },
+    {
+      provider: "openai",
+      run: () => tryOpenAiText({ ...input, timeoutMs: providerTimeoutMs }),
+      enabled: Boolean(env.openAiApiKey),
+    },
   ];
 
   const errors: string[] = [];

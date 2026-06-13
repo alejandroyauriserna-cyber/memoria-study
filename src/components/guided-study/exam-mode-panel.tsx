@@ -49,7 +49,7 @@ function AccordionSection({
   );
 }
 
-function StructuredQuestionCard({
+export function StructuredQuestionCard({
   item,
   index,
   accent,
@@ -97,7 +97,7 @@ function StructuredQuestionCard({
   );
 }
 
-function TestQuestionCard({ item, index }: { item: ExamTestQuestion; index: number }) {
+export function TestQuestionCard({ item, index }: { item: ExamTestQuestion; index: number }) {
   const [picked, setPicked] = useState<number | null>(null);
   const [revealed, setRevealed] = useState(false);
 
@@ -158,9 +158,13 @@ function TestQuestionCard({ item, index }: { item: ExamTestQuestion; index: numb
 export function ExamModePanel({
   examMode,
   prominent,
+  title,
+  hint,
 }: {
   examMode: ExamModeContent;
   prominent?: boolean;
+  title?: string;
+  hint?: string;
 }) {
   const hasContent =
     examMode.oral.length ||
@@ -175,10 +179,10 @@ export function ExamModePanel({
     <div className={`gs-exam-panel ${prominent ? "gs-exam-panel--prominent" : ""}`}>
       <p className="gs-section-label">
         <Brain size={12} />
-        Practicar examen — esta página
+        {title ?? "Practicar examen — esta página"}
       </p>
       <p className="mt-1 text-[10px] text-muted-foreground">
-        Responde mentalmente antes de revelar la corrección.
+        {hint ?? "Responde mentalmente antes de revelar la corrección."}
       </p>
 
       <div className="mt-3 space-y-2">

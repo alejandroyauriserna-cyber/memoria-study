@@ -40,6 +40,92 @@ function scopeKey(scope: TutorCacheScope, examOnly: boolean): string {
   return buildTutorCacheKey(scope, examOnly);
 }
 
+function listCachedPageNumbers(
+  materialId: string,
+  examOnly: boolean,
+  fingerprint: string,
+): number[] {
+  const store = loadStore(materialId);
+  const suffix = examOnly ? "exam" : "full";
+  const pages: number[] = [];
+
+  for (const key of Object.keys(store)) {
+    if (!key.endsWith(`:${suffix}`)) continue;
+    const match = key.match(/^p:(\d+):/);
+    if (!match) continue;
+
+    const entry = store[key];
+    if (!entry || entry.fingerprint !== fingerprint) continue;
+    if (!hasTutorCacheContent({ analysis: entry.analysis, customReply: entry.customReply })) {
+      continue;
+    }
+
+    pages.push(Number(match[1]));
+  }
+
+  return pages;
+}
+
+function loadCachedPageAnalysis(
+  materialId: string,
+  pageNumber: number,
+  examOnly: boolean,
+  fingerprint: string,
+): PageProfessorAnalysis | null {
+  const primary = loadTutorCache(
+    materialId,
+    { type: "page", pageNumber },
+    examOnly,
+    fingerprint,
+  );
+  if (primary?.analysis) return primary.analysis;
+
+  if (examOnly) {
+    const full = loadTutorCache(
+      materialId,
+      { type: "page", pageNumber },
+      false,
+      fingerprint,
+    );
+    if (full?.analysis) return full.analysis;
+  }
+
+  return null;
+}
+
+/** Página anterior (o la más reciente con caché) para repasar mientras carga el tutor. */
+export function findPracticePageCache(
+  materialId: string,
+  beforePage: number,
+  examOnly: boolean,
+  fingerprint: string,
+): { pageNumber: number; analysis: PageProfessorAnalysis } | null {
+  if (beforePage > 1) {
+    const previous = loadCachedPageAnalysis(
+      materialId,
+      beforePage - 1,
+      examOnly,
+      fingerprint,
+    );
+    if (previous) {
+      return { pageNumber: beforePage - 1, analysis: previous };
+    }
+  }
+
+  const candidates = listCachedPageNumbers(materialId, examOnly, fingerprint)
+    .filter((page) => page < beforePage)
+    .sort((a, b) => b - a);
+
+  for (const pageNumber of candidates) {
+    const analysis = loadCachedPageAnalysis(materialId, pageNumber, examOnly, fingerprint);
+    if (analysis) {
+      return { pageNumber, analysis };
+    }
+  }
+
+  return null;
+}
+
 function loadStore(materialId: string): MaterialCacheStore {
   if (typeof window === "undefined") return {};
   try {

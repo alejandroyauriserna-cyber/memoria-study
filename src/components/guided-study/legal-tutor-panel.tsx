@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { ProfessorLessonView } from "@/components/guided-study/professor-lesson-view";
+import { WhileLoadingPracticePanel } from "@/components/guided-study/while-loading-practice-panel";
 import { ExamModePanel } from "@/components/guided-study/exam-mode-panel";
 import { CompactConceptChips } from "@/components/guided-study/compact-concept-chips";
 import { LoadingState } from "@/components/ui/loading-state";
@@ -237,11 +238,15 @@ export function LegalTutorPanel({
   onMarkUnderstood,
   onGeneratePage,
   pageUnderstood,
+  currentPage,
+  practiceWhileLoading,
 }: {
   loading: boolean;
   loadingPercent?: number;
   loadingMessage?: string;
   loadingStageLabel?: string;
+  currentPage?: number;
+  practiceWhileLoading?: { pageNumber: number; analysis: PageProfessorAnalysis } | null;
   analysis: PageProfessorAnalysis | null;
   chatMessages?: TutorChatMessage[];
   customReply?: string | null;
@@ -470,14 +475,27 @@ export function LegalTutorPanel({
         ) : null}
 
         {loading ? (
-          <LoadingState
-            active
-            preset="aiAnalyze"
-            percent={loadingPercent}
-            message={loadingMessage}
-            stageLabel={loadingStageLabel}
-            className="my-4"
-          />
+          <div className="gs-loading-with-practice my-3 space-y-3">
+            <LoadingState
+              active
+              preset="aiAnalyze"
+              percent={loadingPercent}
+              message={loadingMessage}
+              stageLabel={loadingStageLabel}
+            />
+            {practiceWhileLoading ? (
+              <WhileLoadingPracticePanel
+                sourcePageNumber={practiceWhileLoading.pageNumber}
+                targetPageNumber={currentPage ?? practiceWhileLoading.pageNumber + 1}
+                analysis={practiceWhileLoading.analysis}
+              />
+            ) : (
+              <p className="gs-wait-empty rounded-xl border border-border bg-muted/40 px-3 py-3 text-xs leading-5 text-muted-foreground">
+                El profesor IA está preparando esta página. Lee el PDF mientras tanto; en las
+                siguientes páginas podrás repasar aquí lo que ya explicó.
+              </p>
+            )}
+          </div>
         ) : needsGeneration && !analysis && !customReply ? (
           <div className="gs-page-prompt">
             <Sparkles size={22} className="text-accent" />
