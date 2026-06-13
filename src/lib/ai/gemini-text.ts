@@ -1,4 +1,5 @@
 import { env } from "@/lib/env";
+import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
 
 const SUPPORTED_GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash"] as const;
 
@@ -25,7 +26,7 @@ export async function generateGeminiText(input: {
   const model = normalizeGeminiModel(input.model ?? env.geminiModel);
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
-  const response = await fetch(url, {
+  const response = await fetchWithTimeout(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -35,6 +36,7 @@ export async function generateGeminiText(input: {
         ...(input.json ? { responseMimeType: "application/json" } : {}),
       },
     }),
+    timeoutMs: 50_000,
   });
 
   const payload = await response.json();

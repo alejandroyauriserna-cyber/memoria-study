@@ -1,4 +1,5 @@
 import { env } from "@/lib/env";
+import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
 import { generateGeminiText } from "@/lib/ai/gemini-text";
 
 export type TextGenerationProvider = "gemini" | "openrouter" | "xai" | "openai";
@@ -25,12 +26,13 @@ async function fetchOpenRouterText(input: {
   temperature?: number;
   json?: boolean;
   model: string;
+  timeoutMs?: number;
 }): Promise<string> {
   if (!env.openRouterApiKey) {
     throw new Error("OPENROUTER_API_KEY no configurada.");
   }
 
-  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+  const response = await fetchWithTimeout("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${env.openRouterApiKey}`,
@@ -44,6 +46,7 @@ async function fetchOpenRouterText(input: {
       messages: [{ role: "user", content: input.prompt }],
       ...(input.json ? { response_format: { type: "json_object" } } : {}),
     }),
+    timeoutMs: input.timeoutMs ?? 45_000,
   });
 
   const raw = await response.text();
@@ -74,12 +77,13 @@ async function tryOpenRouterText(input: {
   prompt: string;
   temperature?: number;
   json?: boolean;
+  timeoutMs?: number;
 }): Promise<TextGenerationResult> {
   let lastError: Error | null = null;
 
-  for (const model of OPENROUTER_FREE_MODEL_CANDIDATES) {
+  for (const model of OPENROUTER_FREE_MODEL_CANDIDATES.slice(0, 2)) {
     try {
-      const text = await fetchOpenRouterText({ ...input, model });
+      const text = await fetchOpenRouterText({ ...input, model, timeoutMs: input.timeoutMs ?? 45_000 });
       return { text, provider: "openrouter", model };
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
@@ -99,7 +103,7 @@ async function tryXaiText(input: {
     throw new Error("XAI_API_KEY no configurada.");
   }
 
-  const response = await fetch("https://api.x.ai/v1/chat/completions", {
+  const response = await fetchWithTimeout("https://api.x.ai/v1/chat/completions", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${env.xaiApiKey}`,
@@ -111,6 +115,7 @@ async function tryXaiText(input: {
       messages: [{ role: "user", content: input.prompt }],
       ...(input.json ? { response_format: { type: "json_object" } } : {}),
     }),
+    timeoutMs: 45_000,
   });
 
   const raw = await response.text();
@@ -138,7 +143,7 @@ async function tryOpenAiText(input: {
     throw new Error("OPENAI_API_KEY no configurada.");
   }
 
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+  const response = await fetchWithTimeout("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${env.openAiApiKey}`,
@@ -150,6 +155,7 @@ async function tryOpenAiText(input: {
       messages: [{ role: "user", content: input.prompt }],
       ...(input.json ? { response_format: { type: "json_object" } } : {}),
     }),
+    timeoutMs: 45_000,
   });
 
   const raw = await response.text();

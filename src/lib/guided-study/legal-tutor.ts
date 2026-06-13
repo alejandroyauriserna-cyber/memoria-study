@@ -214,10 +214,13 @@ export async function askLegalStudyTutor(input: {
     }
   } catch (error) {
     console.error("[guided-study/tutor] Todos los proveedores fallaron:", error);
+    const detail = error instanceof Error ? error.message : String(error);
     return {
       analysis: buildFallbackAnalysis(input.pageText, input.pageNumber),
       customReply:
-        "El profesor IA no está disponible ahora (Gemini sin cuota y respaldo OpenRouter/DeepSeek no configurado o agotado). Revisa OPENROUTER_API_KEY en el servidor o inténtalo más tarde.",
+        detail.includes("proveedores") || detail.includes("GEMINI") || detail.includes("OPENROUTER")
+          ? `${detail} Configura GEMINI_API_KEY u OPENROUTER_API_KEY en Vercel e inténtalo de nuevo.`
+          : `El profesor IA no respondió: ${detail}`,
       activeSources,
     };
   }

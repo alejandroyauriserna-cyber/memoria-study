@@ -19,7 +19,7 @@ import { hasSupabaseEnv } from "@/lib/env";
 import type { DocumentStudyIndex, GuidedStudyTutorAction } from "@/types/guided-legal-study";
 
 export const runtime = "nodejs";
-export const maxDuration = 120;
+export const maxDuration = 180;
 
 const VALID_ACTIONS = new Set<GuidedStudyTutorAction>([
   "analyze_page",
@@ -85,7 +85,11 @@ export async function POST(request: Request) {
       action = "exam_essentials";
     }
 
-    const material = await loadMaterialForGuidedStudy(body.materialId, user.id);
+    const [material, sourceSettings] = await Promise.all([
+      loadMaterialForGuidedStudy(body.materialId, user.id),
+      enrichSourceSettings(user.id, body.sourceSettings),
+    ]);
+
     const totalPages = material.pages.length;
     const pageNumber = Math.min(Math.max(1, body.pageNumber), totalPages);
 
@@ -103,8 +107,6 @@ export async function POST(request: Request) {
     if (chapterMode && action === "analyze_page") {
       action = "explain_chapter";
     }
-
-    const sourceSettings = await enrichSourceSettings(user.id, body.sourceSettings);
 
     const cacheScope = body.chapterId
       ? resolveTutorCacheScope({ pageNumber, chapterId: body.chapterId })

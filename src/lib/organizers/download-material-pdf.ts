@@ -1,7 +1,13 @@
+import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
+
 const MIN_PDF_BYTES = 512;
+const PDF_DOWNLOAD_TIMEOUT_MS = 45_000;
 
 export async function downloadMaterialPdf(fileUrl: string) {
-  const response = await fetch(fileUrl, { cache: "no-store" });
+  const response = await fetchWithTimeout(fileUrl, {
+    cache: "no-store",
+    timeoutMs: PDF_DOWNLOAD_TIMEOUT_MS,
+  });
 
   if (!response.ok) {
     throw new Error(`No se pudo descargar el PDF del material (HTTP ${response.status}).`);

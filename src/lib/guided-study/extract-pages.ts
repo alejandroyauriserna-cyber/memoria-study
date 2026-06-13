@@ -111,9 +111,11 @@ export async function extractPdfPagesFromBuffer(
   }));
 }
 
-export function getPageText(pages: PdfPageContent[], pageNumber: number): string {
+export function getPageText(pages: PdfPageContent[], pageNumber: number, maxChars = 12_000): string {
   const page = pages.find((p) => p.pageNumber === pageNumber);
-  return page?.text ?? "";
+  const text = page?.text ?? "";
+  if (text.length <= maxChars) return text;
+  return `${text.slice(0, maxChars)}\n\n[... texto de la página truncado ...]`;
 }
 
 export function getChapterText(

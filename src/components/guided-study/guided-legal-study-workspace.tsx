@@ -313,7 +313,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
       setActiveHighlightId(null);
 
       const controller = new AbortController();
-      const timeoutId = window.setTimeout(() => controller.abort(), 120_000);
+      const timeoutId = window.setTimeout(() => controller.abort(), 180_000);
 
       try {
         const response = await fetch("/api/guided-study/tutor", {
@@ -419,7 +419,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
       setActiveHighlightId(null);
 
       const controller = new AbortController();
-      const timeoutId = window.setTimeout(() => controller.abort(), 120_000);
+      const timeoutId = window.setTimeout(() => controller.abort(), 180_000);
 
       try {
         const response = await fetch("/api/guided-study/tutor", {
@@ -456,7 +456,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
       } catch (caught) {
         const message =
           caught instanceof Error && caught.name === "AbortError"
-            ? "El profesor IA tardó demasiado. Comprueba tu conexión y pulsa «Explicar página»."
+            ? "El profesor IA tardó demasiado. Comprueba GEMINI_API_KEY u OPENROUTER_API_KEY en el servidor, tu conexión, y pulsa «Explicar página»."
             : caught instanceof Error
               ? caught.message
               : "Error consultando al profesor.";
