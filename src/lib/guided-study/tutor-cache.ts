@@ -27,9 +27,13 @@ export function buildSourceFingerprint(settings: LegalSourcesSettings): string {
     .join("|");
 }
 
-function scopeKey(scope: TutorCacheScope, examOnly: boolean): string {
+export function buildTutorCacheKey(scope: TutorCacheScope, examOnly: boolean): string {
   const base = scope.type === "page" ? `p:${scope.pageNumber}` : `ch:${scope.chapterId}`;
   return `${base}:${examOnly ? "exam" : "full"}`;
+}
+
+function scopeKey(scope: TutorCacheScope, examOnly: boolean): string {
+  return buildTutorCacheKey(scope, examOnly);
 }
 
 function loadStore(materialId: string): MaterialCacheStore {

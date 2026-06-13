@@ -22,6 +22,15 @@ import {
   saveTutorCache,
   type TutorCacheScope,
 } from "@/lib/guided-study/tutor-cache";
+import { fetchRemoteTutorCache } from "@/lib/guided-study/tutor-cache-remote";
+import {
+  appendLocalTutorChatMessage,
+  createClientTutorChatMessage,
+  findLocalChatAnswer,
+  loadLocalTutorChat,
+  saveLocalTutorChat,
+} from "@/lib/guided-study/tutor-chat-local";
+import { fetchRemoteTutorChat } from "@/lib/guided-study/tutor-chat-remote";
 import { getLibrarySetupStatus } from "@/lib/legal-sources/library-setup";
 import {
   fetchLegalSourcesSettings,
@@ -50,6 +59,7 @@ import type {
   DocumentStudyIndex,
   GuidedStudyTutorAction,
   PageProfessorAnalysis,
+  TutorChatMessage,
   TutorResponse,
 } from "@/types/guided-legal-study";
 import type { LegalSourceAttribution, LegalSourcesSettings } from "@/types/legal-sources";
@@ -94,6 +104,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
   const [analyzedScope, setAnalyzedScope] = useState<TutorCacheScope | null>(null);
   const [tutorScope, setTutorScope] = useState<TutorCacheScope>({ type: "page", pageNumber: 1 });
   const [sourcesStale, setSourcesStale] = useState(false);
+  const [chatMessages, setChatMessages] = useState<TutorChatMessage[]>([]);
   const initialAnalysisDone = useRef(false);
   const initProgress = useLoadingProgress(phase === "loading", "guidedStudyInit");
   const tutorProgress = useLoadingProgress(tutorLoading, "aiAnalyze");
@@ -205,36 +216,163 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
       };
       setTutorState({
         analysis: result.analysis ?? null,
-        customReply: result.customReply ?? null,
+        customReply: null,
         activeSources: result.activeSources ?? [],
       });
       setAnalyzedScope(scope);
       setTutorScope(scope);
       setSourcesStale(false);
-      saveTutorCache(materialId, scope, examOnly, buildSourceFingerprint(settings), result);
+      saveTutorCache(materialId, scope, examOnly, buildSourceFingerprint(settings), {
+        analysis: result.analysis,
+        activeSources: result.activeSources,
+      });
     },
     [materialId, examOnly],
   );
 
   const tryLoadCachedTutor = useCallback(
-    (scope: TutorCacheScope, settings: LegalSourcesSettings) => {
-      const cached = loadTutorCache(
+    async (scope: TutorCacheScope, settings: LegalSourcesSettings) => {
+      const fingerprint = buildSourceFingerprint(settings);
+      const local = loadTutorCache(materialId, scope, examOnly, fingerprint);
+      if (local) {
+        setTutorState({
+          analysis: local.analysis ?? null,
+          customReply: null,
+          activeSources: local.activeSources ?? [],
+        });
+        setAnalyzedScope(scope);
+        setSourcesStale(false);
+        return true;
+      }
+
+      try {
+        const remote = await fetchRemoteTutorCache(materialId, scope, examOnly, settings);
+        if (remote) {
+          saveTutorCache(materialId, scope, examOnly, fingerprint, remote);
+          setTutorState({
+            analysis: remote.analysis ?? null,
+            customReply: null,
+            activeSources: remote.activeSources ?? [],
+          });
+          setAnalyzedScope(scope);
+          setSourcesStale(false);
+          return true;
+        }
+      } catch {
+        // Sin conexión o tabla aún no migrada: seguir sin bloquear.
+      }
+
+      return false;
+    },
+    [materialId, examOnly],
+  );
+
+  const syncChatForScope = useCallback(
+    async (scope: TutorCacheScope, settings: LegalSourcesSettings) => {
+      const fingerprint = buildSourceFingerprint(settings);
+      const local = loadLocalTutorChat(materialId, scope, examOnly, fingerprint);
+      setChatMessages(local);
+
+      try {
+        const remote = await fetchRemoteTutorChat(materialId, scope, examOnly, settings);
+        if (remote.length) {
+          saveLocalTutorChat(materialId, scope, examOnly, fingerprint, remote);
+          setChatMessages(remote);
+        }
+      } catch {
+        // Sin conexión: mantener historial local.
+      }
+    },
+    [materialId, examOnly],
+  );
+
+  const askCustomQuestion = useCallback(
+    async (question: string) => {
+      if (!material || !question.trim()) return;
+
+      const settings = sourceSettings ?? loadLegalSourcesSettings();
+      const scope = tutorScope;
+      const fingerprint = buildSourceFingerprint(settings);
+
+      const localCached = findLocalChatAnswer(
         materialId,
         scope,
         examOnly,
-        buildSourceFingerprint(settings),
+        fingerprint,
+        question,
       );
-      if (!cached) return false;
-      setTutorState({
-        analysis: cached.analysis ?? null,
-        customReply: cached.customReply ?? null,
-        activeSources: cached.activeSources ?? [],
-      });
-      setAnalyzedScope(scope);
-      setSourcesStale(false);
-      return true;
+      if (localCached) {
+        const message = createClientTutorChatMessage(question, localCached, true);
+        setChatMessages(
+          appendLocalTutorChatMessage(materialId, scope, examOnly, fingerprint, message),
+        );
+        return;
+      }
+
+      setTutorLoading(true);
+      setActiveHighlightId(null);
+
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => controller.abort(), 120_000);
+
+      try {
+        const response = await fetch("/api/guided-study/tutor", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            materialId,
+            pageNumber: scope.type === "page" ? scope.pageNumber : currentPage,
+            action: "custom",
+            customPrompt: question,
+            index,
+            examOnly,
+            sourceSettings: settings,
+            chapterId: scope.type === "chapter" ? scope.chapterId : undefined,
+          }),
+          signal: controller.signal,
+        });
+
+        const payload = await response.json();
+        if (!response.ok) {
+          throw new Error(payload.error ?? "Error del tutor.");
+        }
+
+        const answer = payload.customReply?.trim();
+        if (!answer) {
+          throw new Error("El profesor IA no devolvió una respuesta.");
+        }
+
+        const message =
+          payload.chatMessage ??
+          createClientTutorChatMessage(question, answer, Boolean(payload.fromChatCache));
+
+        setChatMessages(
+          appendLocalTutorChatMessage(materialId, scope, examOnly, fingerprint, message),
+        );
+
+        if (payload.activeSources?.length) {
+          setTutorState((prev) => ({
+            ...prev,
+            activeSources: payload.activeSources,
+          }));
+        }
+      } catch (caught) {
+        const message =
+          caught instanceof Error && caught.name === "AbortError"
+            ? "El profesor IA tardó demasiado. Comprueba tu conexión e inténtalo de nuevo."
+            : caught instanceof Error
+              ? caught.message
+              : "Error consultando al profesor.";
+        setChatMessages((prev) => [
+          ...prev,
+          createClientTutorChatMessage(question, message),
+        ]);
+      } finally {
+        window.clearTimeout(timeoutId);
+        setTutorLoading(false);
+      }
     },
-    [materialId, examOnly],
+    [material, materialId, tutorScope, currentPage, index, examOnly, sourceSettings],
   );
 
   const askTutor = useCallback(
@@ -257,7 +395,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
           ? { type: "chapter" as const, chapterId: options.chapterId }
           : { type: "page" as const, pageNumber: currentPage });
 
-      if (!options?.skipCache) {
+      if (action !== "custom" && !options?.skipCache) {
         const cached = loadTutorCache(
           materialId,
           scope,
@@ -267,7 +405,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
         if (cached) {
           setTutorState({
             analysis: cached.analysis ?? null,
-            customReply: cached.customReply ?? null,
+            customReply: null,
             activeSources: cached.activeSources ?? [],
           });
           setAnalyzedScope(scope);
@@ -296,6 +434,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
             examOnly,
             sourceSettings: settings,
             chapterId: options?.chapterId ?? (scope.type === "chapter" ? scope.chapterId : undefined),
+            skipCache: options?.skipCache ?? false,
           }),
           signal: controller.signal,
         });
@@ -309,6 +448,10 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
           throw new Error("El profesor IA no devolvió contenido para esta página. Intenta de nuevo.");
         }
 
+        if (action === "custom") {
+          return;
+        }
+
         applyTutorResult(scope, payload, settings);
       } catch (caught) {
         const message =
@@ -317,11 +460,12 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
             : caught instanceof Error
               ? caught.message
               : "Error consultando al profesor.";
-        setTutorState({
+        setTutorState((prev) => ({
+          ...prev,
           analysis: null,
           customReply: message,
           activeSources: [],
-        });
+        }));
         setAnalyzedScope(null);
       } finally {
         window.clearTimeout(timeoutId);
@@ -422,19 +566,24 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
   }
 
   useEffect(() => {
+    if (phase !== "ready" || !material) return;
+    const settings = sourceSettings ?? loadLegalSourcesSettings();
+    void syncChatForScope(tutorScope, settings);
+  }, [phase, material, tutorScope, examOnly, sourceSettings, syncChatForScope]);
+
+  useEffect(() => {
     if (phase !== "ready" || !material || initialAnalysisDone.current) return;
 
     const scope = { type: "page" as const, pageNumber: currentPage };
     setTutorScope(scope);
 
     const settings = sourceSettings ?? loadLegalSourcesSettings();
-    if (tryLoadCachedTutor(scope, settings)) {
-      initialAnalysisDone.current = true;
-      return;
-    }
-
     initialAnalysisDone.current = true;
-    void askTutor(defaultTutorAction, { scope });
+
+    void (async () => {
+      if (await tryLoadCachedTutor(scope, settings)) return;
+      void askTutor(defaultTutorAction, { scope });
+    })();
   }, [phase, material, currentPage, defaultTutorAction, askTutor, tryLoadCachedTutor, sourceSettings]);
 
   useEffect(() => {
@@ -459,10 +608,11 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
     setPracticeExam(false);
 
     const settings = sourceSettings ?? loadLegalSourcesSettings();
-    if (!tryLoadCachedTutor(scope, settings)) {
+    void (async () => {
+      if (await tryLoadCachedTutor(scope, settings)) return;
       setTutorState({ analysis: null, customReply: null, activeSources: [] });
       setAnalyzedScope(null);
-    }
+    })();
   }
 
   function handleGeneratePage() {
@@ -493,7 +643,11 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
       updateCurrentPage(materialId, chapter.startPage);
     }
 
-    void askTutor("explain_chapter", { scope, chapterId: chapter.id, skipCache: true });
+    void (async () => {
+      const settings = sourceSettings ?? loadLegalSourcesSettings();
+      if (await tryLoadCachedTutor(scope, settings)) return;
+      void askTutor("explain_chapter", { scope, chapterId: chapter.id });
+    })();
   }
 
   function handleMarkUnderstood() {
@@ -659,6 +813,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
             loadingMessage={tutorProgress.message}
             loadingStageLabel={tutorProgress.stageLabel}
             analysis={displayAnalysis}
+            chatMessages={chatMessages}
             customReply={tutorState.customReply}
             examOnly={examOnly}
             practiceExam={practiceExam}
@@ -685,14 +840,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
                 skipCache: true,
               });
             }}
-            onCustomAsk={(prompt) =>
-              void askTutor("custom", {
-                customPrompt: prompt,
-                scope: tutorScope,
-                chapterId: tutorScope.type === "chapter" ? tutorScope.chapterId : undefined,
-                skipCache: true,
-              })
-            }
+            onCustomAsk={(prompt) => void askCustomQuestion(prompt)}
             onMarkUnderstood={handleMarkUnderstood}
             onGeneratePage={handleGeneratePage}
             pageUnderstood={understoodPages.includes(currentPage)}

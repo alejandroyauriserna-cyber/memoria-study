@@ -27,6 +27,7 @@ import { LoadingState } from "@/components/ui/loading-state";
 import type {
   GuidedStudyTutorAction,
   PageProfessorAnalysis,
+  TutorChatMessage,
 } from "@/types/guided-legal-study";
 import { LibrarySetupChecklist } from "@/components/guided-study/library-setup-checklist";
 import { formatSourceSyncLabel } from "@/lib/legal-sources/source-meta";
@@ -212,6 +213,7 @@ export function LegalTutorPanel({
   loadingMessage,
   loadingStageLabel,
   analysis,
+  chatMessages = [],
   customReply,
   examOnly,
   practiceExam,
@@ -241,6 +243,7 @@ export function LegalTutorPanel({
   loadingMessage?: string;
   loadingStageLabel?: string;
   analysis: PageProfessorAnalysis | null;
+  chatMessages?: TutorChatMessage[];
   customReply?: string | null;
   examOnly: boolean;
   practiceExam?: boolean;
@@ -368,31 +371,36 @@ export function LegalTutorPanel({
           </div>
         ) : null}
 
-        <div className="mt-2 flex gap-1.5">
-          <input
-            value={customPrompt}
-            onChange={(e) => setCustomPrompt(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && customPrompt.trim()) {
+        <div className="mt-2">
+          <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Chat con el profesor
+          </p>
+          <div className="mt-1 flex gap-1.5">
+            <input
+              value={customPrompt}
+              onChange={(e) => setCustomPrompt(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && customPrompt.trim()) {
+                  onCustomAsk(customPrompt.trim());
+                  setCustomPrompt("");
+                }
+              }}
+              placeholder="Pregunta lo que quieras sobre esta página…"
+              className="h-8 min-w-0 flex-1 rounded-lg border border-border bg-muted px-2.5 text-xs text-foreground placeholder:text-muted-foreground"
+            />
+            <button
+              type="button"
+              disabled={loading || !customPrompt.trim()}
+              onClick={() => {
                 onCustomAsk(customPrompt.trim());
                 setCustomPrompt("");
-              }
-            }}
-            placeholder="Pregunta al profesor..."
-            className="h-8 min-w-0 flex-1 rounded-lg border border-border bg-muted px-2.5 text-xs text-foreground placeholder:text-muted-foreground"
-          />
-          <button
-            type="button"
-            disabled={loading || !customPrompt.trim()}
-            onClick={() => {
-              onCustomAsk(customPrompt.trim());
-              setCustomPrompt("");
-            }}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-foreground disabled:opacity-40"
-            aria-label="Enviar"
-          >
-            <Send size={14} />
-          </button>
+              }}
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-foreground disabled:opacity-40"
+              aria-label="Enviar pregunta"
+            >
+              <Send size={14} />
+            </button>
+          </div>
         </div>
 
         <Link
@@ -441,6 +449,26 @@ export function LegalTutorPanel({
           <SourcesStaleBanner disabled={loading} onRefresh={onRefreshExplanation} />
         ) : null}
 
+        {chatMessages.length ? (
+          <div className="gs-tutor-chat" aria-label="Historial de preguntas al profesor">
+            {chatMessages.map((message) => (
+              <div key={message.id} className="gs-tutor-chat__exchange">
+                <div className="gs-tutor-chat__question">
+                  <span>Tú</span>
+                  <p>{message.question}</p>
+                </div>
+                <div className="gs-tutor-chat__answer">
+                  <span>
+                    Profesor IA
+                    {message.fromCache ? " · guardado" : null}
+                  </span>
+                  <p>{message.answer}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : null}
+
         {loading ? (
           <LoadingState
             active
@@ -470,7 +498,7 @@ export function LegalTutorPanel({
             animate={{ opacity: 1, y: 0 }}
             className="gs-tutor-content space-y-3"
           >
-            {customReply ? (
+            {customReply && !chatMessages.length ? (
               <div className="gs-custom-reply">
                 <p className="text-sm leading-7 text-foreground">{customReply}</p>
               </div>
@@ -508,7 +536,7 @@ export function LegalTutorPanel({
               </>
             ) : null}
           </motion.div>
-        ) : (
+        ) : !chatMessages.length ? (
           <div className="gs-page-prompt">
             <Sparkles size={22} className="text-accent" />
             <p>
@@ -522,7 +550,7 @@ export function LegalTutorPanel({
               </button>
             ) : null}
           </div>
-        )}
+        ) : null}
       </div>
 
       <div className="gs-tutor-footer shrink-0 border-t border-border px-3 py-2">

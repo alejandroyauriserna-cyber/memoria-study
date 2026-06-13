@@ -163,6 +163,15 @@ export type TutorResponse = {
   answer?: string;
 };
 
+export type TutorChatMessage = {
+  id: string;
+  question: string;
+  answer: string;
+  questionHash: string;
+  createdAt: string;
+  fromCache?: boolean;
+};
+
 export type GuidedStudySession = {
   materialId: string;
   currentPage: number;
