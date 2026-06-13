@@ -738,8 +738,8 @@ export function LegalSourcesWorkspace() {
 
         {settings.strictNormativeMode ? (
           <p className="fuentes-alert is-info-green fuentes-page-hero-wide">
-            Modo normativo estricto: solo se muestran articulos presentes en tus fuentes LP
-            sincronizadas. Sin sync activo, el tutor no citara numeros de articulo.
+            Solo artículos verificados: el tutor cita números de artículo solo si están en tus fuentes LP
+            sincronizadas. La explicación del PDF sigue completa aunque no haya artículo coincidente.
           </p>
         ) : null}
         {settings.strictMode ? (

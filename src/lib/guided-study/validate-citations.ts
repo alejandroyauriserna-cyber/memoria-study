@@ -11,7 +11,10 @@ import type {
 } from "@/types/guided-legal-study";
 
 export const NORMATIVE_SAFETY_MESSAGE =
-  "No encontré una norma específica vinculada con suficiente certeza. Prefiero no mostrar un artículo antes que proporcionar una referencia incorrecta.";
+  "No hay artículo verificado en tus fuentes LP para este punto; la explicación se basa en el PDF del curso.";
+
+export const NORMATIVE_ENRICHMENT_HINT =
+  "Las fuentes activadas enriquecen con normativa peruana verificada cuando hay coincidencia; no limitan la explicación del PDF.";
 
 const NORM_ALIASES: Record<string, string[]> = {
   cc: ["codigo civil", "c.c.", "c.c", "cc"],
@@ -230,12 +233,11 @@ export function processNormativeAnalysis(
     verified.push(validated);
   }
 
-  if (!options.strictNormativeMode) {
-    for (const suggested of suggestVerifiedArticlesFromPage(pageText, 4, index)) {
-      if (seen.has(suggested.legalBaseId!)) continue;
-      seen.add(suggested.legalBaseId!);
-      verified.push(suggested);
-    }
+  // Enriquecer con artículos verificables del índice LP cuando el texto de la página los sugiere.
+  for (const suggested of suggestVerifiedArticlesFromPage(pageText, 4, index)) {
+    if (seen.has(suggested.legalBaseId!)) continue;
+    seen.add(suggested.legalBaseId!);
+    verified.push(suggested);
   }
 
   const conceptualNormLinks: ConceptualNormLink[] = [];
@@ -266,7 +268,7 @@ export function processNormativeAnalysis(
     citations: verified,
     detectedConcepts: buildDetectedConcepts(analysis),
     conceptualNormLinks,
-    normativeNotice:
-      verified.length === 0 ? NORMATIVE_SAFETY_MESSAGE : undefined,
+    // Sin aviso amarillo por defecto: la enseñanza viene del PDF; las fuentes solo enriquecen.
+    normativeNotice: undefined,
   };
 }

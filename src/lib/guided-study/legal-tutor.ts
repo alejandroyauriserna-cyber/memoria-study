@@ -334,7 +334,7 @@ export async function askLegalStudyTutor(input: {
     console.error("[guided-study/tutor] parse error:", error, raw.slice(0, 500));
   }
 
-  if (strictMode && !input.pageText.trim()) {
+  if (strictMode && input.action === "custom" && !input.pageText.trim()) {
     return {
       customReply: "No encontré esta información dentro de las fuentes autorizadas por el usuario.",
       activeSources,

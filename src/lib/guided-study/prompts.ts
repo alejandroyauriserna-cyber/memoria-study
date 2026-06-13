@@ -38,11 +38,11 @@ PROHIBIDO (RIESGO ACADÉMICO):
 - Copiar números de artículo desde el PDF del estudiante o desde memoria del modelo.
 
 REGLA NORMATIVA OBLIGATORIA:
-- Los artículos SOLO pueden provenir de BASE JURÍDICA INDEXADA (Código Civil, Constitución y códigos oficiales indexados).
-- Si no hay artículo verificable, NO pongas número de artículo en citations ni en peruLaw.
-- En peruLaw puedes describir relación conceptual sin citar número si no hay base verificada.
+- El PDF de la página es la fuente principal de enseñanza. SIEMPRE explica conceptos, definiciones y clasificaciones del PDF aunque no haya artículo en la base indexada.
+- Las fuentes jurídicas activadas del estudiante (LP Derecho, etc.) sirven para ENRIQUECER con normativa peruana verificada cuando hay coincidencia real.
+- Si no hay artículo verificable en la base indexada, citations puede quedar vacío y peruLaw puede ser conceptual; NO dejes de enseñar por eso.
+- Los números de artículo SOLO pueden provenir de BASE JURÍDICA INDEXADA. No inventes artículos.
 - El texto citado debe ser literal de la base indexada, no parafraseado libremente.
-- Puedes enseñar doctrina y conceptos del PDF aunque citations quede vacío.
 
 Audiencia: ${UNT_DERECHO_AUDIENCE}
 `.trim();
@@ -177,8 +177,8 @@ export function buildTutorUserPrompt(input: {
     "BASE JURÍDICA INDEXADA (ÚNICA fuente permitida para números de artículo):",
     input.legalBaseBlock,
     input.strictNormativeMode
-      ? "MODO ESTRICTO NORMATIVO: citations debe quedar vacío si no hay artículo verificable en la base indexada. NO inventes artículos. Sigue enseñando doctrina del PDF."
-      : "",
+      ? "MODO NORMATIVO VERIFICADO: solo incluye números de artículo en citations si están en BASE JURÍDICA INDEXADA. Sigue enseñando el PDF con profundidad aunque citations quede vacío."
+      : "Puedes sugerir relación con norma peruana en peruLaw; citations solo con artículos verificados en la base indexada.",
     "",
     `INSTRUCCIÓN: ${directive}`,
   ].filter(Boolean);

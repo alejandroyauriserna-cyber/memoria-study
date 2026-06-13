@@ -54,27 +54,25 @@ export function buildLegalSourcesPromptBlock(
 
   const strictBlock = strictMode
     ? `
-MODO ESTRICTO ACADÉMICO ACTIVO:
-- Responde ÚNICAMENTE con las fuentes autorizadas listadas abajo Y el texto del PDF en estudio.
-- El PDF que el estudiante está leyendo SIEMPRE está autorizado como fuente principal.
-- Si la respuesta no está en esas fuentes ni en el PDF, responde exactamente:
+MODO ESTRICTO ACADÉMICO ACTIVO (solo consultas libres / chat):
+- En preguntas personalizadas del estudiante, responde con las fuentes autorizadas listadas abajo Y el PDF en estudio.
+- El PDF que el estudiante está leyendo SIEMPRE está autorizado como fuente principal de enseñanza.
+- Si una pregunta puntual no está en esas fuentes ni en el PDF, responde:
   "No encontré esta información dentro de las fuentes autorizadas por el usuario."
-- NO uses conocimiento general del modelo fuera de las fuentes autorizadas.
-- Cuando haya contradicción, indica qué fuente prevalece según la jerarquía.
 `
     : `
-Usa prioritariamente las fuentes autorizadas. Complementa con el PDF en estudio cuando la fuente no cubra el punto.
+Las fuentes activadas ENRIQUECEN la explicación con normativa/jurisprudencia verificada cuando hay coincidencia.
+La enseñanza principal siempre viene del PDF de la página; las fuentes no bloquean ni sustituyen esa explicación.
 `;
 
   return `
-FUENTES JURÍDICAS AUTORIZADAS POR EL ESTUDIANTE (orden de prioridad):
+FUENTES JURÍDICAS ACTIVADAS (capa de refuerzo normativo — orden de prioridad):
 ${priorityList}
 ${strictBlock}
-CONTENIDO DE FUENTES ACTIVAS:
-${excerpts || "(Sin extractos cargados para fuentes personalizadas — usa metadatos y PDF en estudio.)"}
+CONTENIDO DE FUENTES ACTIVAS (usar para citations verificadas y peruLaw cuando aplique):
+${excerpts || "(Sin extractos cargados — enseña desde el PDF; cita norma solo si aparece en BASE JURÍDICA INDEXADA.)"}
 
-CITACIÓN OBLIGATORIA en cada respuesta:
-Incluye en citations: sourceId, sourceTitle, article, page, author, fragment, updatedAt cuando aplique.
+CITACIÓN en citations: sourceId, sourceTitle, article, fragment solo cuando el artículo esté verificado en la base indexada.
 `.trim();
 }
 

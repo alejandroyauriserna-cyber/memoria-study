@@ -315,7 +315,7 @@ export function LegalTutorPanel({
         </div>
 
         <p className="mt-2 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Fuentes verificadas
+          Enriquecer con fuentes (opcional)
         </p>
         <div className="mt-1 grid grid-cols-2 gap-1.5">
           <ActionTile
