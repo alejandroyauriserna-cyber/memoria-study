@@ -280,7 +280,7 @@ export function LegalSourcesWorkspace() {
     const sourceUrls = sanitizeLpUrlList(
       urlsOverride?.length
         ? urlsOverride
-        : resolvePresetSyncUrls(settings, presetId, preset.url),
+        : resolvePresetSyncUrls(settings, preset),
     );
 
     const validationError = validateLpUrlList(sourceUrls);
@@ -528,7 +528,7 @@ export function LegalSourcesWorkspace() {
       : undefined;
     const sourceUrls =
       source.kind === "url" && source.lpPresetId && preset
-        ? resolvePresetSyncUrls(settings, source.lpPresetId, preset.url)
+        ? resolvePresetSyncUrls(settings, preset)
         : sanitizeLpUrlList(source.syncUrls ?? (source.sourceUrl ? [source.sourceUrl] : []));
 
     return (
@@ -827,7 +827,7 @@ export function LegalSourcesWorkspace() {
           {LP_NORMATIVE_PRESETS.map((preset) => {
             const synced = syncedPresets.get(preset.id);
             const busy = syncingPresetId === preset.id;
-            const presetUrls = resolvePresetSyncUrls(settings, preset.id, preset.url);
+            const presetUrls = resolvePresetSyncUrls(settings, preset);
 
             return (
               <div key={preset.id} className="fuentes-preset-card">

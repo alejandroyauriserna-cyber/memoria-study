@@ -36,7 +36,7 @@ function resolveSourceUrls(body: {
         : [],
   );
 
-  const urls = fromBody.length ? fromBody : preset ? [preset.url] : [];
+  const urls = fromBody.length ? fromBody : preset?.urls?.length ? preset.urls : preset ? [preset.url] : [];
 
   return { preset, urls };
 }

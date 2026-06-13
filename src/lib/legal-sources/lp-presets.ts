@@ -3,7 +3,10 @@ import type { LegalSourceRecord } from "@/types/legal-sources";
 export type LpNormativePreset = {
   id: string;
   title: string;
+  /** URL principal (primera parte). */
   url: string;
+  /** Partes LP a sincronizar por defecto (varias URLs cuando el código está dividido). */
+  urls?: string[];
   norm: string;
   normShort: string;
   description: string;
@@ -23,6 +26,10 @@ export const LP_NORMATIVE_PRESETS: LpNormativePreset[] = [
     id: "lp-cc",
     title: "Código Civil",
     url: "https://lpderecho.pe/codigo-civil-peruano-realmente-actualizado/",
+    urls: [
+      "https://lpderecho.pe/codigo-civil-peruano-realmente-actualizado/",
+      "https://lpderecho.pe/codigo-civil-peruano-segunda-parte/",
+    ],
     norm: "Código Civil",
     normShort: "CC",
     description: "Código Civil peruano con modificaciones vigentes.",
@@ -39,6 +46,10 @@ export const LP_NORMATIVE_PRESETS: LpNormativePreset[] = [
     id: "lp-cpc",
     title: "Código Procesal Civil",
     url: "https://lpderecho.pe/codigo-procesal-civil-actualizado/",
+    urls: [
+      "https://lpderecho.pe/codigo-procesal-civil-actualizado/",
+      "https://lpderecho.pe/tuo-codigo-procesal-civil-articulo-749-al-847/",
+    ],
     norm: "Código Procesal Civil",
     normShort: "CPC",
     description: "Código Procesal Civil peruano actualizado.",
@@ -47,9 +58,13 @@ export const LP_NORMATIVE_PRESETS: LpNormativePreset[] = [
     id: "lp-ncpp",
     title: "Código Procesal Penal",
     url: "https://lpderecho.pe/nuevo-codigo-procesal-penal-peruano-actualizado/",
+    urls: [
+      "https://lpderecho.pe/nuevo-codigo-procesal-penal-peruano-actualizado/",
+      "https://lpderecho.pe/nuevo-codigo-procesal-penal/",
+    ],
     norm: "Código Procesal Penal",
     normShort: "NCPP",
-    description: "Nuevo Código Procesal Penal — primera parte en LP.",
+    description: "Nuevo Código Procesal Penal — texto completo en LP (2 partes).",
   },
 ];
 

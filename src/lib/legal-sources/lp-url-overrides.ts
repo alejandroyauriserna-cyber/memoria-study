@@ -4,6 +4,7 @@ import {
   getLpPresetById,
   isAllowedLpUrl,
   normalizeLpSourceTitle,
+  type LpNormativePreset,
 } from "@/lib/legal-sources/lp-presets";
 import type { LegalSourceRecord, LegalSourcesSettings } from "@/types/legal-sources";
 
@@ -30,17 +31,18 @@ export function sanitizeLpUrlList(urls: string[]): string[] {
 
 export function resolvePresetSyncUrls(
   settings: LegalSourcesSettings,
-  presetId: string,
-  catalogUrl: string,
+  preset: Pick<LpNormativePreset, "id" | "url" | "urls">,
 ): string[] {
-  const custom = settings.lpPresetUrls?.[presetId];
+  const custom = settings.lpPresetUrls?.[preset.id];
   if (custom?.length) return custom;
 
-  const synced = settings.sources.find((s) => s.lpPresetId === presetId);
+  if (preset.urls?.length) return preset.urls;
+
+  const synced = settings.sources.find((s) => s.lpPresetId === preset.id);
   if (synced?.syncUrls?.length) return synced.syncUrls;
   if (synced?.sourceUrl) return [synced.sourceUrl];
 
-  return [catalogUrl];
+  return [preset.url];
 }
 
 export function setPresetSyncUrls(

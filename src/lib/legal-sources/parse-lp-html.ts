@@ -1,7 +1,7 @@
 import type { LegalArticleRecord } from "@/lib/guided-study/legal-base";
 
 const ARTICLE_HEADER =
-  /(?:^|\n)\s*(?:#{1,6}\s*)?Art[ií]culo\s+([\d]+(?:-[A-Za-z])?|[IVXLCDM]+)\.?\s*(?:°|\.|-)?\s*(?:\[([^\]]+)\]|[-–—]\s*([^\n*]+?))?(?:\*)?\s*(?:\n|$)/gi;
+  /(?:^|\n)\s*(?:#{1,6}\s*)?Art[ií]culo\s+(\d+(?:-[A-Za-z])?|[IVXLCDM]+)\.?\s*(?:°|\.|-)?\s*(?:\[([^\]]+)\]|[-–—]\s*([^\n*]+?))?(?:\*)?\s*(?:\n|$)/g;
 
 function decodeHtmlEntities(value: string): string {
   return value
@@ -76,7 +76,7 @@ export function parseLpLegalArticles(
   const blocks: ParsedBlock[] = [];
 
   ARTICLE_HEADER.lastIndex = 0;
-  const matches = [...plain.matchAll(new RegExp(ARTICLE_HEADER.source, "gi"))];
+  const matches = [...plain.matchAll(ARTICLE_HEADER)];
 
   for (let i = 0; i < matches.length; i++) {
     const match = matches[i]!;
@@ -141,7 +141,7 @@ function articleNumberKey(article: LegalArticleRecord): string {
   }
 
   // Must anchor after "Artículo" — [IVXLCDM]+ with /i also matches c/l/d/m inside the word.
-  const match = article.article.match(/Art[ií]culo\s+(\d+(?:-[A-Za-z])?|[IVXLCDM]+)/i);
+  const match = article.article.match(/Art[ií]culo\s+(\d+(?:-[A-Za-z])?|[IVXLCDM]+)/);
   return match?.[1] ? match[1].toLowerCase() : article.id;
 }
 
