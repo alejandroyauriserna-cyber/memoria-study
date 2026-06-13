@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react";
 import type { FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { FileText, GraduationCap, Sparkles, Upload } from "lucide-react";
 import { LoadingState } from "@/components/ui/loading-state";
 import { useLoadingProgress } from "@/hooks/use-loading-progress";
@@ -27,6 +28,7 @@ const materialTypes: Array<{ value: MaterialType; label: string }> = [
 ];
 
 export function UploadMaterialForm() {
+  const router = useRouter();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [materialType, setMaterialType] = useState<MaterialType>("apunte");
@@ -108,12 +110,11 @@ export function UploadMaterialForm() {
           throw new Error(payload.error ?? "Ocurrió un error al subir el material. Inténtalo nuevamente.");
         }
 
-        setStatus("saved");
-        setMessage("Material subido correctamente. Ya está disponible en la biblioteca.");
-        setTitle("");
-        setDescription("");
-        setFile(null);
-        setErrors({});
+        const uploadedTitle = title.trim();
+        const params = new URLSearchParams({ shared: "1" });
+        if (uploadedTitle) params.set("title", uploadedTitle);
+        router.push(`/library?${params.toString()}`);
+        return;
       } catch (error) {
         setStatus("error");
         setMessage(
@@ -123,7 +124,7 @@ export function UploadMaterialForm() {
         );
       }
     },
-    [academic, description, file, materialType, title],
+    [academic, description, file, materialType, title, router],
   );
 
   return (

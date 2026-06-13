@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { BookOpen, BrainCircuit, Command, Layers3, LibraryBig, ScanSearch, Search, Sparkles } from "lucide-react";
 import { AppShell } from "@/components/ui/shell";
 import { LibraryFocusSearchTrigger } from "@/components/library/library-focus-search-trigger";
+import { LibraryShareSuccessBanner } from "@/components/library/library-share-success-banner";
 import { LibraryPremiumWorkspace } from "@/components/library/library-premium-workspace";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -109,6 +111,9 @@ export default async function LibraryHomePage() {
   return (
     <AppShell>
       <div className="ms-home library-page mx-auto w-full max-w-7xl px-4 pb-12 pt-6 sm:px-6 lg:px-8">
+        <Suspense fallback={null}>
+          <LibraryShareSuccessBanner />
+        </Suspense>
         <header className="library-page-hero">
           <div className="library-page-hero-copy">
             <p className="ms-home-kicker">
