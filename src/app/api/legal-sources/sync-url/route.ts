@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/env";
-import { fetchUrlContent } from "@/lib/legal-sources/fetch-url-content";
+import {
+  buildWaybackSyncNote,
+  fetchUrlContentDetailed,
+} from "@/lib/legal-sources/fetch-url-content";
 import { getLpPresetById, isAllowedLpUrl } from "@/lib/legal-sources/lp-presets";
 import { sanitizeLpUrlList } from "@/lib/legal-sources/lp-url-overrides";
 import {
@@ -96,10 +99,14 @@ export async function POST(request: Request) {
     const title = preset?.norm ?? body.title?.trim() ?? `Fuente LP — ${norm}`;
 
     const articleChunks: Awaited<ReturnType<typeof parseLpLegalArticles>>[] = [];
+    let waybackTimestamp: string | undefined;
     for (const url of sourceUrls) {
-      const html = await fetchUrlContent(url);
+      const fetched = await fetchUrlContentDetailed(url);
+      if (fetched.fetchMode === "wayback") {
+        waybackTimestamp = fetched.waybackTimestamp;
+      }
       articleChunks.push(
-        parseLpLegalArticles(html, {
+        parseLpLegalArticles(fetched.html, {
           norm,
           normShort,
           sourceId,
@@ -126,6 +133,7 @@ export async function POST(request: Request) {
       sourceUrls.length > 1
         ? `Sincronizado desde ${sourceUrls.length} URLs LP.`
         : `Sincronizado desde ${sourceUrls[0]}`;
+    const waybackNote = waybackTimestamp ? buildWaybackSyncNote(waybackTimestamp) : "";
 
     const payload = {
       user_id: user.id,
@@ -133,7 +141,7 @@ export async function POST(request: Request) {
       category: "normativa" as const,
       kind: "url" as const,
       author: "LP Pasión por el Derecho",
-      description: preset?.description ?? urlsNote,
+      description: `${preset?.description ?? urlsNote}${waybackNote}`,
       source_url: sourceUrls[0],
       sync_urls: sourceUrls,
       lp_preset_id: preset?.id ?? null,
@@ -195,6 +203,8 @@ export async function POST(request: Request) {
       articleCount: articles.length,
       syncedAt,
       sourceUrls,
+      fetchMode: waybackTimestamp ? "wayback" : "direct",
+      waybackDate: waybackTimestamp ? waybackTimestamp.slice(0, 8) : undefined,
     });
   } catch (caught) {
     console.error("[legal-sources/sync-url]", caught);
