@@ -47,6 +47,11 @@ import {
   buildFallbackAnalysis,
   parseTutorResponse,
 } from "@/lib/guided-study/parse-tutor-response";
+import {
+  cleanPageTextForStudy,
+  extractStudyTopicHint,
+  looksLikeBibliography,
+} from "@/lib/guided-study/prepare-study-page-text";
 
 function samplePagesForAnalysis(pages: PdfPageContent[], totalPages: number) {
   const indices = new Set<number>([1, 2, 3, Math.ceil(totalPages / 2), totalPages - 1, totalPages]);
@@ -158,9 +163,10 @@ export async function askLegalStudyTutor(input: {
   const strictNormativeMode = input.sourceSettings?.strictNormativeMode !== false;
   const sourcesBlock = buildLegalSourcesPromptBlock(enabledSources, strictMode);
   const normativeIndex = await buildNormativeIndexForUser(input.userId, input.sourceSettings);
+  const pageTextForTutor = cleanPageTextForStudy(input.pageText);
 
   const relevantArticles = searchLegalBase(
-    `${input.pageText} ${input.chapterTitle ?? ""} ${input.chapterOverview ?? ""} ${input.customPrompt ?? ""}`,
+    `${pageTextForTutor} ${input.chapterTitle ?? ""} ${input.chapterOverview ?? ""} ${input.customPrompt ?? ""}`,
     12,
     normativeIndex,
   );
@@ -171,7 +177,7 @@ export async function askLegalStudyTutor(input: {
     input.action === "real_case";
   const jurisprudenceRecords = includeJurisprudence
     ? await findRelevantJurisprudenceForTutor({
-        pageText: input.pageText,
+        pageText: pageTextForTutor,
         chapterTitle: input.chapterTitle,
         customPrompt: input.customPrompt,
         userId: input.userId,
@@ -199,6 +205,7 @@ export async function askLegalStudyTutor(input: {
     const result = await generateTextWithFallback({
       prompt: `${GUIDED_STUDY_SYSTEM_ROLE}\n\n${buildTutorUserPrompt({
         ...input,
+        pageText: pageTextForTutor,
         legalBaseBlock: indexedNormativeBlock,
         sourcesBlock: sourcesBlock || undefined,
         jurisprudenceBlock: jurisprudenceBlock || undefined,
@@ -216,7 +223,7 @@ export async function askLegalStudyTutor(input: {
     console.error("[guided-study/tutor] Todos los proveedores fallaron:", error);
     const detail = error instanceof Error ? error.message : String(error);
     return {
-      analysis: buildFallbackAnalysis(input.pageText, input.pageNumber),
+      analysis: buildFallbackAnalysis(pageTextForTutor || input.pageText, input.pageNumber),
       customReply:
         detail.includes("proveedores") || detail.includes("GEMINI") || detail.includes("OPENROUTER")
           ? `${detail} Configura GEMINI_API_KEY u OPENROUTER_API_KEY en Vercel e inténtalo de nuevo.`
@@ -235,24 +242,40 @@ export async function askLegalStudyTutor(input: {
     if (parsed.analysis) {
       let analysis: PageProfessorAnalysis = processNormativeAnalysis(
         parsed.analysis,
-        input.pageText,
+        pageTextForTutor || input.pageText,
         { strictNormativeMode, normativeIndex },
       );
 
-      if (!analysis.conceptCards.length && analysis.pageFocus) {
-        analysis = {
-          ...analysis,
-          conceptCards: [
-            {
-              id: "auto-1",
-              concept: "Idea central de la página",
-              explanation: analysis.pageFocus,
-              example: "Consulta el PDF y relaciona con tu curso.",
-              examImportance: "Comprende los conceptos antes de avanzar.",
-              essential: true,
-            },
-          ],
-        };
+      analysis = {
+        ...analysis,
+        conceptCards: analysis.conceptCards.filter(
+          (card) => !looksLikeBibliography(`${card.concept} ${card.explanation}`),
+        ),
+      };
+
+      if (!analysis.conceptCards.length) {
+        const fallbackCards = buildFallbackAnalysis(
+          pageTextForTutor || input.pageText,
+          input.pageNumber,
+        ).conceptCards;
+
+        if (fallbackCards.length) {
+          analysis = { ...analysis, conceptCards: fallbackCards };
+        } else if (analysis.pageFocus && !looksLikeBibliography(analysis.pageFocus)) {
+          analysis = {
+            ...analysis,
+            conceptCards: [
+              {
+                id: "auto-1",
+                concept: extractStudyTopicHint(pageTextForTutor || input.pageText) ?? "Idea central de la página",
+                explanation: analysis.pageFocus,
+                example: "Consulta el PDF y relaciona con tu curso.",
+                examImportance: "Comprende los conceptos antes de avanzar.",
+                essential: true,
+              },
+            ],
+          };
+        }
       }
 
       if (input.action === "exam_essentials") {
@@ -277,8 +300,8 @@ export async function askLegalStudyTutor(input: {
   }
 
   return {
-    analysis: buildFallbackAnalysis(input.pageText, input.pageNumber),
-    customReply: input.pageText.trim()
+    analysis: buildFallbackAnalysis(pageTextForTutor || input.pageText, input.pageNumber),
+    customReply: pageTextForTutor.trim()
       ? undefined
       : "No se pudo extraer texto de esta página. Revisa el PDF visualmente mientras el profesor te guía.",
     activeSources,

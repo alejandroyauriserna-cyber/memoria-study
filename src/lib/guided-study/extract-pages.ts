@@ -1,8 +1,14 @@
 import PDFParser, { type Output } from "pdf2json";
 import { PDFDocument } from "pdf-lib";
+import { cleanPageTextForStudy } from "@/lib/guided-study/prepare-study-page-text";
 import type { PdfPageContent } from "@/types/guided-legal-study";
 
 type PdfParserError = { parserError: Error } | Error;
+
+type PdfTextItem = NonNullable<Output["Pages"][number]["Texts"]>[number] & {
+  x?: number;
+  y?: number;
+};
 
 function decodeTextRun(value: string) {
   try {
@@ -17,9 +23,22 @@ function normalizeText(text: string) {
 }
 
 function textFromSinglePage(page: Output["Pages"][number]) {
+  const items = [...(page.Texts ?? [])] as PdfTextItem[];
+  items.sort((a, b) => {
+    const yDiff = (b.y ?? 0) - (a.y ?? 0);
+    if (Math.abs(yDiff) > 0.35) return yDiff;
+    return (a.x ?? 0) - (b.x ?? 0);
+  });
+
+  const pageHeight = (page as { Height?: number }).Height ?? 0;
+  const footerCutoff = pageHeight > 0 ? pageHeight * 0.1 : 0;
   const parts: string[] = [];
 
-  for (const item of page.Texts ?? []) {
+  for (const item of items) {
+    if (footerCutoff > 0 && (item.y ?? pageHeight) < footerCutoff) {
+      continue;
+    }
+
     for (const run of item.R ?? []) {
       if (run.T) {
         parts.push(decodeTextRun(run.T));
@@ -113,7 +132,7 @@ export async function extractPdfPagesFromBuffer(
 
 export function getPageText(pages: PdfPageContent[], pageNumber: number, maxChars = 12_000): string {
   const page = pages.find((p) => p.pageNumber === pageNumber);
-  const text = page?.text ?? "";
+  const text = cleanPageTextForStudy(page?.text ?? "");
   if (text.length <= maxChars) return text;
   return `${text.slice(0, maxChars)}\n\n[... texto de la página truncado ...]`;
 }

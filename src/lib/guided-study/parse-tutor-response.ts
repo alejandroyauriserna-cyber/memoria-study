@@ -1,5 +1,10 @@
 import { z } from "zod";
 import { normalizeExamStructuredList } from "@/lib/guided-study/normalize-exam-questions";
+import {
+  cleanPageTextForStudy,
+  extractStudyTopicHint,
+  looksLikeBibliography,
+} from "@/lib/guided-study/prepare-study-page-text";
 import type { PageProfessorAnalysis, TutorResponse } from "@/types/guided-legal-study";
 
 const HighlightCategorySchema = z.enum([
@@ -271,26 +276,35 @@ export function parseTutorResponse(raw: string): TutorResponse {
 }
 
 export function buildFallbackAnalysis(pageText: string, pageNumber: number): PageProfessorAnalysis {
-  const excerpt = pageText.trim().slice(0, 400);
+  const cleaned = cleanPageTextForStudy(pageText);
+  const topicHint = extractStudyTopicHint(pageText);
+  const studyExcerpt = cleaned.slice(0, 900);
+
   return {
-    pageFocus: excerpt
-      ? `Estudia el contenido jurídico de la página ${pageNumber}.`
-      : `Revisa visualmente la página ${pageNumber} del PDF.`,
+    pageFocus: topicHint
+      ? `En la página ${pageNumber} se estudia: ${topicHint}. Identifica definiciones, clasificaciones y efectos jurídicos antes de avanzar.`
+      : cleaned.length > 80
+        ? `Estudia los institutos jurídicos centrales de la página ${pageNumber} (definiciones, requisitos, efectos y distinciones).`
+        : `Revisa visualmente la página ${pageNumber} del PDF.`,
     secondaryMentions: [],
-    keyLearning: [],
-    highlights: [],
-    conceptCards: excerpt
-      ? [
-          {
-            id: "fallback-1",
-            concept: `Contenido de la página ${pageNumber}`,
-            explanation: excerpt,
-            example: "Relaciona este fragmento con tu curso y con un caso práctico.",
-            examImportance: "Identifica definiciones y conceptos que el profesor pueda evaluar.",
-            essential: true,
-          },
-        ]
+    keyLearning: topicHint
+      ? [{ id: "kl-fallback", label: topicHint.slice(0, 80), essential: true }]
       : [],
+    highlights: [],
+    conceptCards:
+      studyExcerpt.length > 80 && !looksLikeBibliography(studyExcerpt)
+        ? [
+            {
+              id: "fallback-1",
+              concept: topicHint?.slice(0, 90) ?? `Contenido jurídico — página ${pageNumber}`,
+              explanation: studyExcerpt,
+              example: "Relaciona cada instituto con un caso concreto de tu curso.",
+              examImportance:
+                "Domina definiciones, clasificaciones y diferencias entre conceptos vecinos; suelen evaluarse en oral o desarrollo.",
+              essential: true,
+            },
+          ]
+        : [],
     examMode: {
       oral: [],
       desarrollo: [],
@@ -299,5 +313,9 @@ export function buildFallbackAnalysis(pageText: string, pageNumber: number): Pag
       commonErrors: [],
     },
     citations: [],
+    normativeNotice:
+      studyExcerpt.length > 80
+        ? undefined
+        : "No se pudo extraer bien el texto de esta página. Usa el PDF y pulsa «Explicar página» de nuevo.",
   };
 }

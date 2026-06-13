@@ -18,11 +18,10 @@ ESTRUCTURA DIDÁCTICA OBLIGATORIA (por conceptCard):
 5) Aplicación práctica o mini-caso peruano.
 6) Por qué es relevante para examen.
 
-IGNORAR O MINIMIZAR (salvo que sea indispensable para entender un concepto):
-- Datos biográficos extensos de autores.
-- Contexto histórico general no vinculado a un instituto jurídico.
-- Referencias editoriales, agradecimientos, notas al pie irrelevantes.
-- Cualquier dato secundario que no aporte al aprendizaje jurídico.
+IGNORAR COMPLETAMENTE (no explicar ni citar como contenido):
+- Notas al pie numeradas: (1), (2), (3)…
+- Bibliografía, referencias editoriales, ciudades, años, "Manuale", "Napoli", "Milán".
+- Agradecimientos, dedicatorias, índices y metadatos editoriales.
 
 REGLA SOBRE AUTORES Y PERSONAS:
 - Si aparece un autor (ej. "Juan Espinoza Espinoza"), NO dediques párrafos a su biografía.
