@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
 import { analyzeDocumentForStudy } from "@/lib/guided-study/legal-tutor";
 import { loadMaterialForGuidedStudy } from "@/lib/guided-study/load-material";
-import { GUIDED_STUDY_API_MAX_DURATION } from "@/lib/guided-study/timeouts";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/env";
 
 export const runtime = "nodejs";
-export const maxDuration = GUIDED_STUDY_API_MAX_DURATION;
+export const maxDuration = 300;
 
 export async function POST(request: Request) {
   try {

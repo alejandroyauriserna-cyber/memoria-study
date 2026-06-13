@@ -1020,7 +1020,7 @@ html:not(.dark) .gs-exam-toggle--active {
 .gs-wait-flashcard-label {
   font-size: 10px;
   font-weight: 600;
-  uppercase;
+  text-transform: uppercase;
   letter-spacing: 0.12em;
   color: var(--accent);
 }
