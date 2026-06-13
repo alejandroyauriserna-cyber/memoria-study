@@ -520,6 +520,15 @@
   box-shadow: 0 0 0 2px rgba(0, 255, 213, 0.25);
 }
 
+.gs-concept-chip--static {
+  cursor: default;
+  opacity: 0.88;
+}
+
+.gs-concept-chip--static:hover {
+  transform: none;
+}
+
 .gs-concept-chip-dot {
   width: 6px;
   height: 6px;

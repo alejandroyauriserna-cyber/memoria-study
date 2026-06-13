@@ -580,11 +580,8 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
     const settings = sourceSettings ?? loadLegalSourcesSettings();
     initialAnalysisDone.current = true;
 
-    void (async () => {
-      if (await tryLoadCachedTutor(scope, settings)) return;
-      void askTutor(defaultTutorAction, { scope });
-    })();
-  }, [phase, material, currentPage, defaultTutorAction, askTutor, tryLoadCachedTutor, sourceSettings]);
+    void tryLoadCachedTutor(scope, settings);
+  }, [phase, material, currentPage, tryLoadCachedTutor, sourceSettings]);
 
   useEffect(() => {
     if (!initialAnalysisDone.current || phase !== "ready" || !material) return;

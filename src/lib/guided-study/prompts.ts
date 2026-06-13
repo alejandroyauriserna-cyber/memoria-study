@@ -131,7 +131,7 @@ const ACTION_DIRECTIVES: Record<GuidedStudyTutorAction, string> = {
   civil_code:
     "Enriquece peruLaw y citations con Código Civil peruano de la base oficial indexada.",
   custom:
-    "Responde la consulta del estudiante en customReply (texto plano claro, 3-6 oraciones mínimo si es conceptual). Mantén analysis si aporta contexto didáctico.",
+    "Responde DIRECTAMENTE la pregunta del estudiante en customReply (texto plano, 3-6 oraciones mínimo si es conceptual). customReply es OBLIGATORIO y no puede ir vacío.",
 };
 
 export function buildTutorUserPrompt(input: {
@@ -186,10 +186,9 @@ export function buildTutorUserPrompt(input: {
   if (input.structured) {
     if (input.action === "custom") {
       contextParts.push(`
-Responde JSON:
-{"customReply": "respuesta didáctica en texto plano", "analysis": null}
-O si conviene enseñar con tarjetas: incluye analysis con el schema completo y customReply vacío.
-${STRUCTURED_PAGE_JSON_SCHEMA}`);
+Responde JSON con customReply OBLIGATORIO (responde la pregunta del estudiante en prosa clara):
+{"customReply": "tu respuesta didáctica aquí"}
+NO devuelvas solo el schema de analysis para preguntas libres. NO dejes customReply vacío.`);
     } else {
       contextParts.push(STRUCTURED_PAGE_JSON_SCHEMA);
     }

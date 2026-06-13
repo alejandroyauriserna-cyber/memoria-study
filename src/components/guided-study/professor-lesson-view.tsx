@@ -49,15 +49,22 @@ function ConceptCard({
   expanded,
   onToggle,
   active,
+  pdfLinkable,
 }: {
   card: ProfessorConceptCard;
   expanded: boolean;
   onToggle: () => void;
   active?: boolean;
+  pdfLinkable?: boolean;
 }) {
   return (
     <article className={`gs-concept-card ${active ? "gs-concept-card--active" : ""}`}>
-      <button type="button" className="gs-concept-card-head" onClick={onToggle}>
+      <button
+        type="button"
+        className="gs-concept-card-head"
+        onClick={onToggle}
+        title={pdfLinkable ? "Expandir y ubicar en el PDF" : undefined}
+      >
         <div className="flex items-start gap-2">
           <Sparkles size={15} className="mt-0.5 shrink-0 text-accent" />
           <div className="text-left">
@@ -247,18 +254,26 @@ export function ProfessorLessonView({
       <DetectedConceptsBlock concepts={analysis.detectedConcepts ?? []} />
 
       <div className="space-y-2">
-        {cards.map((card) => (
-          <ConceptCard
-            key={card.id}
-            card={card}
-            expanded={expandedId === card.id}
-            active={card.highlightId === activeHighlightId}
-            onToggle={() => {
-              setExpandedId((id) => (id === card.id ? null : card.id));
-              if (card.highlightId) onConceptClick?.(card.highlightId);
-            }}
-          />
-        ))}
+        {cards.map((card) => {
+          const highlight = card.highlightId
+            ? analysis.highlights.find((h) => h.id === card.highlightId)
+            : undefined;
+          const pdfLinkable = Boolean(card.highlightId && highlight?.findable !== false);
+
+          return (
+            <ConceptCard
+              key={card.id}
+              card={card}
+              expanded={expandedId === card.id}
+              active={card.highlightId === activeHighlightId}
+              pdfLinkable={pdfLinkable}
+              onToggle={() => {
+                setExpandedId((id) => (id === card.id ? null : card.id));
+                if (pdfLinkable && card.highlightId) onConceptClick?.(card.highlightId);
+              }}
+            />
+          );
+        })}
       </div>
 
       <NormativeBlock

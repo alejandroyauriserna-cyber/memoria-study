@@ -43,6 +43,8 @@ export type TextHighlight = {
   phrase: string;
   category: HighlightCategory;
   essential?: boolean;
+  /** Texto localizable en la página extraída del PDF (servidor). */
+  findable?: boolean;
 };
 
 export type KeyLearningItem = {

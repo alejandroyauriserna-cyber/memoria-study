@@ -52,6 +52,11 @@ import {
   needsTeachingFallback,
 } from "@/lib/guided-study/teaching-fallback";
 import {
+  buildCustomReplyFromAnalysis,
+  extractPlainTextFallback,
+  resolveCustomChatReply,
+} from "@/lib/guided-study/resolve-custom-reply";
+import {
   cleanPageTextForStudy,
   extractMainBodyBlock,
   extractStudyTopicHint,
@@ -281,6 +286,16 @@ export async function askLegalStudyTutor(input: {
   try {
     const parsed = parseTutorResponse(raw);
 
+    if (input.action === "custom") {
+      const customReply =
+        resolveCustomChatReply(parsed, input.customPrompt) ??
+        extractPlainTextFallback(raw);
+
+      if (customReply) {
+        return { customReply, activeSources };
+      }
+    }
+
     if (parsed.customReply && !parsed.analysis) {
       return { customReply: parsed.customReply, activeSources };
     }
@@ -332,6 +347,12 @@ export async function askLegalStudyTutor(input: {
     }
   } catch (error) {
     console.error("[guided-study/tutor] parse error:", error, raw.slice(0, 500));
+    if (input.action === "custom") {
+      const plain = extractPlainTextFallback(raw);
+      if (plain) {
+        return { customReply: plain, activeSources };
+      }
+    }
   }
 
   if (strictMode && input.action === "custom" && !input.pageText.trim()) {
@@ -342,6 +363,13 @@ export async function askLegalStudyTutor(input: {
   }
 
   const analysis = await finalizeTeachingAnalysis(undefined, input);
+
+  if (input.action === "custom") {
+    const customReply = buildCustomReplyFromAnalysis(analysis, input.customPrompt);
+    if (customReply) {
+      return { customReply, activeSources };
+    }
+  }
 
   return {
     analysis,

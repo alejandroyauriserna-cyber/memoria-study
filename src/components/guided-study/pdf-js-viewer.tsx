@@ -3,21 +3,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PDFDocumentProxy } from "pdfjs-dist";
 import * as pdfjs from "pdfjs-dist";
+import { findPhraseInPageText } from "@/lib/guided-study/highlight-text";
 
 if (typeof window !== "undefined") {
   pdfjs.GlobalWorkerOptions.workerSrc = new URL(
     "pdfjs-dist/build/pdf.worker.min.mjs",
     import.meta.url,
   ).toString();
-}
-
-function normalizeForSearch(text: string) {
-  return text
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
 }
 
 export function PdfJsViewer({
@@ -81,18 +73,19 @@ export function PdfJsViewer({
 
       if (textLayerRef.current) {
         const needle = highlightPhrase?.trim() || searchQuery?.trim() || "";
-        const normalizedPage = normalizeForSearch(strings);
-        const normalizedNeedle = normalizeForSearch(needle);
-        const found = normalizedNeedle.length >= 3 && normalizedPage.includes(normalizedNeedle);
+        const match = needle.length >= 3 ? findPhraseInPageText(strings, needle) : null;
+        const found = match !== null;
 
         textLayerRef.current.innerHTML = "";
         const marker = document.createElement("div");
         marker.className = found ? "gs-pdf-text-hit" : "gs-pdf-text-miss";
         marker.textContent = found
           ? `Coincidencia encontrada en la página ${pageNumber}`
-          : needle.length >= 3
-            ? `Busca «${needle.slice(0, 60)}» en el texto de la página`
-            : "";
+          : highlightPhrase?.trim() && needle.length >= 3
+            ? "Este fragmento no aparece en el texto extraíble del PDF (puede ser escaneado o reformulado por la IA)."
+            : needle.length >= 3
+              ? `Busca «${needle.slice(0, 60)}» en el texto de la página`
+              : "";
         if (marker.textContent) textLayerRef.current.appendChild(marker);
       }
     } catch {

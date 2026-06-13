@@ -3,6 +3,7 @@ import {
   type LegalArticleRecord,
   toLegalCitation,
 } from "@/lib/guided-study/legal-base";
+import { findPhraseInPageText } from "@/lib/guided-study/highlight-text";
 import type {
   ConceptualNormLink,
   DetectedLegalConcept,
@@ -253,6 +254,14 @@ export function processNormativeAnalysis(
     });
   }
 
+  const annotatedHighlights = analysis.highlights.map((highlight) => ({
+    ...highlight,
+    findable: findPhraseInPageText(pageText, highlight.phrase) !== null,
+  }));
+  const findableHighlightIds = new Set(
+    annotatedHighlights.filter((h) => h.findable).map((h) => h.id),
+  );
+
   const sanitizedCards = analysis.conceptCards.map((card) => ({
     ...card,
     peruLaw: card.peruLaw
@@ -260,10 +269,24 @@ export function processNormativeAnalysis(
         ? card.peruLaw
         : stripArticleNumbers(card.peruLaw)
       : undefined,
+    highlightId:
+      card.highlightId && findableHighlightIds.has(card.highlightId)
+        ? card.highlightId
+        : undefined,
+  }));
+
+  const sanitizedKeyLearning = analysis.keyLearning.map((item) => ({
+    ...item,
+    highlightId:
+      item.highlightId && findableHighlightIds.has(item.highlightId)
+        ? item.highlightId
+        : undefined,
   }));
 
   return {
     ...analysis,
+    highlights: annotatedHighlights,
+    keyLearning: sanitizedKeyLearning,
     conceptCards: sanitizedCards,
     citations: verified,
     detectedConcepts: buildDetectedConcepts(analysis),
