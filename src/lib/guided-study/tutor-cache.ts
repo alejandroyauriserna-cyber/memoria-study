@@ -21,7 +21,7 @@ type CacheEntry = {
 type MaterialCacheStore = Record<string, CacheEntry>;
 
 /** Bump when tutor input cleaning / prompts change to invalidate stale cache. */
-export const TUTOR_PIPELINE_VERSION = "study-text-v2";
+export const TUTOR_PIPELINE_VERSION = "study-text-v3";
 
 export function buildSourceFingerprint(settings: LegalSourcesSettings): string {
   const sources = getEnabledSources(settings)

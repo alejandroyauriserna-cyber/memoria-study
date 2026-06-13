@@ -1,6 +1,6 @@
 import PDFParser, { type Output } from "pdf2json";
 import { PDFDocument } from "pdf-lib";
-import { cleanPageTextForStudy } from "@/lib/guided-study/prepare-study-page-text";
+import { cleanPageTextForStudy, scorePageTextQuality } from "@/lib/guided-study/prepare-study-page-text";
 import type { PdfPageContent } from "@/types/guided-legal-study";
 
 type PdfParserError = { parserError: Error } | Error;
@@ -24,29 +24,56 @@ function normalizeText(text: string) {
 
 function textFromSinglePage(page: Output["Pages"][number]) {
   const items = [...(page.Texts ?? [])] as PdfTextItem[];
-  items.sort((a, b) => {
+
+  const joinItems = (sortedItems: PdfTextItem[], skipFooter = false) => {
+    const pageHeight = (page as { Height?: number }).Height ?? 0;
+    const footerCutoff = pageHeight > 0 ? pageHeight * 0.12 : 0;
+    const parts: string[] = [];
+
+    for (const item of sortedItems) {
+      if (skipFooter && footerCutoff > 0 && (item.y ?? pageHeight) < footerCutoff) {
+        continue;
+      }
+
+      for (const run of item.R ?? []) {
+        if (run.T) {
+          parts.push(decodeTextRun(run.T));
+        }
+      }
+    }
+
+    return normalizeText(parts.join(" "));
+  };
+
+  const byPosition = [...items].sort((a, b) => {
     const yDiff = (b.y ?? 0) - (a.y ?? 0);
     if (Math.abs(yDiff) > 0.35) return yDiff;
     return (a.x ?? 0) - (b.x ?? 0);
   });
 
-  const pageHeight = (page as { Height?: number }).Height ?? 0;
-  const footerCutoff = pageHeight > 0 ? pageHeight * 0.1 : 0;
-  const parts: string[] = [];
+  const byPositionAsc = [...items].sort((a, b) => {
+    const yDiff = (a.y ?? 0) - (b.y ?? 0);
+    if (Math.abs(yDiff) > 0.35) return yDiff;
+    return (a.x ?? 0) - (b.x ?? 0);
+  });
 
-  for (const item of items) {
-    if (footerCutoff > 0 && (item.y ?? pageHeight) < footerCutoff) {
-      continue;
-    }
+  const candidates = [
+    joinItems(byPosition, true),
+    joinItems(byPositionAsc, true),
+    joinItems(items, false),
+  ];
 
-    for (const run of item.R ?? []) {
-      if (run.T) {
-        parts.push(decodeTextRun(run.T));
-      }
+  let best = candidates[0] ?? "";
+  let bestScore = -1;
+  for (const candidate of candidates) {
+    const score = scorePageTextQuality(cleanPageTextForStudy(candidate));
+    if (score > bestScore) {
+      bestScore = score;
+      best = candidate;
     }
   }
 
-  return normalizeText(parts.join(" "));
+  return best;
 }
 
 async function extractPagesWithPdf2Json(buffer: Buffer): Promise<PdfPageContent[]> {

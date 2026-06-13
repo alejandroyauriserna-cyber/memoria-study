@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { extractPdfFromBuffer } from "@/lib/pdf/extract";
 import { downloadMaterialPdf } from "@/lib/organizers/download-material-pdf";
 import { extractPdfPagesFromBuffer } from "@/lib/guided-study/extract-pages";
+import { hasSubstantiveStudyText, cleanPageTextForStudy } from "@/lib/guided-study/prepare-study-page-text";
 import { verifyMaterialAccess } from "@/lib/materials/verify-access";
 import type { PdfPageContent } from "@/types/guided-legal-study";
 
@@ -71,7 +72,7 @@ export async function loadMaterialForGuidedStudy(
   }
 
   const cached = pageCache.get(materialId);
-  if (cached && Date.now() - cached.loadedAt < CACHE_TTL_MS) {
+  if (cached && Date.now() - cached.loadedAt < CACHE_TTL_MS && isGuidedStudyPageCacheUsable(cached.pages)) {
     return {
       id: material.id,
       title: material.title,
@@ -84,7 +85,7 @@ export async function loadMaterialForGuidedStudy(
   }
 
   const dbPages = await loadPagesFromDbCache(materialId);
-  if (dbPages?.length) {
+  if (dbPages?.length && isGuidedStudyPageCacheUsable(dbPages)) {
     pageCache.set(materialId, { pages: dbPages, loadedAt: Date.now() });
     return {
       id: material.id,
@@ -131,4 +132,10 @@ export function clearGuidedStudyCache(materialId?: string) {
   } else {
     pageCache.clear();
   }
+}
+
+function isGuidedStudyPageCacheUsable(pages: PdfPageContent[]): boolean {
+  const sample = pages.find((page) => page.text.trim().length >= 40)?.text ?? pages[0]?.text ?? "";
+  if (!sample.trim()) return false;
+  return hasSubstantiveStudyText(cleanPageTextForStudy(sample)) || sample.length >= 400;
 }

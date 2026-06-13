@@ -48,8 +48,14 @@ import {
   parseTutorResponse,
 } from "@/lib/guided-study/parse-tutor-response";
 import {
+  generateTeachingFallback,
+  needsTeachingFallback,
+} from "@/lib/guided-study/teaching-fallback";
+import {
   cleanPageTextForStudy,
+  extractMainBodyBlock,
   extractStudyTopicHint,
+  hasSubstantiveStudyText,
   looksLikeBibliography,
 } from "@/lib/guided-study/prepare-study-page-text";
 
@@ -142,6 +148,43 @@ function usesStructuredResponse(action: GuidedStudyTutorAction): boolean {
   return action !== "custom";
 }
 
+function resolvePageTextForTutor(rawPageText: string): string {
+  return (
+    cleanPageTextForStudy(rawPageText) ||
+    cleanPageTextForStudy(extractMainBodyBlock(rawPageText)) ||
+    extractMainBodyBlock(rawPageText)
+  );
+}
+
+async function finalizeTeachingAnalysis(
+  analysis: PageProfessorAnalysis | undefined,
+  input: {
+    pageText: string;
+    pageNumber: number;
+    documentTitle: string;
+    chapterTitle?: string;
+  },
+): Promise<PageProfessorAnalysis> {
+  const pageTextForTutor = resolvePageTextForTutor(input.pageText);
+
+  if (!needsTeachingFallback(pageTextForTutor, analysis)) {
+    return analysis!;
+  }
+
+  const generated = await generateTeachingFallback({
+    pageText: input.pageText,
+    pageNumber: input.pageNumber,
+    documentTitle: input.documentTitle,
+    chapterTitle: input.chapterTitle,
+  });
+
+  if (generated) {
+    return generated;
+  }
+
+  return buildFallbackAnalysis(input.pageText, input.pageNumber);
+}
+
 export async function askLegalStudyTutor(input: {
   action: GuidedStudyTutorAction;
   customPrompt?: string;
@@ -163,7 +206,7 @@ export async function askLegalStudyTutor(input: {
   const strictNormativeMode = input.sourceSettings?.strictNormativeMode !== false;
   const sourcesBlock = buildLegalSourcesPromptBlock(enabledSources, strictMode);
   const normativeIndex = await buildNormativeIndexForUser(input.userId, input.sourceSettings);
-  const pageTextForTutor = cleanPageTextForStudy(input.pageText);
+  const pageTextForTutor = resolvePageTextForTutor(input.pageText);
 
   const relevantArticles = searchLegalBase(
     `${pageTextForTutor} ${input.chapterTitle ?? ""} ${input.chapterOverview ?? ""} ${input.customPrompt ?? ""}`,
@@ -222,12 +265,15 @@ export async function askLegalStudyTutor(input: {
   } catch (error) {
     console.error("[guided-study/tutor] Todos los proveedores fallaron:", error);
     const detail = error instanceof Error ? error.message : String(error);
+    const analysis = await finalizeTeachingAnalysis(undefined, input);
     return {
-      analysis: buildFallbackAnalysis(pageTextForTutor || input.pageText, input.pageNumber),
+      analysis,
       customReply:
         detail.includes("proveedores") || detail.includes("GEMINI") || detail.includes("OPENROUTER")
           ? `${detail} Configura GEMINI_API_KEY u OPENROUTER_API_KEY en Vercel e inténtalo de nuevo.`
-          : `El profesor IA no respondió: ${detail}`,
+          : analysis.conceptCards.length
+            ? undefined
+            : `El profesor IA no respondió: ${detail}`,
       activeSources,
     };
   }
@@ -254,20 +300,14 @@ export async function askLegalStudyTutor(input: {
       };
 
       if (!analysis.conceptCards.length) {
-        const fallbackCards = buildFallbackAnalysis(
-          pageTextForTutor || input.pageText,
-          input.pageNumber,
-        ).conceptCards;
-
-        if (fallbackCards.length) {
-          analysis = { ...analysis, conceptCards: fallbackCards };
-        } else if (analysis.pageFocus && !looksLikeBibliography(analysis.pageFocus)) {
+        if (analysis.pageFocus && !looksLikeBibliography(analysis.pageFocus)) {
           analysis = {
             ...analysis,
             conceptCards: [
               {
                 id: "auto-1",
-                concept: extractStudyTopicHint(pageTextForTutor || input.pageText) ?? "Idea central de la página",
+                concept:
+                  extractStudyTopicHint(input.pageText) ?? "Idea central de la página",
                 explanation: analysis.pageFocus,
                 example: "Consulta el PDF y relaciona con tu curso.",
                 examImportance: "Comprende los conceptos antes de avanzar.",
@@ -277,6 +317,8 @@ export async function askLegalStudyTutor(input: {
           };
         }
       }
+
+      analysis = await finalizeTeachingAnalysis(analysis, input);
 
       if (input.action === "exam_essentials") {
         analysis = filterEssentials(analysis);
@@ -299,9 +341,11 @@ export async function askLegalStudyTutor(input: {
     };
   }
 
+  const analysis = await finalizeTeachingAnalysis(undefined, input);
+
   return {
-    analysis: buildFallbackAnalysis(pageTextForTutor || input.pageText, input.pageNumber),
-    customReply: pageTextForTutor.trim()
+    analysis,
+    customReply: pageTextForTutor.trim() || hasSubstantiveStudyText(input.pageText)
       ? undefined
       : "No se pudo extraer texto de esta página. Revisa el PDF visualmente mientras el profesor te guía.",
     activeSources,
