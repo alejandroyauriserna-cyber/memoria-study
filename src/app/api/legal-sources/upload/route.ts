@@ -34,7 +34,12 @@ function sanitizeFileName(fileName: string): string {
 async function ensureBucket(admin: ReturnType<typeof createAdminClient>) {
   const bucketInfo = await admin.storage.getBucket(BUCKET);
   if (bucketInfo.error?.message?.toLowerCase().includes("not found") || !bucketInfo.data) {
-    await admin.storage.createBucket(BUCKET, { public: true });
+    const created = await admin.storage.createBucket(BUCKET, { public: true });
+    if (created.error) {
+      throw new Error(
+        "El bucket legal-sources no existe en Supabase Storage. Créalo como público o revisa permisos.",
+      );
+    }
   }
 }
 

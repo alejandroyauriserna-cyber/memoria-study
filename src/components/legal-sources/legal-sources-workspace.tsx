@@ -76,6 +76,7 @@ export function LegalSourcesWorkspace() {
   const [materialOptions, setMaterialOptions] = useState<MaterialOption[]>([]);
   const [selectedMaterialId, setSelectedMaterialId] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [syncNotice, setSyncNotice] = useState<string | null>(null);
   const [syncingPresetId, setSyncingPresetId] = useState<string | null>(null);
   const [activeJurisTemplateId, setActiveJurisTemplateId] = useState<string | null>(null);
   const [jurisTemplateUrls, setJurisTemplateUrls] = useState<Record<string, string[]>>({});
@@ -106,6 +107,12 @@ export function LegalSourcesWorkspace() {
       .finally(() => setLoading(false));
   }, []);
 
+  const refreshSettings = useCallback(async () => {
+    const next = await fetchLegalSourcesSettings();
+    setSettings(next);
+    return next;
+  }, []);
+
   const jurisprudenceSources = useMemo(() => {
     if (!settings) return [];
     return [...settings.sources]
@@ -134,32 +141,43 @@ export function LegalSourcesWorkspace() {
     return map;
   }, [settings]);
 
-  const persist = useCallback((next: LegalSourcesSettings) => {
-    setSettings(next);
-    saveLegalSourcesSettings(next);
-    void syncLegalSourcesSettings(next);
-  }, []);
+  const persist = useCallback(
+    async (next: LegalSourcesSettings, options?: { refresh?: boolean }) => {
+      setSettings(next);
+      saveLegalSourcesSettings(next);
+      const syncResult = await syncLegalSourcesSettings(next);
+      if (!syncResult.ok) {
+        setSyncNotice(syncResult.error);
+      } else {
+        setSyncNotice(null);
+      }
+      if (options?.refresh) {
+        await refreshSettings();
+      }
+    },
+    [refreshSettings],
+  );
 
   function toggleSource(id: string) {
     if (!settings) return;
     const source = settings.sources.find((s) => s.id === id);
     if (!source) return;
-    persist(updateSourceInSettings(settings, id, { enabled: !source.enabled }));
+    void persist(updateSourceInSettings(settings, id, { enabled: !source.enabled }));
   }
 
   function toggleStrictNormative() {
     if (!settings) return;
-    persist({ ...settings, strictNormativeMode: !settings.strictNormativeMode });
+    void persist({ ...settings, strictNormativeMode: !settings.strictNormativeMode });
   }
 
   function toggleStrict() {
     if (!settings) return;
-    persist({ ...settings, strictMode: !settings.strictMode });
+    void persist({ ...settings, strictMode: !settings.strictMode });
   }
 
   function handleAddManual() {
     if (!settings || !newTitle.trim()) return;
-    persist(
+    void persist(
       addCustomSource(settings, {
         title: newTitle.trim(),
         category: newCategory,
@@ -169,6 +187,7 @@ export function LegalSourcesWorkspace() {
         kind: "upload",
         description: `Fuente personalizada: ${newTitle.trim()}`,
       }),
+      { refresh: true },
     );
     resetAddForm();
   }
@@ -192,7 +211,9 @@ export function LegalSourcesWorkspace() {
         throw new Error(data.error ?? "No se pudo subir la fuente.");
       }
 
-      persist(addCustomSource(settings, { ...data.source, enabled: true, priority: 1 }));
+      await persist(addCustomSource(settings, { ...data.source, enabled: true, priority: 1 }), {
+        refresh: true,
+      });
       resetAddForm();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Error al subir PDF.");
@@ -240,7 +261,9 @@ export function LegalSourcesWorkspace() {
         throw new Error(data.error ?? "No se pudo vincular el material.");
       }
 
-      persist(addCustomSource(settings, { ...data.source, enabled: true, priority: 1 }));
+      persist(addCustomSource(settings, { ...data.source, enabled: true, priority: 1 }), {
+        refresh: true,
+      });
       resetAddForm();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Error al vincular material.");
@@ -287,8 +310,9 @@ export function LegalSourcesWorkspace() {
       }
 
       const syncedUrls = sanitizeLpUrlList(data.sourceUrls ?? sourceUrls);
-      persist(
+      await persist(
         applyLpSyncToSettings(settings, data.source, presetId, syncedUrls),
+        { refresh: true },
       );
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Error al sincronizar desde LP.");
@@ -352,7 +376,7 @@ export function LegalSourcesWorkspace() {
 
       const syncedUrls = sanitizeWebUrlList(data.sourceUrls ?? urls);
       setJurisTemplateUrls((prev) => ({ ...prev, [templateId]: syncedUrls }));
-      persist(
+      await persist(
         upsertWebSource(settings, {
           ...data.source,
           enabled: true,
@@ -360,6 +384,7 @@ export function LegalSourcesWorkspace() {
           webTemplateId: templateId,
           syncUrls: syncedUrls,
         }),
+        { refresh: true },
       );
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Error al sincronizar URL.");
@@ -402,13 +427,14 @@ export function LegalSourcesWorkspace() {
         throw new Error(data.error ?? "No se pudo sincronizar la URL.");
       }
 
-      persist(
+      await persist(
         upsertWebSource(settings, {
           ...data.source,
           enabled: true,
           priority: 1,
           title: newTitle.trim(),
         }),
+        { refresh: true },
       );
       resetAddForm();
     } catch (caught) {
@@ -429,7 +455,57 @@ export function LegalSourcesWorkspace() {
       }
     }
 
-    persist(restoreBuiltinAfterLpRemove(removeCustomSource(settings, source.id), source));
+    persist(restoreBuiltinAfterLpRemove(removeCustomSource(settings, source.id), source), {
+      refresh: true,
+    });
+  }
+
+  async function handleResyncWebSource(source: LegalSourceRecord, urls: string[]) {
+    if (!settings) return;
+    const category = source.category === "doctrina" ? "doctrina" : "jurisprudencia";
+    const sourceUrls = sanitizeWebUrlList(urls);
+    const validationError = validateWebUrlList(sourceUrls, category);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    setUploading(true);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/legal-sources/sync-web", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sourceUrls,
+          category,
+          title: source.title,
+          author: source.author,
+          webTemplateId: source.webTemplateId,
+        }),
+      });
+      const data = (await res.json()) as { source?: LegalSourceRecord; error?: string };
+
+      if (!res.ok || !data.source) {
+        throw new Error(data.error ?? "No se pudo re-sincronizar la fuente.");
+      }
+
+      await persist(
+        upsertWebSource(settings, {
+          ...data.source,
+          enabled: source.enabled,
+          priority: source.priority,
+          webTemplateId: source.webTemplateId,
+          syncUrls: sanitizeWebUrlList(data.source.syncUrls ?? sourceUrls),
+        }),
+        { refresh: true },
+      );
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Error al re-sincronizar.");
+    } finally {
+      setUploading(false);
+    }
   }
 
   function openQuickJurisUpload(templateId: string) {
@@ -463,19 +539,28 @@ export function LegalSourcesWorkspace() {
         catalogUrl={preset?.url}
         hideUrlEditor={Boolean(source.lpPresetId)}
         onToggle={() => toggleSource(source.id)}
-        onMoveUp={() => persist(reorderSourcePriority(settings, source.id, "up"))}
-        onMoveDown={() => persist(reorderSourcePriority(settings, source.id, "down"))}
+        onMoveUp={() => void persist(reorderSourcePriority(settings, source.id, "up"))}
+        onMoveDown={() => void persist(reorderSourcePriority(settings, source.id, "down"))}
         onUrlsChange={
-          source.kind === "url" && source.lpPresetId && preset
-            ? (urls) => updatePresetUrls(source.lpPresetId!, preset.url, urls)
+          source.kind === "url"
+            ? source.lpPresetId && preset
+              ? (urls) => updatePresetUrls(source.lpPresetId!, preset.url, urls)
+              : (urls) => {
+                  if (!settings) return;
+                  void persist(
+                    updateSourceInSettings(settings, source.id, { syncUrls: urls, sourceUrl: urls[0] }),
+                  );
+                }
             : undefined
         }
         onResync={
           source.kind === "url" && source.lpPresetId
             ? (urls) => void handleSyncPreset(source.lpPresetId!, urls)
-            : undefined
+            : source.kind === "url" && !source.lpPresetId
+              ? (urls) => void handleResyncWebSource(source, urls)
+              : undefined
         }
-        resyncing={syncingPresetId === source.lpPresetId}
+        resyncing={syncingPresetId === source.lpPresetId || uploading}
         onRemove={source.kind !== "builtin" ? () => void handleRemove(source) : undefined}
       />
     );
@@ -506,16 +591,15 @@ export function LegalSourcesWorkspace() {
     });
   }
 
-  const displayManageableSources = useMemo(
-    () =>
-      manageableSources.filter(
-        (source) => source.title?.trim() || source.lpPresetId || source.webTemplateId,
-      ),
-    [manageableSources],
-  );
+  const displayManageableSources = manageableSources;
 
   const enabledDisplayCount = useMemo(
     () => displayManageableSources.filter((source) => source.enabled).length,
+    [displayManageableSources],
+  );
+
+  const activeSourceChips = useMemo(
+    () => displayManageableSources.filter((source) => source.enabled),
     [displayManageableSources],
   );
 
@@ -542,7 +626,7 @@ export function LegalSourcesWorkspace() {
         <LegalSourcesWizard
           settings={settings}
           onComplete={(next) => {
-            persist(next);
+            void persist({ ...next, wizardCompleted: true }, { refresh: true });
             setShowReconfigureWizard(false);
             setWizardDismissError("");
           }}
@@ -565,6 +649,7 @@ export function LegalSourcesWorkspace() {
 
   return (
     <div className="fuentes-page-content">
+      {syncNotice ? <p className="fuentes-alert is-warning">{syncNotice}</p> : null}
       {!sourcesReady ? (
         <p className="fuentes-alert is-warning">
           Sincroniza al menos una fuente (LP Derecho, PDF o material) para que el tutor pueda citar
@@ -692,8 +777,25 @@ export function LegalSourcesWorkspace() {
           </button>
         </div>
 
+        {activeSourceChips.length ? (
+          <div className="fuentes-active-chips" aria-label="Fuentes activas">
+            {activeSourceChips.map((source) => (
+              <span key={source.id} className="fuentes-active-chip">
+                {source.title}
+              </span>
+            ))}
+          </div>
+        ) : null}
+
         <div className="mt-3 space-y-2">
-          {displayManageableSources.map((source) => renderSourceRow(source))}
+          {displayManageableSources.length ? (
+            displayManageableSources.map((source) => renderSourceRow(source))
+          ) : (
+            <p className="fuentes-panel-copy">
+              Aún no tienes fuentes propias. Sincroniza LP Derecho abajo, sube un PDF (apuntes,
+              rúbricas, separatas) o vincula material de la biblioteca.
+            </p>
+          )}
 
           <button
             type="button"
@@ -904,7 +1006,9 @@ export function LegalSourcesWorkspace() {
                         "Título del PDF de jurisprudencia")
                       : newCategory === "jurisprudencia"
                         ? "Ej. Compendio de casaciones civiles — 2024"
-                        : "Ej. Manual de Acto Jurídico — Juan Espinoza"
+                        : newCategory === "material_universitario"
+                          ? "Ej. Rúbrica de evaluación — Civil I"
+                          : "Ej. Manual de Acto Jurídico — Juan Espinoza"
                   }
                   className="fuentes-input"
                 />
@@ -916,7 +1020,7 @@ export function LegalSourcesWorkspace() {
                 />
                 <label className="fuentes-upload-zone">
                   <FileUp size={24} className="text-[#00FFD5]" />
-                  {uploadFile ? uploadFile.name : "Seleccionar PDF jurídico"}
+                  {uploadFile ? uploadFile.name : "Seleccionar PDF jurídico o rúbrica"}
                   <input
                     type="file"
                     accept="application/pdf,.pdf"
@@ -1099,7 +1203,15 @@ function SourceRow({
       </button>
 
       <div className="min-w-0 flex-1">
-        <p className="fuentes-source-title truncate text-sm font-medium">{source.title}</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="fuentes-source-title truncate text-sm font-medium">{source.title}</p>
+          <span className={`fuentes-source-status${source.enabled ? " is-on" : ""}`}>
+            {source.enabled ? "Activa" : "Inactiva"}
+          </span>
+          <span className="fuentes-source-category">
+            {LEGAL_SOURCE_CATEGORY_LABELS[source.category]}
+          </span>
+        </div>
         <div className="flex flex-wrap items-center gap-2">
           {source.author ? (
             <p className="truncate text-[10px] text-muted-foreground">{source.author}</p>

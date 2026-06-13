@@ -122,16 +122,26 @@ export function removeCustomSource(settings: LegalSourcesSettings, id: string): 
   };
 }
 
-export async function syncLegalSourcesSettings(settings: LegalSourcesSettings): Promise<void> {
+export async function syncLegalSourcesSettings(
+  settings: LegalSourcesSettings,
+): Promise<{ ok: true } | { ok: false; error: string }> {
   saveLegalSourcesSettings(settings);
   try {
-    await fetch("/api/legal-sources", {
+    const res = await fetch("/api/legal-sources", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(settings),
     });
+    const data = (await res.json().catch(() => ({}))) as { error?: string };
+    if (!res.ok) {
+      return {
+        ok: false,
+        error: data.error ?? `No se pudo guardar en el servidor (${res.status}).`,
+      };
+    }
+    return { ok: true };
   } catch {
-    // localStorage sigue siendo respaldo offline
+    return { ok: false, error: "Sin conexión al servidor. Los cambios quedaron solo en este dispositivo." };
   }
 }
 
@@ -139,9 +149,10 @@ export async function fetchLegalSourcesSettings(): Promise<LegalSourcesSettings>
   const local = loadLegalSourcesSettings();
   try {
     const res = await fetch("/api/legal-sources");
+    if (res.status === 401) return local;
     if (!res.ok) return local;
     const remote = (await res.json()) as LegalSourcesSettings & { synced?: boolean };
-    if (!remote.sources?.length) return local;
+    if (!Array.isArray(remote.sources)) return local;
 
     const localById = new Map(local.sources.map((s) => [s.id, s]));
     const remoteIds = new Set(remote.sources.map((s) => s.id));
@@ -154,11 +165,13 @@ export async function fetchLegalSourcesSettings(): Promise<LegalSourcesSettings>
         enabled: localSource.enabled,
         priority: localSource.priority,
         extractedText: s.extractedText ?? localSource.extractedText,
+        syncUrls: s.syncUrls ?? localSource.syncUrls,
+        lastSyncedAt: s.lastSyncedAt ?? localSource.lastSyncedAt,
       };
     });
 
     for (const s of local.sources) {
-      if (!remoteIds.has(s.id) && s.id.startsWith("custom-")) {
+      if (!remoteIds.has(s.id)) {
         mergedList.push(s);
       }
     }
@@ -167,8 +180,10 @@ export async function fetchLegalSourcesSettings(): Promise<LegalSourcesSettings>
       strictMode: remote.strictMode ?? local.strictMode,
       strictNormativeMode: remote.strictNormativeMode ?? local.strictNormativeMode,
       lpPresetUrls: remote.lpPresetUrls ?? local.lpPresetUrls,
-      studyCategories: remote.studyCategories ?? local.studyCategories,
-      wizardCompleted: remote.wizardCompleted ?? local.wizardCompleted ?? false,
+      studyCategories: remote.studyCategories?.length
+        ? remote.studyCategories
+        : local.studyCategories,
+      wizardCompleted: Boolean(remote.wizardCompleted || local.wizardCompleted),
       sources: mergeWithDefaultSources(mergedList),
     };
     saveLegalSourcesSettings(settings);

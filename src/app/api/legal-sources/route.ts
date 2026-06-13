@@ -31,7 +31,15 @@ export async function GET() {
     }
 
     const settings = await loadUserLegalSourceSettings(user.id);
-    return NextResponse.json({ ...(settings ?? { strictMode: false, sources: mergeWithDefaultSources([]) }), synced: true });
+    return NextResponse.json({
+      ...(settings ?? {
+        strictMode: false,
+        strictNormativeMode: true,
+        wizardCompleted: false,
+        sources: mergeWithDefaultSources([]),
+      }),
+      synced: true,
+    });
   } catch (caught) {
     console.error("[legal-sources GET]", caught);
     return NextResponse.json(
@@ -57,7 +65,7 @@ export async function PUT(request: Request) {
     }
 
     const body = (await request.json()) as LegalSourcesSettings;
-    if (!body?.sources?.length) {
+    if (!body || !Array.isArray(body.sources)) {
       return NextResponse.json({ error: "Configuración inválida." }, { status: 400 });
     }
 
