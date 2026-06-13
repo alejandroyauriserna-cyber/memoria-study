@@ -135,8 +135,14 @@ export function buildExtractedSummary(articles: LegalArticleRecord[], maxChars =
 }
 
 function articleNumberKey(article: LegalArticleRecord): string {
-  const match = article.article.match(/(\d+(?:-[A-Za-z])?|[IVXLCDM]+)/i);
-  return match ? match[1]!.toLowerCase() : article.id;
+  const fromId = article.id.match(/-art-(.+)$/i);
+  if (fromId?.[1]) {
+    return fromId[1].toLowerCase();
+  }
+
+  // Must anchor after "Artículo" — [IVXLCDM]+ with /i also matches c/l/d/m inside the word.
+  const match = article.article.match(/Art[ií]culo\s+(\d+(?:-[A-Za-z])?|[IVXLCDM]+)/i);
+  return match?.[1] ? match[1].toLowerCase() : article.id;
 }
 
 /** Fusiona artículos de varias URLs LP (continuaciones, partes). */
