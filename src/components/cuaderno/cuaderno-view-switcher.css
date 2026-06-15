@@ -1,0 +1,64 @@
+/* Cuaderno View Switcher */
+
+.cn-view-switcher {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: #f3f4f6;
+  border-radius: 8px;
+  width: fit-content;
+}
+
+.cn-view-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: #666666;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: inherit;
+}
+
+.cn-view-btn:hover {
+  background: rgba(0, 122, 255, 0.05);
+  color: #007aff;
+}
+
+.cn-view-btn[data-active="true"] {
+  background: #ffffff;
+  border-color: #e5e7eb;
+  color: #007aff;
+  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.1);
+}
+
+.cn-view-btn svg {
+  pointer-events: none;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .cn-view-switcher {
+    background: #2c2c2e;
+  }
+
+  .cn-view-btn {
+    color: #999999;
+  }
+
+  .cn-view-btn:hover {
+    background: rgba(10, 132, 255, 0.1);
+    color: #0a84ff;
+  }
+
+  .cn-view-btn[data-active="true"] {
+    background: #1c1c1e;
+    border-color: #424245;
+    color: #0a84ff;
+    box-shadow: 0 2px 8px rgba(10, 132, 255, 0.15);
+  }
+}

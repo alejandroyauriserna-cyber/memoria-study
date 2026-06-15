@@ -1,0 +1,225 @@
+/* Cuaderno New Note Dialog */
+
+.cn-new-note-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1001;
+  animation: fadeIn 0.2s ease;
+}
+
+.cn-new-note-dialog {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  width: 90%;
+  max-width: 400px;
+  overflow: hidden;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.cn-new-note-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.cn-new-note-header h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333333;
+  margin: 0;
+}
+
+.cn-new-note-close {
+  background: transparent;
+  border: none;
+  color: #999999;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.cn-new-note-close:hover {
+  background: #f0f0f0;
+  color: #333333;
+}
+
+.cn-new-note-form {
+  padding: 20px;
+}
+
+.cn-form-group {
+  margin-bottom: 16px;
+}
+
+.cn-form-group:last-of-type {
+  margin-bottom: 24px;
+}
+
+.cn-form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #666666;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.cn-form-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 15px;
+  color: #333333;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.cn-form-input:focus {
+  outline: none;
+  border-color: #007aff;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+}
+
+.cn-form-input:disabled {
+  background: #f5f5f5;
+  color: #999999;
+  cursor: not-allowed;
+}
+
+.cn-form-input::placeholder {
+  color: #999999;
+}
+
+.cn-new-note-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.cn-btn-primary,
+.cn-btn-secondary {
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  font-family: inherit;
+}
+
+.cn-btn-primary {
+  background: linear-gradient(135deg, #007aff 0%, #0051d5 100%);
+  color: white;
+}
+
+.cn-btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+}
+
+.cn-btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cn-btn-secondary {
+  background: #f0f0f0;
+  color: #333333;
+}
+
+.cn-btn-secondary:hover:not(:disabled) {
+  background: #e0e0e0;
+}
+
+.cn-btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .cn-new-note-dialog {
+    background: #2c2c2e;
+    color: #ffffff;
+  }
+
+  .cn-new-note-header {
+    border-bottom-color: #424245;
+  }
+
+  .cn-new-note-header h2 {
+    color: #ffffff;
+  }
+
+  .cn-new-note-close {
+    color: #999999;
+  }
+
+  .cn-new-note-close:hover {
+    background: #424245;
+    color: #ffffff;
+  }
+
+  .cn-form-group label {
+    color: #999999;
+  }
+
+  .cn-form-input {
+    background: #1c1c1e;
+    color: #ffffff;
+    border-color: #424245;
+  }
+
+  .cn-form-input:focus {
+    border-color: #0a84ff;
+    box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.2);
+  }
+
+  .cn-form-input::placeholder {
+    color: #666666;
+  }
+
+  .cn-btn-secondary {
+    background: #424245;
+    color: #ffffff;
+  }
+
+  .cn-btn-secondary:hover:not(:disabled) {
+    background: #555555;
+  }
+}

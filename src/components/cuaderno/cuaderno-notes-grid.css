@@ -1,0 +1,260 @@
+/* Cuaderno Notes Grid - Pro Design */
+
+.cn-notes-grid-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  overflow-y: auto;
+  padding: 24px 28px;
+}
+
+.cn-grid-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  color: #999999;
+  font-size: 15px;
+}
+
+.cn-notes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Tarjetas del grid */
+.cn-grid-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.cn-grid-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at top right,
+    rgba(0, 122, 255, 0.05),
+    transparent 70%
+  );
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.cn-grid-card:hover {
+  transform: translateY(-4px);
+  border-color: #d1d5db;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+}
+
+.cn-grid-card:hover::before {
+  opacity: 1;
+}
+
+.cn-grid-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.cn-grid-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333333;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.3;
+}
+
+.cn-grid-card-menu {
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  color: #999999;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  opacity: 0;
+}
+
+.cn-grid-card:hover .cn-grid-card-menu {
+  opacity: 1;
+}
+
+.cn-grid-card-menu:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #333333;
+}
+
+.cn-grid-card-preview {
+  font-size: 13px;
+  color: #666666;
+  margin: 0 0 12px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.4;
+  flex: 1;
+}
+
+.cn-grid-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.cn-grid-course {
+  font-size: 12px;
+  font-weight: 600;
+  color: #007aff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cn-grid-favorite-btn {
+  background: transparent;
+  border: none;
+  color: #999999;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.cn-grid-favorite-btn:hover {
+  color: #ff3b30;
+}
+
+/* Acento de color */
+.cn-grid-accent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #007aff, #00d9ff);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .cn-notes-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 14px;
+  }
+}
+
+@media (max-width: 768px) {
+  .cn-notes-grid-container {
+    padding: 16px 12px;
+  }
+
+  .cn-notes-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+  }
+
+  .cn-grid-card {
+    padding: 12px;
+  }
+
+  .cn-grid-card-title {
+    font-size: 14px;
+  }
+
+  .cn-grid-card-preview {
+    font-size: 12px;
+    -webkit-line-clamp: 1;
+  }
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .cn-notes-grid-container {
+    background: #1c1c1e;
+  }
+
+  .cn-grid-card {
+    background: linear-gradient(135deg, #2c2c2e 0%, #1c1c1e 100%);
+    border-color: #424245;
+  }
+
+  .cn-grid-card:hover {
+    border-color: #555555;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+  }
+
+  .cn-grid-card-title {
+    color: #ffffff;
+  }
+
+  .cn-grid-card-preview {
+    color: #999999;
+  }
+
+  .cn-grid-card-footer {
+    border-top-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .cn-grid-course {
+    color: #0a84ff;
+  }
+
+  .cn-grid-card-menu {
+    color: #666666;
+  }
+
+  .cn-grid-card:hover .cn-grid-card-menu {
+    color: #ffffff;
+  }
+
+  .cn-grid-card-menu:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+  }
+
+  .cn-grid-favorite-btn {
+    color: #666666;
+  }
+
+  .cn-grid-favorite-btn:hover {
+    color: #ff3b30;
+  }
+}

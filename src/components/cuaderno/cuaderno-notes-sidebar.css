@@ -1,0 +1,200 @@
+/* Cuaderno Notes Sidebar - Apple Notes Style Pro */
+
+.cn-notes-sidebar {
+  display: flex;
+  flex-direction: column;
+  width: 280px;
+  height: 100%;
+  background: linear-gradient(180deg, #ffffff 0%, #f9fafb 100%);
+  border-right: 1px solid #e5e7eb;
+  overflow-y: auto;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.01);
+}
+
+/* Header con botón crear */
+.cn-sidebar-header {
+  padding: 16px 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.cn-sidebar-create-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #007aff 0%, #0051d5 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cn-sidebar-create-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.25);
+}
+
+.cn-sidebar-create-btn:active {
+  transform: translateY(0);
+}
+
+/* Navegación */
+.cn-sidebar-nav {
+  flex: 1;
+  padding: 8px 0;
+}
+
+.cn-sidebar-nav-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.cn-sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 8px 16px;
+  background: transparent;
+  border: none;
+  color: #333333;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.cn-sidebar-nav-item:hover {
+  background: #f5f5f7;
+}
+
+.cn-sidebar-nav-item[data-active="true"] {
+  background: #f0f0f0;
+  color: #007aff;
+  border-left: 3px solid #007aff;
+  padding-left: 13px;
+}
+
+.cn-sidebar-nav-item svg {
+  flex-shrink: 0;
+  color: currentColor;
+}
+
+.cn-nav-badge {
+  margin-left: auto;
+  font-size: 13px;
+  color: #999999;
+  font-weight: 400;
+}
+
+/* Divider */
+.cn-sidebar-divider {
+  height: 1px;
+  background: #f0f0f0;
+  margin: 8px 0;
+}
+
+/* Sección de carpetas */
+.cn-sidebar-section {
+  padding: 12px 0;
+  border-top: 1px solid #f0f0f0;
+}
+
+.cn-sidebar-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 16px;
+  background: transparent;
+  border: none;
+  color: #666666;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: color 0.2s ease;
+}
+
+.cn-sidebar-section-header:hover {
+  color: #333333;
+}
+
+.cn-sidebar-toggle {
+  font-size: 14px;
+}
+
+.cn-sidebar-folders-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.cn-sidebar-folder-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 16px;
+  background: transparent;
+  border: none;
+  color: #555555;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.cn-sidebar-folder-item:hover {
+  background: #f5f5f7;
+  color: #333333;
+}
+
+.cn-sidebar-folder-item svg {
+  flex-shrink: 0;
+  color: #999999;
+}
+
+/* Footer con stats */
+.cn-sidebar-footer {
+  padding: 12px 16px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.cn-sidebar-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cn-stat-item {
+  font-size: 12px;
+  color: #888888;
+  line-height: 1.4;
+}
+
+.cn-stat-item strong {
+  color: #333333;
+  font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .cn-notes-sidebar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 100;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+}

@@ -1,0 +1,352 @@
+/* Cuaderno Notes Header Pro - Premium Design */
+
+.cn-notes-header-pro {
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafb 100%);
+  border-bottom: 1px solid #e5e7eb;
+  padding: 24px 28px;
+  backdrop-filter: blur(10px);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+.cn-header-content {
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+/* Sección intro con stats */
+.cn-header-intro {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-width: 0;
+}
+
+.cn-header-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #000000;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.cn-header-subtitle {
+  font-size: 13px;
+  color: #888888;
+  margin: 2px 0 0;
+  font-weight: 500;
+}
+
+/* Stats badge */
+.cn-header-stats-badge {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  background: rgba(0, 122, 255, 0.05);
+  border-radius: 10px;
+  border: 1px solid rgba(0, 122, 255, 0.1);
+  animation: slideInRight 0.4s ease;
+}
+
+.cn-stat-badge-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.cn-stat-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #007aff;
+}
+
+.cn-stat-label {
+  font-size: 11px;
+  color: #666666;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.cn-stat-divider {
+  width: 1px;
+  height: 24px;
+  background: rgba(0, 122, 255, 0.2);
+}
+
+/* Contenedor de búsqueda */
+.cn-search-container {
+  flex: 1;
+  min-width: 300px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.cn-search-wrapper {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.cn-search-icon {
+  position: absolute;
+  left: 14px;
+  color: #999999;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.cn-search-input-pro {
+  width: 100%;
+  padding: 11px 40px 11px 42px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #333333;
+  font-family: inherit;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+}
+
+.cn-search-input-pro:focus {
+  background: #ffffff;
+  border-color: #007aff;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.08);
+}
+
+.cn-search-input-pro::placeholder {
+  color: #999999;
+}
+
+.cn-search-clear-pro {
+  position: absolute;
+  right: 12px;
+  background: transparent;
+  border: none;
+  color: #999999;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  z-index: 1;
+}
+
+.cn-search-clear-pro:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #333333;
+}
+
+/* Botones de acciones */
+.cn-search-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.cn-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  color: #666666;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.cn-action-btn:hover {
+  background: #e5e7eb;
+  color: #333333;
+  border-color: #d1d5db;
+}
+
+.cn-action-btn:active {
+  transform: scale(0.95);
+}
+
+/* Sugerencias de búsqueda */
+.cn-search-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 12px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  z-index: 50;
+  animation: slideDown 0.3s ease;
+}
+
+.cn-suggestion-group {
+  padding: 12px 0;
+}
+
+.cn-suggestion-group h4 {
+  font-size: 11px;
+  font-weight: 600;
+  color: #666666;
+  margin: 0;
+  padding: 8px 16px 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.cn-suggestion-item {
+  width: 100%;
+  padding: 10px 16px;
+  background: transparent;
+  border: none;
+  color: #333333;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cn-suggestion-item:hover {
+  background: #f3f4f6;
+  color: #007aff;
+}
+
+/* Animaciones */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .cn-header-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .cn-search-container {
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .cn-notes-header-pro {
+    padding: 16px 12px;
+  }
+
+  .cn-header-title {
+    font-size: 24px;
+  }
+
+  .cn-header-stats-badge {
+    display: none;
+  }
+
+  .cn-header-intro {
+    width: 100%;
+  }
+
+  .cn-search-input-pro {
+    font-size: 13px;
+  }
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .cn-notes-header-pro {
+    background: linear-gradient(135deg, #1c1c1e 0%, #2c2c2e 100%);
+    border-bottom-color: #424245;
+  }
+
+  .cn-header-title {
+    color: #ffffff;
+  }
+
+  .cn-header-subtitle {
+    color: #999999;
+  }
+
+  .cn-header-stats-badge {
+    background: rgba(10, 132, 255, 0.1);
+    border-color: rgba(10, 132, 255, 0.2);
+  }
+
+  .cn-stat-value {
+    color: #0a84ff;
+  }
+
+  .cn-search-input-pro {
+    background: #2c2c2e;
+    border-color: #424245;
+    color: #ffffff;
+  }
+
+  .cn-search-input-pro:focus {
+    background: #3a3a3c;
+    border-color: #0a84ff;
+    box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.15);
+  }
+
+  .cn-search-input-pro::placeholder {
+    color: #666666;
+  }
+
+  .cn-action-btn {
+    background: #2c2c2e;
+    border-color: #424245;
+    color: #999999;
+  }
+
+  .cn-action-btn:hover {
+    background: #3a3a3c;
+    color: #ffffff;
+    border-color: #555555;
+  }
+
+  .cn-search-suggestions {
+    background: #2c2c2e;
+    border-color: #424245;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  }
+
+  .cn-suggestion-item {
+    color: #ffffff;
+  }
+
+  .cn-suggestion-item:hover {
+    background: #3a3a3c;
+    color: #0a84ff;
+  }
+}

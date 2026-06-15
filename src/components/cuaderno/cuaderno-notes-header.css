@@ -1,0 +1,118 @@
+/* Cuaderno Notes Header - Apple Notes Style */
+
+.cn-notes-header {
+  flex-shrink: 0;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 16px 20px;
+}
+
+.cn-notes-header-content {
+  max-width: 100%;
+}
+
+.cn-notes-header-title {
+  margin-bottom: 16px;
+}
+
+.cn-notes-header-title h1 {
+  font-size: 32px;
+  font-weight: 700;
+  color: #000000;
+  margin: 0 0 4px;
+  letter-spacing: -0.5px;
+}
+
+.cn-notes-header-title p {
+  font-size: 13px;
+  color: #888888;
+  margin: 0;
+}
+
+/* Búsqueda */
+.cn-notes-search-wrapper {
+  margin-bottom: 12px;
+}
+
+.cn-notes-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: #f0f0f0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  transition: all 0.2s ease;
+}
+
+.cn-notes-search:focus-within {
+  background: #e8e8f0;
+  box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.1);
+}
+
+.cn-search-icon {
+  color: #999999;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.cn-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 15px;
+  color: #333333;
+  padding: 0;
+}
+
+.cn-search-input::placeholder {
+  color: #999999;
+}
+
+.cn-search-clear {
+  background: transparent;
+  border: none;
+  color: #999999;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.cn-search-clear:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: #333333;
+}
+
+/* Stats */
+.cn-notes-stats {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: #888888;
+}
+
+.cn-stat {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .cn-notes-header {
+    padding: 12px 16px;
+  }
+
+  .cn-notes-header-title h1 {
+    font-size: 24px;
+  }
+
+  .cn-notes-stats {
+    display: none;
+  }
+}
