@@ -5,8 +5,9 @@
   --cn-studio-surface: rgba(22, 26, 34, 0.72);
   --cn-studio-glass: rgba(28, 34, 44, 0.55);
   --cn-studio-border: rgba(255, 255, 255, 0.08);
-  --cn-studio-accent: #14b8a6;
-  --cn-studio-accent-2: #2dd4bf;
+  --cn-studio-popover-bg: rgba(22, 26, 34, 0.96);
+  --cn-studio-accent: var(--accent, #00ffd5);
+  --cn-studio-accent-2: color-mix(in srgb, var(--accent, #00ffd5) 82%, white);
   --cn-studio-text: #f1f5f9;
   --cn-studio-muted: rgba(148, 163, 184, 0.85);
 }
@@ -205,10 +206,11 @@
   z-index: 200;
   padding: 10px;
   border-radius: 14px;
-  background: rgba(18, 22, 30, 0.94);
+  background: var(--cn-studio-popover-bg);
   border: 1px solid var(--cn-studio-border);
   backdrop-filter: blur(24px);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+  color: var(--cn-studio-text);
 }
 
 .cn-tb-popover-title {
@@ -262,7 +264,8 @@
 
 .cn-tb-popover-item:hover,
 .cn-tb-popover-item.is-active {
-  background: rgba(20, 184, 166, 0.12);
+  background: color-mix(in srgb, var(--cn-studio-accent) 16%, transparent);
+  color: var(--cn-studio-text);
 }
 
 .cn-tb-popover-preview {
@@ -283,6 +286,31 @@
   border-radius: 50%;
   border: 2px solid rgba(255, 255, 255, 0.2);
   cursor: pointer;
+}
+
+.cn-tb-popover-swatch--hi.is-active {
+  box-shadow:
+    0 0 0 2px var(--cn-studio-popover-bg),
+    0 0 0 4px var(--cn-studio-accent);
+}
+
+.cn-tb-popover-clear-hi {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--cn-studio-muted) 12%, transparent);
+  color: var(--cn-studio-muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cn-tb-popover-clear-hi:hover {
+  background: color-mix(in srgb, var(--cn-studio-accent) 14%, transparent);
+  color: var(--cn-studio-text);
 }
 
 /* Ink toolbar — secundaria flotante GoodNotes */
@@ -413,12 +441,18 @@
 
 .cn-immersive-canvas--studio .cn-canvas-viewport--immersive {
   flex: 1;
-  contain: strict;
+  contain: none;
   overflow: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   scroll-behavior: auto;
-  padding: 20px 56px 32px 24px;
+  padding: 52px 16px 72px;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  align-content: flex-start;
 }
 
 .cn-immersive-canvas--studio .cn-canvas-stage--immersive {
@@ -658,12 +692,12 @@
 }
 
 /* ===========================
-   CONTENEDOR DE HOJA
+   CONTENEDOR DE HOJA — sin padding (el canvas llena el espacio)
 =========================== */
 
-.cn-immersive-paper-shell {
-  padding: 2rem;
-  border-radius: 32px;
+.cn-immersive-root .cn-immersive-paper-shell {
+  padding: 0;
+  border-radius: 0;
 }
 
 /* ===========================
@@ -727,11 +761,11 @@
    BOTONES ESTILO LINEAR
 =========================== */
 
-.cn-immersive-root button:not(:disabled):not(.cn-immersive-header-icon):not(.cn-page-timeline-star):not(.cn-page-timeline-page):not(.cn-page-timeline-unit-btn):not(.cn-selection-menu-btn):not(.cn-float-tb-btn):not(.cn-float-tb-chip):not(.cn-side-rail-btn):not(.cn-notebook-gate-cta):not(.cn-ai-btn-primary):not(.cn-ai-btn-primary--luxury) {
+.cn-immersive-root button:not(:disabled):not(.cn-immersive-header-icon):not(.cn-immersive-header-action):not(.cn-page-timeline-star):not(.cn-page-timeline-page):not(.cn-page-timeline-unit-btn):not(.cn-selection-menu-btn):not(.cn-float-tb-btn):not(.cn-float-tb-chip):not(.cn-side-rail-btn):not(.cn-notebook-gate-cta):not(.cn-ai-btn-primary):not(.cn-ai-btn-primary--luxury) {
   transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
 }
 
-.cn-immersive-root button:not(:disabled):not(.cn-immersive-header-icon):not(.cn-page-timeline-star):not(.cn-page-timeline-page):not(.cn-page-timeline-unit-btn):not(.cn-selection-menu-btn):not(.cn-float-tb-btn):not(.cn-float-tb-chip):not(.cn-side-rail-btn):not(.cn-notebook-gate-cta):not(.cn-ai-btn-primary):not(.cn-ai-btn-primary--luxury):hover {
+.cn-immersive-root button:not(:disabled):not(.cn-immersive-header-icon):not(.cn-immersive-header-action):not(.cn-page-timeline-star):not(.cn-page-timeline-page):not(.cn-page-timeline-unit-btn):not(.cn-selection-menu-btn):not(.cn-float-tb-btn):not(.cn-float-tb-chip):not(.cn-side-rail-btn):not(.cn-notebook-gate-cta):not(.cn-ai-btn-primary):not(.cn-ai-btn-primary--luxury):hover {
   transform: translateY(-2px);
   box-shadow: 0 12px 25px rgba(0, 255, 213, 0.1);
 }
@@ -1111,7 +1145,8 @@
 }
 
 .cn-immersive-root--luxury .cn-immersive-paper-shell {
-  padding: calc(2rem * var(--cn-luxury-space));
+  padding: 0;
+  border-radius: 0;
 }
 
 .cn-immersive-root--luxury .cn-ai-sidebar-scroll {
@@ -1127,7 +1162,7 @@
 }
 
 .cn-immersive-root--luxury .cn-immersive-canvas--studio .cn-canvas-viewport--immersive {
-  padding: calc(24px * var(--cn-luxury-space)) calc(56px * var(--cn-luxury-space)) calc(36px * var(--cn-luxury-space)) calc(28px * var(--cn-luxury-space));
+  padding: 8px 20px 72px;
 }
 
 /* —— Paneles secundarios más discretos —— */
@@ -1576,6 +1611,13 @@
   color: #fff;
 }
 
+html:not(.dark) .cn-immersive-root--luxury h1,
+html:not(.dark) .cn-immersive-root--luxury h2,
+html:not(.dark) .cn-immersive-root--luxury h3,
+html:not(.dark) .cn-immersive-root--luxury strong {
+  color: var(--foreground);
+}
+
 .cn-immersive-root--luxury button:hover {
   transform: none;
 }
@@ -1641,6 +1683,8 @@
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .cn-immersive-paper-shell {
@@ -1662,37 +1706,45 @@
 }
 
 .cn-immersive-canvas--studio .cn-float-toolbar-wrap {
-  position: sticky;
-  top: 0;
-  z-index: 6;
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
   flex-shrink: 0;
-  padding: 10px 16px 6px;
-  background: linear-gradient(180deg, rgba(8, 12, 18, 0.72), transparent);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  padding: 0 16px;
+  pointer-events: none;
+  width: max-content;
+  max-width: calc(100% - 32px);
 }
 
 .cn-immersive-canvas--studio .cn-canvas-viewport--immersive {
   flex: 1;
   min-height: 0;
   contain: none;
-  display: block;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  align-content: flex-start;
   overflow: auto;
-  padding: 8px 20px 120px;
-  background:
-    radial-gradient(ellipse 80% 55% at 50% 0%, rgba(0, 255, 213, 0.07), transparent 58%),
-    radial-gradient(ellipse 55% 45% at 100% 100%, rgba(0, 153, 255, 0.06), transparent 52%),
-    linear-gradient(180deg, #0a1018 0%, #07131a 100%);
-  background-size: 100% 100%, 100% 100%, 100% 100%;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: auto;
+  padding: 52px 16px 72px;
 }
 
 .cn-immersive-canvas--studio .cn-canvas-stage--immersive {
   width: 100%;
   max-width: 1400px;
   margin: 0 auto;
-  padding: 16px 12px 48px;
+  padding: 0 0 24px;
   transform-origin: top center;
   box-sizing: border-box;
+  flex-shrink: 0;
+  align-self: stretch;
+  min-height: 0;
+  align-items: stretch;
 }
 
 .cn-immersive-root .cn-paper-stage-wrap {
@@ -1701,32 +1753,15 @@
   margin: 0 auto;
 }
 
-.cn-immersive-root .cn-paper {
-  width: 100%;
-  min-height: min(78dvh, 960px);
-  border-radius: 6px 10px 10px 6px;
-}
-
-.cn-immersive-root .cn-paper-layers {
-  min-height: min(72dvh, 880px);
-}
-
+.cn-immersive-root .cn-paper-layers,
 .cn-immersive-root .cn-paper-editor--rich,
 .cn-immersive-root .cn-paper-editor--rich .cn-prosemirror {
-  min-height: min(68dvh, 820px);
+  min-height: 0;
 }
 
-.cn-immersive-root .cn-paper[data-page-size="a4"],
-.cn-immersive-root .cn-paper[data-page-size="letter"] {
-  min-height: clamp(560px, 72dvh, 1100px);
-}
-
-.cn-immersive-root .cn-paper[data-page-size="free"] {
-  min-height: min(78dvh, 960px);
-}
-
-.cn-immersive-root .cn-paper[data-page-size="infinite"] {
-  min-height: 120vh;
+.cn-immersive-root .cn-paper {
+  width: 100%;
+  border-radius: 6px 10px 10px 6px;
 }
 
 /* ==========================================================
@@ -1758,6 +1793,45 @@ html:not(.dark) .cn-immersive-root .cn-float-toolbar {
   background: rgba(255, 255, 255, 0.92) !important;
   border-color: color-mix(in srgb, var(--border) 80%, transparent) !important;
   color: var(--foreground);
+}
+
+html:not(.dark) .cn-immersive-root .cn-tb-popover {
+  --cn-studio-popover-bg: rgba(255, 255, 255, 0.98);
+  background: var(--cn-studio-popover-bg);
+  border-color: color-mix(in srgb, var(--border) 85%, transparent);
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.12);
+  color: var(--foreground);
+}
+
+html:not(.dark) .cn-immersive-root .cn-tb-popover-title {
+  color: var(--muted-foreground);
+}
+
+html:not(.dark) .cn-immersive-root .cn-tb-popover-search {
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
+  color: var(--muted-foreground);
+}
+
+html:not(.dark) .cn-immersive-root .cn-tb-popover-search input {
+  color: var(--foreground);
+}
+
+html:not(.dark) .cn-immersive-root .cn-tb-popover-item {
+  color: var(--foreground);
+}
+
+html:not(.dark) .cn-immersive-root .cn-tb-popover-item:hover,
+html:not(.dark) .cn-immersive-root .cn-tb-popover-item.is-active {
+  background: var(--accent-soft, color-mix(in srgb, var(--accent) 14%, transparent));
+  color: var(--foreground);
+}
+
+html:not(.dark) .cn-immersive-root .cn-tb-popover-swatch {
+  border-color: color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+html:not(.dark) .cn-immersive-root .cn-float-tb-sep {
+  background: color-mix(in srgb, var(--border) 80%, transparent);
 }
 
 html:not(.dark) .cn-immersive-root--luxury h1,
@@ -1845,4 +1919,235 @@ html:not(.dark) .cn-immersive-root--studio .cn-side-rail {
   background: rgba(255, 255, 255, 0.92);
   border-color: color-mix(in srgb, var(--border) 80%, transparent);
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+/* ==========================================================
+   TEMA CLARO — tokens, paneles, menús y layout inmersivo
+========================================================== */
+
+html:not(.dark) .cn-immersive-root.cuaderno-shell {
+  --cn-bg: #eef4f8;
+  --cn-surface: #ffffff;
+  --cn-surface-raised: #f8fafc;
+  --cn-border: color-mix(in srgb, var(--border) 82%, transparent);
+  --cn-text: var(--foreground);
+  --cn-text-secondary: var(--muted-foreground);
+  --cn-accent-muted: var(--accent-soft, color-mix(in srgb, var(--accent) 14%, transparent));
+  --cn-shadow-paper: 0 24px 64px rgba(15, 23, 42, 0.12), 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+html:not(.dark) .cn-floating-menu {
+  background: rgba(255, 255, 255, 0.98);
+  border-color: color-mix(in srgb, var(--border) 85%, transparent);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
+  color: var(--foreground);
+}
+
+html:not(.dark) .cn-floating-menu-item {
+  color: var(--foreground);
+}
+
+html:not(.dark) .cn-floating-menu-item:hover,
+html:not(.dark) .cn-floating-menu-item.is-active {
+  background: var(--accent-soft, color-mix(in srgb, var(--accent) 14%, transparent));
+  color: var(--foreground);
+}
+
+html:not(.dark) .cn-floating-menu-heading {
+  color: var(--muted-foreground);
+}
+
+/* —— Paneles portaleados (body): tokens propios en tema claro —— */
+
+html:not(.dark) .cn-page-settings-panel,
+html:not(.dark) .cn-format-panel {
+  --cn-surface: #ffffff;
+  --cn-surface-raised: #f8fafc;
+  --cn-border: color-mix(in srgb, var(--border) 82%, transparent);
+  --cn-text: var(--foreground);
+  --cn-text-secondary: var(--muted-foreground);
+  --cn-accent-muted: var(--accent-soft);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: -12px 0 40px rgba(15, 23, 42, 0.1);
+  backdrop-filter: blur(20px) saturate(1.1);
+  -webkit-backdrop-filter: blur(20px) saturate(1.1);
+}
+
+html:not(.dark) .cn-page-settings-current {
+  background: #f8fafc;
+  border-color: color-mix(in srgb, var(--border) 80%, transparent);
+}
+
+html:not(.dark) .cn-page-settings-current-meta strong {
+  color: var(--foreground);
+}
+
+html:not(.dark) .cn-page-settings-current-meta span {
+  color: var(--muted-foreground);
+}
+
+html:not(.dark) .cn-page-settings-cover-emoji,
+html:not(.dark) .cn-page-settings-chip,
+html:not(.dark) .cn-page-settings-template-btn {
+  background: #ffffff;
+  border-color: color-mix(in srgb, var(--border) 80%, transparent);
+  color: var(--foreground);
+}
+
+html:not(.dark) .cn-page-settings-chip[data-active="true"],
+html:not(.dark) .cn-page-settings-template-btn[data-active="true"] {
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+html:not(.dark) .cn-page-settings-cover-row input {
+  background: #ffffff;
+  border-color: color-mix(in srgb, var(--border) 80%, transparent);
+  color: var(--foreground);
+}
+
+html:not(.dark) .cn-page-settings-cta {
+  color: var(--accent-foreground);
+}
+
+html:not(.dark) .cn-format-panel-field select,
+html:not(.dark) .cn-format-panel-chip {
+  background: #ffffff;
+  border-color: color-mix(in srgb, var(--border) 80%, transparent);
+  color: var(--foreground);
+}
+
+html:not(.dark) .cn-format-panel-chip[data-active="true"] {
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+html:not(.dark) .cn-immersive-root .cn-format-panel-head,
+html:not(.dark) .cn-format-panel-head,
+html:not(.dark) .cn-immersive-root .cn-page-settings-head,
+html:not(.dark) .cn-page-settings-head {
+  border-bottom-color: color-mix(in srgb, var(--border) 80%, transparent);
+}
+
+html:not(.dark) .cn-immersive-root .cn-format-panel-head h2,
+html:not(.dark) .cn-format-panel-head h2,
+html:not(.dark) .cn-immersive-root .cn-page-settings-head h2,
+html:not(.dark) .cn-page-settings-head h2 {
+  color: var(--foreground);
+}
+
+html:not(.dark) .cn-immersive-root .cn-format-panel-label,
+html:not(.dark) .cn-format-panel-label,
+html:not(.dark) .cn-immersive-root .cn-page-settings-label,
+html:not(.dark) .cn-page-settings-label {
+  color: var(--muted-foreground);
+}
+
+html:not(.dark) .cn-immersive-root .cn-format-panel-field,
+html:not(.dark) .cn-format-panel-field {
+  color: var(--muted-foreground);
+}
+
+html:not(.dark) .cn-immersive-root .cn-format-panel-field select,
+html:not(.dark) .cn-format-panel-field select,
+html:not(.dark) .cn-immersive-root .cn-format-panel-chip,
+html:not(.dark) .cn-format-panel-chip,
+html:not(.dark) .cn-immersive-root .cn-page-settings-chip,
+html:not(.dark) .cn-page-settings-chip {
+  background: var(--card);
+  border-color: color-mix(in srgb, var(--border) 80%, transparent);
+  color: var(--foreground);
+}
+
+html:not(.dark) .cn-immersive-root .cn-format-panel-chip[data-active="true"],
+html:not(.dark) .cn-format-panel-chip[data-active="true"],
+html:not(.dark) .cn-immersive-root .cn-page-settings-chip[data-active="true"],
+html:not(.dark) .cn-page-settings-chip[data-active="true"] {
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  color: var(--accent);
+  background: var(--accent-soft, color-mix(in srgb, var(--accent) 12%, transparent));
+}
+
+html:not(.dark) .cn-immersive-root .cn-format-panel-swatch,
+html:not(.dark) .cn-format-panel-swatch {
+  border-color: color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+html:not(.dark) .cn-immersive-root .cn-page-timeline-unit-btn,
+html:not(.dark) .cn-immersive-root .cn-page-timeline-page,
+html:not(.dark) .cn-immersive-root .cn-page-timeline-page strong,
+html:not(.dark) .cn-immersive-root .cn-page-timeline-page small {
+  color: var(--foreground);
+}
+
+html:not(.dark) .cn-immersive-root .cn-page-timeline-unit-btn:hover,
+html:not(.dark) .cn-immersive-root .cn-page-timeline-page:hover {
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
+}
+
+html:not(.dark) .cn-immersive-root .cn-format-panel-backdrop,
+html:not(.dark) .cn-format-panel-backdrop,
+html:not(.dark) .cn-immersive-root .cn-page-settings-backdrop,
+html:not(.dark) .cn-page-settings-backdrop {
+  background: rgba(15, 23, 42, 0.18);
+}
+
+html:not(.dark) .cn-page-settings-head p,
+html:not(.dark) .cn-immersive-root .cn-page-settings-head p {
+  color: var(--muted-foreground);
+}
+
+html:not(.dark) .cn-page-settings-current strong,
+html:not(.dark) .cn-immersive-root .cn-page-settings-current strong {
+  color: var(--foreground);
+}
+
+html:not(.dark) .cn-page-settings-current span,
+html:not(.dark) .cn-immersive-root .cn-page-settings-current span,
+html:not(.dark) .cn-page-settings-chip-hint,
+html:not(.dark) .cn-immersive-root .cn-page-settings-chip-hint {
+  color: var(--muted-foreground);
+}
+
+html:not(.dark) .cn-page-settings-cover-row input,
+html:not(.dark) .cn-immersive-root .cn-page-settings-cover-row input {
+  background: var(--card);
+  border-color: color-mix(in srgb, var(--border) 80%, transparent);
+  color: var(--foreground);
+}
+
+html:not(.dark) .cn-page-settings-template-btn,
+html:not(.dark) .cn-immersive-root .cn-page-settings-template-btn {
+  background: var(--card);
+  border-color: color-mix(in srgb, var(--border) 80%, transparent);
+  color: var(--foreground);
+}
+
+/* Paneles laterales — overlay en body, no empujan la hoja */
+
+/* Hoja arriba, sin espacio vacío */
+
+.cn-immersive-root .cn-paper-editor--rich {
+  min-height: 0;
+}
+
+.cn-immersive-root .cn-paper-editor--rich .cn-prosemirror {
+  min-height: 0;
+}
+
+.cn-immersive-root .cn-paper[data-page-size="a4"],
+.cn-immersive-root .cn-paper[data-page-size="letter"] {
+  min-height: 0;
+  height: auto;
+}
+
+.cn-immersive-root .cn-paper[data-page-size="infinite"] {
+  min-height: auto;
+}
+
+.cn-immersive-root .cn-paper[data-page-size="infinite"] .cn-paper-editor--rich,
+.cn-immersive-root .cn-paper[data-page-size="infinite"] .cn-prosemirror {
+  min-height: 0;
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Heart, MoreVertical, Eye, Users } from "lucide-react";
 import { getTextPreview } from "@/lib/cuaderno/html-utils";
 import type { CuadernoClass, CuadernoClassAccess } from "@/types/cuaderno";
@@ -62,12 +63,12 @@ export function CuadernoNotesList({
       ) : (
         <div className="cn-notes-list-items">
           {sortedClasses.map((note) => (
-            <article
+            <Link
               key={note.id}
+              href={`/cuaderno/${note.id}`}
               className="cn-note-item"
               onMouseEnter={() => setHoveredId(note.id)}
               onMouseLeave={() => setHoveredId(null)}
-              onClick={() => onSelectNote(note.id)}
             >
               <div className="cn-note-item-content">
                 <div className="cn-note-header">
@@ -125,7 +126,7 @@ export function CuadernoNotesList({
                   </button>
                 </div>
               )}
-            </article>
+            </Link>
           ))}
         </div>
       )}

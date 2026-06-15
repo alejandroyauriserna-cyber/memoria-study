@@ -17,17 +17,18 @@ import {
   Scale,
   Sparkles,
   StickyNote,
+  Highlighter,
   Strikethrough,
   Table,
   Type,
   Underline,
 } from "lucide-react";
 import { CUADERNO_FONTS, type CuadernoFontId } from "@/lib/cuaderno/editor-fonts";
+import { CUADERNO_HIGHLIGHT_COLORS, CUADERNO_TEXT_COLORS } from "@/lib/cuaderno/editor-colors";
 import { CuadernoToolbarPopover } from "@/components/cuaderno/cuaderno-toolbar-popover";
 import { CuadernoTableInsertDialog } from "@/components/cuaderno/cuaderno-table-insert-dialog";
 import type { CuadernoWritingMode } from "@/components/cuaderno/cuaderno-canvas-editor";
 
-const TEXT_COLORS = ["#1c1917", "#1e3a5f", "#7f1d1d", "#14532d", "#5b21b6", "#0f766e", "#0d9488"];
 const FONT_SIZES = ["12px", "14px", "16px", "18px", "20px", "24px", "28px"];
 
 function TbBtn({
@@ -57,7 +58,7 @@ function TbBtn({
 
 export function CuadernoFloatingToolbar({
   editor,
-  courseAccent = "#14b8a6",
+  courseAccent = "#00ffd5",
   writingMode,
   onWritingModeChange,
   onToggleAi,
@@ -77,6 +78,7 @@ export function CuadernoFloatingToolbar({
   const [fontOpen, setFontOpen] = useState(false);
   const [sizeOpen, setSizeOpen] = useState(false);
   const [colorOpen, setColorOpen] = useState(false);
+  const [highlightOpen, setHighlightOpen] = useState(false);
   const [tableDialogOpen, setTableDialogOpen] = useState(false);
   const [fontQuery, setFontQuery] = useState("");
   const [fontId, setFontId] = useState<CuadernoFontId | "">("");
@@ -84,6 +86,7 @@ export function CuadernoFloatingToolbar({
   const fontRef = useRef<HTMLButtonElement>(null);
   const sizeRef = useRef<HTMLButtonElement>(null);
   const colorRef = useRef<HTMLButtonElement>(null);
+  const highlightRef = useRef<HTMLButtonElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   const fonts = CUADERNO_FONTS.filter(
@@ -98,6 +101,7 @@ export function CuadernoFloatingToolbar({
     setFontOpen(false);
     setSizeOpen(false);
     setColorOpen(false);
+    setHighlightOpen(false);
   };
 
   return (
@@ -131,6 +135,7 @@ export function CuadernoFloatingToolbar({
                   setFontOpen((v) => !v);
                   setSizeOpen(false);
                   setColorOpen(false);
+                  setHighlightOpen(false);
                 }}
               >
                 Aa
@@ -144,6 +149,7 @@ export function CuadernoFloatingToolbar({
                   setSizeOpen((v) => !v);
                   setFontOpen(false);
                   setColorOpen(false);
+                  setHighlightOpen(false);
                 }}
               >
                 {fontSize ? fontSize.replace("px", "") : "16"}
@@ -157,9 +163,26 @@ export function CuadernoFloatingToolbar({
                   setColorOpen((v) => !v);
                   setFontOpen(false);
                   setSizeOpen(false);
+                  setHighlightOpen(false);
                 }}
               >
                 <span className="cn-float-tb-color-dot" />
+              </button>
+              <button
+                ref={highlightRef}
+                type="button"
+                className={`cn-float-tb-btn${highlightOpen || editor.isActive("highlight") ? " is-active" : ""}`}
+                title="Resaltar con color"
+                aria-label="Resaltar con color"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  setHighlightOpen((v) => !v);
+                  setFontOpen(false);
+                  setSizeOpen(false);
+                  setColorOpen(false);
+                }}
+              >
+                <Highlighter size={15} />
               </button>
             </div>
 
@@ -312,16 +335,17 @@ export function CuadernoFloatingToolbar({
         open={colorOpen && !!editor}
         onClose={() => setColorOpen(false)}
         anchorRef={colorRef}
-        title="Color"
-        width={200}
+        title="Color de texto"
+        width={220}
       >
         <div className="cn-tb-popover-swatches">
-          {TEXT_COLORS.map((c) => (
+          {CUADERNO_TEXT_COLORS.map((c) => (
             <button
               key={c}
               type="button"
               className="cn-tb-popover-swatch"
               style={{ background: c }}
+              title="Color de texto"
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => {
                 editor?.chain().focus().setColor(c).run();
@@ -330,6 +354,43 @@ export function CuadernoFloatingToolbar({
             />
           ))}
         </div>
+      </CuadernoToolbarPopover>
+
+      <CuadernoToolbarPopover
+        open={highlightOpen && !!editor}
+        onClose={() => setHighlightOpen(false)}
+        anchorRef={highlightRef}
+        title="Resaltar"
+        width={240}
+      >
+        <div className="cn-tb-popover-swatches cn-tb-popover-swatches--hi">
+          {CUADERNO_HIGHLIGHT_COLORS.map(({ color, label }) => (
+            <button
+              key={color}
+              type="button"
+              className={`cn-tb-popover-swatch cn-tb-popover-swatch--hi${editor?.isActive("highlight", { color }) ? " is-active" : ""}`}
+              style={{ background: color }}
+              title={label}
+              aria-label={label}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                editor?.chain().focus().toggleHighlight({ color }).run();
+                closeAll();
+              }}
+            />
+          ))}
+        </div>
+        <button
+          type="button"
+          className="cn-tb-popover-clear-hi"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => {
+            editor?.chain().focus().unsetHighlight().run();
+            closeAll();
+          }}
+        >
+          Quitar resaltado
+        </button>
       </CuadernoToolbarPopover>
 
       <CuadernoTableInsertDialog

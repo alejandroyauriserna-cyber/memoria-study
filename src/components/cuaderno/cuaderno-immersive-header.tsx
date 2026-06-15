@@ -3,6 +3,9 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import {
+  BookOpen,
+  ClipboardList,
+  Sparkles,
   ArrowLeft,
   FileText,
   LayoutGrid,
@@ -28,6 +31,12 @@ const VIEW_OPTIONS: Array<{ id: CuadernoLayoutMode; label: string; icon: typeof 
 export function CuadernoImmersiveHeader({
   courseId,
   courseName,
+  notebookTitle,
+  pageLabel,
+  pageNumber = 1,
+  totalPages = 1,
+  courseAccent = "#00ffd5",
+  coverEmoji = "📓",
   saveState,
   favorite,
   favoritePulse,
@@ -52,6 +61,13 @@ export function CuadernoImmersiveHeader({
 }: {
   courseId: string;
   courseName: string;
+  /** Título del apunte / cuaderno */
+  notebookTitle: string;
+  pageLabel?: string;
+  pageNumber?: number;
+  totalPages?: number;
+  courseAccent?: string;
+  coverEmoji?: string;
   saveState: "idle" | "saving" | "saved";
   favorite: boolean;
   favoritePulse?: boolean;
@@ -89,24 +105,55 @@ export function CuadernoImmersiveHeader({
         ? "Guardado"
         : "Listo";
 
+  const statusTone =
+    saveState === "saving" ? "saving" : saveState === "saved" ? "saved" : "ready";
+
+  const displayPage = pageLabel?.trim() || `Página ${pageNumber}`;
+
   return (
     <header
-      className={`cn-immersive-header cn-immersive-header--studio cn-immersive-header--clean${compact ? " cn-immersive-header--compact" : ""}${studyMode ? " cn-immersive-header--study" : ""}`}
+      className={`cn-immersive-header cn-immersive-header--studio cn-immersive-header--clean cn-immersive-header--identity${compact ? " cn-immersive-header--compact" : ""}${studyMode ? " cn-immersive-header--study" : ""}`}
+      style={{ "--cn-header-accent": courseAccent } as React.CSSProperties}
     >
       <Link
         href={`/cuaderno/curso/${courseId}`}
-        className="cn-immersive-header-icon"
+        className="cn-immersive-header-icon cn-immersive-header-icon--back"
         aria-label="Volver al curso"
       >
         <ArrowLeft size={17} />
       </Link>
 
-      <div className="cn-immersive-header-title-block">
-        <p className="cn-immersive-header-brand">MemoriaStudy</p>
-        <h1 className="cn-immersive-header-course">{courseName}</h1>
-        <span className="cn-immersive-header-status cn-immersive-header-status--dot">
-          <span aria-hidden>●</span> {statusLabel}
-        </span>
+      <div className="cn-immersive-header-identity">
+        <div className="cn-immersive-header-cover" aria-hidden>
+          <span className="cn-immersive-header-cover-emoji">{coverEmoji}</span>
+        </div>
+        <div className="cn-immersive-header-title-block">
+          <div className="cn-immersive-header-crumb-row">
+            <Link href={`/cuaderno/curso/${courseId}`} className="cn-immersive-header-crumb">
+              {courseName}
+            </Link>
+            <span className="cn-immersive-header-crumb-sep" aria-hidden>
+              /
+            </span>
+            <span className="cn-immersive-header-page-chip" title={displayPage}>
+              {displayPage}
+              {totalPages > 1 ? ` · ${pageNumber}/${totalPages}` : ""}
+            </span>
+          </div>
+          <h1 className="cn-immersive-header-course">{notebookTitle}</h1>
+          <div className="cn-immersive-header-badges">
+            <span className={`cn-immersive-header-status-pill is-${statusTone}`}>
+              <span className="cn-immersive-header-status-dot" aria-hidden />
+              {statusLabel}
+            </span>
+            {studyMode ? (
+              <span className="cn-immersive-header-status-pill is-study">Modo estudio</span>
+            ) : null}
+            {readOnly ? (
+              <span className="cn-immersive-header-status-pill is-readonly">Solo lectura</span>
+            ) : null}
+          </div>
+        </div>
       </div>
 
       <div className="cn-immersive-header-divider" aria-hidden />
@@ -114,19 +161,26 @@ export function CuadernoImmersiveHeader({
       <div className="cn-immersive-header-primary">
         <button
           type="button"
-          className={`cn-immersive-header-cta${studyMode ? " is-active" : ""}`}
+          className={`cn-immersive-header-action tron-btn-secondary inline-flex h-9 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold${studyMode ? " is-active" : ""}`}
           onClick={onToggleStudy}
         >
+          <BookOpen size={15} aria-hidden />
           Estudiar
         </button>
         <button
           type="button"
-          className={`cn-immersive-header-cta cn-immersive-header-cta--ai${aiOpen ? " is-active" : ""}`}
+          className={`cn-immersive-header-action tron-btn-primary inline-flex h-9 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold${aiOpen ? " is-active" : ""}`}
           onClick={onToggleAi}
         >
+          <Sparkles size={15} aria-hidden />
           Preguntar IA
         </button>
-        <button type="button" className="cn-immersive-header-cta" onClick={onGenerateExam}>
+        <button
+          type="button"
+          className="cn-immersive-header-action tron-btn-secondary inline-flex h-9 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold"
+          onClick={onGenerateExam}
+        >
+          <ClipboardList size={15} aria-hidden />
           Examen
         </button>
       </div>
@@ -161,7 +215,6 @@ export function CuadernoImmersiveHeader({
           </button>
         ) : null}
 
-        {readOnly ? <span className="cn-immersive-header-readonly">Solo lectura</span> : null}
 
         {!compact ? (
           <>

@@ -85,7 +85,7 @@ export function CuadernoImmersiveEditor({
   const [title, setTitle] = useState(initialClass.title);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
   const [favorite, setFavorite] = useState(false);
-  const [notebookGateOpen, setNotebookGateOpen] = useState(true);
+  const [notebookGateOpen, setNotebookGateOpen] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
   const [studyMode, setStudyMode] = useState(false);
   const [favoritePulse, setFavoritePulse] = useState(false);
@@ -142,11 +142,29 @@ export function CuadernoImmersiveEditor({
   }, [cuadernoClass.id, sync]);
 
   useEffect(() => {
-    setNotebookGateOpen(true);
+    const gateKey = `cn-gate-seen-${cuadernoClass.id}`;
+    const seen = typeof window !== "undefined" && localStorage.getItem(gateKey) === "1";
+    setNotebookGateOpen(!seen);
     setAiOpen(false);
     setStudyMode(false);
     setFocusMode(false);
   }, [cuadernoClass.id]);
+
+  useEffect(() => {
+    if (!formatPanelOpen) return;
+    const viewport = document.querySelector(".cn-canvas-viewport--immersive");
+    if (viewport instanceof HTMLElement) {
+      viewport.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    }
+  }, [formatPanelOpen]);
+
+  useEffect(() => {
+    if (!pageSettingsOpen) return;
+    const viewport = document.querySelector(".cn-canvas-viewport--immersive");
+    if (viewport instanceof HTMLElement) {
+      viewport.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    }
+  }, [pageSettingsOpen]);
 
   const persist = useCallback(
     async (patch: Record<string, unknown>) => {
@@ -373,6 +391,7 @@ export function CuadernoImmersiveEditor({
   }
 
   function openPageFromGate() {
+    localStorage.setItem(`cn-gate-seen-${cuadernoClass.id}`, "1");
     setNotebookGateOpen(false);
   }
 
@@ -394,7 +413,7 @@ export function CuadernoImmersiveEditor({
 
   return (
     <div
-      className={`cn-immersive-root cn-immersive-root--studio cn-immersive-root--luxury cn-ambient-bg cuaderno-shell ${aiOpen ? " cn-immersive-root--ai-open" : ""}${decorationPanelOpen ? " cn-immersive-root--side-open" : ""}${focusMode || studyMode ? " cn-immersive-root--focus cn-immersive-root--study" : ""}${notebookGateOpen ? " cn-immersive-root--gate" : ""}`}
+      className={`cn-immersive-root cn-immersive-root--studio cn-immersive-root--luxury cn-ambient-bg cuaderno-shell${aiOpen ? " cn-immersive-root--ai-open" : ""}${decorationPanelOpen ? " cn-immersive-root--side-open" : ""}${focusMode || studyMode ? " cn-immersive-root--focus cn-immersive-root--study" : ""}${notebookGateOpen ? " cn-immersive-root--gate" : ""}`}
       data-layout={chrome.layoutMode}
       data-focus={focusMode ? "true" : "false"}
       style={
@@ -413,6 +432,12 @@ export function CuadernoImmersiveEditor({
       <CuadernoImmersiveHeader
         courseId={cuadernoClass.courseId}
         courseName={cuadernoClass.courseName}
+        notebookTitle={title}
+        pageLabel={activePage.title}
+        pageNumber={pageNumber}
+        totalPages={doc.pages.length}
+        courseAccent={coverArt.accent}
+        coverEmoji={activePage.cover?.emoji ?? activePage.cover?.icon ?? coverArt.icon ?? "📓"}
         saveState={canEdit ? saveState : "saved"}
         favorite={favorite}
         favoritePulse={favoritePulse}
@@ -534,9 +559,9 @@ export function CuadernoImmersiveEditor({
         <motion.div
           className="cn-immersive-paper-shell"
           key={doc.activePageId}
-          initial={{ opacity: 0, y: 16, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
         >
           {!studyMode ? (
             <CuadernoFloatingConcepts
@@ -551,7 +576,9 @@ export function CuadernoImmersiveEditor({
             immersive
             externalToolbar
             notes={notes}
-            onChange={(raw) => applyDoc(parseCuadernoDocument(raw))}
+            onChange={(raw) => {
+              if (raw !== notes) setNotes(raw);
+            }}
             registerAddDecoration={(fn) => {
               placeDecorationRef.current = fn;
             }}
@@ -562,6 +589,7 @@ export function CuadernoImmersiveEditor({
             paperTone={activePage.paperTone}
             marginMode={activePage.marginMode}
             pageSizeMode={activePage.pageSizeMode}
+            writingLayout={activePage.writingLayout}
             templateId={activePage.templateId}
             courseAccent={coverArt.accent}
             lineHeight={lineHeight}

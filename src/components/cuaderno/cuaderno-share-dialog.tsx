@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { X, Copy, Check, Users, Eye, Pencil } from "lucide-react";
+import { createPortal } from "react-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { X, Copy, Check, Users, Eye, Pencil, Share2, Link2 } from "lucide-react";
 import type { CuadernoSharePermission } from "@/types/cuaderno";
 import "./cuaderno-share-dialog.css";
 
@@ -22,6 +24,7 @@ export function CuadernoShareDialog({
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [collaborators, setCollaborators] = useState<
     Array<{ userId: string; displayName: string | null; role: string }>
   >([]);
@@ -36,10 +39,23 @@ export function CuadernoShareDialog({
   }, [classId]);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
     if (!isOpen) return;
     setPermission(isGroupNotebook ? "edit" : initialPermission);
     void loadCollaborators();
   }, [isOpen, isGroupNotebook, initialPermission, loadCollaborators]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [isOpen, onClose]);
 
   async function generateLink() {
     setLoading(true);
@@ -67,85 +83,141 @@ export function CuadernoShareDialog({
     window.setTimeout(() => setCopied(false), 2000);
   }
 
-  if (!isOpen) return null;
+  if (!mounted) return null;
 
-  return (
-    <div className="cn-share-overlay" onClick={onClose}>
-      <div className="cn-share-dialog" onClick={(e) => e.stopPropagation()}>
-        <div className="cn-share-header">
-          <div>
-            <h2>{isGroupNotebook ? "Cuaderno grupal" : "Compartir apunte"}</h2>
-            <p>Invita compañeros a ver o editar esta hoja</p>
-          </div>
-          <button type="button" onClick={onClose} aria-label="Cerrar">
-            <X size={20} />
-          </button>
-        </div>
+  const dialog = (
+    <AnimatePresence>
+      {isOpen ? (
+        <motion.div
+          className="cn-share-overlay"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.18 }}
+          onClick={onClose}
+        >
+          <motion.div
+            className="cn-share-dialog"
+            role="dialog"
+            aria-labelledby="cn-share-title"
+            initial={{ opacity: 0, y: 16, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 12, scale: 0.98 }}
+            transition={{ type: "spring", stiffness: 420, damping: 34 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <header className="cn-share-header">
+              <div className="cn-share-header-icon" aria-hidden>
+                <Share2 size={20} />
+              </div>
+              <div className="cn-share-header-text">
+                <h2 id="cn-share-title">{isGroupNotebook ? "Cuaderno grupal" : "Compartir apunte"}</h2>
+                <p>Invita compañeros a ver o editar esta hoja</p>
+              </div>
+              <button type="button" className="cn-share-close" onClick={onClose} aria-label="Cerrar">
+                <X size={18} />
+              </button>
+            </header>
 
-        {!isGroupNotebook && (
-          <div className="cn-share-permissions">
-            <button
-              type="button"
-              className={permission === "view" ? "is-active" : ""}
-              onClick={() => setPermission("view")}
-            >
-              <Eye size={16} />
-              Solo lectura
-            </button>
-            <button
-              type="button"
-              className={permission === "edit" ? "is-active" : ""}
-              onClick={() => setPermission("edit")}
-            >
-              <Pencil size={16} />
-              Pueden editar
-            </button>
-          </div>
-        )}
+            <div className="cn-share-body">
+              {!isGroupNotebook && (
+                <div className="cn-share-permissions">
+                  <button
+                    type="button"
+                    className={`cn-share-perm-card${permission === "view" ? " is-active" : ""}`}
+                    onClick={() => setPermission("view")}
+                  >
+                    <span className="cn-share-perm-icon">
+                      <Eye size={18} />
+                    </span>
+                    <span className="cn-share-perm-copy">
+                      <strong>Solo lectura</strong>
+                      <small>Pueden ver el apunte sin modificarlo</small>
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`cn-share-perm-card${permission === "edit" ? " is-active" : ""}`}
+                    onClick={() => setPermission("edit")}
+                  >
+                    <span className="cn-share-perm-icon">
+                      <Pencil size={18} />
+                    </span>
+                    <span className="cn-share-perm-copy">
+                      <strong>Pueden editar</strong>
+                      <small>Colaboración en tiempo real secuencial</small>
+                    </span>
+                  </button>
+                </div>
+              )}
 
-        {isGroupNotebook && (
-          <p className="cn-share-group-note">
-            Los cuadernos grupales permiten edición colaborativa. Comparte el enlace con tu salón o grupo de estudio.
-          </p>
-        )}
+              {isGroupNotebook && (
+                <div className="cn-share-group-note">
+                  Los cuadernos grupales permiten edición colaborativa. Comparte el enlace con tu salón o grupo de
+                  estudio.
+                </div>
+              )}
 
-        <div className="cn-share-actions">
-          <button type="button" className="cn-share-generate" onClick={generateLink} disabled={loading}>
-            {loading ? "Generando..." : shareUrl ? "Actualizar enlace" : "Generar enlace"}
-          </button>
-        </div>
+              <button
+                type="button"
+                className="cn-share-generate tron-btn-primary"
+                onClick={generateLink}
+                disabled={loading}
+              >
+                {loading ? "Generando enlace…" : shareUrl ? "Actualizar enlace" : "Generar enlace de acceso"}
+              </button>
 
-        {shareUrl && (
-          <div className="cn-share-url-row">
-            <input readOnly value={shareUrl} className="cn-share-url-input" />
-            <button type="button" onClick={copyLink} className="cn-share-copy">
-              {copied ? <Check size={16} /> : <Copy size={16} />}
-            </button>
-          </div>
-        )}
+              {shareUrl && (
+                <div className="cn-share-url-block">
+                  <p className="cn-share-url-label">
+                    <Link2 size={14} />
+                    Enlace para compartir
+                  </p>
+                  <div className="cn-share-url-row">
+                    <input readOnly value={shareUrl} className="cn-share-url-input" aria-label="Enlace compartido" />
+                    <button
+                      type="button"
+                      onClick={copyLink}
+                      className={`cn-share-copy tron-btn-secondary${copied ? " is-copied" : ""}`}
+                      aria-label={copied ? "Copiado" : "Copiar enlace"}
+                    >
+                      {copied ? <Check size={16} /> : <Copy size={16} />}
+                      <span>{copied ? "Copiado" : "Copiar"}</span>
+                    </button>
+                  </div>
+                </div>
+              )}
 
-        {error && <p className="cn-form-error">{error}</p>}
+              {error && <p className="cn-share-error">{error}</p>}
 
-        {collaborators.length > 0 && (
-          <div className="cn-share-collaborators">
-            <p className="cn-share-collab-title">
-              <Users size={14} /> Colaboradores ({collaborators.length})
-            </p>
-            <ul>
-              {collaborators.map((c) => (
-                <li key={c.userId}>
-                  {c.displayName ?? "Estudiante"}
-                  <span>{c.role === "editor" ? "Editor" : "Lector"}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+              {collaborators.length > 0 && (
+                <div className="cn-share-collaborators">
+                  <p className="cn-share-collab-title">
+                    <Users size={15} />
+                    Colaboradores
+                    <span className="cn-share-collab-count">{collaborators.length}</span>
+                  </p>
+                  <ul>
+                    {collaborators.map((c) => (
+                      <li key={c.userId}>
+                        <span className="cn-share-collab-name">{c.displayName ?? "Estudiante"}</span>
+                        <span className="cn-share-collab-role">{c.role === "editor" ? "Editor" : "Lector"}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
-        <p className="cn-share-footnote">
-          La edición simultánea guarda los cambios de forma secuencial. Recarga si no ves las últimas modificaciones.
-        </p>
-      </div>
-    </div>
+              <p className="cn-share-footnote">
+                La edición simultánea guarda los cambios de forma secuencial. Recarga si no ves las últimas
+                modificaciones.
+              </p>
+            </div>
+          </motion.div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
   );
+
+  return createPortal(dialog, document.body);
 }

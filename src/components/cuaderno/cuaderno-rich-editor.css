@@ -46,8 +46,36 @@
   height: 0;
 }
 
+.cn-rich-editor--immersive .cn-prosemirror p.is-editor-empty:first-child::before,
+.cn-paper-editor--immersive:empty::before {
+  content: none !important;
+  display: none;
+}
+
+/* Modo Word — inicio arriba-izquierda */
+.cn-paper[data-writing-layout="word"] .cn-prosemirror {
+  padding: 18px clamp(28px, 4vw, 56px) 48px;
+  min-height: min(420px, 50dvh);
+}
+
+.cn-paper[data-writing-layout="word"] .cn-paper-editor--rich {
+  min-height: 0;
+}
+
+.cn-paper[data-writing-layout="word"] .cn-prosemirror p:first-child {
+  margin-top: 0;
+}
+
+/* Modo libre — lienzo largo, clic en cualquier zona */
+.cn-paper[data-writing-layout="free"] .cn-prosemirror {
+  padding: 12px clamp(20px, 3.5vw, 48px) min(24vh, 280px);
+  min-height: min(520px, 62dvh);
+  cursor: text;
+}
+
 .cn-prosemirror ::selection {
-  background: color-mix(in srgb, var(--cn-course-accent, #00ffd5) 28%, transparent);
+  background: color-mix(in srgb, var(--cn-course-accent, #00ffd5) 38%, #bae6fd);
+  color: inherit;
 }
 
 .cn-prosemirror h1 {
@@ -169,6 +197,14 @@
 .cn-prosemirror mark {
   border-radius: 3px;
   padding: 0 2px;
+  color: var(--paper-ink, #0f172a);
+}
+
+.cn-prosemirror mark,
+.cn-prosemirror mark span,
+.cn-prosemirror mark strong,
+.cn-prosemirror mark em {
+  color: var(--paper-ink, #0f172a) !important;
 }
 
 /* Bloques de estudio jurídico */
@@ -317,7 +353,122 @@
   color: var(--cn-accent, #00ffd5) !important;
 }
 
-/* Toolbar flotante agrupada (inmersivo) */
+/* Barra única al seleccionar texto (modo inmersivo / estudiante) */
+.cn-format-bubble--immersive {
+  z-index: 55;
+}
+
+.cn-format-bubble-inner--immersive {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  min-width: min(92vw, 320px);
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--cn-format-bubble-bg, rgba(12, 16, 22, 0.96));
+  border-color: color-mix(in srgb, var(--cn-accent, #00ffd5) 28%, rgba(255, 255, 255, 0.12));
+}
+
+.cn-format-bubble-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cn-format-bubble-section--inline {
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+}
+
+.cn-format-bubble-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--cn-accent, #00ffd5) 70%, white);
+}
+
+.cn-format-colors--hi {
+  gap: 8px;
+}
+
+.cn-format-swatch--lg {
+  width: 28px;
+  height: 28px;
+  border-width: 2px;
+}
+
+.cn-format-swatch--lg.is-active {
+  box-shadow:
+    0 0 0 2px var(--cn-format-bubble-bg, rgba(12, 16, 22, 0.96)),
+    0 0 0 4px var(--cn-accent, #00ffd5);
+}
+
+.cn-format-clear-hi {
+  margin-left: auto;
+  width: auto !important;
+  height: 28px !important;
+  padding: 0 10px !important;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.72) !important;
+}
+
+.cn-format-study-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cn-format-study-btn {
+  width: auto !important;
+  height: 32px !important;
+  padding: 0 12px !important;
+  border-radius: 999px !important;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--cn-accent, #00ffd5) 14%, transparent) !important;
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+
+.cn-format-study-btn:hover {
+  background: color-mix(in srgb, var(--cn-accent, #00ffd5) 28%, transparent) !important;
+}
+
+html:not(.dark) .cn-format-bubble-inner,
+html:not(.dark) .cn-format-bubble-inner--immersive {
+  --cn-format-bubble-bg: rgba(255, 255, 255, 0.98);
+  background: var(--cn-format-bubble-bg);
+  border-color: color-mix(in srgb, var(--border) 80%, transparent);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
+}
+
+html:not(.dark) .cn-format-bubble-inner button {
+  color: var(--foreground);
+}
+
+html:not(.dark) .cn-format-bubble-label {
+  color: var(--muted-foreground);
+}
+
+html:not(.dark) .cn-format-study-btn {
+  color: var(--foreground) !important;
+  background: var(--accent-soft, color-mix(in srgb, var(--accent) 14%, transparent)) !important;
+}
+
+html:not(.dark) .cn-format-clear-hi {
+  color: var(--muted-foreground) !important;
+}
+
+html:not(.dark) .cn-format-divider {
+  background: color-mix(in srgb, var(--border) 80%, transparent);
+}
+
+/* Toolbar flotante agrupada (inmersivo) — legacy, ya no se usa en selección */
 .cn-float-edit-toolbar {
   z-index: var(--cn-z-menu, 10000);
 }

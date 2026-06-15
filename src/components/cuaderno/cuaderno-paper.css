@@ -83,6 +83,11 @@
   padding-right: clamp(28px, 4vw, 48px);
 }
 
+.cn-paper.margin-normal .cn-prosemirror {
+  padding-left: clamp(40px, 5vw, 72px);
+  padding-right: clamp(40px, 5vw, 72px);
+}
+
 .cn-paper.margin-wide .cn-prosemirror {
   padding-left: clamp(56px, 6vw, 96px);
   padding-right: clamp(56px, 6vw, 96px);

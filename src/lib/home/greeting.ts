@@ -13,14 +13,14 @@ export function getHourFromDate(date: Date, timeZone?: string): number {
 }
 
 export function getTimeGreetingFromHour(hour: number): string {
-  if (hour < 12) return "Buenos días";
-  if (hour < 19) return "Buenas tardes";
+  if (hour >= 5 && hour < 12) return "Buenos días";
+  if (hour >= 12 && hour < 19) return "Buenas tardes";
   return "Buenas noches";
 }
 
-/** Saludo según la hora local del navegador o del sistema. */
+/** Saludo según la hora en Perú (misma zona que la UNT). */
 export function getLocalTimeGreeting(date = new Date()): string {
-  return getTimeGreetingFromHour(date.getHours());
+  return getTimeGreetingInTimeZone(date, APP_TIME_ZONE);
 }
 
 /** Saludo según una zona horaria concreta (p. ej. Perú en SSR). */

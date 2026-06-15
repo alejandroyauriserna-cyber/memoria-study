@@ -71,12 +71,13 @@ export function CuadernoCanvasEditor({
   notes,
   onChange,
   onSelectionAction,
-  placeholder = "Escribe aquí como en tu cuaderno…",
+  placeholder = "",
   immersive = false,
   layoutMode = "fullscreen",
   paperTone: paperToneProp,
   marginMode: marginModeProp,
   pageSizeMode: pageSizeModeProp,
+  writingLayout: writingLayoutProp,
   templateId: templateIdProp,
   courseAccent = "#00E5C3",
   pageSettingsSlot,
@@ -111,6 +112,7 @@ export function CuadernoCanvasEditor({
   paperTone?: CuadernoPaperTone;
   marginMode?: import("@/lib/cuaderno/page-settings").CuadernoPageMargin;
   pageSizeMode?: CuadernoPageSizeMode;
+  writingLayout?: import("@/lib/cuaderno/page-settings").CuadernoWritingLayout;
   templateId?: CuadernoTemplateId;
   courseAccent?: string;
   pageSettingsSlot?: React.ReactNode;
@@ -157,12 +159,20 @@ export function CuadernoCanvasEditor({
   const paperTone = paperToneProp ?? activePage.paperTone;
   const marginMode = marginModeProp ?? activePage.marginMode;
   const pageSizeMode = pageSizeModeProp ?? activePage.pageSizeMode ?? DEFAULT_PAGE_SIZE_MODE;
+  const writingLayout =
+    writingLayoutProp ?? activePage.writingLayout ?? "word";
   const template = getTemplate(templateId);
   const paperClass = `${getPaperClasses(templateId)} tone-${paperTone} margin-${marginMode}`;
   const inkStrokes = activePage.inkStrokes ?? [];
   const decorations = activePage.decorations ?? [];
 
-  const fitKey = `${doc.activePageId}-${pageSizeMode}-${layoutMode}-${templateId}`;
+  const fitKey = `${doc.activePageId}-${pageSizeMode}-${marginMode}-${paperTone}-${writingLayout}-${layoutMode}-${templateId}`;
+
+  useEffect(() => {
+    const vp = viewportRef.current;
+    if (!vp) return;
+    vp.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [fitKey]);
   const { zoom, setZoom } = useCuadernoPaperFit(
     viewportRef,
     shellRef,
@@ -601,6 +611,7 @@ export function CuadernoCanvasEditor({
         className={paperClass}
         data-template={templateId}
         data-page-size={pageSizeMode}
+        data-writing-layout={writingLayout}
         style={{ "--cn-course-accent": courseAccent } as React.CSSProperties}
       >
         <div
@@ -609,6 +620,20 @@ export function CuadernoCanvasEditor({
           onPointerDown={(e) => {
             const t = e.target as HTMLElement;
             if (t.closest(".cn-decoration-item")) return;
+            if (
+              writingLayout === "free" &&
+              editor &&
+              writingMode === "text" &&
+              panMode === "write" &&
+              (t === paperLayersRef.current ||
+                t.classList.contains("cn-prosemirror") ||
+                t.closest(".cn-rich-editor-content"))
+            ) {
+              const pos = editor.view.posAtCoords({ left: e.clientX, top: e.clientY });
+              if (pos) {
+                editor.chain().focus().setTextSelection(pos.pos).run();
+              }
+            }
             if (
               t === paperLayersRef.current ||
               t.classList.contains("cn-prosemirror") ||
@@ -657,12 +682,14 @@ export function CuadernoCanvasEditor({
             body={activePage.body}
             onBodyChange={syncBody}
             onEditorReady={handleEditorReady}
-            placeholder={placeholder || template.description}
+            placeholder={immersive ? "" : placeholder || template.description}
             editable={writingMode === "text" && panMode === "write"}
             courseAccent={courseAccent}
-            className="cn-paper-editor cn-paper-editor--rich cn-paper-layer-text"
+            className={`cn-paper-editor cn-paper-editor--rich cn-paper-layer-text${immersive ? " cn-paper-editor--immersive" : ""}`}
             lineHeight={lineHeight}
             immersiveEdit={immersive}
+            writingLayout={writingLayout}
+            activePageId={doc.activePageId}
             onSelectionAction={onSelectionAction}
             onClipboardImagePaste={writingMode === "text" ? handleClipboardPaste : undefined}
           />

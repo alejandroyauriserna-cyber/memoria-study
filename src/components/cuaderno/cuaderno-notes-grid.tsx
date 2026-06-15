@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Heart, MoreVertical } from "lucide-react";
 import { getTextPreview } from "@/lib/cuaderno/html-utils";
 import type { CuadernoClass } from "@/types/cuaderno";
@@ -31,11 +32,7 @@ export function CuadernoNotesGrid({
       ) : (
         <div className="cn-notes-grid">
           {classes.map((note) => (
-            <article
-              key={note.id}
-              className="cn-grid-card"
-              onClick={() => onSelectNote(note.id)}
-            >
+            <Link key={note.id} href={`/cuaderno/${note.id}`} className="cn-grid-card">
               <div className="cn-grid-card-header">
                 <h3 className="cn-grid-card-title">{note.title || "Sin título"}</h3>
                 <button
@@ -69,7 +66,7 @@ export function CuadernoNotesGrid({
 
               {/* Colores de acento por curso */}
               <div className="cn-grid-accent" />
-            </article>
+            </Link>
           ))}
         </div>
       )}

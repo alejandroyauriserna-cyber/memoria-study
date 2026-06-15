@@ -1,3 +1,5 @@
+/* —— Compartir apunte — tokens tema claro/oscuro —— */
+
 .cn-share-overlay {
   position: fixed;
   inset: 0;
@@ -5,39 +7,131 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.65);
   padding: 20px;
+  background: rgba(0, 0, 0, 0.62);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+html:not(.dark) .cn-share-overlay {
+  background: rgba(15, 23, 42, 0.2);
 }
 
 .cn-share-dialog {
-  width: min(100%, 480px);
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: #0f1419;
-  padding: 24px;
-  color: #f5f7fa;
+  --cn-share-text: #f5f7fa;
+  --cn-share-muted: rgba(245, 247, 250, 0.62);
+  --cn-share-muted-soft: rgba(245, 247, 250, 0.42);
+  --cn-share-surface: rgba(18, 22, 28, 0.96);
+  --cn-share-surface-raised: rgba(255, 255, 255, 0.04);
+  --cn-share-border: rgba(255, 255, 255, 0.1);
+  --cn-share-border-soft: rgba(255, 255, 255, 0.06);
+  --cn-share-accent: #00ffd5;
+  --cn-share-accent-soft: rgba(0, 255, 213, 0.12);
+  --cn-share-input-bg: rgba(255, 255, 255, 0.05);
+  --cn-share-shadow: 0 32px 80px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.06);
+
+  width: min(100%, 520px);
+  max-height: min(92vh, 720px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border-radius: 22px;
+  border: 1px solid var(--cn-share-border);
+  background:
+    radial-gradient(ellipse 90% 60% at 50% -20%, rgba(0, 255, 213, 0.08), transparent 55%),
+    var(--cn-share-surface);
+  box-shadow: var(--cn-share-shadow);
+  color: var(--cn-share-text);
+  backdrop-filter: blur(24px) saturate(1.2);
+  -webkit-backdrop-filter: blur(24px) saturate(1.2);
+}
+
+html:not(.dark) .cn-share-dialog {
+  --cn-share-text: var(--foreground);
+  --cn-share-muted: var(--muted-foreground);
+  --cn-share-muted-soft: color-mix(in srgb, var(--muted-foreground) 72%, transparent);
+  --cn-share-surface: rgba(255, 255, 255, 0.97);
+  --cn-share-surface-raised: rgba(255, 255, 255, 0.92);
+  --cn-share-border: color-mix(in srgb, var(--border) 85%, transparent);
+  --cn-share-border-soft: color-mix(in srgb, var(--border) 55%, transparent);
+  --cn-share-accent: var(--accent);
+  --cn-share-accent-soft: var(--accent-soft);
+  --cn-share-input-bg: #fff;
+  --cn-share-shadow:
+    0 28px 70px rgba(15, 23, 42, 0.12),
+    0 0 0 1px color-mix(in srgb, var(--border) 70%, transparent);
+  background:
+    radial-gradient(ellipse 90% 55% at 50% -15%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 58%),
+    var(--cn-share-surface);
 }
 
 .cn-share-header {
   display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 20px;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 22px 22px 18px;
+  border-bottom: 1px solid var(--cn-share-border-soft);
+}
+
+.cn-share-header-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: var(--cn-share-accent-soft);
+  color: var(--cn-share-accent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+html:not(.dark) .cn-share-header-icon {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.cn-share-header-text {
+  flex: 1;
+  min-width: 0;
 }
 
 .cn-share-header h2 {
   font-size: 1.125rem;
   font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--cn-share-text);
 }
 
 .cn-share-header p {
   margin-top: 4px;
   font-size: 0.8125rem;
-  color: rgba(245, 247, 250, 0.55);
+  line-height: 1.45;
+  color: var(--cn-share-muted);
 }
 
-.cn-share-header button {
-  color: rgba(245, 247, 250, 0.6);
+.cn-share-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--cn-share-muted);
+  cursor: pointer;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+
+.cn-share-close:hover {
+  background: var(--cn-share-surface-raised);
+  color: var(--cn-share-text);
+}
+
+.cn-share-body {
+  padding: 18px 22px 22px;
+  overflow-y: auto;
 }
 
 .cn-share-permissions {
@@ -47,120 +141,245 @@
   margin-bottom: 16px;
 }
 
-.cn-share-permissions button {
+@media (max-width: 480px) {
+  .cn-share-permissions {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cn-share-perm-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--cn-share-border);
+  background: var(--cn-share-surface-raised);
+  color: var(--cn-share-text);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+}
+
+.cn-share-perm-card:hover {
+  border-color: color-mix(in srgb, var(--cn-share-accent) 28%, var(--cn-share-border));
+  transform: translateY(-1px);
+}
+
+.cn-share-perm-card.is-active {
+  border-color: color-mix(in srgb, var(--cn-share-accent) 45%, transparent);
+  background: var(--cn-share-accent-soft);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--cn-share-accent) 20%, transparent),
+    0 8px 24px color-mix(in srgb, var(--cn-share-accent) 12%, transparent);
+}
+
+.cn-share-perm-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 12px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.03);
-  color: rgba(245, 247, 250, 0.75);
-  font-size: 0.8125rem;
-  cursor: pointer;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--cn-share-accent) 10%, transparent);
+  color: var(--cn-share-accent);
 }
 
-.cn-share-permissions button.is-active {
-  border-color: rgba(0, 255, 213, 0.4);
-  background: rgba(0, 255, 213, 0.1);
-  color: #00ffd5;
+.cn-share-perm-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.cn-share-perm-copy strong {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--cn-share-text);
+}
+
+.cn-share-perm-copy small {
+  font-size: 0.6875rem;
+  line-height: 1.4;
+  color: var(--cn-share-muted);
 }
 
 .cn-share-group-note {
   margin-bottom: 16px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--cn-share-accent) 22%, var(--cn-share-border));
+  background: var(--cn-share-accent-soft);
   font-size: 0.8125rem;
   line-height: 1.55;
-  color: rgba(245, 247, 250, 0.62);
+  color: var(--cn-share-muted);
 }
 
 .cn-share-generate {
   width: 100%;
-  padding: 12px 16px;
-  border-radius: 12px;
-  border: none;
-  background: #00ffd5;
-  color: #07131a;
+  padding: 12px 18px;
+  border-radius: 14px;
   font-weight: 700;
   font-size: 0.875rem;
   cursor: pointer;
 }
 
 .cn-share-generate:disabled {
-  opacity: 0.6;
+  opacity: 0.65;
   cursor: wait;
+}
+
+.cn-share-url-block {
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid var(--cn-share-border-soft);
+  background: var(--cn-share-surface-raised);
+}
+
+.cn-share-url-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cn-share-muted);
 }
 
 .cn-share-url-row {
   display: flex;
   gap: 8px;
-  margin-top: 14px;
 }
 
 .cn-share-url-input {
   flex: 1;
   min-width: 0;
   padding: 10px 12px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.04);
-  color: #f5f7fa;
+  border-radius: 12px;
+  border: 1px solid var(--cn-share-border);
+  background: var(--cn-share-input-bg);
+  color: var(--cn-share-text);
   font-size: 0.75rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 .cn-share-copy {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  border-radius: 10px;
-  border: 1px solid rgba(0, 255, 213, 0.3);
-  background: rgba(0, 255, 213, 0.08);
-  color: #00ffd5;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 0 14px;
+  min-height: 40px;
+  border-radius: 12px;
+  font-size: 0.8125rem;
+  font-weight: 600;
   cursor: pointer;
 }
 
+.cn-share-copy.is-copied {
+  border-color: color-mix(in srgb, var(--cn-share-accent) 45%, transparent);
+  color: var(--cn-share-accent);
+}
+
+.cn-share-error {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 107, 107, 0.35);
+  background: rgba(255, 107, 107, 0.08);
+  font-size: 0.8125rem;
+  color: #ff6b6b;
+}
+
+html:not(.dark) .cn-share-error {
+  color: #dc2626;
+  background: rgba(220, 38, 38, 0.06);
+  border-color: rgba(220, 38, 38, 0.2);
+}
+
 .cn-share-collaborators {
-  margin-top: 20px;
+  margin-top: 18px;
   padding-top: 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--cn-share-border-soft);
 }
 
 .cn-share-collab-title {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   font-size: 0.8125rem;
-  font-weight: 600;
-  color: #00ffd5;
+  font-weight: 700;
+  color: var(--cn-share-text);
   margin-bottom: 10px;
+}
+
+.cn-share-collab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.35rem;
+  height: 1.35rem;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--cn-share-accent-soft);
+  color: var(--cn-share-accent);
+  font-size: 0.6875rem;
+  font-weight: 700;
 }
 
 .cn-share-collaborators ul {
   list-style: none;
   padding: 0;
   margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .cn-share-collaborators li {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  padding: 8px 0;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--cn-share-border-soft);
+  background: var(--cn-share-surface-raised);
   font-size: 0.8125rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.cn-share-collaborators li span {
-  color: rgba(245, 247, 250, 0.45);
-  font-size: 0.75rem;
+.cn-share-collab-name {
+  font-weight: 600;
+  color: var(--cn-share-text);
+}
+
+.cn-share-collab-role {
+  flex-shrink: 0;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--cn-share-accent-soft);
+  color: var(--cn-share-accent);
+  font-size: 0.6875rem;
+  font-weight: 700;
 }
 
 .cn-share-footnote {
   margin-top: 16px;
   font-size: 0.6875rem;
-  line-height: 1.5;
-  color: rgba(245, 247, 250, 0.38);
+  line-height: 1.55;
+  color: var(--cn-share-muted-soft);
 }
+
+/* —— Estilos compartidos (otros diálogos) —— */
 
 .cn-new-note-dialog--dark {
   background: #0f1419 !important;
@@ -236,6 +455,35 @@
 .cn-notes-grid-container--dark .cn-grid-card-preview,
 .cn-notes-grid-container--dark .cn-grid-course {
   color: rgba(245, 247, 250, 0.55);
+}
+
+html:not(.dark) .cn-shared-preview-badge {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+html:not(.dark) .cn-shared-preview-title {
+  color: var(--foreground);
+}
+
+html:not(.dark) .cn-shared-preview-meta {
+  color: var(--muted-foreground);
+}
+
+html:not(.dark) .cn-shared-preview-body {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: color-mix(in srgb, var(--border) 75%, transparent);
+  color: var(--foreground);
+}
+
+html:not(.dark) .cn-shared-back,
+html:not(.dark) .cn-shared-readonly-note {
+  color: var(--muted-foreground);
+}
+
+html:not(.dark) .cn-shared-cta {
+  background: var(--foreground);
+  color: #fff;
 }
 
 .cn-readonly-banner {

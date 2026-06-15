@@ -1,7 +1,36 @@
-/* Biblioteca unificada — estética MemoriaStudy + UX tipo lista */
+/* Biblioteca unificada — tokens adaptables a tema claro/oscuro */
 
 .cn-unified-library {
+  --cn-lib-text: #f5f7fa;
+  --cn-lib-muted: rgba(245, 247, 250, 0.62);
+  --cn-lib-muted-soft: rgba(245, 247, 250, 0.45);
+  --cn-lib-surface: rgba(255, 255, 255, 0.02);
+  --cn-lib-surface-raised: rgba(255, 255, 255, 0.04);
+  --cn-lib-border: rgba(255, 255, 255, 0.08);
+  --cn-lib-border-soft: rgba(255, 255, 255, 0.06);
+  --cn-lib-hover: rgba(255, 255, 255, 0.05);
+  --cn-lib-accent: #00ffd5;
+  --cn-lib-accent-soft: rgba(0, 255, 213, 0.1);
+  --cn-lib-input-bg: rgba(255, 255, 255, 0.05);
+  --cn-lib-tab-bg: rgba(255, 255, 255, 0.04);
+  --cn-lib-tab-active-bg: rgba(0, 255, 213, 0.12);
   min-height: calc(100vh - 4rem);
+}
+
+html:not(.dark) .cn-unified-library {
+  --cn-lib-text: var(--foreground);
+  --cn-lib-muted: var(--muted-foreground);
+  --cn-lib-muted-soft: color-mix(in srgb, var(--muted-foreground) 78%, transparent);
+  --cn-lib-surface: rgba(255, 255, 255, 0.82);
+  --cn-lib-surface-raised: rgba(255, 255, 255, 0.94);
+  --cn-lib-border: color-mix(in srgb, var(--border) 80%, transparent);
+  --cn-lib-border-soft: color-mix(in srgb, var(--border) 55%, transparent);
+  --cn-lib-hover: color-mix(in srgb, var(--accent) 6%, #fff);
+  --cn-lib-accent: var(--accent);
+  --cn-lib-accent-soft: var(--accent-soft);
+  --cn-lib-input-bg: #fff;
+  --cn-lib-tab-bg: rgba(15, 23, 42, 0.04);
+  --cn-lib-tab-active-bg: rgba(255, 255, 255, 0.92);
 }
 
 .cn-unified-nav {
@@ -14,16 +43,24 @@
 
 .cn-unified-nav .cn-tab {
   border: none !important;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--cn-lib-tab-bg);
   box-shadow: none;
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  color: var(--cn-lib-muted);
 }
 
 .cn-unified-nav .cn-tab[data-active="true"] {
-  background: rgba(0, 255, 213, 0.12);
-  color: #00ffd5;
+  background: var(--cn-lib-tab-active-bg);
+  color: var(--cn-lib-accent);
+}
+
+html:not(.dark) .cn-unified-nav .cn-tab[data-active="true"] {
+  color: var(--foreground);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent),
+    0 8px 20px rgba(15, 23, 42, 0.06);
 }
 
 .cn-unified-nav-badge {
@@ -33,8 +70,8 @@
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  background: rgba(0, 255, 213, 0.2);
-  color: #00ffd5;
+  background: var(--cn-lib-accent-soft);
+  color: var(--cn-lib-accent);
   font-size: 0.6875rem;
   font-weight: 700;
   padding: 0 5px;
@@ -47,9 +84,9 @@
   gap: 8px;
   padding: 10px 16px;
   border-radius: 999px;
-  border: 1px solid rgba(0, 255, 213, 0.25);
-  background: rgba(0, 255, 213, 0.06);
-  color: #00ffd5;
+  border: 1px solid color-mix(in srgb, var(--cn-lib-accent) 35%, transparent);
+  background: var(--cn-lib-accent-soft);
+  color: var(--cn-lib-accent);
   font-size: 0.8125rem;
   font-weight: 600;
   cursor: pointer;
@@ -57,8 +94,8 @@
 }
 
 .cn-unified-join-btn:hover {
-  background: rgba(0, 255, 213, 0.12);
-  border-color: rgba(0, 255, 213, 0.4);
+  background: color-mix(in srgb, var(--cn-lib-accent) 14%, transparent);
+  border-color: color-mix(in srgb, var(--cn-lib-accent) 45%, transparent);
 }
 
 .cn-unified-shared-intro {
@@ -68,30 +105,34 @@
   margin-bottom: 20px;
   padding: 16px 18px;
   border-radius: 16px;
-  border: 1px solid rgba(0, 255, 213, 0.15);
-  background: rgba(0, 255, 213, 0.04);
+  border: 1px solid color-mix(in srgb, var(--cn-lib-accent) 22%, transparent);
+  background: var(--cn-lib-accent-soft);
 }
 
 .cn-unified-shared-title {
   font-size: 0.9375rem;
   font-weight: 700;
-  color: #f5f7fa;
+  color: var(--cn-lib-text);
 }
 
 .cn-unified-shared-desc {
   margin-top: 4px;
   font-size: 0.8125rem;
   line-height: 1.55;
-  color: rgba(245, 247, 250, 0.62);
+  color: var(--cn-lib-muted);
 }
 
 .cn-unified-layout {
   display: flex;
   min-height: 520px;
   border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--cn-lib-border);
+  background: var(--cn-lib-surface);
   overflow: hidden;
+}
+
+html:not(.dark) .cn-unified-layout {
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.06);
 }
 
 .cn-unified-main {
@@ -105,15 +146,15 @@
 .cn-unified-controls {
   flex-shrink: 0;
   padding: 10px 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--cn-lib-border-soft);
   background: transparent;
 }
 
-/* Dark overrides for sidebar */
+/* Sidebar */
 .cn-unified-library .cn-notes-sidebar.cn-notes-sidebar--dark {
   width: 260px;
-  background: rgba(255, 255, 255, 0.03);
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--cn-lib-surface-raised);
+  border-right: 1px solid var(--cn-lib-border);
   box-shadow: none;
 }
 
@@ -124,111 +165,115 @@
 }
 
 .cn-unified-library .cn-notes-sidebar--dark .cn-sidebar-nav-item {
-  color: rgba(245, 247, 250, 0.78);
+  color: var(--cn-lib-text);
 }
 
 .cn-unified-library .cn-notes-sidebar--dark .cn-sidebar-nav-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--cn-lib-hover);
 }
 
 .cn-unified-library .cn-notes-sidebar--dark .cn-sidebar-nav-item[data-active="true"] {
-  background: rgba(0, 255, 213, 0.1);
-  color: #00ffd5;
+  background: var(--cn-lib-accent-soft);
+  color: var(--cn-lib-accent);
+}
+
+html:not(.dark) .cn-unified-library .cn-notes-sidebar--dark .cn-sidebar-nav-item[data-active="true"] {
+  color: var(--foreground);
 }
 
 .cn-unified-library .cn-notes-sidebar--dark .cn-nav-badge {
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(245, 247, 250, 0.7);
+  background: var(--cn-lib-hover);
+  color: var(--cn-lib-muted);
 }
 
 .cn-unified-library .cn-notes-sidebar--dark .cn-sidebar-header,
 .cn-unified-library .cn-notes-sidebar--dark .cn-sidebar-divider {
-  border-color: rgba(255, 255, 255, 0.08);
+  border-color: var(--cn-lib-border-soft);
 }
 
 .cn-unified-library .cn-notes-sidebar--dark .cn-sidebar-section-header,
 .cn-unified-library .cn-notes-sidebar--dark .cn-sidebar-folder-item {
-  color: rgba(245, 247, 250, 0.65);
+  color: var(--cn-lib-muted);
 }
 
 .cn-unified-library .cn-notes-sidebar--dark .cn-sidebar-footer {
-  border-top-color: rgba(255, 255, 255, 0.08);
-  color: rgba(245, 247, 250, 0.5);
+  border-top-color: var(--cn-lib-border-soft);
+  color: var(--cn-lib-muted-soft);
 }
 
-/* Dark overrides for header */
+/* Header */
 .cn-unified-library .cn-notes-header-pro.cn-notes-header-pro--dark {
-  background: rgba(255, 255, 255, 0.02);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--cn-lib-surface-raised);
+  border-bottom: 1px solid var(--cn-lib-border-soft);
 }
 
 .cn-unified-library .cn-notes-header-pro--dark .cn-header-title {
-  color: #f5f7fa;
+  color: var(--cn-lib-text);
 }
 
 .cn-unified-library .cn-notes-header-pro--dark .cn-header-subtitle {
-  color: rgba(245, 247, 250, 0.55);
+  color: var(--cn-lib-muted);
 }
 
 .cn-unified-library .cn-notes-header-pro--dark .cn-search-input-pro {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: #f5f7fa;
+  background: var(--cn-lib-input-bg);
+  border-color: var(--cn-lib-border);
+  color: var(--cn-lib-text);
 }
 
 .cn-unified-library .cn-notes-header-pro--dark .cn-search-input-pro::placeholder {
-  color: rgba(245, 247, 250, 0.35);
+  color: var(--cn-lib-muted-soft);
 }
 
 .cn-unified-library .cn-notes-header-pro--dark .cn-search-icon {
-  color: #00ffd5;
+  color: var(--cn-lib-accent);
 }
 
 .cn-unified-library .cn-notes-header-pro--dark .cn-header-stats-badge {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.08);
+  background: var(--cn-lib-surface);
+  border-color: var(--cn-lib-border);
 }
 
 .cn-unified-library .cn-notes-header-pro--dark .cn-stat-value {
-  color: #00ffd5;
+  color: var(--cn-lib-accent);
 }
 
 .cn-unified-library .cn-notes-header-pro--dark .cn-stat-label {
-  color: rgba(245, 247, 250, 0.5);
+  color: var(--cn-lib-muted);
 }
 
-/* Dark overrides for list */
+/* Lista */
 .cn-unified-library .cn-notes-list.cn-notes-list--dark {
   background: transparent;
 }
 
 .cn-unified-library .cn-notes-list--dark .cn-note-item {
-  border-bottom-color: rgba(255, 255, 255, 0.06);
+  border-bottom-color: var(--cn-lib-border-soft);
 }
 
 .cn-unified-library .cn-notes-list--dark .cn-note-item:hover {
-  background: rgba(0, 255, 213, 0.04);
+  background: var(--cn-lib-accent-soft);
 }
 
 .cn-unified-library .cn-notes-list--dark .cn-note-title {
-  color: #f5f7fa;
+  color: var(--cn-lib-text);
 }
 
 .cn-unified-library .cn-notes-list--dark .cn-note-preview,
 .cn-unified-library .cn-notes-list--dark .cn-note-meta {
-  color: rgba(245, 247, 250, 0.55);
+  color: var(--cn-lib-muted);
 }
 
 .cn-unified-library .cn-notes-list--dark .cn-note-date {
-  color: rgba(245, 247, 250, 0.4);
+  color: var(--cn-lib-muted-soft);
 }
 
 .cn-unified-library .cn-notes-list--dark .cn-notes-empty {
-  color: rgba(245, 247, 250, 0.45);
+  color: var(--cn-lib-muted);
 }
 
 .cn-unified-library .cn-notes-list--dark .cn-notes-empty h2 {
-  color: #f5f7fa;
+  color: var(--cn-lib-text);
 }
 
 .cn-unified-library .cn-note-shared-badge {
@@ -238,11 +283,39 @@
   margin-left: 8px;
   padding: 2px 8px;
   border-radius: 999px;
-  background: rgba(0, 255, 213, 0.12);
-  color: #00ffd5;
+  background: var(--cn-lib-accent-soft);
+  color: var(--cn-lib-accent);
   font-size: 0.6875rem;
   font-weight: 600;
   vertical-align: middle;
+}
+
+/* Grid + view switcher en biblioteca */
+.cn-unified-library .cn-notes-grid-container--dark .cn-grid-card {
+  background: var(--cn-lib-surface-raised);
+  border-color: var(--cn-lib-border);
+}
+
+.cn-unified-library .cn-notes-grid-container--dark .cn-grid-card-title {
+  color: var(--cn-lib-text);
+}
+
+.cn-unified-library .cn-notes-grid-container--dark .cn-grid-card-preview,
+.cn-unified-library .cn-notes-grid-container--dark .cn-grid-course {
+  color: var(--cn-lib-muted);
+}
+
+.cn-unified-library .cn-view-switcher--dark .cn-view-btn {
+  color: var(--cn-lib-muted);
+}
+
+.cn-unified-library .cn-view-switcher--dark .cn-view-btn[data-active="true"] {
+  background: var(--cn-lib-accent-soft);
+  color: var(--cn-lib-accent);
+}
+
+html:not(.dark) .cn-unified-library .cn-view-switcher--dark .cn-view-btn[data-active="true"] {
+  color: var(--foreground);
 }
 
 @media (max-width: 900px) {
@@ -254,6 +327,6 @@
     width: 100%;
     max-height: 220px;
     border-right: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid var(--cn-lib-border);
   }
 }

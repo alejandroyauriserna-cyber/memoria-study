@@ -3,7 +3,8 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import type { Editor } from "@tiptap/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { CUADERNO_FONTS, type CuadernoFontId } from "@/lib/cuaderno/editor-fonts";
 import type { CuadernoPaperTone } from "@/lib/cuaderno/editor-preferences";
 
@@ -47,8 +48,13 @@ export function CuadernoFormatPanel({
 }) {
   const [fontId, setFontId] = useState<CuadernoFontId | "">("");
   const [fontSize, setFontSize] = useState("");
+  const [mounted, setMounted] = useState(false);
 
-  return (
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const panel = (
     <AnimatePresence>
       {open ? (
         <>
@@ -185,4 +191,7 @@ export function CuadernoFormatPanel({
       ) : null}
     </AnimatePresence>
   );
+
+  if (!mounted) return null;
+  return createPortal(panel, document.body);
 }

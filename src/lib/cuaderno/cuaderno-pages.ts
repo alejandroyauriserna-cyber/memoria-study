@@ -4,6 +4,7 @@ import {
   DEFAULT_PAGE_SETTINGS,
   type CuadernoPageMargin,
   type CuadernoPageSettings,
+  type CuadernoWritingLayout,
 } from "@/lib/cuaderno/page-settings";
 import type { CuadernoTemplateId } from "@/lib/cuaderno/templates";
 import type { CuadernoPageSizeMode } from "@/lib/cuaderno/page-size";
@@ -19,6 +20,7 @@ export type CuadernoPage = {
   paperTone: CuadernoPaperTone;
   marginMode: CuadernoPageMargin;
   pageSizeMode: CuadernoPageSizeMode;
+  writingLayout: CuadernoWritingLayout;
   favorite: boolean;
   inkStrokes: InkStroke[];
   decorations: DecorationObject[];
@@ -44,6 +46,7 @@ function hydratePage(
     paperTone?: CuadernoPaperTone;
     marginMode?: CuadernoPageMargin;
     pageSizeMode?: CuadernoPageSizeMode;
+    writingLayout?: CuadernoWritingLayout;
     favorite?: boolean;
     inkStrokes?: InkStroke[];
     decorations?: DecorationObject[];
@@ -59,6 +62,7 @@ function hydratePage(
     paperTone: partial.paperTone ?? DEFAULT_PAGE_SETTINGS.paperTone,
     marginMode: partial.marginMode ?? DEFAULT_PAGE_SETTINGS.marginMode,
     pageSizeMode: partial.pageSizeMode ?? DEFAULT_PAGE_SETTINGS.pageSizeMode,
+    writingLayout: partial.writingLayout ?? DEFAULT_PAGE_SETTINGS.writingLayout,
     favorite: partial.favorite ?? false,
     inkStrokes: partial.inkStrokes ?? [],
     decorations: partial.decorations ?? [],
@@ -79,6 +83,7 @@ export function createPage(
     paperTone: settings?.paperTone ?? DEFAULT_PAGE_SETTINGS.paperTone,
     marginMode: settings?.marginMode ?? DEFAULT_PAGE_SETTINGS.marginMode,
     pageSizeMode: settings?.pageSizeMode ?? DEFAULT_PAGE_SETTINGS.pageSizeMode,
+    writingLayout: settings?.writingLayout ?? DEFAULT_PAGE_SETTINGS.writingLayout,
     favorite: settings?.favorite ?? false,
     inkStrokes: settings?.inkStrokes ?? [],
     decorations: settings?.decorations ?? [],
@@ -131,6 +136,7 @@ export function serializeCuadernoDocument(doc: CuadernoDocument): string {
       paperTone: p.paperTone,
       marginMode: p.marginMode,
       pageSizeMode: p.pageSizeMode,
+      writingLayout: p.writingLayout,
       favorite: p.favorite,
       inkStrokes: p.inkStrokes,
       decorations: p.decorations,
@@ -205,6 +211,7 @@ export function duplicatePage(doc: CuadernoDocument, pageId: string): CuadernoDo
     paperTone: source.paperTone,
     marginMode: source.marginMode,
     pageSizeMode: source.pageSizeMode,
+    writingLayout: source.writingLayout,
     inkStrokes: [...source.inkStrokes],
     decorations: source.decorations.map((d) => duplicateDecoration(d)),
     favorite: false,

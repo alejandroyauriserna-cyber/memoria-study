@@ -490,12 +490,14 @@
 
 /* —— Tema claro —— */
 
-html:not(.dark) .cn-bookshelf-nav .cn-tab {
+html:not(.dark) .cn-bookshelf-nav .cn-tab,
+html:not(.dark) .cn-unified-nav .cn-tab {
   background: rgba(15, 23, 42, 0.04);
   color: var(--muted-foreground);
 }
 
-html:not(.dark) .cn-bookshelf-nav .cn-tab[data-active="true"] {
+html:not(.dark) .cn-bookshelf-nav .cn-tab[data-active="true"],
+html:not(.dark) .cn-unified-nav .cn-tab[data-active="true"] {
   background: rgba(255, 255, 255, 0.92);
   color: var(--foreground);
   box-shadow:
@@ -544,6 +546,10 @@ html:not(.dark) .cn-bookshelf-footer-stats dt {
 
 html:not(.dark) .cn-bookshelf-footer-stats dd {
   color: var(--foreground);
+}
+
+html:not(.dark) .cn-shelf-cover-gen {
+  color: var(--muted-foreground);
 }
 
 html:not(.dark) .cn-bookshelf-footer-stats div {

@@ -1,6 +1,6 @@
 export type CuadernoPageSizeMode = "a4" | "letter" | "free" | "infinite";
 
-export const DEFAULT_PAGE_SIZE_MODE: CuadernoPageSizeMode = "free";
+export const DEFAULT_PAGE_SIZE_MODE: CuadernoPageSizeMode = "infinite";
 
 export const PAGE_SIZE_OPTIONS: Array<{
   id: CuadernoPageSizeMode;

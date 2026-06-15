@@ -18,8 +18,8 @@ import CodeBlock from "@tiptap/extension-code-block";
 import type { Extensions } from "@tiptap/core";
 import { FontSize } from "@/components/cuaderno/tiptap/font-size";
 import { StudyBlock } from "@/components/cuaderno/tiptap/study-block";
-export function createCuadernoEditorExtensions(placeholder: string): Extensions {
-  return [
+export function createCuadernoEditorExtensions(placeholder?: string): Extensions {
+  const extensions: Extensions = [
     StarterKit.configure({
       heading: { levels: [1, 2, 3] },
       codeBlock: false,
@@ -46,7 +46,12 @@ export function createCuadernoEditorExtensions(placeholder: string): Extensions 
     TableCell,
     HorizontalRule,
     CodeBlock.configure({ HTMLAttributes: { class: "cn-code-block" } }),
-    Placeholder.configure({ placeholder }),
     StudyBlock,
   ];
+
+  if (placeholder?.trim()) {
+    extensions.push(Placeholder.configure({ placeholder }));
+  }
+
+  return extensions;
 }

@@ -15,6 +15,7 @@ import { CuadernoCreateNoteDialog } from "@/components/cuaderno/cuaderno-create-
 import { CuadernoDictionaryTab } from "@/components/cuaderno/cuaderno-dictionary-tab";
 import { CuadernoJoinSharedDialog } from "@/components/cuaderno/cuaderno-join-shared-dialog";
 import { useCuadernoSyncContext } from "@/components/cuaderno/cuaderno-sync-context";
+import { getNotePreviewText } from "@/lib/cuaderno/html-utils";
 import { buildInitialNotes } from "@/lib/cuaderno/templates";
 import type { CuadernoClass, CuadernoClassAccess } from "@/types/cuaderno";
 import "./cuaderno-unified-library.css";
@@ -95,13 +96,15 @@ export function CuadernoUnifiedLibrary({
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      result = result.filter(
-        (c) =>
+      result = result.filter((c) => {
+        const preview = getNotePreviewText(c.notes, 2000).toLowerCase();
+        return (
           c.title.toLowerCase().includes(q) ||
-          c.notes.toLowerCase().includes(q) ||
+          preview.includes(q) ||
           c.topic?.toLowerCase().includes(q) ||
-          c.courseName.toLowerCase().includes(q),
-      );
+          c.courseName.toLowerCase().includes(q)
+        );
+      });
     }
 
     return [...result].sort(
