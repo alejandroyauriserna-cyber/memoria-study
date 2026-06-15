@@ -7,6 +7,7 @@ import { CuadernoNotesList } from "@/components/cuaderno/cuaderno-notes-list";
 import { CuadernoNotesGrid } from "@/components/cuaderno/cuaderno-notes-grid";
 import { CuadernoViewSwitcher, type ViewType } from "@/components/cuaderno/cuaderno-view-switcher";
 import { CuadernoNewNoteDialog } from "@/components/cuaderno/cuaderno-new-note-dialog";
+import { CuadernoNoteEditor } from "@/components/cuaderno/cuaderno-note-editor";
 import { CuadernoSyncProvider, useCuadernoSyncContext } from "@/components/cuaderno/cuaderno-sync-context";
 import type { CuadernoClass } from "@/types/cuaderno";
 import "./cuaderno-apple-notes-layout.css";
@@ -28,6 +29,8 @@ function CuadernoAppleNotesLayoutInner({
   const [viewType, setViewType] = useState<ViewType>("list");
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [isNewNoteDialogOpen, setIsNewNoteDialogOpen] = useState(false);
+  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
+  const [selectedNote, setSelectedNote] = useState<CuadernoClass | null>(null);
 
   // Filtrar notas basado en búsqueda
   const filteredClasses = useMemo(() => {
@@ -71,8 +74,11 @@ function CuadernoAppleNotesLayoutInner({
   };
 
   const handleSelectNote = (classId: string) => {
-    // TODO: Navegar a la nota seleccionada
-    console.log("Seleccionar nota:", classId);
+    const note = initialClasses.find((c) => c.id === classId);
+    if (note) {
+      setSelectedNoteId(classId);
+      setSelectedNote(note);
+    }
   };
 
   const handleToggleFavorite = (classId: string) => {
@@ -150,6 +156,22 @@ function CuadernoAppleNotesLayoutInner({
           onClose={() => setIsNewNoteDialogOpen(false)}
           onCreateNote={handleCreateNewNote}
         />
+
+        {/* Editor de nota */}
+        {selectedNote && (
+          <CuadernoNoteEditor
+            note={selectedNote}
+            isOpen={selectedNoteId !== null}
+            onClose={() => {
+              setSelectedNoteId(null);
+              setSelectedNote(null);
+            }}
+            onSave={async (content) => {
+              // TODO: Llamar API para guardar la nota
+              console.log("Guardar nota:", { id: selectedNoteId, content });
+            }}
+          />
+        )}
       </div>
     </div>
   );
