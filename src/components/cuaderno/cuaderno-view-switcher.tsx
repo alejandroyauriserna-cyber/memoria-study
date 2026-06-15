@@ -8,12 +8,14 @@ export type ViewType = "list" | "grid" | "timeline";
 export function CuadernoViewSwitcher({
   currentView,
   onViewChange,
+  dark = false,
 }: {
   currentView: ViewType;
   onViewChange: (view: ViewType) => void;
+  dark?: boolean;
 }) {
   return (
-    <div className="cn-view-switcher">
+    <div className={dark ? "cn-view-switcher cn-view-switcher--dark" : "cn-view-switcher"}>
       <button
         className="cn-view-btn"
         data-active={currentView === "list"}

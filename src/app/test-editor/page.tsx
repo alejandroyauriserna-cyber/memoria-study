@@ -18,6 +18,10 @@ const mockNote: CuadernoClass = {
   notes: "<h2>Conceptos Fundamentales</h2><p>El derecho constitucional es la rama del derecho que estudia la Constitución...</p><ul><li>Definición</li><li>Características</li><li>Importancia</li></ul>",
   extractedConcepts: ["Constitución", "Derecho Público", "Soberanía"],
   materialId: null,
+  shareToken: null,
+  isShared: false,
+  sharePermission: "view",
+  isGroupNotebook: false,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 };

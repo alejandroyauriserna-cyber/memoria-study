@@ -3,6 +3,7 @@ import { AppShell } from "@/components/ui/shell";
 import { CuadernoWorkspace } from "@/components/cuaderno/cuaderno-workspace";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { listCollaboratedClasses } from "@/lib/cuaderno/auth";
 import { recordToCuadernoClass } from "@/lib/cuaderno/mapper";
 import { hasSupabaseEnv } from "@/lib/env";
 import { formatStudyHours } from "@/lib/profile/aggregate-learning-stats";
@@ -41,7 +42,7 @@ export default async function CuadernoPage() {
   }
 
   const admin = createAdminClient();
-  const [{ data: profileData }, { data }, learningStats] = await Promise.all([
+  const [{ data: profileData }, { data }, learningStats, sharedWithMe] = await Promise.all([
     admin.from("user_profiles").select("full_name").eq("user_id", user.id).maybeSingle(),
     admin
       .from("cuaderno_classes")
@@ -49,6 +50,7 @@ export default async function CuadernoPage() {
       .eq("user_id", user.id)
       .order("updated_at", { ascending: false }),
     fetchServerLearningStats(user.id),
+    listCollaboratedClasses(user.id).catch(() => []),
   ]);
 
   const classes = (data ?? []).map((row) => recordToCuadernoClass(row as CuadernoClassRecord));
@@ -60,6 +62,7 @@ export default async function CuadernoPage() {
     <AppShell>
       <CuadernoWorkspace
         initialClasses={classes}
+        initialSharedWithMe={sharedWithMe}
         profileName={profileName}
         studyHoursLabel={studyHoursLabel}
       />

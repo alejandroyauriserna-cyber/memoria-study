@@ -33,6 +33,7 @@ import {
   CuadernoPageSettingsPanel,
   CuadernoPageSettingsTrigger,
 } from "@/components/cuaderno/cuaderno-page-settings-panel";
+import { CuadernoShareDialog } from "@/components/cuaderno/cuaderno-share-dialog";
 import { CuadernoTemplatePicker } from "@/components/cuaderno/cuaderno-template-picker";
 import { getSelectedBlock } from "@/lib/cuaderno/cuaderno-block-utils";
 import {
@@ -62,8 +63,19 @@ import "./cuaderno-premium.css";
 import "./cuaderno-paper.css";
 import "./cuaderno-decorations.css";
 import "./cuaderno-studio.css";
+import "./cuaderno-share-dialog.css";
 
-export function CuadernoImmersiveEditor({ initialClass }: { initialClass: CuadernoClass }) {
+export function CuadernoImmersiveEditor({
+  initialClass,
+  accessRole = "owner",
+  canEdit = true,
+  ownerName,
+}: {
+  initialClass: CuadernoClass;
+  accessRole?: import("@/types/cuaderno").CuadernoAccessRole;
+  canEdit?: boolean;
+  ownerName?: string | null;
+}) {
   const router = useRouter();
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const chrome = useEditorChromeState();
@@ -95,6 +107,7 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
   const [focusMode, setFocusMode] = useState(false);
   const [lineHeight, setLineHeight] = useState("1.78");
   const [writingMode, setWritingMode] = useState<"text" | "ink">("text");
+  const [shareOpen, setShareOpen] = useState(false);
   const [templateGalleryOpen, setTemplateGalleryOpen] = useState(false);
   const [templateTargetPageId, setTemplateTargetPageId] = useState<string | null>(null);
   const [stickerPanelOpen, setStickerPanelOpen] = useState(false);
@@ -137,6 +150,7 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
 
   const persist = useCallback(
     async (patch: Record<string, unknown>) => {
+      if (!canEdit) return;
       setSaveState("saving");
       const response = await fetch(`/api/cuaderno/classes/${cuadernoClass.id}`, {
         method: "PATCH",
@@ -149,10 +163,11 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
       setSaveState("saved");
       window.setTimeout(() => setSaveState("idle"), 2000);
     },
-    [cuadernoClass.id],
+    [cuadernoClass.id, canEdit],
   );
 
   useEffect(() => {
+    if (!canEdit) return;
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
       if (notes === cuadernoClass.notes) return;
@@ -161,7 +176,7 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
     return () => {
       if (saveTimer.current) clearTimeout(saveTimer.current);
     };
-  }, [notes, cuadernoClass.notes, persist]);
+  }, [notes, cuadernoClass.notes, persist, canEdit]);
 
   function applyDoc(next: ReturnType<typeof parseCuadernoDocument>) {
     setNotes(serializeCuadernoDocument(next));
@@ -389,15 +404,24 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
         } as React.CSSProperties
       }
     >
+      {!canEdit && (
+        <div className="cn-readonly-banner">
+          Solo lectura
+          {ownerName ? ` — apunte de ${ownerName}` : ""}. Pide permiso de edición para colaborar.
+        </div>
+      )}
       <CuadernoImmersiveHeader
         courseId={cuadernoClass.courseId}
         courseName={cuadernoClass.courseName}
-        saveState={saveState}
+        saveState={canEdit ? saveState : "saved"}
         favorite={favorite}
         favoritePulse={favoritePulse}
         aiOpen={aiOpen}
         studyMode={studyMode}
         compact={chrome.layoutMode === "fullscreen"}
+        canShare={accessRole === "owner"}
+        onOpenShare={() => setShareOpen(true)}
+        readOnly={!canEdit}
         onToggleStudy={toggleStudyMode}
         onGenerateExam={() =>
           void handleAsk("exam_questions", "Genera un simulacro de examen con mis apuntes", "exam")
@@ -692,6 +716,14 @@ export function CuadernoImmersiveEditor({ initialClass }: { initialClass: Cuader
       />
 
       {error ? <p className="cn-immersive-error">{error}</p> : null}
+
+      <CuadernoShareDialog
+        classId={cuadernoClass.id}
+        isOpen={shareOpen}
+        onClose={() => setShareOpen(false)}
+        isGroupNotebook={cuadernoClass.isGroupNotebook}
+        initialPermission={cuadernoClass.sharePermission}
+      />
     </div>
   );
 }

@@ -92,13 +92,15 @@ export function CuadernoNoteEditorPro({
     if (tag === "table") {
       const table = document.createElement("table");
       table.innerHTML = `
+        <tr><td>Encabezado 1</td><td>Encabezado 2</td></tr>
         <tr><td>Celda 1</td><td>Celda 2</td></tr>
         <tr><td>Celda 3</td><td>Celda 4</td></tr>
       `;
       table.className = "editor-table";
       contentRef.current?.appendChild(table);
     } else if (tag === "image") {
-      const url = prompt("Ingresa URL de imagen:");
+      // En producción, mostrar un modal o file picker
+      const url = typeof window !== "undefined" ? prompt("Ingresa URL de imagen:") : null;
       if (url) {
         const img = document.createElement("img");
         img.src = url;
@@ -108,7 +110,8 @@ export function CuadernoNoteEditorPro({
         contentRef.current?.appendChild(img);
       }
     } else if (tag === "link") {
-      const url = prompt("Ingresa URL:");
+      // En producción, mostrar un modal
+      const url = typeof window !== "undefined" ? prompt("Ingresa URL:") : null;
       if (url) {
         execCommand("createLink", url);
       }
@@ -117,20 +120,18 @@ export function CuadernoNoteEditorPro({
   };
 
   const insertTable = () => {
-    const rows = prompt("Número de filas:", "3");
-    const cols = prompt("Número de columnas:", "3");
-    if (rows && cols) {
-      let table = "<table class='editor-table'><tbody>";
-      for (let i = 0; i < parseInt(rows); i++) {
-        table += "<tr>";
-        for (let j = 0; j < parseInt(cols); j++) {
-          table += "<td>Celda</td>";
-        }
-        table += "</tr>";
-      }
-      table += "</tbody></table>";
-      execCommand("insertHTML", table);
-    }
+    // Insertar tabla de 3x3 por defecto
+    const table = document.createElement("table");
+    table.className = "editor-table";
+    table.innerHTML = `
+      <tbody>
+        <tr><td>Encabezado 1</td><td>Encabezado 2</td><td>Encabezado 3</td></tr>
+        <tr><td>Dato 1</td><td>Dato 2</td><td>Dato 3</td></tr>
+        <tr><td>Dato 4</td><td>Dato 5</td><td>Dato 6</td></tr>
+      </tbody>
+    `;
+    contentRef.current?.appendChild(table);
+    contentRef.current?.focus();
   };
 
   const wordCount = contentRef.current?.innerText?.split(/\s+/).filter((w) => w).length || 0;

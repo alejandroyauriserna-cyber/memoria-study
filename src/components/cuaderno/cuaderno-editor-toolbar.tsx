@@ -1,7 +1,7 @@
 "use client";
 
 import type { Editor } from "@tiptap/react";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import {
   AlignCenter,
   AlignJustify,
@@ -145,12 +145,6 @@ export function CuadernoEditorToolbar({
   const imageInputRef = useRef<HTMLInputElement>(null);
   const colorTriggerRef = useRef<HTMLButtonElement>(null);
 
-  const closeAll = () => {
-    setLegalOpen(false);
-    setAiOpen(false);
-    setColorOpen(false);
-  };
-
   if (!editor || disabled) {
     return (
       <div
@@ -178,11 +172,11 @@ export function CuadernoEditorToolbar({
       className="cn-editor-toolbar-rail"
       style={{ "--cn-tb-accent": courseAccent } as React.CSSProperties}
       role="toolbar"
-      aria-label="Formato del cuaderno"
+      aria-label="Barra de herramientas de formato"
     >
       <div className="cn-editor-toolbar-scroll">
-        {/* Formato */}
-        <div className="cn-tb-group" role="group" aria-label="Formato">
+        {/* 1. Tipografía: Fuente y Tamaño */}
+        <div className="cn-tb-group" role="group" aria-label="Tipografía">
           <ToolbarSelect
             label="Fuente"
             value={fontId}
@@ -203,23 +197,28 @@ export function CuadernoEditorToolbar({
               editor.chain().focus().setFontSize(v).run();
             }}
           />
-          <ToolbarDivider />
+        </div>
+
+        <ToolbarDivider />
+
+        {/* 2. Estilo de Texto: Negrita, Cursiva, Subrayado, Tachado */}
+        <div className="cn-tb-group" role="group" aria-label="Estilo de texto">
           <ToolbarBtn
-            title="Negrita"
+            title="Negrita (Ctrl+B)"
             active={editor.isActive("bold")}
             onClick={() => editor.chain().focus().toggleBold().run()}
           >
             <Bold size={15} />
           </ToolbarBtn>
           <ToolbarBtn
-            title="Cursiva"
+            title="Cursiva (Ctrl+I)"
             active={editor.isActive("italic")}
             onClick={() => editor.chain().focus().toggleItalic().run()}
           >
             <Italic size={15} />
           </ToolbarBtn>
           <ToolbarBtn
-            title="Subrayado"
+            title="Subrayado (Ctrl+U)"
             active={editor.isActive("underline")}
             onClick={() => editor.chain().focus().toggleUnderline().run()}
           >
@@ -236,8 +235,8 @@ export function CuadernoEditorToolbar({
 
         <ToolbarDivider />
 
-        {/* Color */}
-        <div className="cn-tb-group cn-tb-group--color" role="group" aria-label="Color">
+        {/* 3. Color y Resaltado */}
+        <div className="cn-tb-group cn-tb-group--color" role="group" aria-label="Color y resaltado">
           <button
             ref={colorTriggerRef}
             type="button"
@@ -248,6 +247,8 @@ export function CuadernoEditorToolbar({
               setLegalOpen(false);
               setAiOpen(false);
             }}
+            aria-label="Abrir selector de color"
+            aria-expanded={colorOpen}
           >
             <span className="cn-tb-color-dot" style={{ background: TEXT_COLORS[0] }} />
             Color
@@ -270,6 +271,7 @@ export function CuadernoEditorToolbar({
                   title="Color de texto"
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => editor.chain().focus().setColor(c).run()}
+                  aria-label={`Color de texto ${c}`}
                 />
               ))}
             </div>
@@ -284,6 +286,7 @@ export function CuadernoEditorToolbar({
                   title="Resaltar"
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => editor.chain().focus().toggleHighlight({ color: c }).run()}
+                  aria-label={`Resaltado ${c}`}
                 />
               ))}
             </div>
@@ -292,42 +295,54 @@ export function CuadernoEditorToolbar({
 
         <ToolbarDivider />
 
-        {/* Párrafo */}
-        <div className="cn-tb-group" role="group" aria-label="Párrafo">
-          <ToolbarBtn title="Alinear izquierda" onClick={() => editor.chain().focus().setTextAlign("left").run()}>
+        {/* 4. Alineación: Izquierda, Centro, Derecha, Justificado */}
+        <div className="cn-tb-group" role="group" aria-label="Alineación de párrafo">
+          <ToolbarBtn
+            title="Alinear a la izquierda"
+            onClick={() => editor.chain().focus().setTextAlign("left").run()}
+          >
             <AlignLeft size={15} />
           </ToolbarBtn>
-          <ToolbarBtn title="Centrar" onClick={() => editor.chain().focus().setTextAlign("center").run()}>
+          <ToolbarBtn
+            title="Centrar"
+            onClick={() => editor.chain().focus().setTextAlign("center").run()}
+          >
             <AlignCenter size={15} />
           </ToolbarBtn>
-          <ToolbarBtn title="Alinear derecha" onClick={() => editor.chain().focus().setTextAlign("right").run()}>
+          <ToolbarBtn
+            title="Alinear a la derecha"
+            onClick={() => editor.chain().focus().setTextAlign("right").run()}
+          >
             <AlignRight size={15} />
           </ToolbarBtn>
-          <ToolbarBtn title="Justificar" onClick={() => editor.chain().focus().setTextAlign("justify").run()}>
+          <ToolbarBtn
+            title="Justificar"
+            onClick={() => editor.chain().focus().setTextAlign("justify").run()}
+          >
             <AlignJustify size={15} />
           </ToolbarBtn>
         </div>
 
         <ToolbarDivider />
 
-        {/* Listas */}
+        {/* 5. Listas: Viñetas, Numeración, Checklist */}
         <div className="cn-tb-group" role="group" aria-label="Listas">
           <ToolbarBtn
-            title="Viñetas"
+            title="Viñetas (Lista sin orden)"
             active={editor.isActive("bulletList")}
             onClick={() => editor.chain().focus().toggleBulletList().run()}
           >
             <List size={15} />
           </ToolbarBtn>
           <ToolbarBtn
-            title="Numeración"
+            title="Numeración (Lista ordenada)"
             active={editor.isActive("orderedList")}
             onClick={() => editor.chain().focus().toggleOrderedList().run()}
           >
             <ListOrdered size={15} />
           </ToolbarBtn>
           <ToolbarBtn
-            title="Checklist"
+            title="Checklist (Tareas)"
             active={editor.isActive("taskList")}
             onClick={() => editor.chain().focus().toggleTaskList().run()}
           >
@@ -337,12 +352,12 @@ export function CuadernoEditorToolbar({
 
         <ToolbarDivider />
 
-        {/* Insertar */}
-        <div className="cn-tb-group" role="group" aria-label="Insertar">
-          <ToolbarBtn title="Tabla" onClick={() => setTableDialogOpen(true)}>
+        {/* 6. Inserción: Tabla, Imagen, Audio, Código */}
+        <div className="cn-tb-group" role="group" aria-label="Insertar contenido">
+          <ToolbarBtn title="Insertar tabla" onClick={() => setTableDialogOpen(true)}>
             <Table size={15} />
           </ToolbarBtn>
-          <ToolbarBtn title="Imagen" onClick={() => imageInputRef.current?.click()}>
+          <ToolbarBtn title="Insertar imagen" onClick={() => imageInputRef.current?.click()}>
             <ImageIcon size={15} />
           </ToolbarBtn>
           <input
@@ -355,15 +370,16 @@ export function CuadernoEditorToolbar({
               if (file) insertImage(file);
               e.target.value = "";
             }}
+            aria-label="Seleccionar archivo de imagen"
           />
-          <ToolbarBtn title="Nota de audio" onClick={() => insertStudyBlock(editor, "audio")}>
+          <ToolbarBtn title="Insertar bloque de código" onClick={() => insertStudyBlock(editor, "audio")}>
             <Mic size={15} />
           </ToolbarBtn>
-          <ToolbarBtn title="Línea divisoria" onClick={() => editor.chain().focus().setHorizontalRule().run()}>
+          <ToolbarBtn title="Insertar línea divisoria" onClick={() => editor.chain().focus().setHorizontalRule().run()}>
             <Minus size={15} />
           </ToolbarBtn>
           <ToolbarBtn
-            title="Código"
+            title="Bloque de código (Ctrl+Alt+C)"
             active={editor.isActive("codeBlock")}
             onClick={() => editor.chain().focus().toggleCodeBlock().run()}
           >
@@ -373,7 +389,7 @@ export function CuadernoEditorToolbar({
 
         <ToolbarDivider />
 
-        {/* Jurídico */}
+        {/* 7. Bloques Jurídicos */}
         <ToolbarFloatingDropdown
           label="Jurídico"
           icon={<Scale size={14} />}
@@ -398,6 +414,7 @@ export function CuadernoEditorToolbar({
           ))}
         </ToolbarFloatingDropdown>
 
+        {/* 8. Asistente de IA */}
         {onAiAction ? (
           <>
             <ToolbarDivider />

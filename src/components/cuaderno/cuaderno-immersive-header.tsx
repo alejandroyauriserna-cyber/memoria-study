@@ -10,6 +10,7 @@ import {
   Minimize2,
   MoreHorizontal,
   PanelRight,
+  Share2,
   Settings2,
   Star,
 } from "lucide-react";
@@ -45,6 +46,9 @@ export function CuadernoImmersiveHeader({
   onOpenStickers,
   stickersOpen = false,
   compact = false,
+  canShare = false,
+  onOpenShare,
+  readOnly = false,
 }: {
   courseId: string;
   courseName: string;
@@ -66,6 +70,9 @@ export function CuadernoImmersiveHeader({
   onOpenStickers: () => void;
   stickersOpen?: boolean;
   compact?: boolean;
+  canShare?: boolean;
+  onOpenShare?: () => void;
+  readOnly?: boolean;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [sheetMenuOpen, setSheetMenuOpen] = useState(false);
@@ -142,6 +149,19 @@ export function CuadernoImmersiveHeader({
         >
           <Star size={17} fill={favorite ? "currentColor" : "none"} />
         </button>
+
+        {canShare && onOpenShare ? (
+          <button
+            type="button"
+            className="cn-immersive-header-icon"
+            onClick={onOpenShare}
+            title="Compartir apunte"
+          >
+            <Share2 size={17} />
+          </button>
+        ) : null}
+
+        {readOnly ? <span className="cn-immersive-header-readonly">Solo lectura</span> : null}
 
         {!compact ? (
           <>

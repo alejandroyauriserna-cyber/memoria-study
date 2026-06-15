@@ -10,14 +10,20 @@ export function CuadernoNotesGrid({
   onSelectNote,
   isFavorite,
   onToggleFavorite,
+  dark = false,
 }: {
   classes: CuadernoClass[];
   onSelectNote: (classId: string) => void;
   isFavorite: (classId: string) => boolean;
   onToggleFavorite: (classId: string) => void;
+  dark?: boolean;
 }) {
+  const containerClass = dark
+    ? "cn-notes-grid-container cn-notes-grid-container--dark"
+    : "cn-notes-grid-container";
+
   return (
-    <div className="cn-notes-grid-container">
+    <div className={containerClass}>
       {classes.length === 0 ? (
         <div className="cn-grid-empty">
           <p>No hay notas para mostrar</p>

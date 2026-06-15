@@ -9,12 +9,14 @@ export function CuadernoNotesHeaderPro({
   onFilterToggle,
   studyHours,
   profileName,
+  dark = false,
   stats,
 }: {
   onSearch: (query: string) => void;
   onFilterToggle: () => void;
   studyHours?: string;
   profileName?: string;
+  dark?: boolean;
   stats?: {
     totalNotes: number;
     totalPages: number;
@@ -35,7 +37,7 @@ export function CuadernoNotesHeaderPro({
   };
 
   return (
-    <header className="cn-notes-header-pro">
+    <header className={dark ? "cn-notes-header-pro cn-notes-header-pro--dark" : "cn-notes-header-pro"}>
       <div className="cn-header-content">
         {/* Sección izquierda: Título y subtítulo */}
         <div className="cn-header-intro">

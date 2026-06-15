@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Heart, Archive, MoreVertical, Eye } from "lucide-react";
+import { Heart, MoreVertical, Eye, Users } from "lucide-react";
 import { getTextPreview } from "@/lib/cuaderno/html-utils";
-import type { CuadernoClass } from "@/types/cuaderno";
+import type { CuadernoClass, CuadernoClassAccess } from "@/types/cuaderno";
 import "./cuaderno-notes-list.css";
 
 export function CuadernoNotesList({
@@ -11,11 +11,15 @@ export function CuadernoNotesList({
   onSelectNote,
   isFavorite,
   onToggleFavorite,
+  dark = false,
+  sharedWithMe = [],
 }: {
   classes: CuadernoClass[];
   onSelectNote: (classId: string) => void;
   isFavorite: (classId: string) => boolean;
   onToggleFavorite: (classId: string) => void;
+  dark?: boolean;
+  sharedWithMe?: CuadernoClassAccess[];
 }) {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
@@ -41,13 +45,19 @@ export function CuadernoNotesList({
     return getTextPreview(html, 100);
   };
 
+  const ownerByClass = new Map(
+    sharedWithMe.map((a) => [a.cuadernoClass.id, a.ownerName]),
+  );
+
+  const listClass = dark ? "cn-notes-list cn-notes-list--dark" : "cn-notes-list";
+
   return (
-    <div className="cn-notes-list">
+    <div className={listClass}>
       {sortedClasses.length === 0 ? (
         <div className="cn-notes-empty">
           <Eye size={48} />
-          <h2>No hay notas</h2>
-          <p>Crea tu primera nota para comenzar</p>
+          <h2>No hay hojas</h2>
+          <p>Crea tu primera hoja o únete a un cuaderno compartido</p>
         </div>
       ) : (
         <div className="cn-notes-list-items">
@@ -61,7 +71,15 @@ export function CuadernoNotesList({
             >
               <div className="cn-note-item-content">
                 <div className="cn-note-header">
-                  <h3 className="cn-note-title">{note.title || "Sin título"}</h3>
+                  <h3 className="cn-note-title">
+                    {note.title || "Sin título"}
+                    {(note.isGroupNotebook || note.isShared) && (
+                      <span className="cn-note-shared-badge">
+                        <Users size={10} />
+                        {note.isGroupNotebook ? "Grupal" : "Compartido"}
+                      </span>
+                    )}
+                  </h3>
                   <time className="cn-note-date">{formatDate(note.updatedAt)}</time>
                 </div>
 
@@ -71,6 +89,12 @@ export function CuadernoNotesList({
                   <span className="cn-note-course">{note.courseName}</span>
                   <span className="cn-note-divider">·</span>
                   <span className="cn-note-topic">{note.topic || "General"}</span>
+                  {ownerByClass.get(note.id) && (
+                    <>
+                      <span className="cn-note-divider">·</span>
+                      <span>de {ownerByClass.get(note.id)}</span>
+                    </>
+                  )}
                 </div>
               </div>
 

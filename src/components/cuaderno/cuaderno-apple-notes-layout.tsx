@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { CuadernoNotesSidebar } from "@/components/cuaderno/cuaderno-notes-sidebar";
+import { CuadernoNotesSidebar, type SidebarTab } from "@/components/cuaderno/cuaderno-notes-sidebar";
 import { CuadernoNotesHeaderPro } from "@/components/cuaderno/cuaderno-notes-header-pro";
 import { CuadernoNotesList } from "@/components/cuaderno/cuaderno-notes-list";
 import { CuadernoNotesGrid } from "@/components/cuaderno/cuaderno-notes-grid";
@@ -27,6 +27,7 @@ function CuadernoAppleNotesLayoutInner({
   const { isFavorite } = useCuadernoSyncContext();
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("recientes");
+  const [sidebarTab, setSidebarTab] = useState<SidebarTab>("recientes");
   const [viewType, setViewType] = useState<ViewType>("list");
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [isNewNoteDialogOpen, setIsNewNoteDialogOpen] = useState(false);
@@ -100,6 +101,8 @@ function CuadernoAppleNotesLayoutInner({
       {/* Sidebar */}
       <CuadernoNotesSidebar
         classes={initialClasses}
+        activeTab={sidebarTab}
+        onTabChange={setSidebarTab}
         onCreateNew={handleCreateNew}
         onSelectClass={handleSelectNote}
         isFavorite={isFavorite}

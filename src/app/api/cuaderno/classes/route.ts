@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { randomBytes } from "crypto";
 import { normalizeCuadernoAcademicInput } from "@/lib/cuaderno/academic";
 import { recordToCuadernoClass } from "@/lib/cuaderno/mapper";
 import { requireCuadernoUser } from "@/lib/cuaderno/auth";
@@ -67,6 +68,8 @@ export async function POST(request: Request) {
       classDate?: string;
       materialId?: string | null;
       notes?: string;
+      isGroupNotebook?: boolean;
+      sharePermission?: "view" | "edit";
     };
 
     if (!body.courseId || !body.courseName || !body.cycleNumber || !body.cycleLabel || !body.title) {
@@ -87,6 +90,9 @@ export async function POST(request: Request) {
       );
     }
 
+    const isGroupNotebook = body.isGroupNotebook === true;
+    const sharePermission = body.sharePermission === "view" ? "view" : "edit";
+
     const admin = createAdminClient();
     const { data, error } = await admin
       .from("cuaderno_classes")
@@ -103,6 +109,10 @@ export async function POST(request: Request) {
         notes: typeof body.notes === "string" ? body.notes : "",
         extracted_concepts: [],
         material_id: body.materialId ?? null,
+        is_group_notebook: isGroupNotebook,
+        is_shared: isGroupNotebook,
+        share_permission: isGroupNotebook ? sharePermission : "view",
+        share_token: isGroupNotebook ? randomBytes(16).toString("hex") : null,
       })
       .select("*")
       .single();

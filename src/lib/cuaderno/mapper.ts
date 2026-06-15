@@ -28,6 +28,10 @@ export function recordToCuadernoClass(record: CuadernoClassRecord): CuadernoClas
     notes: record.notes ?? "",
     extractedConcepts: parseConcepts(record.extracted_concepts),
     materialId: record.material_id,
+    shareToken: record.share_token ?? null,
+    isShared: record.is_shared ?? false,
+    sharePermission: record.share_permission ?? "view",
+    isGroupNotebook: record.is_group_notebook ?? false,
     createdAt: record.created_at,
     updatedAt: record.updated_at,
   };

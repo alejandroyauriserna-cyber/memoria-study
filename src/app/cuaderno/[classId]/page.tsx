@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { AppShell } from "@/components/ui/shell";
 import { CuadernoImmersiveEditor } from "@/components/cuaderno/cuaderno-immersive-editor";
 import { CuadernoSyncProvider } from "@/components/cuaderno/cuaderno-sync-context";
-import { getCuadernoClassForUser, requireCuadernoUser } from "@/lib/cuaderno/auth";
+import { getCuadernoClassWithAccess, requireCuadernoUser } from "@/lib/cuaderno/auth";
 import { hasSupabaseEnv } from "@/lib/env";
 
 type PageProps = { params: Promise<{ classId: string }> };
@@ -26,12 +26,17 @@ export default async function CuadernoClassPage({ params }: PageProps) {
     );
   }
 
-  const cuadernoClass = await getCuadernoClassForUser(classId, user.id);
-  if (!cuadernoClass) notFound();
+  const access = await getCuadernoClassWithAccess(classId, user.id);
+  if (!access) notFound();
 
   return (
     <CuadernoSyncProvider>
-      <CuadernoImmersiveEditor initialClass={cuadernoClass} />
+      <CuadernoImmersiveEditor
+        initialClass={access.cuadernoClass}
+        accessRole={access.role}
+        canEdit={access.canEdit}
+        ownerName={access.ownerName}
+      />
     </CuadernoSyncProvider>
   );
 }

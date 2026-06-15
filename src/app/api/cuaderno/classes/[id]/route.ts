@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getCuadernoClassForUser, requireCuadernoUser } from "@/lib/cuaderno/auth";
+import { getCuadernoClassForUser, getCuadernoClassWithAccess, requireCuadernoUser } from "@/lib/cuaderno/auth";
 import { recordToCuadernoClass } from "@/lib/cuaderno/mapper";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hasSupabaseEnv } from "@/lib/env";
@@ -41,9 +41,12 @@ export async function PATCH(request: Request, context: RouteContext) {
       return NextResponse.json({ error: "Debes iniciar sesión." }, { status: 401 });
     }
 
-    const existing = await getCuadernoClassForUser(id, user.id);
-    if (!existing) {
+    const access = await getCuadernoClassWithAccess(id, user.id);
+    if (!access) {
       return NextResponse.json({ error: "Clase no encontrada." }, { status: 404 });
+    }
+    if (!access.canEdit) {
+      return NextResponse.json({ error: "Solo lectura: no puedes editar este apunte." }, { status: 403 });
     }
 
     const body = (await request.json()) as {
@@ -73,7 +76,6 @@ export async function PATCH(request: Request, context: RouteContext) {
       .from("cuaderno_classes")
       .update(patch)
       .eq("id", id)
-      .eq("user_id", user.id)
       .select("*")
       .single();
 

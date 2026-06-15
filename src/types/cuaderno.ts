@@ -1,3 +1,7 @@
+export type CuadernoSharePermission = "view" | "edit";
+
+export type CuadernoCollaboratorRole = "viewer" | "editor";
+
 export type CuadernoClassRecord = {
   id: string;
   user_id: string;
@@ -12,6 +16,10 @@ export type CuadernoClassRecord = {
   notes: string;
   extracted_concepts: string[];
   material_id: string | null;
+  share_token: string | null;
+  is_shared: boolean;
+  share_permission: CuadernoSharePermission;
+  is_group_notebook: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -30,8 +38,38 @@ export type CuadernoClass = {
   notes: string;
   extractedConcepts: string[];
   materialId: string | null;
+  shareToken: string | null;
+  isShared: boolean;
+  sharePermission: CuadernoSharePermission;
+  isGroupNotebook: boolean;
   createdAt: string;
   updatedAt: string;
+};
+
+export type CuadernoAccessRole = "owner" | "viewer" | "editor";
+
+export type CuadernoClassAccess = {
+  cuadernoClass: CuadernoClass;
+  role: CuadernoAccessRole;
+  canEdit: boolean;
+  ownerName?: string | null;
+};
+
+export type CuadernoCollaboratorRecord = {
+  class_id: string;
+  user_id: string;
+  role: CuadernoCollaboratorRole;
+  invited_by: string | null;
+  joined_at: string;
+};
+
+export type CuadernoCollaborator = {
+  classId: string;
+  userId: string;
+  role: CuadernoCollaboratorRole;
+  invitedBy: string | null;
+  joinedAt: string;
+  displayName?: string | null;
 };
 
 export type CuadernoTreeCycle = {
