@@ -6,14 +6,20 @@ import { useState } from "react";
 
 const mockNote: CuadernoClass = {
   id: "test-1",
-  title: "Introducción al Derecho Constitucional",
-  courseName: "Derecho Constitucional I",
-  notes: "<h2>Conceptos Fundamentales</h2><p>El derecho constitucional es la rama del derecho que estudia la Constitución...</p><ul><li>Definición</li><li>Características</li><li>Importancia</li></ul>",
-  topic: "Constitución",
   userId: "test-user",
+  courseId: "course-1",
+  courseName: "Derecho Constitucional I",
+  cycleNumber: 1,
+  cycleLabel: "Primera Parte",
+  classNumber: 1,
+  title: "Introducción al Derecho Constitucional",
+  topic: "Constitución",
+  classDate: new Date().toISOString(),
+  notes: "<h2>Conceptos Fundamentales</h2><p>El derecho constitucional es la rama del derecho que estudia la Constitución...</p><ul><li>Definición</li><li>Características</li><li>Importancia</li></ul>",
+  extractedConcepts: ["Constitución", "Derecho Público", "Soberanía"],
+  materialId: null,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
-  isFavorite: false,
 };
 
 export default function EditorTestPage() {
