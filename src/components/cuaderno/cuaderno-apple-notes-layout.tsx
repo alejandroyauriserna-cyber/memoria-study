@@ -8,6 +8,7 @@ import { CuadernoNotesGrid } from "@/components/cuaderno/cuaderno-notes-grid";
 import { CuadernoViewSwitcher, type ViewType } from "@/components/cuaderno/cuaderno-view-switcher";
 import { CuadernoNewNoteDialog } from "@/components/cuaderno/cuaderno-new-note-dialog";
 import { CuadernoNoteEditor } from "@/components/cuaderno/cuaderno-note-editor";
+import { CuadernoNoteEditorPro } from "@/components/cuaderno/cuaderno-note-editor-pro";
 import { CuadernoSyncProvider, useCuadernoSyncContext } from "@/components/cuaderno/cuaderno-sync-context";
 import type { CuadernoClass } from "@/types/cuaderno";
 import "./cuaderno-apple-notes-layout.css";
@@ -159,7 +160,7 @@ function CuadernoAppleNotesLayoutInner({
 
         {/* Editor de nota */}
         {selectedNote && (
-          <CuadernoNoteEditor
+          <CuadernoNoteEditorPro
             note={selectedNote}
             isOpen={selectedNoteId !== null}
             onClose={() => {
