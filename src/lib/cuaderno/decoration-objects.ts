@@ -9,6 +9,8 @@ export type PostItColor =
 
 export type ImageTextWrap = "inline" | "square" | "tight" | "inFront" | "behind";
 
+export type ShapeVariant = "rectangle" | "circle" | "line";
+
 export type DecorationKind =
   | "postit"
   | "sticker"
@@ -19,7 +21,10 @@ export type DecorationKind =
   | "divider"
   | "frame"
   | "arrow"
-  | "highlight-deco";
+  | "highlight-deco"
+  | "textbox"
+  | "free-text"
+  | "shape";
 
 export type DecorationObject = {
   id: string;
@@ -49,6 +54,8 @@ export type DecorationObject = {
   /** Decorativos */
   decoVariant?: string;
   color?: string;
+  opacity?: number;
+  shapeShadow?: boolean;
 };
 
 export const POSTIT_COLORS: Record<PostItColor, { label: string; bg: string; border: string }> = {
@@ -134,6 +141,60 @@ export function createStickerFromLibrary(
     at,
     aspectRatio: 1,
   });
+}
+
+export function createFreeText(text = "", at?: { x: number; y: number }): DecorationObject {
+  return {
+    id: decorationId(),
+    kind: "free-text",
+    x: at?.x ?? 0.15,
+    y: at?.y ?? 0.12,
+    w: 0.22,
+    h: 0.05,
+    rotation: 0,
+    zIndex: Date.now(),
+    locked: false,
+    text: text || "",
+  };
+}
+
+export function createTextBox(text = "", at?: { x: number; y: number }): DecorationObject {
+  return {
+    id: decorationId(),
+    kind: "textbox",
+    x: at?.x ?? 0.2,
+    y: at?.y ?? 0.18,
+    w: 0.28,
+    h: 0.12,
+    rotation: 0,
+    zIndex: Date.now(),
+    locked: false,
+    text: text || "",
+    color: "#0d9488",
+  };
+}
+
+export function createShape(
+  variant: ShapeVariant = "rectangle",
+  color = "#0d9488",
+  at?: { x: number; y: number },
+): DecorationObject {
+  const isLine = variant === "line";
+  return {
+    id: decorationId(),
+    kind: "shape",
+    x: at?.x ?? 0.22,
+    y: at?.y ?? 0.2,
+    w: isLine ? 0.3 : 0.26,
+    h: isLine ? 0.02 : 0.14,
+    rotation: 0,
+    zIndex: Date.now(),
+    locked: false,
+    text: "",
+    color,
+    decoVariant: variant,
+    shapeShadow: variant !== "line",
+  };
 }
 
 export function createDecoElement(

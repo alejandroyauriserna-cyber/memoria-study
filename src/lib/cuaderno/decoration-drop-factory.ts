@@ -1,11 +1,14 @@
 import {
   createDecoElement,
   createPostIt,
+  createShape,
   createStickerFromCatalog,
   createStickerFromLibrary,
   createStickerFromSrc,
+  createTextBox,
   type DecorationObject,
   type PostItColor,
+  type ShapeVariant,
 } from "@/lib/cuaderno/decoration-objects";
 import type { DecorationDragPayload } from "@/lib/cuaderno/decoration-drag";
 import { getStickerById } from "@/lib/cuaderno/sticker-catalog";

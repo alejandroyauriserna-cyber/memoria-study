@@ -2042,3 +2042,149 @@
 .cn-immersive-root--studio .cn-sticker-heart {
   background: rgba(15, 23, 42, 0.75);
 }
+
+/* —— Formas y texto libre —— */
+.cn-deco-freetext,
+.cn-deco-textbox,
+.cn-deco-shape {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.cn-deco-freetext-input {
+  width: 100%;
+  min-height: 100%;
+  outline: none;
+  font-size: clamp(13px, 1.6vw, 16px);
+  line-height: 1.45;
+  color: #1e293b;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.cn-deco-freetext-input:empty::before {
+  content: attr(data-placeholder);
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.cn-deco-textbox {
+  border: 2px solid;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 6px;
+}
+
+.cn-deco-textbox-input {
+  width: 100%;
+  height: 100%;
+  border: none;
+  resize: none;
+  background: transparent;
+  outline: none;
+  font: inherit;
+  color: #1e293b;
+}
+
+.cn-deco-shape {
+  border: 2px solid;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.94);
+  padding: 4px;
+  cursor: move;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.cn-deco-shape--circle {
+  border-radius: 999px;
+}
+
+.cn-deco-shape--line {
+  border: none;
+  background: transparent;
+  padding: 0;
+  min-height: 4px;
+}
+
+.cn-deco-shape--shadow {
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.14);
+}
+
+.cn-deco-shape-input {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  outline: none;
+  cursor: text;
+  font-size: clamp(13px, 1.6vw, 16px);
+  line-height: 1.45;
+  color: #1e293b;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  overflow: hidden;
+}
+
+.cn-deco-shape-input:empty::before {
+  content: attr(data-placeholder);
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.cn-board-context-toolbar {
+  position: fixed;
+  z-index: 220;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  border-radius: 12px;
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.18);
+}
+
+.cn-board-ctx-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #334155;
+  cursor: pointer;
+}
+
+.cn-board-ctx-btn:hover,
+.cn-board-ctx-btn.is-active {
+  background: rgba(13, 148, 136, 0.12);
+  color: #0d9488;
+}
+
+.cn-board-ctx-btn--danger:hover {
+  background: rgba(239, 68, 68, 0.12);
+  color: #dc2626;
+}
+
+.cn-board-ctx-color {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.15);
+  cursor: pointer;
+  padding: 0;
+}
+
+.cn-board-ctx-color.is-on {
+  box-shadow: 0 0 0 2px #0d9488;
+}
+
+.cn-board-ctx-sep {
+  width: 1px;
+  height: 20px;
+  background: rgba(148, 163, 184, 0.45);
+  margin: 0 2px;
+}

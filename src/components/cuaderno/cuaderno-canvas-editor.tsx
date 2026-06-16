@@ -54,6 +54,9 @@ import {
 import { clampDecorationToPaper, visiblePaperCenterNorm } from "@/lib/cuaderno/decoration-bounds";
 import { createFloatingImage } from "@/lib/cuaderno/floating-image";
 import { CuadernoPlacementOverlay } from "@/components/cuaderno/cuaderno-placement-overlay";
+import { CuadernoBoardContextToolbar } from "@/components/cuaderno/cuaderno-board-context-toolbar";
+import { applyContentEditableCommand } from "@/lib/cuaderno/content-editable-format";
+import { createFreeText } from "@/lib/cuaderno/decoration-objects";
 import { NodeSelection } from "@tiptap/pm/state";
 import { migrateInlineImagesFromHtml } from "@/lib/cuaderno/migrate-inline-images";
 import { getPaperClasses } from "@/lib/cuaderno/paper-styles";
@@ -243,6 +246,62 @@ export function CuadernoCanvasEditor({
     }
   }, [editor, syncDecorations]);
 
+  const selectedBoardDeco = useMemo(() => {
+    const id = selectedDecoIds[0];
+    if (!id) return null;
+    return decorations.find((d) => d.id === id) ?? null;
+  }, [selectedDecoIds, decorations]);
+
+  const getSelectedDecoTextEl = useCallback(() => {
+    const id = selectedDecoIdsRef.current[0];
+    if (!id) return null;
+    return paperLayersRef.current?.querySelector(
+      `[data-deco-id="${CSS.escape(id)}"] .cn-deco-freetext-input, [data-deco-id="${CSS.escape(id)}"] .cn-deco-shape-input`,
+    ) as HTMLElement | null;
+  }, []);
+
+  const applyFreeTextFormat = useCallback(
+    (cmd: "bold" | "italic" | "underline") => {
+      const el = getSelectedDecoTextEl();
+      if (!el) return;
+      applyContentEditableCommand(el, cmd);
+      const id = selectedDecoIdsRef.current[0];
+      if (!id) return;
+      const page = getActivePage(docRef.current);
+      syncDecorations(
+        (page.decorations ?? []).map((d) => (d.id === id ? { ...d, text: el.innerHTML } : d)),
+      );
+    },
+    [getSelectedDecoTextEl, syncDecorations],
+  );
+
+  const applySelectedDecoTextColor = useCallback(
+    (color: string) => {
+      const el = getSelectedDecoTextEl();
+      if (!el) return;
+      applyContentEditableCommand(el, "foreColor", color);
+      const id = selectedDecoIdsRef.current[0];
+      if (!id) return;
+      const page = getActivePage(docRef.current);
+      syncDecorations(
+        (page.decorations ?? []).map((d) => (d.id === id ? { ...d, text: el.innerHTML } : d)),
+      );
+    },
+    [getSelectedDecoTextEl, syncDecorations],
+  );
+
+  const patchSelectedDeco = useCallback(
+    (patch: Partial<DecorationObject>) => {
+      const id = selectedDecoIdsRef.current[0];
+      if (!id) return;
+      const page = getActivePage(docRef.current);
+      syncDecorations(
+        (page.decorations ?? []).map((d) => (d.id === id ? { ...d, ...patch } : d)),
+      );
+    },
+    [syncDecorations],
+  );
+
   const visibleCenterNorm = useCallback(() => {
     const vp = viewportRef.current?.getBoundingClientRect() ?? null;
     const paper = paperLayersRef.current?.getBoundingClientRect() ?? null;
@@ -321,6 +380,13 @@ export function CuadernoCanvasEditor({
     });
     return () => registerAddDecoration?.(null);
   }, [registerAddDecoration, placeDecorationItem, visibleCenterNorm]);
+
+  const insertFreeTextAt = useCallback(
+    (at: { x: number; y: number }) => {
+      void placeDecorationItem(createFreeText("", at), at);
+    },
+    [placeDecorationItem],
+  );
 
   useEffect(() => {
     registerPlacePayload?.((payload, clientX, clientY) => {
@@ -491,7 +557,7 @@ export function CuadernoCanvasEditor({
     if (writingMode !== "text") return;
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement;
-      if (t.closest("textarea, input, .cn-postit-text")) return;
+      if (t.closest("textarea, input, .cn-postit-text, .cn-deco-shape-input, .cn-deco-freetext-input, .cn-deco-textbox-input")) return;
       const inProse = t.closest(".cn-prosemirror");
       if (inProse && !(e.key === "Delete" || e.key === "Backspace")) return;
       if (inProse && (e.key === "Delete" || e.key === "Backspace") && !isTableNodeSelected(editor)) {
@@ -499,7 +565,7 @@ export function CuadernoCanvasEditor({
       }
 
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "a") {
-        if (t.closest("textarea, .cn-postit-text")) return;
+        if (t.closest("textarea, .cn-postit-text, .cn-deco-shape-input, .cn-deco-freetext-input, .cn-deco-textbox-input")) return;
         e.preventDefault();
         setSelectedDecoIds(liveDecorationsRef.current.map((d) => d.id));
         return;
@@ -519,7 +585,7 @@ export function CuadernoCanvasEditor({
   const handleClipboardPaste = useCallback(
     (e: ClipboardEvent): boolean => {
       const t = e.target as HTMLElement | null;
-      if (t?.closest("textarea, input, .cn-postit-text")) return false;
+      if (t?.closest("textarea, input, .cn-postit-text, .cn-deco-shape-input, .cn-deco-freetext-input, .cn-deco-textbox-input")) return false;
       const payload = readImagePayloadFromClipboard(e.clipboardData);
       if (!payload) return false;
       e.preventDefault();
@@ -640,7 +706,16 @@ export function CuadernoCanvasEditor({
               t.closest(".cn-rich-editor-content")
             ) {
               focusEditor();
+              clearCanvasSelection();
             }
+          }}
+          onDoubleClick={(e) => {
+            if (writingMode !== "text" || panMode !== "write") return;
+            const t = e.target as HTMLElement;
+            if (t.closest(".cn-decoration-item, .cn-deco-shape-input, .cn-deco-freetext-input")) return;
+            const at = clientToPaperNorm(e.clientX, e.clientY);
+            if (!at) return;
+            insertFreeTextAt(at);
           }}
           onDragEnter={handleDecorationDragEnter}
           onDragOver={handleDecorationDragOver}
@@ -729,6 +804,18 @@ export function CuadernoCanvasEditor({
     : `cn-canvas-viewport ${panMode === "pan" ? "is-panning" : ""}`;
 
   const stageClass = immersive ? "cn-canvas-stage cn-canvas-stage--immersive" : "cn-canvas-stage";
+
+  const decorationContextToolbar = (
+    <CuadernoBoardContextToolbar
+      paperRef={paperLayersRef}
+      decoration={writingMode === "text" && panMode === "write" ? selectedBoardDeco : null}
+      onTextFormat={applyFreeTextFormat}
+      onTextColor={applySelectedDecoTextColor}
+      onShapeColor={(color) => patchSelectedDeco({ color })}
+      onShapeShadow={(enabled) => patchSelectedDeco({ shapeShadow: enabled })}
+      onDelete={deleteCanvasSelection}
+    />
+  );
 
   const handleSideRail = (tab: SideRailTab) => {
     if (tab === "images") {
@@ -826,6 +913,7 @@ export function CuadernoCanvasEditor({
         ) : null}
         {perfEnabled ? <CuadernoPerfBadge stats={perfStats} /> : null}
         <CuadernoPlacementOverlay progress={placeProgress} />
+        {decorationContextToolbar}
       </div>
     );
   }

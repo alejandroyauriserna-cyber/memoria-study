@@ -1,6 +1,6 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useEffect, useRef } from "react";
 import { RotateCw } from "lucide-react";
 import {
   POSTIT_COLORS,
@@ -8,12 +8,13 @@ import {
   type PostItColor,
 } from "@/lib/cuaderno/decoration-objects";
 import { resolveStickerLabel, resolveStickerSrc } from "@/lib/cuaderno/sticker-resolve-src";
+import { autoGrowFreeText } from "@/lib/cuaderno/whiteboard-text";
 import type { ResizeHandle } from "@/lib/cuaderno/decoration-resize";
 
 const RESIZE_HANDLES: ResizeHandle[] = ["nw", "n", "ne", "e", "se", "s", "sw", "w"];
 
 const DECO_CHROME_SELECTOR =
-  ".cn-decoration-handle, .cn-postit-colors";
+  ".cn-decoration-handle, .cn-postit-colors, .cn-deco-textbox-input";
 
 function decoPropsEqual(
   prev: {
@@ -48,7 +49,11 @@ function decoPropsEqual(
     a.text === b.text &&
     a.textWrap === b.textWrap &&
     a.postitColor === b.postitColor &&
+    a.decoVariant === b.decoVariant &&
     a.src === b.src &&
+    a.opacity === b.opacity &&
+    a.shapeShadow === b.shapeShadow &&
+    a.color === b.color &&
     a.kind === b.kind
   );
 }
@@ -93,11 +98,37 @@ export const CuadernoDecorationItem = memo(function CuadernoDecorationItem({
       onPointerDown={(e) => {
         if (!active) return;
         if (e.button !== 0) return;
+
+        const shapeInput = (e.target as HTMLElement).closest(".cn-deco-shape-input");
+        const freeTextInput = (e.target as HTMLElement).closest(".cn-deco-freetext-input");
+        const textboxInput = (e.target as HTMLElement).closest(".cn-deco-textbox-input");
+
+        if (shapeInput || freeTextInput || textboxInput) {
+          if (!selected) {
+            e.stopPropagation();
+            onSelect(false);
+            return;
+          }
+          if (textboxInput) {
+            e.stopPropagation();
+            return;
+          }
+          if (shapeInput || freeTextInput) {
+            const onShapeBorder = (e.target as HTMLElement).closest(".cn-deco-shape, .cn-deco-freetext");
+            const onInputOnly = shapeInput || freeTextInput;
+            if (onShapeBorder && onInputOnly && e.target === onInputOnly) {
+              e.stopPropagation();
+              return;
+            }
+          }
+        }
+
         const chrome = (e.target as HTMLElement).closest(DECO_CHROME_SELECTOR);
         if (chrome) {
           e.stopPropagation();
           return;
         }
+
         e.stopPropagation();
         const additive = e.shiftKey || e.metaKey || e.ctrlKey;
         onSelect(additive);
@@ -108,7 +139,9 @@ export const CuadernoDecorationItem = memo(function CuadernoDecorationItem({
       <DecorationBody
         obj={obj}
         active={active}
+        selected={selected}
         onTextChange={(text) => onPatch({ text })}
+        onPatch={onPatch}
       />
 
       {selected && active ? (
@@ -161,12 +194,27 @@ export const CuadernoDecorationItem = memo(function CuadernoDecorationItem({
 function DecorationBody({
   obj,
   active,
+  selected,
   onTextChange,
+  onPatch,
 }: {
   obj: DecorationObject;
   active: boolean;
+  selected: boolean;
   onTextChange: (text: string) => void;
+  onPatch: (patch: Partial<DecorationObject>) => void;
 }) {
+  const freeTextRef = useRef<HTMLDivElement>(null);
+  const shapeInputRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (obj.kind !== "free-text" && obj.kind !== "shape") return;
+    const el = obj.kind === "free-text" ? freeTextRef.current : shapeInputRef.current;
+    if (!el || document.activeElement === el) return;
+    const html = obj.text ?? "";
+    if (el.innerHTML !== html) el.innerHTML = html;
+  }, [obj.kind, obj.text, obj.id]);
+
   if (obj.kind === "postit") {
     const c = POSTIT_COLORS[obj.postitColor ?? "yellow"];
     const cat = obj.postitCategory ? ` cn-postit--${obj.postitCategory}` : "";
@@ -187,13 +235,57 @@ function DecorationBody({
     );
   }
 
+  if (obj.kind === "free-text") {
+    const syncFreeText = (el: HTMLDivElement) => {
+      onTextChange(el.innerHTML);
+      autoGrowFreeText(el, obj.h, (h) => onPatch({ h }));
+    };
+
+    return (
+      <div className="cn-deco-freetext">
+        <div
+          ref={freeTextRef}
+          className="cn-deco-freetext-input"
+          contentEditable={active}
+          suppressContentEditableWarning
+          role="textbox"
+          aria-multiline
+          data-placeholder="Escribe aquí…"
+          onInput={(e) => syncFreeText(e.currentTarget)}
+          onPointerDown={(e) => {
+            if (!selected) return;
+            e.stopPropagation();
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (obj.kind === "textbox") {
+    return (
+      <div
+        className="cn-deco-textbox"
+        style={{ borderColor: obj.color ?? "#0d9488" }}
+      >
+        <textarea
+          className="cn-deco-textbox-input"
+          value={obj.text ?? ""}
+          onChange={(e) => onTextChange(e.target.value)}
+          onPointerDown={(e) => e.stopPropagation()}
+          readOnly={!active}
+          placeholder="Escribe en el recuadro…"
+        />
+      </div>
+    );
+  }
+
   if (obj.kind === "image" && obj.src) {
     const crop = obj.crop;
     const clip = crop
       ? `inset(${crop.y * 100}% ${(1 - crop.x - crop.w) * 100}% ${(1 - crop.y - crop.h) * 100}% ${crop.x * 100}%)`
       : undefined;
     return (
-      <div className="cn-floating-image-frame">
+      <div className="cn-floating-image-frame" style={{ opacity: obj.opacity ?? 1 }}>
         <img
           src={obj.src}
           alt=""
@@ -242,6 +334,50 @@ function DecorationBody({
   }
   if (obj.kind === "highlight-deco") {
     return <div className="cn-deco-highlight" style={{ background: obj.color }} />;
+  }
+
+  if (obj.kind === "shape") {
+    const variant = obj.decoVariant ?? "rectangle";
+    const accent = obj.color ?? "#0d9488";
+    if (variant === "line") {
+      return (
+        <div
+          className={`cn-deco-shape cn-deco-shape--${variant}`}
+          style={{ color: accent, background: accent }}
+        />
+      );
+    }
+    return (
+      <div
+        className={`cn-deco-shape cn-deco-shape--${variant}${obj.shapeShadow ? " cn-deco-shape--shadow" : ""}`}
+        style={
+          {
+            "--shape-accent": accent,
+            borderColor: accent,
+            color: accent,
+          } as React.CSSProperties
+        }
+      >
+        <div
+          ref={shapeInputRef}
+          className="cn-deco-shape-input"
+          contentEditable={active}
+          suppressContentEditableWarning
+          role="textbox"
+          aria-multiline
+          data-placeholder="Escribe aquí…"
+          onInput={(e) => {
+            const el = e.currentTarget;
+            onTextChange(el.innerHTML);
+            autoGrowFreeText(el, obj.h, (h) => onPatch({ h }));
+          }}
+          onPointerDown={(e) => {
+            if (!selected) return;
+            e.stopPropagation();
+          }}
+        />
+      </div>
+    );
   }
 
   return null;
