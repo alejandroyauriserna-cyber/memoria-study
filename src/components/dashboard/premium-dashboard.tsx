@@ -15,10 +15,10 @@ import {
   PenLine,
   Sparkles,
   Upload,
+  Zap,
 } from "lucide-react";
 import { DashboardOnboarding } from "@/components/dashboard/dashboard-onboarding";
 import { PwaInstallHint } from "@/components/dashboard/pwa-install-hint";
-import { Zap } from "lucide-react";
 import { useTimeGreeting } from "@/lib/home/use-time-greeting";
 import { UNT_DERECHO } from "@/lib/academic/unt-derecho";
 import type {
