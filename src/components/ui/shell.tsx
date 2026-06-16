@@ -26,12 +26,20 @@ function navIsActive(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({
+  children,
+  minimal = false,
+}: {
+  children: React.ReactNode;
+  minimal?: boolean;
+}) {
   const pathname = usePathname();
   const isHome = pathname === "/";
   const isCuaderno = pathname === "/cuaderno" || pathname.startsWith("/cuaderno/");
   const isGuidedStudy =
     pathname === "/estudio-guiado" || pathname.startsWith("/estudio-guiado/");
+  const isMicroEstudio = pathname === "/micro-estudio" || pathname.startsWith("/micro-estudio/");
+  const compactShell = minimal || isMicroEstudio;
 
   return (
     <div
@@ -48,11 +56,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <OfflineSyncBanner />
 
       <header
-        className="sticky top-0 z-40 shrink-0 border-b border-[var(--border)] bg-[var(--shell-header-bg)] backdrop-blur-xl"
+        className="sticky top-0 z-40 shrink-0 border-b border-[var(--border)] bg-[var(--shell-header-bg)] backdrop-blur-xl pt-[env(safe-area-inset-top)]"
       >
         <div
-          className={`relative mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8 ${
-            isHome ? "py-2.5" : "py-3"
+          className={`relative mx-auto flex w-full max-w-7xl items-center justify-between gap-2 px-3 sm:gap-3 sm:px-6 lg:px-8 ${
+            isHome ? "py-2 sm:py-2.5" : "py-2.5 sm:py-3"
           }`}
         >
           <Link
@@ -82,6 +90,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
           </Link>
 
+          {!compactShell ? (
           <nav className="hidden min-w-0 flex-1 items-center justify-center gap-0.5 overflow-x-auto md:flex lg:gap-1" aria-label="Navegación principal">
             {NAV.map((item) => (
               <Link
@@ -95,14 +104,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             ))}
             <JurisprudenceAdminNavLink />
           </nav>
+          ) : null}
 
-          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+          <div className="hidden shrink-0 items-center gap-1.5 sm:flex sm:gap-2">
             <ThemePicker />
             <ThemeToggle />
             <UserMenu />
           </div>
 
-          <details className="ml-1 block rounded-xl border border-[var(--border)] bg-[var(--shell-card-bg)] px-3 py-2 md:hidden">
+          <div className="flex shrink-0 items-center gap-1 sm:hidden">
+            <ThemeToggle />
+            <UserMenu />
+          </div>
+
+          {!compactShell ? (
+          <details className="shell-mobile-menu ml-0 block rounded-xl border border-[var(--border)] bg-[var(--shell-card-bg)] px-2.5 py-1.5 sm:ml-1 sm:px-3 sm:py-2 md:hidden">
             <summary
               className="flex cursor-pointer list-none items-center gap-2 text-sm text-muted-foreground"
               aria-label="Abrir menú de navegación"
@@ -118,6 +134,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <JurisprudenceAdminNavLink />
             </nav>
           </details>
+          ) : null}
         </div>
       </header>
 
@@ -128,7 +145,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {children}
       </main>
 
-      {!isHome && !isGuidedStudy ? (
+      {!isHome && !isGuidedStudy && !compactShell ? (
         <footer className="relative z-[1] shrink-0 border-t border-[var(--border)] px-4 py-5 text-center text-xs text-muted-foreground">
           MemoriaStudy · Plataforma inteligente para el estudio jurídico
         </footer>

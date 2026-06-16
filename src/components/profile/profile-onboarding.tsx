@@ -37,7 +37,7 @@ const STEPS = [
 export function ProfileOnboarding({ compact = false }: { compact?: boolean }) {
   if (compact) {
     return (
-      <div className="ms-home-onboarding">
+      <>
         <p className="ms-home-onboarding__title">Primera sesión</p>
         <p className="ms-home-onboarding__lead">
           Cuatro pasos para activar tu espacio de estudio.
@@ -58,7 +58,7 @@ export function ProfileOnboarding({ compact = false }: { compact?: boolean }) {
             );
           })}
         </div>
-      </div>
+      </>
     );
   }
 

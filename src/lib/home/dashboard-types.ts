@@ -1,3 +1,5 @@
+import type { ContinueStudyingPoint } from "@/lib/home/build-continue-studying";
+
 export type RecentItemKind = "pdf" | "apunte" | "organizer" | "exam" | "chat";
 
 export type RecentContinueItem = {
@@ -37,4 +39,7 @@ export type MemoriaDashboardProps = {
   showOnboarding: boolean;
   recentItems: RecentContinueItem[];
   suggestions: AiSuggestion[];
+  continueStudying: ContinueStudyingPoint | null;
 };
+
+export type { ContinueStudyingPoint };

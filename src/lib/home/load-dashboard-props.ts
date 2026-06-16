@@ -1,4 +1,5 @@
 import { buildAiSuggestions } from "@/lib/home/build-suggestions";
+import { buildContinueStudyingPoint } from "@/lib/home/build-continue-studying";
 import { buildRecentContinueItems } from "@/lib/home/build-recent-items";
 import type { MemoriaDashboardProps } from "@/lib/home/dashboard-types";
 import { getCoursesForCycle } from "@/lib/academic/helpers";
@@ -27,6 +28,7 @@ export async function loadMemoriaDashboardProps(user: User): Promise<MemoriaDash
     { data: organizersData },
     { data: historyData },
     { data: recentMaterialsData },
+    { data: guidedSessionsData },
     learningStats,
   ] = await Promise.all([
     admin
@@ -59,6 +61,12 @@ export async function loadMemoriaDashboardProps(user: User): Promise<MemoriaDash
       .gte("created_at", weekAgoIso)
       .order("created_at", { ascending: false })
       .limit(5),
+    admin
+      .from("guided_study_sessions")
+      .select("material_id, current_page, last_updated, materials(title, course_name)")
+      .eq("user_id", user.id)
+      .order("last_updated", { ascending: false })
+      .limit(1),
     fetchServerLearningStats(user.id),
   ]);
 
@@ -118,6 +126,26 @@ export async function loadMemoriaDashboardProps(user: User): Promise<MemoriaDash
     organizers: (organizersData ?? []) as OrganizerRecord[],
   });
 
+  const latestGuided = guidedSessionsData?.[0];
+  const guidedMaterial = latestGuided?.materials as
+    | { title?: string; course_name?: string }
+    | { title?: string; course_name?: string }[]
+    | null;
+  const guidedMat = Array.isArray(guidedMaterial) ? guidedMaterial[0] : guidedMaterial;
+
+  const continueStudying = buildContinueStudyingPoint({
+    guidedSession: latestGuided && guidedMat?.title
+      ? {
+          materialId: latestGuided.material_id as string,
+          title: guidedMat.title,
+          courseName: guidedMat.course_name ?? "Tu material",
+          currentPage: latestGuided.current_page as number,
+          lastUpdated: latestGuided.last_updated as string,
+        }
+      : null,
+    latestOrganizer: (organizersData?.[0] as OrganizerRecord | undefined) ?? null,
+  });
+
   const suggestionMaterials = (recentMaterialsData ?? []).map((m) => ({
     id: m.id as string,
     title: m.title as string,
@@ -141,5 +169,6 @@ export async function loadMemoriaDashboardProps(user: User): Promise<MemoriaDash
     showOnboarding: isNewUser(learningStats),
     recentItems,
     suggestions: buildAiSuggestions(suggestionMaterials),
+    continueStudying,
   };
 }

@@ -16,7 +16,9 @@ import { AppShell } from "@/components/ui/shell";
 import { DashboardOnboarding } from "@/components/dashboard/dashboard-onboarding";
 import { LegalAiHero } from "@/components/home/legal-ai-hero";
 import { TimeGreetingText } from "@/components/home/time-greeting-text";
+import { MicroStudyDashboard } from "@/components/micro-study/micro-study-dashboard";
 import { loadMemoriaDashboardProps } from "@/lib/home/load-dashboard-props";
+import { loadMicroStudyDashboardProps } from "@/lib/micro-study/load-micro-dashboard";
 import { formatProfileFirstName } from "@/lib/profile/display-name";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/env";
@@ -57,6 +59,7 @@ const FEATURE_CARDS = [
 
 export default async function Home() {
   let dashboardProps = null;
+  let microStudyProps = null;
 
   if (hasSupabaseEnv()) {
     const supabase = await createClient();
@@ -65,11 +68,14 @@ export default async function Home() {
     } = await supabase.auth.getUser();
 
     if (user) {
-      dashboardProps = await loadMemoriaDashboardProps(user);
+      [dashboardProps, microStudyProps] = await Promise.all([
+        loadMemoriaDashboardProps(user),
+        loadMicroStudyDashboardProps(user.id),
+      ]);
     }
   }
 
-  const isAuthenticated = Boolean(dashboardProps);
+  const isAuthenticated = Boolean(dashboardProps && microStudyProps);
   const firstName = dashboardProps
     ? formatProfileFirstName(dashboardProps.profileName)
     : "Estudiante";
@@ -83,6 +89,9 @@ export default async function Home() {
 
   return (
     <AppShell>
+      {isAuthenticated && dashboardProps && microStudyProps ? (
+        <MicroStudyDashboard {...dashboardProps} microStudy={microStudyProps} />
+      ) : (
       <div className="ms-home mx-auto w-full max-w-7xl px-4 pb-12 pt-6 sm:px-6 lg:px-8">
         {dashboardProps?.showOnboarding ? (
           <div className="mb-4">
@@ -259,6 +268,7 @@ export default async function Home() {
             : "Vista previa del asistente / requiere cuenta para guardar tu progreso"}
         </p>
       </div>
+      )}
     </AppShell>
   );
 }
