@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, Zap } from "lucide-react";
+import { Zap } from "lucide-react";
 import { TronBackground } from "@/components/ui/tron-background";
 import { AppThemeProvider } from "@/components/app-theme-provider";
 import { ThemePicker } from "@/components/theme-picker";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserMenu } from "@/components/ui/user-menu";
 import { OfflineSyncBanner } from "@/components/ui/offline-sync-banner";
+import { MobileNavMenu } from "@/components/ui/mobile-nav-menu";
 import { JurisprudenceAdminNavLink } from "@/components/jurisprudence/jurisprudence-admin-nav-link";
 
 const NAV = [
@@ -59,7 +60,7 @@ export function AppShell({
         className="sticky top-0 z-40 shrink-0 border-b border-[var(--border)] bg-[var(--shell-header-bg)] backdrop-blur-xl pt-[env(safe-area-inset-top)]"
       >
         <div
-          className={`relative mx-auto flex w-full max-w-7xl items-center justify-between gap-2 px-3 sm:gap-3 sm:px-6 lg:px-8 ${
+          className={`shell-header-bar relative mx-auto flex w-full max-w-7xl items-center justify-between gap-2 px-3 sm:gap-3 sm:px-6 lg:px-8 ${
             isHome ? "py-2 sm:py-2.5" : "py-2.5 sm:py-3"
           }`}
         >
@@ -106,35 +107,19 @@ export function AppShell({
           </nav>
           ) : null}
 
-          <div className="hidden shrink-0 items-center gap-1.5 sm:flex sm:gap-2">
-            <ThemePicker />
-            <ThemeToggle />
-            <UserMenu />
-          </div>
+          <div className="shell-header-actions flex shrink-0 items-center gap-0.5 sm:gap-2">
+            <div className="hidden items-center gap-1.5 sm:flex">
+              <ThemePicker />
+              <ThemeToggle />
+              <UserMenu />
+            </div>
 
-          <div className="flex shrink-0 items-center gap-1 sm:hidden">
-            <ThemeToggle />
-            <UserMenu />
+            <div className="flex items-center gap-0.5 sm:hidden">
+              <ThemeToggle />
+              <UserMenu />
+              {!compactShell ? <MobileNavMenu /> : null}
+            </div>
           </div>
-
-          {!compactShell ? (
-          <details className="shell-mobile-menu ml-0 block rounded-xl border border-[var(--border)] bg-[var(--shell-card-bg)] px-2.5 py-1.5 sm:ml-1 sm:px-3 sm:py-2 md:hidden">
-            <summary
-              className="flex cursor-pointer list-none items-center gap-2 text-sm text-muted-foreground"
-              aria-label="Abrir menú de navegación"
-            >
-              <Menu size={18} /> Menú
-            </summary>
-            <nav className="mt-3 flex flex-col gap-1" aria-label="Navegación móvil">
-              {NAV.map((item) => (
-                <Link key={item.href} href={item.href} className="tron-nav-link">
-                  {item.label}
-                </Link>
-              ))}
-              <JurisprudenceAdminNavLink />
-            </nav>
-          </details>
-          ) : null}
         </div>
       </header>
 

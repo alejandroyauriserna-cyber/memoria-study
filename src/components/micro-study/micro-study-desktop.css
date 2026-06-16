@@ -1,0 +1,364 @@
+/* Micro Estudio — layout expandido tablet / desktop (mismo lenguaje que dash-home) */
+
+@media (min-width: 768px) {
+  .ms-micro {
+    --ms-micro-line: rgba(0, 255, 213, 0.12);
+    --ms-micro-panel: rgba(16, 39, 48, 0.62);
+    max-width: 1120px;
+    padding: 2rem 1.5rem 5rem;
+    gap: 1.15rem;
+  }
+
+  .ms-micro__head {
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .ms-micro__kicker {
+    border-radius: 999px;
+    border: 1px solid rgba(0, 255, 213, 0.18);
+    background: rgba(0, 255, 213, 0.07);
+    padding: 0.45rem 0.75rem;
+    letter-spacing: 0.12em;
+  }
+
+  .ms-micro__kicker-mobile-only {
+    display: none;
+  }
+
+  .ms-micro__kicker-desktop-only {
+    display: inline-flex;
+  }
+
+  .ms-micro__greeting {
+    margin-top: 0.85rem;
+    font-size: clamp(1.75rem, 4vw, 2.65rem);
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+  }
+
+  .ms-micro__head-metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    font-size: 0.75rem;
+    color: rgba(245, 247, 250, 0.5);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ms-micro__head-metrics strong {
+    color: #f5f7fa;
+    font-weight: 600;
+  }
+
+  .ms-micro__streak-pill {
+    display: none;
+  }
+
+  /* Hero continuar — estilo premium */
+  .ms-micro__continue-hero {
+    position: relative;
+    overflow: hidden;
+    gap: 0.5rem;
+    padding: clamp(1.35rem, 3vw, 2rem);
+    border-radius: 1.25rem;
+    border: 1px solid var(--ms-micro-line);
+    background:
+      radial-gradient(ellipse 70% 55% at 12% 0%, rgba(0, 255, 213, 0.14), transparent 58%),
+      radial-gradient(ellipse 55% 45% at 95% 100%, rgba(0, 191, 255, 0.1), transparent 55%),
+      linear-gradient(160deg, rgba(16, 39, 48, 0.88), rgba(7, 19, 26, 0.94));
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.03),
+      0 28px 90px rgba(0, 0, 0, 0.42);
+  }
+
+  .ms-micro__continue-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0, 255, 213, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 255, 213, 0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    mask-image: linear-gradient(120deg, black, transparent 75%);
+    opacity: 0.35;
+    pointer-events: none;
+  }
+
+  .ms-micro__continue-hero > * {
+    position: relative;
+  }
+
+  .ms-micro__continue-hero-label {
+    letter-spacing: 0.14em;
+  }
+
+  .ms-micro__continue-hero-title {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    letter-spacing: -0.03em;
+    line-height: 1.12;
+    max-width: 42ch;
+    -webkit-line-clamp: unset;
+    display: block;
+  }
+
+  .ms-micro__continue-hero-meta {
+    font-size: 0.875rem;
+    max-width: 52ch;
+    -webkit-line-clamp: unset;
+    display: block;
+  }
+
+  .ms-micro__continue-hero-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    width: auto;
+    min-height: 2.75rem;
+    margin-top: 0.85rem;
+    padding: 0 1.25rem;
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    color: var(--accent-foreground);
+    background: linear-gradient(135deg, rgba(0, 255, 213, 0.95), rgba(0, 191, 255, 0.85));
+    border: 1px solid rgba(0, 255, 213, 0.45);
+    box-shadow: 0 8px 28px rgba(0, 255, 213, 0.2);
+    transition: transform 200ms ease, box-shadow 200ms ease;
+  }
+
+  .ms-micro__continue-hero:hover .ms-micro__continue-hero-cta {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 36px rgba(0, 255, 213, 0.28);
+  }
+
+  .ms-micro__continue-hero:active {
+    transform: none;
+  }
+
+  /* Bento grid */
+  .ms-micro__bento {
+    display: grid;
+    gap: 0.85rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ms-micro__card {
+    border-radius: 1.15rem;
+    padding: 1.25rem 1.35rem;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 14px 46px rgba(0, 0, 0, 0.25);
+    transition:
+      transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
+      border-color 260ms ease,
+      box-shadow 260ms ease;
+  }
+
+  .ms-micro__card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(0, 255, 213, 0.28);
+    box-shadow: 0 18px 52px rgba(0, 0, 0, 0.32);
+  }
+
+  .ms-micro__card-title {
+    font-size: 1.05rem;
+    -webkit-line-clamp: unset;
+    display: block;
+  }
+
+  .ms-micro__card-def,
+  .ms-micro__card-summary {
+    font-size: 0.875rem;
+    -webkit-line-clamp: unset;
+    display: block;
+  }
+
+  .ms-micro__card--concept {
+    grid-column: 1;
+  }
+
+  .ms-micro__card--sentencia {
+    grid-column: 2;
+  }
+
+  .ms-micro__five-min-wrap {
+    grid-column: 1 / -1;
+  }
+
+  .ms-micro__five-min {
+    min-height: 72px;
+    padding: 1rem 1.25rem;
+    border-radius: 1.15rem;
+    transition: transform 260ms ease, box-shadow 260ms ease;
+  }
+
+  .ms-micro__five-min:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 18px 52px rgba(0, 255, 213, 0.12);
+  }
+
+  .ms-micro__five-min:active {
+    transform: none;
+  }
+
+  .ms-micro__five-min-copy strong {
+    font-size: 1.05rem;
+  }
+
+  .ms-micro__five-min-icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .ms-micro__route-full {
+    grid-column: 1 / -1;
+    border-radius: 1.15rem;
+    padding: 1.25rem 1.35rem;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 14px 46px rgba(0, 0, 0, 0.25);
+  }
+
+  .ms-micro__section-head h2 {
+    font-size: 1.05rem;
+  }
+
+  .ms-micro__route-details-summary {
+    display: none;
+  }
+
+  .ms-micro__route-ladder {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+  }
+
+  .ms-micro__route-step {
+    flex: 1 1 auto;
+    min-width: 7rem;
+    justify-content: center;
+    min-height: 40px;
+    padding: 0.45rem 0.65rem;
+  }
+
+  .ms-micro__route-step-label {
+    white-space: normal;
+    text-overflow: unset;
+    overflow: visible;
+  }
+
+  .ms-micro__quick-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .ms-micro__quick-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border-radius: 999px;
+    border: 1px solid rgba(0, 255, 213, 0.16);
+    background: rgba(7, 19, 26, 0.55);
+    padding: 0.42rem 0.85rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--foreground);
+    text-decoration: none;
+    transition: border-color 180ms ease, background 180ms ease;
+  }
+
+  .ms-micro__quick-link:hover {
+    border-color: rgba(0, 255, 213, 0.35);
+    background: rgba(0, 255, 213, 0.08);
+  }
+}
+
+@media (min-width: 900px) {
+  .ms-micro__bento {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+
+  .ms-micro__card--concept {
+    grid-column: span 6;
+  }
+
+  .ms-micro__card--sentencia {
+    grid-column: span 6;
+  }
+
+  .ms-micro__five-min-wrap {
+    grid-column: span 4;
+  }
+
+  .ms-micro__route-full {
+    grid-column: span 8;
+  }
+}
+
+@media (min-width: 768px) {
+  .ms-micro__head-metrics {
+    display: flex;
+  }
+}
+
+/* Ocultar métricas desktop en móvil */
+.ms-micro__head-metrics {
+  display: none;
+}
+
+.ms-micro__quick-links {
+  display: none;
+}
+
+/* Tema claro — desktop */
+@media (min-width: 768px) {
+  html:not(.dark) .ms-micro__continue-hero {
+    border-color: color-mix(in srgb, var(--accent) 20%, transparent);
+    background:
+      linear-gradient(140deg, color-mix(in srgb, var(--accent) 10%, #fff), transparent 35%),
+      radial-gradient(ellipse 70% 55% at 95% 100%, color-mix(in srgb, var(--accent-secondary, var(--accent)) 10%, #fff), transparent 55%),
+      linear-gradient(160deg, #f8fbfd 0%, #eef4f8 52%, #f5f9fc 100%);
+    box-shadow:
+      0 0 0 1px rgba(15, 23, 42, 0.04),
+      0 20px 48px rgba(15, 23, 42, 0.08);
+  }
+
+  html:not(.dark) .ms-micro__continue-hero::before {
+    opacity: 0.2;
+  }
+
+  html:not(.dark) .ms-micro__continue-hero-title {
+    color: var(--foreground);
+  }
+
+  html:not(.dark) .ms-micro__continue-hero-meta {
+    color: var(--muted-foreground);
+  }
+
+  html:not(.dark) .ms-micro__head-metrics strong {
+    color: var(--foreground);
+  }
+
+  html:not(.dark) .ms-micro__card,
+  html:not(.dark) .ms-micro__route-full {
+    background: rgba(255, 255, 255, 0.88);
+    border-color: color-mix(in srgb, var(--border) 75%, transparent);
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.06);
+  }
+}
+
+@media (min-width: 768px) and (prefers-reduced-motion: reduce) {
+  .ms-micro__card,
+  .ms-micro__five-min,
+  .ms-micro__continue-hero-cta {
+    transition: none;
+  }
+
+  .ms-micro__card:hover,
+  .ms-micro__five-min:hover {
+    transform: none;
+  }
+}

@@ -4,14 +4,19 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
-  BookOpen,
+  Brain,
   ChevronRight,
   Clock,
   FileText,
+  Gavel,
+  Layers3,
   Scale,
   Search,
+  Sparkles,
+  Upload,
   Zap,
 } from "lucide-react";
+import { UNT_DERECHO } from "@/lib/academic/unt-derecho";
 import { DashboardOnboarding } from "@/components/dashboard/dashboard-onboarding";
 import { useTimeGreeting } from "@/lib/home/use-time-greeting";
 import { formatContinueRelative } from "@/lib/home/build-continue-studying";
@@ -23,6 +28,14 @@ import {
 } from "@/lib/micro-study/professional-route";
 import { recordMicroActivity } from "@/lib/micro-study/record-activity";
 import "@/components/micro-study/micro-study-mobile.css";
+import "@/components/micro-study/micro-study-desktop.css";
+
+const QUICK_LINKS = [
+  { href: "/organizers", label: "Organizadores", icon: Brain },
+  { href: "/fuentes-juridicas", label: "Fuentes", icon: Gavel },
+  { href: "/upload-material", label: "Subir PDF", icon: Upload },
+  { href: "/cuaderno", label: "Cuaderno IA", icon: Layers3 },
+] as const;
 
 function fade(index: number) {
   return {
@@ -41,6 +54,10 @@ export function MicroStudyDashboard(props: Props) {
     showOnboarding,
     continueStudying,
     studyStreakDays,
+    materialsThisWeek,
+    pagesUnderstood,
+    totalOrganizers,
+    totalShared,
     microStudy,
   } = props;
 
@@ -52,18 +69,41 @@ export function MicroStudyDashboard(props: Props) {
   );
 
   return (
-    <div className="ms-micro">
+    <div className="ms-micro ms-home">
       <motion.header className="ms-micro__head" {...fade(0)}>
         <div>
           <p className="ms-micro__kicker">
-            <Scale size={13} />
-            {currentCycle ?? "MemoriaStudy"}
+            <Scale size={13} aria-hidden className="ms-micro__kicker-mobile-only" />
+            <Sparkles size={13} aria-hidden className="ms-micro__kicker-desktop-only" />
+            <span className="ms-micro__kicker-mobile-only">{currentCycle ?? "MemoriaStudy"}</span>
+            <span className="ms-micro__kicker-desktop-only">
+              {currentCycle
+                ? `${UNT_DERECHO.university} / ${currentCycle}`
+                : UNT_DERECHO.university}
+            </span>
           </p>
           <h1 className="ms-micro__greeting">
             {greeting}, {firstName}
           </h1>
         </div>
         <span className="ms-micro__streak-pill">{studyStreakDays} d activos</span>
+        <div className="ms-micro__head-metrics" aria-label="Métricas de estudio">
+          <span>
+            <strong>{studyStreakDays}</strong> d racha
+          </span>
+          <span>
+            <strong>{materialsThisWeek}</strong> nuevos
+          </span>
+          <span>
+            <strong>{pagesUnderstood}</strong> págs.
+          </span>
+          <span>
+            <strong>{totalOrganizers}</strong> org.
+          </span>
+          <span>
+            <strong>{totalShared}</strong> docs
+          </span>
+        </div>
       </motion.header>
 
       {showOnboarding ? (
@@ -102,6 +142,7 @@ export function MicroStudyDashboard(props: Props) {
         )}
       </motion.section>
 
+      <div className="ms-micro__bento">
       {/* 2. Concepto del día — desde materiales del usuario */}
       <motion.article className="ms-micro__card ms-micro__card--concept" {...fade(3)}>
         <p className="ms-micro__card-label">
@@ -157,7 +198,7 @@ export function MicroStudyDashboard(props: Props) {
       </motion.article>
 
       {/* 4. Tengo 5 minutos */}
-      <motion.section {...fade(5)}>
+      <motion.section className="ms-micro__five-min-wrap" {...fade(5)}>
         <Link href="/micro-estudio" className="ms-micro__five-min">
           <span className="ms-micro__five-min-icon">
             <Zap size={22} strokeWidth={2.2} />
@@ -211,6 +252,16 @@ export function MicroStudyDashboard(props: Props) {
           </ol>
         </details>
       </motion.section>
+      </div>
+
+      <motion.nav className="ms-micro__quick-links" {...fade(7)} aria-label="Accesos rápidos">
+        {QUICK_LINKS.map((item) => (
+          <Link key={item.href} href={item.href} className="ms-micro__quick-link">
+            <item.icon size={12} />
+            {item.label}
+          </Link>
+        ))}
+      </motion.nav>
     </div>
   );
 }
