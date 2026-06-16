@@ -263,6 +263,19 @@ body {
     justify-content: center;
   }
 
+  .shell--cuaderno .cn-unified-library .cn-notes-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px;
+  }
+
+  .shell--cuaderno .cn-unified-library .cn-grid-card {
+    padding: 10px;
+  }
+
+  .shell--cuaderno .cn-unified-library .cn-grid-card-title {
+    font-size: 0.8125rem;
+  }
+
   .shell--cuaderno #main-content {
     overflow-x: hidden;
   }

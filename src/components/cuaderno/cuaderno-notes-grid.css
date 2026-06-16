@@ -207,56 +207,54 @@
   }
 }
 
-/* Dark mode */
-@media (prefers-color-scheme: dark) {
-  .cn-notes-grid-container {
-    background: #1c1c1e;
-  }
+/* Tema oscuro de la app */
+html.dark .cn-notes-grid-container {
+  background: #1c1c1e;
+}
 
-  .cn-grid-card {
-    background: linear-gradient(135deg, #2c2c2e 0%, #1c1c1e 100%);
-    border-color: #424245;
-  }
+html.dark .cn-grid-card {
+  background: linear-gradient(135deg, #2c2c2e 0%, #1c1c1e 100%);
+  border-color: #424245;
+}
 
-  .cn-grid-card:hover {
-    border-color: #555555;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
-  }
+html.dark .cn-grid-card:hover {
+  border-color: #555555;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+}
 
-  .cn-grid-card-title {
-    color: #ffffff;
-  }
+html.dark .cn-grid-card-title {
+  color: #ffffff;
+}
 
-  .cn-grid-card-preview {
-    color: #999999;
-  }
+html.dark .cn-grid-card-preview {
+  color: #999999;
+}
 
-  .cn-grid-card-footer {
-    border-top-color: rgba(255, 255, 255, 0.1);
-  }
+html.dark .cn-grid-card-footer {
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
 
-  .cn-grid-course {
-    color: #0a84ff;
-  }
+html.dark .cn-grid-course {
+  color: #0a84ff;
+}
 
-  .cn-grid-card-menu {
-    color: #666666;
-  }
+html.dark .cn-grid-card-menu {
+  color: #666666;
+}
 
-  .cn-grid-card:hover .cn-grid-card-menu {
-    color: #ffffff;
-  }
+html.dark .cn-grid-card:hover .cn-grid-card-menu {
+  color: #ffffff;
+}
 
-  .cn-grid-card-menu:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #ffffff;
-  }
+html.dark .cn-grid-card-menu:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
 
-  .cn-grid-favorite-btn {
-    color: #666666;
-  }
+html.dark .cn-grid-favorite-btn {
+  color: #666666;
+}
 
-  .cn-grid-favorite-btn:hover {
-    color: #ff3b30;
-  }
+html.dark .cn-grid-favorite-btn:hover {
+  color: #ff3b30;
 }

@@ -481,6 +481,68 @@
   }
 }
 
+/* iPhone — dos cuadernos por fila, más compactos */
+@media (max-width: 767px) {
+  .cn-shelf-row--library {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 10px;
+    overflow-x: visible;
+    padding: 14px 6px 20px;
+    scroll-snap-type: none;
+    align-items: start;
+  }
+
+  .cn-shelf-book-slot--library {
+    flex: unset;
+    width: 100%;
+    scroll-snap-align: unset;
+  }
+
+  .cn-notebook-wrap--shelf .cn-notebook-cover {
+    width: 100%;
+    min-height: 200px;
+    max-width: none;
+  }
+
+  .cn-notebook-wrap--shelf .cn-notebook-body {
+    padding: 18px 12px 14px 20px;
+  }
+
+  .cn-notebook-wrap--shelf .cn-notebook-icon {
+    font-size: 1.75rem;
+  }
+
+  .cn-notebook-wrap--shelf .cn-notebook-title {
+    margin-top: 8px;
+    font-size: 0.76rem;
+    line-height: 1.25;
+  }
+
+  .cn-notebook-wrap--shelf .cn-notebook-course {
+    margin-top: 4px;
+    font-size: 0.65rem;
+  }
+
+  .cn-notebook-wrap--shelf .cn-notebook-meta-shelf {
+    padding-top: 12px;
+  }
+
+  .cn-shelf-cover-gen {
+    font-size: 0.68rem;
+    margin-top: 6px;
+  }
+
+  .cn-shelf-stage::before {
+    display: none;
+  }
+
+  .cn-shelf-plank--library {
+    height: 10px;
+    margin-inline: 4px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .cn-bookshelf-hero-cta:hover,
   .cn-smart-module:hover {

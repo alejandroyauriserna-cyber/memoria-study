@@ -318,6 +318,38 @@ html:not(.dark) .cn-unified-library .cn-view-switcher--dark .cn-view-btn[data-ac
   color: var(--foreground);
 }
 
+html:not(.dark) .cn-unified-library .cn-view-switcher,
+html:not(.dark) .cn-unified-library .cn-view-switcher--dark {
+  background: #eef2f6;
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+}
+
+html:not(.dark) .cn-unified-library .cn-view-switcher--dark .cn-view-btn {
+  color: var(--muted-foreground);
+}
+
+html:not(.dark) .cn-unified-library .cn-view-switcher--dark .cn-view-btn[data-active="true"] {
+  background: #ffffff;
+  border-color: color-mix(in srgb, var(--border) 85%, transparent);
+  color: var(--accent);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+html:not(.dark) .cn-unified-library .cn-notes-header-pro--dark .cn-action-btn {
+  background: #ffffff;
+  border-color: color-mix(in srgb, var(--border) 85%, transparent);
+  color: var(--muted-foreground);
+}
+
+html:not(.dark) .cn-unified-library .cn-notes-header-pro--dark .cn-action-btn:hover {
+  background: color-mix(in srgb, var(--accent) 6%, #fff);
+  color: var(--foreground);
+}
+
+html:not(.dark) .cn-unified-library .cn-notes-grid-container--dark {
+  background: transparent;
+}
+
 @media (max-width: 900px) {
   .cn-unified-layout {
     flex-direction: column;

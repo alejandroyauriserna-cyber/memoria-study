@@ -283,70 +283,68 @@
   }
 }
 
-/* Dark mode */
-@media (prefers-color-scheme: dark) {
-  .cn-notes-header-pro {
-    background: linear-gradient(135deg, #1c1c1e 0%, #2c2c2e 100%);
-    border-bottom-color: #424245;
-  }
+/* Tema oscuro de la app */
+html.dark .cn-notes-header-pro {
+  background: linear-gradient(135deg, #1c1c1e 0%, #2c2c2e 100%);
+  border-bottom-color: #424245;
+}
 
-  .cn-header-title {
-    color: #ffffff;
-  }
+html.dark .cn-header-title {
+  color: #ffffff;
+}
 
-  .cn-header-subtitle {
-    color: #999999;
-  }
+html.dark .cn-header-subtitle {
+  color: #999999;
+}
 
-  .cn-header-stats-badge {
-    background: rgba(10, 132, 255, 0.1);
-    border-color: rgba(10, 132, 255, 0.2);
-  }
+html.dark .cn-header-stats-badge {
+  background: rgba(10, 132, 255, 0.1);
+  border-color: rgba(10, 132, 255, 0.2);
+}
 
-  .cn-stat-value {
-    color: #0a84ff;
-  }
+html.dark .cn-stat-value {
+  color: #0a84ff;
+}
 
-  .cn-search-input-pro {
-    background: #2c2c2e;
-    border-color: #424245;
-    color: #ffffff;
-  }
+html.dark .cn-search-input-pro {
+  background: #2c2c2e;
+  border-color: #424245;
+  color: #ffffff;
+}
 
-  .cn-search-input-pro:focus {
-    background: #3a3a3c;
-    border-color: #0a84ff;
-    box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.15);
-  }
+html.dark .cn-search-input-pro:focus {
+  background: #3a3a3c;
+  border-color: #0a84ff;
+  box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.15);
+}
 
-  .cn-search-input-pro::placeholder {
-    color: #666666;
-  }
+html.dark .cn-search-input-pro::placeholder {
+  color: #666666;
+}
 
-  .cn-action-btn {
-    background: #2c2c2e;
-    border-color: #424245;
-    color: #999999;
-  }
+html.dark .cn-action-btn {
+  background: #2c2c2e;
+  border-color: #424245;
+  color: #999999;
+}
 
-  .cn-action-btn:hover {
-    background: #3a3a3c;
-    color: #ffffff;
-    border-color: #555555;
-  }
+html.dark .cn-action-btn:hover {
+  background: #3a3a3c;
+  color: #ffffff;
+  border-color: #555555;
+}
 
-  .cn-search-suggestions {
-    background: #2c2c2e;
-    border-color: #424245;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  }
+html.dark .cn-search-suggestions {
+  background: #2c2c2e;
+  border-color: #424245;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
 
-  .cn-suggestion-item {
-    color: #ffffff;
-  }
+html.dark .cn-suggestion-item {
+  color: #ffffff;
+}
 
-  .cn-suggestion-item:hover {
-    background: #3a3a3c;
-    color: #0a84ff;
-  }
+html.dark .cn-suggestion-item:hover {
+  background: #3a3a3c;
+  color: #0a84ff;
 }

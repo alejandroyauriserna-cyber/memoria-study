@@ -40,25 +40,23 @@
   pointer-events: none;
 }
 
-/* Dark mode */
-@media (prefers-color-scheme: dark) {
-  .cn-view-switcher {
-    background: #2c2c2e;
-  }
+/* Tema oscuro de la app (no prefers-color-scheme del sistema) */
+html.dark .cn-view-switcher {
+  background: #2c2c2e;
+}
 
-  .cn-view-btn {
-    color: #999999;
-  }
+html.dark .cn-view-btn {
+  color: #999999;
+}
 
-  .cn-view-btn:hover {
-    background: rgba(10, 132, 255, 0.1);
-    color: #0a84ff;
-  }
+html.dark .cn-view-btn:hover {
+  background: rgba(10, 132, 255, 0.1);
+  color: #0a84ff;
+}
 
-  .cn-view-btn[data-active="true"] {
-    background: #1c1c1e;
-    border-color: #424245;
-    color: #0a84ff;
-    box-shadow: 0 2px 8px rgba(10, 132, 255, 0.15);
-  }
+html.dark .cn-view-btn[data-active="true"] {
+  background: #1c1c1e;
+  border-color: #424245;
+  color: #0a84ff;
+  box-shadow: 0 2px 8px rgba(10, 132, 255, 0.15);
 }
