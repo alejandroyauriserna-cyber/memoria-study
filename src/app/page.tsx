@@ -11,10 +11,10 @@ import {
   Network,
   Scale,
   Sparkles,
+  Zap,
 } from "lucide-react";
 import { AppShell } from "@/components/ui/shell";
 import { DashboardOnboarding } from "@/components/dashboard/dashboard-onboarding";
-import { PremiumDashboard } from "@/components/dashboard/premium-dashboard";
 import { LegalAiHero } from "@/components/home/legal-ai-hero";
 import { TimeGreetingText } from "@/components/home/time-greeting-text";
 import { MobilePwaMicroEntry } from "@/components/pwa/mobile-pwa-micro-entry";
@@ -85,12 +85,8 @@ export default async function Home() {
 
   return (
     <AppShell>
-      {isAuthenticated && dashboardProps ? (
-        <>
-          <MobilePwaMicroEntry />
-          <PremiumDashboard {...dashboardProps} />
-        </>
-      ) : (
+      {isAuthenticated ? <MobilePwaMicroEntry /> : null}
+
       <div className="ms-home mx-auto w-full max-w-7xl px-4 pb-12 pt-6 sm:px-6 lg:px-8">
         {dashboardProps?.showOnboarding ? (
           <div className="mb-4">
@@ -132,6 +128,13 @@ export default async function Home() {
                     className="tron-btn-secondary inline-flex h-12 items-center justify-center rounded-xl px-6 text-sm font-semibold"
                   >
                     Abrir cuaderno IA
+                  </Link>
+                  <Link
+                    href="/micro-estudio"
+                    className="tron-btn-secondary inline-flex h-12 items-center justify-center gap-2 rounded-xl px-6 text-sm font-semibold md:hidden"
+                  >
+                    <Zap size={16} />
+                    Tengo 5 min
                   </Link>
                 </>
               ) : (
@@ -267,7 +270,6 @@ export default async function Home() {
             : "Vista previa del asistente / requiere cuenta para guardar tu progreso"}
         </p>
       </div>
-      )}
     </AppShell>
   );
 }
