@@ -10,6 +10,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { UserMenu } from "@/components/ui/user-menu";
 import { OfflineSyncBanner } from "@/components/ui/offline-sync-banner";
 import { MobileNavMenu } from "@/components/ui/mobile-nav-menu";
+import { MobileBackButton } from "@/components/ui/mobile-back-button";
 import { JurisprudenceAdminNavLink } from "@/components/jurisprudence/jurisprudence-admin-nav-link";
 
 const NAV = [
@@ -64,7 +65,9 @@ export function AppShell({
             isHome ? "py-2 sm:py-2.5" : "py-2.5 sm:py-3"
           }`}
         >
-          <Link
+          <div className="shell-header-start flex min-w-0 shrink-0 items-center gap-1">
+            {!isHome && !compactShell ? <MobileBackButton /> : null}
+            <Link
             href="/"
             className={`group flex shrink-0 items-center gap-2.5 transition ${
               isHome
@@ -90,6 +93,7 @@ export function AppShell({
               ) : null}
             </div>
           </Link>
+          </div>
 
           {!compactShell ? (
           <nav className="hidden min-w-0 flex-1 items-center justify-center gap-0.5 overflow-x-auto md:flex lg:gap-1" aria-label="Navegación principal">

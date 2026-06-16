@@ -1,0 +1,113 @@
+
+/* iPhone / móvil — Materiales (/library). Solo max-width 767px; PC sin cambios. */
+
+@media (max-width: 767px) {
+  .ms-home.library-page {
+    width: 100%;
+    max-width: 100%;
+    padding-top: 0.75rem;
+    padding-inline: max(0.75rem, env(safe-area-inset-left, 0px))
+      max(0.75rem, env(safe-area-inset-right, 0px));
+    overflow-x: hidden;
+    box-sizing: border-box;
+  }
+
+  .library-page-hero {
+    min-height: auto !important;
+    grid-template-columns: 1fr !important;
+    align-items: start;
+    gap: 1rem;
+    padding: 1rem !important;
+    border-radius: 1rem !important;
+    overflow: hidden;
+  }
+
+  .library-page-hero-copy,
+  .library-page-stats,
+  .library-hero-console {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .library-page-hero-copy h1 {
+    max-width: none !important;
+    font-size: clamp(1.3rem, 5.2vw, 1.65rem) !important;
+    line-height: 1.15 !important;
+    letter-spacing: -0.02em !important;
+    text-wrap: pretty;
+    overflow-wrap: anywhere;
+  }
+
+  .library-page-hero-copy .ms-home-lead {
+    max-width: none !important;
+    font-size: 0.875rem !important;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+  }
+
+  .library-hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+
+  .library-hero-action {
+    width: 100%;
+    min-height: 2.75rem;
+    justify-content: center;
+  }
+
+  .library-hero-console {
+    border-radius: 0.85rem;
+    padding: 0.75rem;
+    overflow: hidden;
+  }
+
+  .library-hero-console-top {
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .library-page-stats {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+
+  .library-page-stat {
+    min-height: auto;
+    padding: 0.65rem 0.75rem;
+  }
+
+  .library-page-stat strong {
+    font-size: 1.1rem;
+  }
+
+  .library-welcome-stage {
+    display: none;
+  }
+
+  .library-search-bar,
+  .library-toolbar,
+  .library-cycles-grid,
+  .library-materials-grid {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .library-hero-console-top span,
+  .library-page-stat span {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .library-page-hero::after {
+    display: none;
+  }
+}
+
+@media (max-width: 430px) {
+  .library-page-stats {
+    grid-template-columns: 1fr;
+  }
+}

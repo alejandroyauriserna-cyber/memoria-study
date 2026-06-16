@@ -22,6 +22,29 @@ body {
     align-items: center;
   }
 
+  .shell-header-start {
+    min-width: 0;
+  }
+
+  .shell-mobile-back {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    flex-shrink: 0;
+    border-radius: 0.65rem;
+    border: 1px solid var(--border);
+    background: var(--shell-card-bg);
+    color: var(--foreground);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .shell-mobile-back:active {
+    background: color-mix(in srgb, var(--accent) 10%, var(--shell-card-bg));
+  }
+
   .shell-header-actions {
     margin-left: auto;
   }
@@ -164,10 +187,125 @@ body {
 }
 
 /* Biblioteca y páginas con max-w-7xl */
+@media (max-width: 767px) {
+  .max-w-7xl.ms-home,
+  .max-w-7xl.bj-page-wrap {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    box-sizing: border-box;
+  }
+}
+
 @media (max-width: 430px) {
   .max-w-7xl {
     padding-left: max(0.75rem, env(safe-area-inset-left));
     padding-right: max(0.75rem, env(safe-area-inset-right));
+  }
+}
+
+/* Cuaderno — sidebar no debe empujar ni superponer contenido en iPhone */
+@media (max-width: 767px) {
+  .shell--cuaderno .cn-apple-notes-main {
+    margin-left: 0 !important;
+    width: 100% !important;
+    min-width: 0;
+  }
+
+  .shell--cuaderno .cn-notes-sidebar,
+  .shell--cuaderno .cn-unified-library .cn-notes-sidebar {
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+    bottom: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 220px !important;
+    z-index: auto !important;
+    box-shadow: none !important;
+    flex-shrink: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .shell--cuaderno .cn-apple-notes-layout,
+  .shell--cuaderno .cn-unified-layout {
+    flex-direction: column !important;
+    height: auto;
+    min-height: 0 !important;
+  }
+
+  .shell--cuaderno .cn-unified-library {
+    width: 100%;
+    max-width: 100%;
+    padding-inline: max(0.75rem, env(safe-area-inset-left, 0px))
+      max(0.75rem, env(safe-area-inset-right, 0px));
+    overflow-x: hidden;
+    box-sizing: border-box;
+  }
+
+  .shell--cuaderno .cn-unified-main,
+  .shell--cuaderno .cn-notes-timeline,
+  .shell--cuaderno .cn-notes-grid-container {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .shell--cuaderno .cn-unified-nav {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .shell--cuaderno .cn-unified-join-btn {
+    margin-left: 0;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .shell--cuaderno #main-content {
+    overflow-x: hidden;
+  }
+}
+
+/* Editor inmersivo — ancho completo y botón atrás más fácil de tocar */
+@media (max-width: 767px) {
+  .cn-immersive-root--studio .cn-page-timeline {
+    display: none;
+  }
+
+  .cn-immersive-root--studio .cn-immersive-workspace {
+    min-width: 0;
+  }
+
+  .cn-immersive-root--studio .cn-immersive-canvas--studio .cn-canvas-viewport--immersive {
+    padding: 10px 6px 56px;
+  }
+
+  .cn-immersive-root--studio .cn-canvas-stage--immersive,
+  .cn-immersive-root--studio .cn-paper-stage-wrap {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .cn-immersive-root--studio .cn-paper-stage-wrap[data-page-size] {
+    width: 100% !important;
+  }
+
+  .cn-immersive-header-icon--back {
+    width: 2.75rem !important;
+    height: 2.75rem !important;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+  }
+
+  .cn-immersive-root--studio .cn-side-rail {
+    right: 4px;
+    padding: 6px 4px;
+  }
+
+  .cn-immersive-root--studio .cn-side-rail-btn {
+    width: 44px;
   }
 }
 
