@@ -499,6 +499,60 @@
   padding: 0.9rem 1.1rem;
 }
 
+/* Micro estudio — acceso rápido solo móvil */
+.dash-home__mobile-micro-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(0, 255, 213, 0.28);
+  background: linear-gradient(135deg, rgba(0, 255, 213, 0.12), rgba(0, 180, 160, 0.06));
+  text-decoration: none;
+  color: inherit;
+}
+
+.dash-home__mobile-micro-icon {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.65rem;
+  background: rgba(0, 255, 213, 0.18);
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.dash-home__mobile-micro-link strong {
+  display: block;
+  font-size: 0.9rem;
+  color: #f8fafc;
+}
+
+.dash-home__mobile-micro-link small {
+  display: block;
+  margin-top: 0.1rem;
+  font-size: 0.72rem;
+  color: rgba(226, 232, 240, 0.75);
+}
+
+html:not(.dark) .dash-home__mobile-micro-link {
+  border-color: color-mix(in srgb, var(--accent) 28%, transparent);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--accent) 12%, #fff),
+    color-mix(in srgb, var(--accent) 5%, #fff)
+  );
+}
+
+html:not(.dark) .dash-home__mobile-micro-link strong {
+  color: var(--foreground);
+}
+
+html:not(.dark) .dash-home__mobile-micro-link small {
+  color: var(--muted-foreground);
+}
+
 /* Aliases onboarding / PWA */
 .premium-dash__pill {
   display: inline-flex;
@@ -585,6 +639,38 @@ html:not(.dark) .dash-home__hero-time-badge {
 
 html:not(.dark) .dash-home__metrics-inline strong {
   color: var(--foreground);
+}
+
+html:not(.dark) .dash-home__greeting {
+  color: var(--foreground);
+}
+
+html:not(.dark) .dash-home__metrics-inline {
+  color: var(--muted-foreground);
+}
+
+html:not(.dark) .dash-home__cuaderno-title,
+html:not(.dark) .dash-home__library-title {
+  color: var(--foreground);
+}
+
+html:not(.dark) .dash-home__cuaderno-copy,
+html:not(.dark) .dash-home__library-copy,
+html:not(.dark) .dash-home__insight-context,
+html:not(.dark) .dash-home__empty {
+  color: var(--muted-foreground);
+}
+
+html:not(.dark) .dash-home__insight-text {
+  color: var(--foreground);
+}
+
+html:not(.dark) .dash-home__panel-label {
+  color: var(--muted-foreground);
+}
+
+html:not(.dark) .dash-home__kicker {
+  color: var(--accent);
 }
 
 html:not(.dark) .dash-home__glass {

@@ -1084,72 +1084,86 @@
   }
 }
 
-/* Modo claro — legibilidad en iPhone (textos no blancos sobre fondo claro) */
-@media (max-width: 767px) {
-  html:not(.dark) .ms-micro__greeting {
-    color: var(--foreground);
-  }
+/* Modo claro — legibilidad (micro-estudio y cards) */
+html:not(.dark) .ms-micro__greeting {
+  color: var(--foreground);
+}
 
-  html:not(.dark) .ms-micro__card {
-    --ms-micro-panel: rgba(255, 255, 255, 0.94);
-    border-color: color-mix(in srgb, var(--border) 80%, transparent);
-    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
-  }
+html:not(.dark) .ms-micro__card {
+  --ms-micro-panel: rgba(255, 255, 255, 0.94);
+  border-color: color-mix(in srgb, var(--border) 80%, transparent);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
 
-  html:not(.dark) .ms-micro__card-title,
-  html:not(.dark) .ms-micro__five-min-copy strong {
-    color: var(--foreground);
-  }
+html:not(.dark) .ms-micro__card-title,
+html:not(.dark) .ms-micro__five-min-copy strong {
+  color: var(--foreground);
+}
 
-  html:not(.dark) .ms-micro__card-def {
-    color: color-mix(in srgb, var(--foreground) 78%, transparent);
-  }
+html:not(.dark) .ms-micro__card-def {
+  color: color-mix(in srgb, var(--foreground) 78%, transparent);
+}
 
-  html:not(.dark) .ms-micro__card-summary,
-  html:not(.dark) .ms-micro__card-source,
-  html:not(.dark) .ms-micro__ai-badge,
-  html:not(.dark) .ms-micro__time {
-    color: var(--muted-foreground);
-  }
+html:not(.dark) .ms-micro__card-summary,
+html:not(.dark) .ms-micro__card-source,
+html:not(.dark) .ms-micro__ai-badge,
+html:not(.dark) .ms-micro__time {
+  color: var(--muted-foreground);
+}
 
-  html:not(.dark) .ms-micro__continue-hero {
-    background:
-      linear-gradient(140deg, color-mix(in srgb, var(--accent) 12%, #fff), transparent 42%),
-      linear-gradient(160deg, #f0faf8 0%, #e8f4f2 100%);
-    border-color: color-mix(in srgb, var(--accent) 28%, transparent);
-    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
-  }
+html:not(.dark) .ms-micro__continue-hero {
+  background:
+    linear-gradient(140deg, color-mix(in srgb, var(--accent) 12%, #fff), transparent 42%),
+    linear-gradient(160deg, #f0faf8 0%, #e8f4f2 100%);
+  border-color: color-mix(in srgb, var(--accent) 28%, transparent);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
 
-  html:not(.dark) .ms-micro__continue-hero-title {
-    color: var(--foreground);
-  }
+html:not(.dark) .ms-micro__continue-hero-title {
+  color: var(--foreground);
+}
 
-  html:not(.dark) .ms-micro__continue-hero-meta {
-    color: var(--muted-foreground);
-  }
+html:not(.dark) .ms-micro__continue-hero-meta {
+  color: var(--muted-foreground);
+}
 
-  html:not(.dark) .ms-micro__five-min {
-    background: linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--accent) 14%, #fff),
-      color-mix(in srgb, var(--accent) 6%, #fff)
-    );
-  }
+html:not(.dark) .ms-micro__five-min {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--accent) 14%, #fff),
+    color-mix(in srgb, var(--accent) 6%, #fff)
+  );
+}
 
-  html:not(.dark) .ms-micro__five-min-copy small {
-    color: var(--muted-foreground);
-  }
+html:not(.dark) .ms-micro__five-min-copy small {
+  color: var(--muted-foreground);
+}
 
-  html:not(.dark) .ms-micro__route-full {
-    --ms-micro-panel: rgba(255, 255, 255, 0.94);
-    border-color: color-mix(in srgb, var(--border) 80%, transparent);
-  }
+html:not(.dark) .ms-micro__route-full {
+  --ms-micro-panel: rgba(255, 255, 255, 0.94);
+  border-color: color-mix(in srgb, var(--border) 80%, transparent);
+}
 
-  html:not(.dark) .ms-micro__section-head h2 {
-    color: var(--foreground);
-  }
+html:not(.dark) .ms-micro__section-head h2 {
+  color: var(--foreground);
+}
 
-  html:not(.dark) .ms-micro__route-step.is-locked {
-    color: var(--muted-foreground);
-  }
+html:not(.dark) .ms-micro__route-step.is-locked {
+  color: var(--muted-foreground);
+}
+
+html:not(.dark) .ms-session__intro h1,
+html:not(.dark) .ms-session__step h2,
+html:not(.dark) .ms-session__done h1 {
+  color: var(--foreground);
+}
+
+html:not(.dark) .ms-session__body,
+html:not(.dark) .ms-session__intro p,
+html:not(.dark) .ms-session__done p {
+  color: var(--muted-foreground);
+}
+
+html:not(.dark) .ms-session__flashcard strong {
+  color: var(--foreground);
 }

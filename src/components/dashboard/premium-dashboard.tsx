@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { DashboardOnboarding } from "@/components/dashboard/dashboard-onboarding";
 import { PwaInstallHint } from "@/components/dashboard/pwa-install-hint";
+import { Zap } from "lucide-react";
 import { useTimeGreeting } from "@/lib/home/use-time-greeting";
 import { UNT_DERECHO } from "@/lib/academic/unt-derecho";
 import type {
@@ -113,6 +114,19 @@ export function PremiumDashboard({
           <DashboardOnboarding show />
         </motion.div>
       ) : null}
+
+      <motion.div className="dash-home__mobile-micro md:hidden" {...fade(1)}>
+        <Link href="/micro-estudio" className="dash-home__mobile-micro-link">
+          <span className="dash-home__mobile-micro-icon">
+            <Zap size={18} strokeWidth={2.2} />
+          </span>
+          <span className="min-w-0">
+            <strong>Tengo 5 minutos</strong>
+            <small>Micro sesión · conceptos, flashcards y quiz</small>
+          </span>
+          <ArrowRight size={16} />
+        </Link>
+      </motion.div>
 
       {/* 1. Hero — continuar estudiando */}
       <motion.section className="dash-home__hero" {...fade(2)} aria-label="Continuar estudiando">

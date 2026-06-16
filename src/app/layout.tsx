@@ -8,6 +8,7 @@ import "./library-modern.css";
 import "./favorites-modern.css";
 import "./fuentes-modern.css";
 import "./biblioteca-juridica-modern.css";
+import "./biblioteca-juridica-mobile.css";
 import "./profile-modern.css";
 import "./auth-modern.css";
 import "./organizers-2026.css";

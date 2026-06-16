@@ -14,11 +14,11 @@ import {
 } from "lucide-react";
 import { AppShell } from "@/components/ui/shell";
 import { DashboardOnboarding } from "@/components/dashboard/dashboard-onboarding";
+import { PremiumDashboard } from "@/components/dashboard/premium-dashboard";
 import { LegalAiHero } from "@/components/home/legal-ai-hero";
 import { TimeGreetingText } from "@/components/home/time-greeting-text";
-import { MicroStudyDashboard } from "@/components/micro-study/micro-study-dashboard";
+import { MobilePwaMicroEntry } from "@/components/pwa/mobile-pwa-micro-entry";
 import { loadMemoriaDashboardProps } from "@/lib/home/load-dashboard-props";
-import { loadMicroStudyDashboardProps } from "@/lib/micro-study/load-micro-dashboard";
 import { formatProfileFirstName } from "@/lib/profile/display-name";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/env";
@@ -59,7 +59,6 @@ const FEATURE_CARDS = [
 
 export default async function Home() {
   let dashboardProps = null;
-  let microStudyProps = null;
 
   if (hasSupabaseEnv()) {
     const supabase = await createClient();
@@ -68,14 +67,11 @@ export default async function Home() {
     } = await supabase.auth.getUser();
 
     if (user) {
-      [dashboardProps, microStudyProps] = await Promise.all([
-        loadMemoriaDashboardProps(user),
-        loadMicroStudyDashboardProps(user.id),
-      ]);
+      dashboardProps = await loadMemoriaDashboardProps(user);
     }
   }
 
-  const isAuthenticated = Boolean(dashboardProps && microStudyProps);
+  const isAuthenticated = Boolean(dashboardProps);
   const firstName = dashboardProps
     ? formatProfileFirstName(dashboardProps.profileName)
     : "Estudiante";
@@ -89,8 +85,11 @@ export default async function Home() {
 
   return (
     <AppShell>
-      {isAuthenticated && dashboardProps && microStudyProps ? (
-        <MicroStudyDashboard {...dashboardProps} microStudy={microStudyProps} />
+      {isAuthenticated && dashboardProps ? (
+        <>
+          <MobilePwaMicroEntry />
+          <PremiumDashboard {...dashboardProps} />
+        </>
       ) : (
       <div className="ms-home mx-auto w-full max-w-7xl px-4 pb-12 pt-6 sm:px-6 lg:px-8">
         {dashboardProps?.showOnboarding ? (
