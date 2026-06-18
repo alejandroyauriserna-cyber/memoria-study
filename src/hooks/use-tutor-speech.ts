@@ -32,6 +32,14 @@ export function useTutorSpeech() {
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
   const keepAliveAudioRef = useRef<HTMLAudioElement | null>(null);
   const rateRef = useRef<TutorSpeechRate>(1);
+  const suspendedRef = useRef<{
+    script: string;
+    chunks: string[];
+    chunkIndex: number;
+    estimatedDurationSec: number;
+    elapsedSec: number;
+    startedAt: number;
+  } | null>(null);
 
   const [status, setStatus] = useState<TutorSpeechStatus>("idle");
   const [rate, setRate] = useState<TutorSpeechRate>(1);
@@ -40,6 +48,9 @@ export function useTutorSpeech() {
   const [error, setError] = useState<string | null>(null);
   const [supported] = useState(() => isSpeechSynthesisSupported());
   const [backgroundMode, setBackgroundMode] = useState(false);
+  const [lessonSuspended, setLessonSuspended] = useState(false);
+  const [awaitingResume, setAwaitingResume] = useState(false);
+  const [isSnippet, setIsSnippet] = useState(false);
 
   rateRef.current = rate;
 
@@ -139,6 +150,10 @@ export function useTutorSpeech() {
         // ignore
       }
     }
+    suspendedRef.current = null;
+    setLessonSuspended(false);
+    setAwaitingResume(false);
+    setIsSnippet(false);
     setStatus((s) => (s === "loading" ? s : scriptRef.current ? "ready" : "idle"));
   }, [supported, clearTick, clearResumeGuard, releaseWakeLock, stopKeepAlive]);
 
@@ -181,6 +196,10 @@ export function useTutorSpeech() {
     stop();
     scriptRef.current = "";
     chunksRef.current = [];
+    suspendedRef.current = null;
+    setLessonSuspended(false);
+    setAwaitingResume(false);
+    setIsSnippet(false);
     setEstimatedDurationSec(0);
     setStatus("idle");
     setError(null);
@@ -292,6 +311,125 @@ export function useTutorSpeech() {
     queueChunks(chunks, voice, 0);
   }, [status, supported, startTick, queueChunks, startResumeGuard, requestWakeLock, startKeepAlive]);
 
+  const suspendLesson = useCallback(() => {
+    if (!scriptRef.current || suspendedRef.current) return;
+    window.speechSynthesis.cancel();
+    suspendedRef.current = {
+      script: scriptRef.current,
+      chunks: [...chunksRef.current],
+      chunkIndex: chunkIndexRef.current,
+      estimatedDurationSec,
+      elapsedSec,
+      startedAt: startedAtRef.current || Date.now(),
+    };
+    clearTick();
+    clearResumeGuard();
+    void releaseWakeLock();
+    stopKeepAlive();
+    setLessonSuspended(true);
+    setAwaitingResume(false);
+    setIsSnippet(false);
+    setStatus("paused");
+  }, [
+    estimatedDurationSec,
+    elapsedSec,
+    clearTick,
+    clearResumeGuard,
+    releaseWakeLock,
+    stopKeepAlive,
+  ]);
+
+  const playSnippet = useCallback(
+    async (text: string): Promise<void> => {
+      if (!supported || !text.trim()) return;
+
+      if (!suspendedRef.current && scriptRef.current) {
+        suspendLesson();
+      }
+
+      window.speechSynthesis.cancel();
+      const voice = getCachedSpanishVoice() ?? (await waitForVoices());
+      const normalized = normalizeSpeechScript(text);
+      const utterance = new SpeechSynthesisUtterance(normalized);
+      utterance.lang = voice?.lang ?? "es-PE";
+      if (voice) utterance.voice = voice;
+      utterance.rate = rateRef.current;
+      utterance.pitch = 1;
+      utterance.volume = 1;
+
+      setIsSnippet(true);
+      setAwaitingResume(false);
+      setStatus("playing");
+      setError(null);
+      startTick();
+      void requestWakeLock();
+      startKeepAlive();
+      startResumeGuard();
+      setupMediaSession("Profesor IA — respuesta");
+
+      await new Promise<void>((resolve) => {
+        utterance.onend = () => {
+          clearTick();
+          clearResumeGuard();
+          void releaseWakeLock();
+          stopKeepAlive();
+          setIsSnippet(false);
+          setAwaitingResume(true);
+          setStatus("paused");
+          resolve();
+        };
+        utterance.onerror = () => {
+          clearTick();
+          clearResumeGuard();
+          setIsSnippet(false);
+          setStatus("error");
+          setError("No se pudo reproducir la respuesta.");
+          void releaseWakeLock();
+          stopKeepAlive();
+          resolve();
+        };
+        window.speechSynthesis.speak(utterance);
+      });
+    },
+    [
+      supported,
+      suspendLesson,
+      startTick,
+      clearTick,
+      clearResumeGuard,
+      requestWakeLock,
+      startKeepAlive,
+      startResumeGuard,
+      setupMediaSession,
+      releaseWakeLock,
+      stopKeepAlive,
+    ],
+  );
+
+  const resumeLesson = useCallback(async (): Promise<void> => {
+    const saved = suspendedRef.current;
+    if (!saved) {
+      void play();
+      return;
+    }
+
+    if (!supported) return;
+
+    window.speechSynthesis.cancel();
+    const voice = getCachedSpanishVoice() ?? (await waitForVoices());
+    scriptRef.current = saved.script;
+    chunksRef.current = saved.chunks;
+    chunkIndexRef.current = saved.chunkIndex;
+    setEstimatedDurationSec(saved.estimatedDurationSec);
+    setElapsedSec(saved.elapsedSec);
+    startedAtRef.current = saved.startedAt;
+    suspendedRef.current = null;
+    setLessonSuspended(false);
+    setAwaitingResume(false);
+    setIsSnippet(false);
+    queueChunks(saved.chunks, voice, saved.chunkIndex);
+  }, [supported, play, queueChunks]);
+
   const pause = useCallback(() => {
     if (!supported || status !== "playing") return;
     window.speechSynthesis.pause();
@@ -362,11 +500,17 @@ export function useTutorSpeech() {
     progressPercent,
     error,
     backgroundMode,
+    lessonSuspended,
+    awaitingResume,
+    isSnippet,
     loadScript,
     play,
     pause,
     stop,
     reset,
+    suspendLesson,
+    playSnippet,
+    resumeLesson,
     isPlaying: status === "playing",
     isPaused: status === "paused",
     canPlay: Boolean(scriptRef.current) && status !== "loading",

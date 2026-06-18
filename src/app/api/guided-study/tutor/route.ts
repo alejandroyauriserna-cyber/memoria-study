@@ -69,6 +69,7 @@ export async function POST(request: Request) {
       teachingStyle?: import("@/types/guided-legal-study").ProfessorTeachingStyle;
       caseNarrative?: import("@/types/guided-legal-study").CaseNarrativeThread;
       socraticMode?: boolean;
+      pedagogyMemoryHint?: string;
     };
 
     if (!body.materialId || !body.pageNumber) {
@@ -164,6 +165,7 @@ export async function POST(request: Request) {
         teachingStyle: body.teachingStyle,
         caseNarrative: body.caseNarrative,
         socraticMode: body.socraticMode,
+        pedagogyMemoryHint: body.pedagogyMemoryHint,
       });
 
       const answer = response.customReply?.trim();
@@ -236,6 +238,7 @@ export async function POST(request: Request) {
       userId: user.id,
       teachingStyle: body.teachingStyle,
       caseNarrative: body.caseNarrative,
+      pedagogyMemoryHint: body.pedagogyMemoryHint,
     });
 
     if (!body.skipCache) {

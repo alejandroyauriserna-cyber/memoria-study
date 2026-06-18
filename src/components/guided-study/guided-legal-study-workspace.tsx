@@ -73,10 +73,12 @@ import {
   markSpacedReviewDone,
 } from "@/lib/guided-study/spaced-repetition";
 import { getContinuityGreeting } from "@/lib/guided-study/session-continuity";
+import { recordNarrationMicroAction, buildNarrationMemoryPrompt, getNarrationMemory } from "@/lib/guided-study/tutor-voice/narration-session-memory";
 import { MasteryProgressBadge } from "@/components/guided-study/mastery-progress-badge";
 import { SurpriseQuestionOverlay } from "@/components/guided-study/surprise-question-overlay";
 import { SessionDiagnosisPanel } from "@/components/guided-study/session-diagnosis-panel";
 import { SpacedReviewBanner } from "@/components/guided-study/spaced-review-banner";
+import type { NarrationMicroAction } from "@/types/tutor-voice";
 import type { GuidedStudySession, OralDefenseEvaluation, ProfessorTeachingStyle, SurpriseQuestion } from "@/types/guided-legal-study";
 import {
   fetchCloudGuidedStudySession,
@@ -140,6 +142,11 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
   const [continuityDismissed, setContinuityDismissed] = useState(false);
   const [spacedSkippedIds, setSpacedSkippedIds] = useState<string[]>([]);
   const initialAnalysisDone = useRef(false);
+
+  const pedagogyMemoryHint = useMemo(
+    () => buildNarrationMemoryPrompt(getNarrationMemory(studySession)),
+    [studySession],
+  );
   const initProgress = useLoadingProgress(phase === "loading", "guidedStudyInit", {
     stageIntervalMs: 5500,
     tickMs: 800,
@@ -376,6 +383,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
             teachingStyle: professorStyle,
             caseNarrative: studySession?.caseNarrative,
             socraticMode: isSocraticTrigger(question),
+            pedagogyMemoryHint: pedagogyMemoryHint || undefined,
           }),
           signal: controller.signal,
         });
@@ -420,7 +428,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
         setTutorLoading(false);
       }
     },
-    [material, materialId, tutorScope, currentPage, index, examOnly, sourceSettings, professorStyle, studySession?.caseNarrative],
+    [material, materialId, tutorScope, currentPage, index, examOnly, sourceSettings, professorStyle, studySession?.caseNarrative, pedagogyMemoryHint],
   );
 
   const askTutorForVoice = useCallback(
@@ -461,6 +469,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
             teachingStyle: professorStyle,
             caseNarrative: studySession?.caseNarrative,
             socraticMode: isSocraticTrigger(question),
+            pedagogyMemoryHint: pedagogyMemoryHint || undefined,
           }),
           signal: controller.signal,
         });
@@ -495,7 +504,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
         window.clearTimeout(timeoutId);
       }
     },
-    [material, materialId, tutorScope, currentPage, index, examOnly, sourceSettings, professorStyle, studySession?.caseNarrative],
+    [material, materialId, tutorScope, currentPage, index, examOnly, sourceSettings, professorStyle, studySession?.caseNarrative, pedagogyMemoryHint],
   );
 
   const askTutor = useCallback(
@@ -560,6 +569,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
             skipCache: options?.skipCache ?? false,
             teachingStyle: professorStyle,
             caseNarrative: studySession?.caseNarrative,
+            pedagogyMemoryHint: pedagogyMemoryHint || undefined,
           }),
           signal: controller.signal,
         });
@@ -607,6 +617,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
       applyTutorResult,
       professorStyle,
       studySession?.caseNarrative,
+      pedagogyMemoryHint,
     ],
   );
 
@@ -838,6 +849,20 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
       },
       {},
     );
+    setStudySession(updated);
+  }
+
+  function handleNarrationMemoryUpdate(action: NarrationMicroAction, primaryConcept: string) {
+    const base =
+      studySession ??
+      loadGuidedStudySession(materialId) ?? {
+        materialId,
+        currentPage,
+        understoodPages: [],
+        lastUpdated: new Date().toISOString(),
+      };
+    const updated = recordNarrationMicroAction(base, action, primaryConcept);
+    saveGuidedStudySession(updated);
     setStudySession(updated);
   }
 
@@ -1157,6 +1182,8 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
             onContinuityDismiss={() => setContinuityDismissed(true)}
             onOralComplete={handleOralComplete}
             caseNarrativeTitle={studySession?.caseNarrative?.title}
+            studySession={studySession}
+            onNarrationMemoryUpdate={handleNarrationMemoryUpdate}
           />
           </div>
         </div>

@@ -1,4 +1,5 @@
 import type { LegalSourceAttribution } from "@/types/legal-sources";
+import type { NarrationMicroAction } from "@/types/tutor-voice";
 
 export type GuidedStudyTutorAction =
   | "analyze_page"
@@ -189,6 +190,13 @@ export type ConceptDifficulty = {
   attemptCount: number;
 };
 
+export type NarrationSessionMemory = {
+  simplerRequestCount: number;
+  conceptFocusCounts: Record<string, number>;
+  microActionCounts: Partial<Record<NarrationMicroAction, number>>;
+  lastFocusedConcept?: string;
+};
+
 export type OralDefenseEvaluation = {
   score: number;
   correctConcepts: string[];
@@ -322,6 +330,7 @@ export type GuidedStudySession = {
   spacedReviews?: SpacedReviewItem[];
   difficultConcepts?: ConceptDifficulty[];
   lastSessionEndedAt?: string;
+  narrationMemory?: NarrationSessionMemory;
 };
 
 export type PdfPageContent = {

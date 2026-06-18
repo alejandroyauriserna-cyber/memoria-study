@@ -4,6 +4,27 @@ export type TutorNarrationScript = {
   wordCount: number;
   estimatedDurationSec: number;
   generatedAt: string;
+  style?: NarrationStyle;
+};
+
+export type NarrationStyle = "quick" | "normal" | "magistral";
+
+export type NarrationMicroAction =
+  | "example"
+  | "simpler"
+  | "casacion"
+  | "exam"
+  | "repeat_main";
+
+export const NARRATION_MICRO_ACTION_LABELS: Record<
+  NarrationMicroAction,
+  { emoji: string; label: string }
+> = {
+  example: { emoji: "💡", label: "Dame un ejemplo" },
+  simpler: { emoji: "📚", label: "Explícalo más fácil" },
+  casacion: { emoji: "⚖️", label: "Relaciónalo con una casación" },
+  exam: { emoji: "🎓", label: "¿Cómo respondería esto en un examen?" },
+  repeat_main: { emoji: "🔄", label: "Repetir idea principal" },
 };
 
 export type TutorSpeechRate = 1 | 1.25 | 1.5;

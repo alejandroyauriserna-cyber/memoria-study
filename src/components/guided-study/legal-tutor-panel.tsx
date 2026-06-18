@@ -33,12 +33,14 @@ import { SessionContinuityBanner } from "@/components/guided-study/session-conti
 import { LoadingState } from "@/components/ui/loading-state";
 import type {
   GuidedStudyTutorAction,
+  GuidedStudySession,
   OralDefenseEvaluation,
   PageLearningStatus,
   PageProfessorAnalysis,
   ProfessorTeachingStyle,
   TutorChatMessage,
 } from "@/types/guided-legal-study";
+import type { NarrationMicroAction } from "@/types/tutor-voice";
 import type { TutorCacheScope } from "@/lib/guided-study/tutor-cache";
 import { LibrarySetupChecklist } from "@/components/guided-study/library-setup-checklist";
 import { formatSourceSyncLabel } from "@/lib/legal-sources/source-meta";
@@ -265,6 +267,8 @@ export function LegalTutorPanel({
   onContinuityDismiss,
   onOralComplete,
   caseNarrativeTitle,
+  studySession,
+  onNarrationMemoryUpdate,
 }: {
   loading: boolean;
   loadingPercent?: number;
@@ -318,6 +322,11 @@ export function LegalTutorPanel({
   onContinuityDismiss?: () => void;
   onOralComplete?: (score: number, evaluation: OralDefenseEvaluation) => void;
   caseNarrativeTitle?: string;
+  studySession?: GuidedStudySession | null;
+  onNarrationMemoryUpdate?: (
+    action: NarrationMicroAction,
+    primaryConcept: string,
+  ) => void;
 }) {
   const [customPrompt, setCustomPrompt] = useState("");
   const [showMoreActions, setShowMoreActions] = useState(false);
@@ -603,6 +612,8 @@ export function LegalTutorPanel({
                         analysis={analysis}
                         chapterTitle={chapterTitle}
                         disabled={loading}
+                        studySession={studySession}
+                        onNarrationMemoryUpdate={onNarrationMemoryUpdate}
                       />
                     ) : null}
                     <CompactConceptChips

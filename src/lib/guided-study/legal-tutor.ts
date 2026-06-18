@@ -215,6 +215,7 @@ export async function askLegalStudyTutor(input: {
   teachingStyle?: ProfessorTeachingStyle;
   caseNarrative?: CaseNarrativeThread;
   socraticMode?: boolean;
+  pedagogyMemoryHint?: string;
 }): Promise<TutorResponse> {
   const enabledSources = input.sourceSettings
     ? getEnabledSources(input.sourceSettings)
@@ -264,13 +265,16 @@ export async function askLegalStudyTutor(input: {
   const styleBlock = input.teachingStyle
     ? buildProfessorStylePrompt(input.teachingStyle)
     : "";
+  const memoryBlock = input.pedagogyMemoryHint?.trim()
+    ? `\n\nMEMORIA PEDAGÓGICA DEL ESTUDIANTE:\n${input.pedagogyMemoryHint.trim()}`
+    : "";
   const socraticMode =
     input.socraticMode ??
     (input.action === "custom" && isSocraticTrigger(input.customPrompt ?? ""));
 
   try {
     const result = await generateTextWithFallback({
-      prompt: `${GUIDED_STUDY_SYSTEM_ROLE}${styleBlock ? `\n\n${styleBlock}` : ""}\n\n${buildTutorUserPrompt({
+      prompt: `${GUIDED_STUDY_SYSTEM_ROLE}${styleBlock ? `\n\n${styleBlock}` : ""}${memoryBlock}\n\n${buildTutorUserPrompt({
         ...input,
         pageText: pageTextForTutor,
         legalBaseBlock: indexedNormativeBlock,
