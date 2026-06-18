@@ -2893,3 +2893,220 @@ html:not(.dark) .bj-admin__pdf-preview {
   background: #f8fafc;
   border-color: rgba(15, 118, 110, 0.2);
 }
+
+/* —— Ingesta inteligente PDF —— */
+.bj-admin__ingest-ai {
+  margin: 0 0 1.25rem;
+  padding: 1.1rem 1.15rem;
+  border-radius: 16px;
+  border: 1px solid rgba(0, 255, 213, 0.35);
+  background: linear-gradient(135deg, rgba(0, 255, 213, 0.08), rgba(168, 85, 247, 0.06));
+}
+
+.bj-ingest-upload-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: center;
+  margin-top: 0.75rem;
+}
+
+.bj-ingest-label-input {
+  flex: 1;
+  min-width: 10rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.2);
+  padding: 0.45rem 0.65rem;
+  font-size: 0.82rem;
+}
+
+.bj-ingest-batches {
+  margin-top: 0.85rem;
+}
+
+.bj-ingest-batches-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.7;
+}
+
+.bj-ingest-batch-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+}
+
+.bj-ingest-batch-chips button {
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 0.3rem 0.65rem;
+  font-size: 0.75rem;
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.bj-ingest-batch-chips button.is-active {
+  border-color: rgba(0, 255, 213, 0.5);
+  background: rgba(0, 255, 213, 0.12);
+}
+
+.bj-ingest-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+  margin: 0.85rem 0 0.65rem;
+}
+
+.bj-ingest-toolbar button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  padding: 0.4rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.bj-ingest-publish-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  margin-left: 0.25rem;
+}
+
+.bj-ingest-batch-edit {
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.bj-ingest-batch-edit select {
+  border-radius: 8px;
+  font-size: 0.72rem;
+  padding: 0.35rem 0.5rem;
+}
+
+.bj-ingest-table-wrap {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.bj-ingest-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+
+.bj-ingest-table th,
+.bj-ingest-table td {
+  padding: 0.55rem 0.6rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  text-align: left;
+  vertical-align: top;
+}
+
+.bj-ingest-table th {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.75;
+}
+
+.bj-ingest-table tr.needs-review {
+  background: rgba(251, 191, 36, 0.08);
+}
+
+.bj-ingest-table tr.is-ready {
+  background: rgba(34, 197, 94, 0.06);
+}
+
+.bj-ingest-doc-cell strong {
+  display: block;
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+.bj-ingest-summary {
+  margin: 0.35rem 0 0;
+  font-size: 0.72rem;
+  opacity: 0.8;
+  line-height: 1.45;
+}
+
+.bj-ingest-conf.is-high {
+  color: #4ade80;
+}
+
+.bj-ingest-conf.is-mid {
+  color: #fbbf24;
+}
+
+.bj-ingest-conf.is-low {
+  color: #f87171;
+}
+
+.bj-ingest-overall {
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+
+.bj-ingest-overall.is-high {
+  color: #4ade80;
+}
+
+.bj-ingest-overall.is-mid {
+  color: #fbbf24;
+}
+
+.bj-ingest-overall.is-low {
+  color: #f87171;
+}
+
+.bj-ingest-status {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 0.15rem 0.45rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.bj-ingest-tipo {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.68rem;
+  opacity: 0.75;
+}
+
+.bj-ingest-dup,
+.bj-ingest-err {
+  margin: 0.25rem 0 0;
+  font-size: 0.68rem;
+  color: #f87171;
+}
+
+html:not(.dark) .bj-admin__ingest-ai {
+  background: linear-gradient(135deg, rgba(13, 148, 136, 0.08), rgba(124, 58, 237, 0.05));
+  border-color: rgba(13, 148, 136, 0.3);
+}
+
+html:not(.dark) .bj-ingest-label-input,
+html:not(.dark) .bj-ingest-toolbar button,
+html:not(.dark) .bj-ingest-batch-chips button {
+  background: #fff;
+  color: #0f172a;
+  border-color: rgba(15, 118, 110, 0.2);
+}
+
+html:not(.dark) .bj-ingest-table-wrap {
+  border-color: rgba(15, 118, 110, 0.15);
+}
+

@@ -143,6 +143,136 @@ export type ConceptualNormLink = {
   confidence: "conceptual";
 };
 
+export type CaseNarrativePhase = "intro" | "development" | "complication" | "resolution";
+
+export type CaseNarrativeThread = {
+  title: string;
+  facts: string[];
+  lastPage: number;
+  phase: CaseNarrativePhase;
+};
+
+export type ApplyConceptCase = {
+  studiedConcept: string;
+  scenario: string;
+  prompt: string;
+  options?: Array<{ id: string; label: string }>;
+  correctOptionId?: string;
+  modelAnswer: string;
+  feedbackCorrect: string;
+  feedbackIncorrect: string;
+  narrativePhase?: CaseNarrativePhase;
+  continuesFrom?: string;
+};
+
+export type ProfessorTeachingStyle =
+  | "friendly"
+  | "university"
+  | "demanding"
+  | "defense_simulation";
+
+export type SpacedReviewItem = {
+  id: string;
+  concept: string;
+  pageNumber: number;
+  materialId: string;
+  nextReviewAt: string;
+  intervalDays: number;
+  lastScore: number;
+};
+
+export type ConceptDifficulty = {
+  concept: string;
+  pageNumber: number;
+  score: number;
+  lastAttemptAt: string;
+  attemptCount: number;
+};
+
+export type OralDefenseEvaluation = {
+  score: number;
+  correctConcepts: string[];
+  omittedConcepts: string[];
+  errors: string[];
+  feedback: string;
+  followUpQuestion: string | null;
+};
+
+export type SessionDiagnosis = {
+  strengths: string[];
+  weaknesses: string[];
+  forgetRisk: string[];
+  summary: string;
+};
+
+export type RetrievalQuestion = {
+  question: string;
+  hint?: string;
+};
+
+export type FeynmanPrompt = {
+  concept: string;
+  audiencePrompt: string;
+};
+
+export type SurpriseQuestion = {
+  question: string;
+  timeLimitSec: number;
+};
+
+export type OralExamSeed = {
+  question: string;
+  gradingPoints: string[];
+  followUpQuestions?: string[];
+};
+
+export type ActiveLearningBlock = {
+  applyConcept: ApplyConceptCase;
+  retrieval: RetrievalQuestion;
+  feynman: FeynmanPrompt;
+};
+
+export type LearningActivityType =
+  | "apply_concept"
+  | "retrieval"
+  | "feynman"
+  | "surprise"
+  | "oral_defense";
+
+export type LearningActivityResult = {
+  type: LearningActivityType;
+  pageNumber: number;
+  score: number;
+  completedAt: string;
+  concept?: string;
+  strengths?: string[];
+  gaps?: string[];
+};
+
+export type GuidedStudyMastery = {
+  conceptsApplied: number;
+  retrievalAnswered: number;
+  casesSolved: number;
+  feynmanCompleted: number;
+  surpriseAnswered: number;
+  totalScore: number;
+  activityCount: number;
+};
+
+export type PageLearningStatus = {
+  applyDone?: boolean;
+  retrievalDone?: boolean;
+  feynmanDone?: boolean;
+};
+
+export type FeynmanEvaluation = {
+  strengths: string[];
+  gaps: string[];
+  masteryLevel: "bajo" | "medio" | "alto";
+  masteryScore: number;
+  summary: string;
+};
+
 export type PageProfessorAnalysis = {
   pageFocus: string;
   secondaryMentions: SecondaryMention[];
@@ -154,7 +284,11 @@ export type PageProfessorAnalysis = {
   detectedConcepts?: DetectedLegalConcept[];
   conceptualNormLinks?: ConceptualNormLink[];
   normativeNotice?: string;
+  /** @deprecated Usar activeLearning.retrieval */
   comprehensionQuestion?: string;
+  activeLearning?: ActiveLearningBlock;
+  surpriseQuestion?: SurpriseQuestion;
+  oralExamSeed?: OralExamSeed;
 };
 
 export type TutorResponse = {
@@ -180,6 +314,14 @@ export type GuidedStudySession = {
   understoodPages: number[];
   analysisVersion?: number;
   lastUpdated: string;
+  learningActivities?: LearningActivityResult[];
+  mastery?: GuidedStudyMastery;
+  pageLearningStatus?: Record<string, PageLearningStatus>;
+  lastSurprisePage?: number;
+  caseNarrative?: CaseNarrativeThread;
+  spacedReviews?: SpacedReviewItem[];
+  difficultConcepts?: ConceptDifficulty[];
+  lastSessionEndedAt?: string;
 };
 
 export type PdfPageContent = {

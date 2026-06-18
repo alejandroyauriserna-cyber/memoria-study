@@ -20,6 +20,7 @@ import {
   guidedStudyClientTimeoutSeconds,
 } from "@/lib/guided-study/timeouts";
 import { filterAnalysisForExamMode } from "@/lib/guided-study/legal-tutor";
+import { ensureActiveLearning } from "@/lib/guided-study/ensure-active-learning";
 import {
   buildSourceFingerprint,
   findPracticePageCache,
@@ -55,7 +56,28 @@ import {
   loadGuidedStudySession,
   markPageUnderstood,
   updateCurrentPage,
+  appendLearningActivity,
+  markSurpriseShown,
+  endStudySession,
+  saveGuidedStudySession,
 } from "@/lib/guided-study/progress";
+import {
+  computeMasteryPercent,
+  getPageLearningStatus,
+  shouldShowSurpriseOnPageEnter,
+} from "@/lib/guided-study/learning-mastery";
+import { loadProfessorStyle } from "@/lib/guided-study/professor-style";
+import { isSocraticTrigger } from "@/lib/guided-study/socratic-tutor";
+import {
+  getDueSpacedReviews,
+  markSpacedReviewDone,
+} from "@/lib/guided-study/spaced-repetition";
+import { getContinuityGreeting } from "@/lib/guided-study/session-continuity";
+import { MasteryProgressBadge } from "@/components/guided-study/mastery-progress-badge";
+import { SurpriseQuestionOverlay } from "@/components/guided-study/surprise-question-overlay";
+import { SessionDiagnosisPanel } from "@/components/guided-study/session-diagnosis-panel";
+import { SpacedReviewBanner } from "@/components/guided-study/spaced-review-banner";
+import type { GuidedStudySession, OralDefenseEvaluation, ProfessorTeachingStyle, SurpriseQuestion } from "@/types/guided-legal-study";
 import {
   fetchCloudGuidedStudySession,
   mergeGuidedStudySessions,
@@ -93,6 +115,9 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
   const [index, setIndex] = useState<DocumentStudyIndex | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [understoodPages, setUnderstoodPages] = useState<number[]>([]);
+  const [studySession, setStudySession] = useState<GuidedStudySession | null>(null);
+  const [surpriseOpen, setSurpriseOpen] = useState(false);
+  const [surpriseQuestion, setSurpriseQuestion] = useState<SurpriseQuestion | null>(null);
   const [showIndex, setShowIndex] = useState(false);
   const [examOnly, setExamOnly] = useState(false);
   const [practiceExam, setPracticeExam] = useState(false);
@@ -110,6 +135,10 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
   const [tutorScope, setTutorScope] = useState<TutorCacheScope>({ type: "page", pageNumber: 1 });
   const [sourcesStale, setSourcesStale] = useState(false);
   const [chatMessages, setChatMessages] = useState<TutorChatMessage[]>([]);
+  const [professorStyle, setProfessorStyle] = useState<ProfessorTeachingStyle>("university");
+  const [showDiagnosis, setShowDiagnosis] = useState(false);
+  const [continuityDismissed, setContinuityDismissed] = useState(false);
+  const [spacedSkippedIds, setSpacedSkippedIds] = useState<string[]>([]);
   const initialAnalysisDone = useRef(false);
   const initProgress = useLoadingProgress(phase === "loading", "guidedStudyInit", {
     stageIntervalMs: 5500,
@@ -146,14 +175,17 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
       setTutorScope({ type: "page", pageNumber: session.currentPage });
       setUnderstoodPages(session.understoodPages);
       setAnalysisVersion(session.analysisVersion ?? 1);
+      setStudySession(session);
     });
     if (local) {
       setCurrentPage(local.currentPage);
       setTutorScope({ type: "page", pageNumber: local.currentPage });
       setUnderstoodPages(local.understoodPages);
       setAnalysisVersion(local.analysisVersion ?? 1);
+      setStudySession(local);
     }
     setSourceSettings(loadLegalSourcesSettings());
+    setProfessorStyle(loadProfessorStyle());
     void fetchLegalSourcesSettings().then(setSourceSettings);
   }, [materialId]);
 
@@ -341,6 +373,9 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
             examOnly,
             sourceSettings: settings,
             chapterId: scope.type === "chapter" ? scope.chapterId : undefined,
+            teachingStyle: professorStyle,
+            caseNarrative: studySession?.caseNarrative,
+            socraticMode: isSocraticTrigger(question),
           }),
           signal: controller.signal,
         });
@@ -385,7 +420,82 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
         setTutorLoading(false);
       }
     },
-    [material, materialId, tutorScope, currentPage, index, examOnly, sourceSettings],
+    [material, materialId, tutorScope, currentPage, index, examOnly, sourceSettings, professorStyle, studySession?.caseNarrative],
+  );
+
+  const askTutorForVoice = useCallback(
+    async (question: string): Promise<string> => {
+      if (!material || !question.trim()) {
+        throw new Error("Escribe o di una pregunta.");
+      }
+
+      const settings = sourceSettings ?? loadLegalSourcesSettings();
+      const scope = tutorScope;
+      const fingerprint = buildSourceFingerprint(settings);
+
+      const localCached = findLocalChatAnswer(
+        materialId,
+        scope,
+        examOnly,
+        fingerprint,
+        question,
+      );
+      if (localCached) return localCached;
+
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => controller.abort(), GUIDED_STUDY_CLIENT_TIMEOUT_MS);
+
+      try {
+        const response = await fetch("/api/guided-study/tutor", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            materialId,
+            pageNumber: scope.type === "page" ? scope.pageNumber : currentPage,
+            action: "custom",
+            customPrompt: question,
+            index,
+            examOnly,
+            sourceSettings: settings,
+            chapterId: scope.type === "chapter" ? scope.chapterId : undefined,
+            teachingStyle: professorStyle,
+            caseNarrative: studySession?.caseNarrative,
+            socraticMode: isSocraticTrigger(question),
+          }),
+          signal: controller.signal,
+        });
+
+        const payload = await response.json();
+        if (!response.ok) {
+          throw new Error(payload.error ?? "Error del tutor.");
+        }
+
+        const answer = payload.customReply?.trim();
+        if (!answer) {
+          throw new Error("El profesor IA no devolvió una respuesta.");
+        }
+
+        const message =
+          payload.chatMessage ??
+          createClientTutorChatMessage(question, answer, Boolean(payload.fromChatCache));
+
+        setChatMessages(
+          appendLocalTutorChatMessage(materialId, scope, examOnly, fingerprint, message),
+        );
+
+        if (payload.activeSources?.length) {
+          setTutorState((prev) => ({
+            ...prev,
+            activeSources: payload.activeSources,
+          }));
+        }
+
+        return answer;
+      } finally {
+        window.clearTimeout(timeoutId);
+      }
+    },
+    [material, materialId, tutorScope, currentPage, index, examOnly, sourceSettings, professorStyle, studySession?.caseNarrative],
   );
 
   const askTutor = useCallback(
@@ -448,6 +558,8 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
             sourceSettings: settings,
             chapterId: options?.chapterId ?? (scope.type === "chapter" ? scope.chapterId : undefined),
             skipCache: options?.skipCache ?? false,
+            teachingStyle: professorStyle,
+            caseNarrative: studySession?.caseNarrative,
           }),
           signal: controller.signal,
         });
@@ -493,6 +605,8 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
       examOnly,
       sourceSettings,
       applyTutorResult,
+      professorStyle,
+      studySession?.caseNarrative,
     ],
   );
 
@@ -605,7 +719,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
 
   const displayAnalysis = useMemo(() => {
     if (!tutorState.analysis) return null;
-    return filterAnalysisForExamMode(tutorState.analysis, examOnly);
+    return filterAnalysisForExamMode(ensureActiveLearning(tutorState.analysis), examOnly);
   }, [tutorState.analysis, examOnly]);
 
   const practiceWhileLoading = useMemo(() => {
@@ -616,6 +730,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
   }, [tutorLoading, materialId, currentPage, examOnly, sourceSettings]);
 
   function handlePageChange(page: number) {
+    const previousPage = currentPage;
     const scope = { type: "page" as const, pageNumber: page };
     setCurrentPage(page);
     setTutorScope(scope);
@@ -624,12 +739,127 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
     setSourcesStale(false);
     setPracticeExam(false);
 
+    const session = loadGuidedStudySession(materialId);
+    setStudySession(session);
+
+    if (page > previousPage && session && shouldShowSurpriseOnPageEnter(session, page)) {
+      const settings = sourceSettings ?? loadLegalSourcesSettings();
+      const fingerprint = buildSourceFingerprint(settings);
+      const prevCache = findPracticePageCache(materialId, previousPage, examOnly, fingerprint);
+      const q = prevCache?.analysis.surpriseQuestion;
+      if (q?.question) {
+        setSurpriseQuestion(q);
+        setSurpriseOpen(true);
+      }
+    }
+
     const settings = sourceSettings ?? loadLegalSourcesSettings();
     void (async () => {
       if (await tryLoadCachedTutor(scope, settings)) return;
       setTutorState({ analysis: null, customReply: null, activeSources: [] });
       setAnalyzedScope(null);
     })();
+  }
+
+  function refreshStudySession() {
+    const session = loadGuidedStudySession(materialId);
+    setStudySession(session);
+    if (session) setUnderstoodPages(session.understoodPages);
+  }
+
+  function handleApplyComplete(score: number, meta?: { concept?: string }) {
+    const applyCase = tutorState.analysis?.activeLearning?.applyConcept;
+    const updated = appendLearningActivity(
+      materialId,
+      {
+        type: "apply_concept",
+        pageNumber: currentPage,
+        score,
+        completedAt: new Date().toISOString(),
+        concept: meta?.concept ?? applyCase?.studiedConcept,
+      },
+      { applyDone: true },
+      applyCase ? { narrativeCase: applyCase } : undefined,
+    );
+    setStudySession(updated);
+  }
+
+  function handleRetrievalComplete(
+    score: number,
+    meta?: { concept?: string; strengths?: string[]; gaps?: string[] },
+  ) {
+    const updated = appendLearningActivity(
+      materialId,
+      {
+        type: "retrieval",
+        pageNumber: currentPage,
+        score,
+        completedAt: new Date().toISOString(),
+        concept: meta?.concept,
+        strengths: meta?.strengths,
+        gaps: meta?.gaps,
+      },
+      { retrievalDone: true },
+    );
+    setStudySession(updated);
+  }
+
+  function handleFeynmanComplete(
+    score: number,
+    meta?: { concept?: string; strengths?: string[]; gaps?: string[] },
+  ) {
+    const updated = appendLearningActivity(
+      materialId,
+      {
+        type: "feynman",
+        pageNumber: currentPage,
+        score,
+        completedAt: new Date().toISOString(),
+        concept: meta?.concept,
+        strengths: meta?.strengths,
+        gaps: meta?.gaps,
+      },
+      { feynmanDone: true },
+    );
+    setStudySession(updated);
+  }
+
+  function handleOralComplete(score: number, evaluation: OralDefenseEvaluation) {
+    const updated = appendLearningActivity(
+      materialId,
+      {
+        type: "oral_defense",
+        pageNumber: currentPage,
+        score,
+        completedAt: new Date().toISOString(),
+        concept: tutorState.analysis?.oralExamSeed?.question.slice(0, 80),
+        strengths: evaluation.correctConcepts,
+        gaps: [...evaluation.omittedConcepts, ...evaluation.errors],
+      },
+      {},
+    );
+    setStudySession(updated);
+  }
+
+  function dismissSurprise() {
+    setSurpriseOpen(false);
+    markSurpriseShown(materialId, currentPage);
+    refreshStudySession();
+  }
+
+  function completeSurprise() {
+    const updated = appendLearningActivity(
+      materialId,
+      {
+        type: "surprise",
+        pageNumber: currentPage,
+        score: 70,
+        completedAt: new Date().toISOString(),
+      },
+      {},
+    );
+    setStudySession(updated);
+    dismissSurprise();
   }
 
   function handleGeneratePage() {
@@ -670,22 +900,39 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
   function handleMarkUnderstood() {
     const session = markPageUnderstood(materialId, currentPage);
     setUnderstoodPages(session.understoodPages);
+    setStudySession(session);
     if (material && currentPage < material.totalPages) {
       handlePageChange(currentPage + 1);
     }
   }
 
+  const masteryPercent = computeMasteryPercent(studySession?.mastery);
+  const pageLearningStatus = getPageLearningStatus(studySession, currentPage);
+
   const progressPercent =
-    material && understoodPages.length
-      ? getStudyProgressPercent(
-          { materialId, currentPage, understoodPages, lastUpdated: "" },
-          material.totalPages,
-        )
-      : 0;
+    masteryPercent > 0
+      ? masteryPercent
+      : material && understoodPages.length
+        ? getStudyProgressPercent(
+            { materialId, currentPage, understoodPages, lastUpdated: "" },
+            material.totalPages,
+          )
+        : 0;
 
   const currentChapter = index?.chapters.find(
     (ch) => currentPage >= ch.startPage && currentPage <= ch.endPage,
   );
+
+  const continuityGreeting = useMemo(() => {
+    if (continuityDismissed) return null;
+    return getContinuityGreeting(studySession);
+  }, [studySession, continuityDismissed]);
+
+  const dueSpacedReview = useMemo(() => {
+    const due = getDueSpacedReviews(studySession, 1)[0];
+    if (!due || spacedSkippedIds.includes(due.id)) return null;
+    return due;
+  }, [studySession, spacedSkippedIds]);
 
   if (phase === "loading") {
     return (
@@ -728,9 +975,18 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
           <h1 className="truncate text-base font-bold text-foreground">{material.title}</h1>
         </div>
         <div className="flex items-center gap-2">
+          <MasteryProgressBadge mastery={studySession?.mastery} />
           <span className="hidden text-xs text-muted-foreground sm:inline">
-            Pág. {currentPage}/{material.totalPages} · {progressPercent}%
+            Pág. {currentPage}/{material.totalPages}
+            {masteryPercent > 0 ? ` · Dominio ${masteryPercent}%` : ` · ${progressPercent}% leído`}
           </span>
+          <button
+            type="button"
+            onClick={() => setShowDiagnosis(true)}
+            className="tron-btn-secondary hidden h-8 items-center rounded-lg px-2.5 text-[11px] font-semibold sm:flex"
+          >
+            Diagnóstico
+          </button>
           <button
             type="button"
             onClick={() => setShowIndex(true)}
@@ -741,6 +997,19 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
           </button>
         </div>
       </header>
+
+      {dueSpacedReview ? (
+        <SpacedReviewBanner
+          review={dueSpacedReview}
+          onComplete={(score) => {
+            if (!studySession) return;
+            const updated = markSpacedReviewDone(studySession, dueSpacedReview.id, score);
+            saveGuidedStudySession(updated);
+            setStudySession(updated);
+          }}
+          onDismiss={() => setSpacedSkippedIds((ids) => [...ids, dueSpacedReview.id])}
+        />
+      ) : null}
 
       <StudyPageNavigator
         currentPage={currentPage}
@@ -863,6 +1132,31 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
             onMarkUnderstood={handleMarkUnderstood}
             onGeneratePage={handleGeneratePage}
             pageUnderstood={understoodPages.includes(currentPage)}
+            pageLearningStatus={pageLearningStatus}
+            onApplyComplete={handleApplyComplete}
+            onRetrievalComplete={handleRetrievalComplete}
+            onFeynmanComplete={handleFeynmanComplete}
+            materialId={materialId}
+            tutorScope={tutorScope}
+            chapterTitle={currentChapter?.title}
+            onVoiceAsk={askTutorForVoice}
+            professorStyle={professorStyle}
+            onProfessorStyleChange={setProfessorStyle}
+            continuityGreeting={continuityGreeting}
+            onContinuityReview={() => {
+              if (continuityGreeting) {
+                setCurrentPage(continuityGreeting.pageNumber);
+                setTutorScope({ type: "page", pageNumber: continuityGreeting.pageNumber });
+                void askTutor("explain_page", {
+                  scope: { type: "page", pageNumber: continuityGreeting.pageNumber },
+                  skipCache: false,
+                });
+              }
+              setContinuityDismissed(true);
+            }}
+            onContinuityDismiss={() => setContinuityDismissed(true)}
+            onOralComplete={handleOralComplete}
+            caseNarrativeTitle={studySession?.caseNarrative?.title}
           />
           </div>
         </div>
@@ -944,6 +1238,27 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
           ) : null}
         </AnimatePresence>
       </div>
+
+      {surpriseQuestion ? (
+        <SurpriseQuestionOverlay
+          open={surpriseOpen}
+          question={surpriseQuestion}
+          onDismiss={dismissSurprise}
+          onAnswered={completeSurprise}
+        />
+      ) : null}
+
+      {showDiagnosis ? (
+        <SessionDiagnosisPanel
+          session={studySession}
+          onClose={() => setShowDiagnosis(false)}
+          onEndSession={() => {
+            const updated = endStudySession(materialId);
+            setStudySession(updated);
+            setShowDiagnosis(false);
+          }}
+        />
+      ) : null}
     </div>
   );
 }

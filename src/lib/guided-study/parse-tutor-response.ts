@@ -128,6 +128,41 @@ export const PageAnalysisSchema = z.object({
     .optional(),
   normativeNotice: z.string().optional(),
   comprehensionQuestion: z.string().optional(),
+  activeLearning: z
+    .object({
+      applyConcept: z.object({
+        studiedConcept: z.string(),
+        scenario: z.string(),
+        prompt: z.string(),
+        options: z.array(z.object({ id: z.string(), label: z.string() })).optional(),
+        correctOptionId: z.string().optional(),
+        modelAnswer: z.string(),
+        feedbackCorrect: z.string(),
+        feedbackIncorrect: z.string(),
+      }),
+      retrieval: z.object({
+        question: z.string(),
+        hint: z.string().optional(),
+      }),
+      feynman: z.object({
+        concept: z.string(),
+        audiencePrompt: z.string(),
+      }),
+    })
+    .optional(),
+  surpriseQuestion: z
+    .object({
+      question: z.string(),
+      timeLimitSec: z.number().default(10),
+    })
+    .optional(),
+  oralExamSeed: z
+    .object({
+      question: z.string(),
+      gradingPoints: z.array(z.string()).default([]),
+      followUpQuestions: z.array(z.string()).optional(),
+    })
+    .optional(),
 });
 
 const TutorResponseSchema = z.object({

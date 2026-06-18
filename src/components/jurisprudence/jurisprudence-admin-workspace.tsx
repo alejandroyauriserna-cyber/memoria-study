@@ -27,6 +27,7 @@ import {
   JURISPRUDENCE_TIPO_LABELS,
 } from "@/lib/jurisprudence/labels";
 import type { JurisprudenceRecord } from "@/types/jurisprudence";
+import { JurisprudenceIntelligentIngest } from "@/components/jurisprudence/jurisprudence-intelligent-ingest";
 
 type AdminStats = {
   totals: {
@@ -260,8 +261,8 @@ export function JurisprudenceAdminWorkspace() {
           </p>
           <h1>Centro de control de la Biblioteca Jurídica.</h1>
           <p className="ms-home-lead">
-            Aprueba aportes estudiantiles, revisa reportes, importa catálogo CSV y mantén
-            la jurisprudencia curada para toda la comunidad.
+            Aprueba aportes estudiantiles, revisa reportes, ingesta masiva con IA o importa CSV y
+            mantén la jurisprudencia curada para toda la comunidad.
           </p>
           <div className="bj-hero__signals" aria-label="Acciones de moderación">
             <span>
@@ -274,7 +275,7 @@ export function JurisprudenceAdminWorkspace() {
             </span>
             <span>
               <Upload size={15} />
-              Importar CSV
+              Ingesta IA / CSV
             </span>
           </div>
         </div>
@@ -369,6 +370,8 @@ export function JurisprudenceAdminWorkspace() {
       ) : null}
 
       <section className="bj-admin__panel">
+        <JurisprudenceIntelligentIngest onPublished={() => void refresh()} />
+
         <section className="bj-admin__import">
           <div className="bj-admin__import-head">
             <div>

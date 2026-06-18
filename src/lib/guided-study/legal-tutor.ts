@@ -8,6 +8,8 @@ import {
   buildAnalyzeDocumentPrompt,
   buildTutorUserPrompt,
 } from "@/lib/guided-study/prompts";
+import { buildProfessorStylePrompt } from "@/lib/guided-study/professor-style";
+import { isSocraticTrigger } from "@/lib/guided-study/socratic-tutor";
 import {
   formatLegalBaseForPrompt,
   searchLegalBase,
@@ -25,6 +27,8 @@ import type {
   DocumentStudyIndex,
   GuidedStudyTutorAction,
   PageProfessorAnalysis,
+  ProfessorTeachingStyle,
+  CaseNarrativeThread,
   TutorResponse,
 } from "@/types/guided-legal-study";
 import type { PdfPageContent } from "@/types/guided-legal-study";
@@ -54,6 +58,7 @@ import {
   generateTeachingFallback,
   needsTeachingFallback,
 } from "@/lib/guided-study/teaching-fallback";
+import { ensureActiveLearning } from "@/lib/guided-study/ensure-active-learning";
 import {
   buildCustomReplyFromAnalysis,
   extractPlainTextFallback,
@@ -207,6 +212,9 @@ export async function askLegalStudyTutor(input: {
   chapterMode?: boolean;
   sourceSettings?: LegalSourcesSettings;
   userId?: string;
+  teachingStyle?: ProfessorTeachingStyle;
+  caseNarrative?: CaseNarrativeThread;
+  socraticMode?: boolean;
 }): Promise<TutorResponse> {
   const enabledSources = input.sourceSettings
     ? getEnabledSources(input.sourceSettings)
@@ -253,9 +261,16 @@ export async function askLegalStudyTutor(input: {
   }));
 
   let raw: string;
+  const styleBlock = input.teachingStyle
+    ? buildProfessorStylePrompt(input.teachingStyle)
+    : "";
+  const socraticMode =
+    input.socraticMode ??
+    (input.action === "custom" && isSocraticTrigger(input.customPrompt ?? ""));
+
   try {
     const result = await generateTextWithFallback({
-      prompt: `${GUIDED_STUDY_SYSTEM_ROLE}\n\n${buildTutorUserPrompt({
+      prompt: `${GUIDED_STUDY_SYSTEM_ROLE}${styleBlock ? `\n\n${styleBlock}` : ""}\n\n${buildTutorUserPrompt({
         ...input,
         pageText: pageTextForTutor,
         legalBaseBlock: indexedNormativeBlock,
@@ -263,6 +278,9 @@ export async function askLegalStudyTutor(input: {
         jurisprudenceBlock: jurisprudenceBlock || undefined,
         strictNormativeMode,
         structured,
+        teachingStyle: input.teachingStyle,
+        caseNarrative: input.caseNarrative,
+        socraticMode,
       })}`,
       temperature,
       json: true,
@@ -339,6 +357,7 @@ export async function askLegalStudyTutor(input: {
       }
 
       analysis = await finalizeTeachingAnalysis(analysis, input);
+      analysis = ensureActiveLearning(analysis);
 
       if (input.action === "exam_essentials") {
         analysis = filterEssentials(analysis);

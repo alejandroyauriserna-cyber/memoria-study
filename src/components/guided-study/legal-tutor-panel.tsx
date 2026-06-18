@@ -24,12 +24,22 @@ import { ProfessorLessonView } from "@/components/guided-study/professor-lesson-
 import { WhileLoadingPracticePanel } from "@/components/guided-study/while-loading-practice-panel";
 import { ExamModePanel } from "@/components/guided-study/exam-mode-panel";
 import { CompactConceptChips } from "@/components/guided-study/compact-concept-chips";
+import { LearningEnginePanel } from "@/components/guided-study/learning-engine-panel";
+import { TutorNarrationPlayer } from "@/components/guided-study/tutor-narration-player";
+import { TutorVoiceSessionShell } from "@/components/guided-study/tutor-voice-session-shell";
+import { OralSimulationFlow } from "@/components/guided-study/oral-simulation-flow";
+import { ProfessorStylePicker } from "@/components/guided-study/professor-style-picker";
+import { SessionContinuityBanner } from "@/components/guided-study/session-continuity-banner";
 import { LoadingState } from "@/components/ui/loading-state";
 import type {
   GuidedStudyTutorAction,
+  OralDefenseEvaluation,
+  PageLearningStatus,
   PageProfessorAnalysis,
+  ProfessorTeachingStyle,
   TutorChatMessage,
 } from "@/types/guided-legal-study";
+import type { TutorCacheScope } from "@/lib/guided-study/tutor-cache";
 import { LibrarySetupChecklist } from "@/components/guided-study/library-setup-checklist";
 import { formatSourceSyncLabel } from "@/lib/legal-sources/source-meta";
 import {
@@ -240,6 +250,21 @@ export function LegalTutorPanel({
   pageUnderstood,
   currentPage,
   practiceWhileLoading,
+  pageLearningStatus,
+  onApplyComplete,
+  onRetrievalComplete,
+  onFeynmanComplete,
+  materialId,
+  tutorScope,
+  chapterTitle,
+  onVoiceAsk,
+  professorStyle,
+  onProfessorStyleChange,
+  continuityGreeting,
+  onContinuityReview,
+  onContinuityDismiss,
+  onOralComplete,
+  caseNarrativeTitle,
 }: {
   loading: boolean;
   loadingPercent?: number;
@@ -272,6 +297,27 @@ export function LegalTutorPanel({
   onMarkUnderstood: () => void;
   onGeneratePage?: () => void;
   pageUnderstood: boolean;
+  pageLearningStatus?: PageLearningStatus;
+  onApplyComplete?: (score: number, meta?: { concept?: string }) => void;
+  onRetrievalComplete?: (
+    score: number,
+    meta?: { concept?: string; strengths?: string[]; gaps?: string[] },
+  ) => void;
+  onFeynmanComplete?: (
+    score: number,
+    meta?: { concept?: string; strengths?: string[]; gaps?: string[] },
+  ) => void;
+  materialId?: string;
+  tutorScope?: TutorCacheScope;
+  chapterTitle?: string;
+  onVoiceAsk?: (prompt: string) => Promise<string>;
+  professorStyle?: ProfessorTeachingStyle;
+  onProfessorStyleChange?: (style: ProfessorTeachingStyle) => void;
+  continuityGreeting?: { message: string; concept: string; pageNumber: number } | null;
+  onContinuityReview?: () => void;
+  onContinuityDismiss?: () => void;
+  onOralComplete?: (score: number, evaluation: OralDefenseEvaluation) => void;
+  caseNarrativeTitle?: string;
 }) {
   const [customPrompt, setCustomPrompt] = useState("");
   const [showMoreActions, setShowMoreActions] = useState(false);
@@ -286,6 +332,11 @@ export function LegalTutorPanel({
       analysis?.examMode.test.length,
   );
 
+  const pageNum = currentPage ?? 1;
+  const learningStatus = pageLearningStatus ?? {};
+  const applyRequired = Boolean(analysis?.activeLearning && !chapterMode && !practiceExam && !customReply);
+  const footerBlocked = applyRequired && !learningStatus.applyDone && !pageUnderstood;
+
   return (
     <div className="gs-panel-shell flex h-full min-h-0 w-full max-w-full flex-col overflow-hidden">
       <div className="gs-tutor-toolbar shrink-0 border-b border-border px-3 py-2.5">
@@ -293,7 +344,9 @@ export function LegalTutorPanel({
           <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-accent">
             Profesor IA
           </p>
-          <button
+          <div className="flex items-center gap-2">
+            <ProfessorStylePicker onChange={onProfessorStyleChange} />
+            <button
             type="button"
             onClick={() => onExamOnlyChange(!examOnly)}
             className={`gs-exam-toggle shrink-0 text-[10px] ${examOnly ? "gs-exam-toggle--active" : ""}`}
@@ -301,6 +354,7 @@ export function LegalTutorPanel({
             <Filter size={10} className="mr-1 inline" />
             Solo esencial (80/20)
           </button>
+          </div>
         </div>
 
         <p className="mt-2 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -516,6 +570,14 @@ export function LegalTutorPanel({
             animate={{ opacity: 1, y: 0 }}
             className="gs-tutor-content space-y-3"
           >
+            {continuityGreeting && onContinuityReview && onContinuityDismiss ? (
+              <SessionContinuityBanner
+                message={continuityGreeting.message}
+                concept={continuityGreeting.concept}
+                onReview={onContinuityReview}
+                onDismiss={onContinuityDismiss}
+              />
+            ) : null}
             {customReply && !chatMessages.length ? (
               <div className="gs-custom-reply">
                 <p className="text-sm leading-7 text-foreground">{customReply}</p>
@@ -533,6 +595,16 @@ export function LegalTutorPanel({
                   )
                 ) : (
                   <>
+                    {analysis && materialId && tutorScope ? (
+                      <TutorNarrationPlayer
+                        materialId={materialId}
+                        pageNumber={pageNum}
+                        scope={tutorScope}
+                        analysis={analysis}
+                        chapterTitle={chapterTitle}
+                        disabled={loading}
+                      />
+                    ) : null}
                     <CompactConceptChips
                       keyLearning={analysis.keyLearning}
                       highlights={analysis.highlights}
@@ -548,7 +620,31 @@ export function LegalTutorPanel({
                       customReply={customReply}
                       hideKeyLearning
                     />
+                    {analysis.activeLearning && onApplyComplete && onRetrievalComplete && onFeynmanComplete ? (
+                      <LearningEnginePanel
+                        key={`le-${pageNum}`}
+                        analysis={analysis}
+                        pageNumber={pageNum}
+                        pageStatus={learningStatus}
+                        referenceContext=""
+                        onApplyComplete={onApplyComplete}
+                        onRetrievalComplete={onRetrievalComplete}
+                        onFeynmanComplete={onFeynmanComplete}
+                        caseNarrativeTitle={caseNarrativeTitle}
+                      />
+                    ) : null}
+                    {analysis.oralExamSeed && onOralComplete ? (
+                      <OralSimulationFlow
+                        seed={analysis.oralExamSeed}
+                        pageNumber={pageNum}
+                        referenceContext={`${analysis.pageFocus}\n${analysis.conceptCards.map((c) => `${c.concept}: ${c.explanation}`).join("\n")}`.slice(0, 6000)}
+                        onComplete={onOralComplete}
+                      />
+                    ) : null}
                     {hasExamContent ? <ExamModePanel examMode={analysis.examMode} /> : null}
+                    {onVoiceAsk ? (
+                      <TutorVoiceSessionShell onAskTutor={onVoiceAsk} disabled={loading} />
+                    ) : null}
                   </>
                 )}
               </>
@@ -572,10 +668,15 @@ export function LegalTutorPanel({
       </div>
 
       <div className="gs-tutor-footer shrink-0 border-t border-border px-3 py-2">
+        {footerBlocked ? (
+          <p className="mb-2 text-[10px] leading-4 text-[#FF8A00]">
+            Resuelve el caso «Aplica el concepto» para marcar la página como comprendida.
+          </p>
+        ) : null}
         <button
           type="button"
           onClick={onMarkUnderstood}
-          disabled={pageUnderstood || loading}
+          disabled={pageUnderstood || loading || footerBlocked}
           className="gs-nav-control"
         >
           {pageUnderstood ? (

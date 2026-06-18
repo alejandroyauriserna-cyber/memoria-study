@@ -16,6 +16,8 @@ export const JURISPRUDENCE_TIPO_LABELS: Record<JurisprudenceTipo, string> = {
   expediente: "Expediente",
   resolucion: "Resolución",
   precedente_vinculante: "Precedente Vinculante",
+  pleno_casatorio: "Pleno Casatorio",
+  sentencia_tc: "Sentencia TC",
 };
 
 export const JURISPRUDENCE_SEARCH_EXAMPLES = [

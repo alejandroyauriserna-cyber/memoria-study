@@ -16,6 +16,8 @@ export const JURISPRUDENCE_TIPOS = [
   "expediente",
   "resolucion",
   "precedente_vinculante",
+  "pleno_casatorio",
+  "sentencia_tc",
 ] as const;
 
 export type JurisprudenceTipo = (typeof JURISPRUDENCE_TIPOS)[number];
@@ -33,6 +35,10 @@ export type JurisprudenceRecord = {
   keywords: string[];
   pdfUrl: string;
   expediente?: string;
+  sala?: string;
+  distritoJudicial?: string;
+  asuntoPrincipal?: string;
+  numeroDocumento?: string;
   /** Aporte de un estudiante (no catálogo curado). */
   isCommunityContribution?: boolean;
   submittedBy?: string;

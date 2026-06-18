@@ -1,5 +1,8 @@
 import { UNT_DERECHO_AUDIENCE } from "@/lib/ai/prompts";
-import type { GuidedStudyTutorAction } from "@/types/guided-legal-study";
+import type { GuidedStudyTutorAction, ProfessorTeachingStyle, CaseNarrativeThread } from "@/types/guided-legal-study";
+import { buildProfessorStylePrompt } from "@/lib/guided-study/professor-style";
+import { buildCaseNarrativePromptBlock } from "@/lib/guided-study/case-narrative";
+import { SOCRATIC_CUSTOM_DIRECTIVE } from "@/lib/guided-study/socratic-tutor";
 
 export const GUIDED_STUDY_SYSTEM_ROLE = `
 Eres un profesor universitario de Derecho peruano de la UNT. Enseñas página por página como en cátedra, NO como un chatbot que resume.
@@ -80,7 +83,36 @@ Responde ÚNICAMENTE JSON válido (sin markdown) con esta forma:
     "commonErrors": ["error frecuente del estudiante y cómo evitarlo"]
   },
   "citations": [{"norm":"...","article":"...","text":"...","updatedAt":"...","sourceId":"...","sourceTitle":"...","page":"...","author":"...","fragment":"..."}],
-  "comprehensionQuestion": "¿Entendiste X?"
+  "comprehensionQuestion": "¿Entendiste X?",
+  "activeLearning": {
+    "applyConcept": {
+      "studiedConcept": "Nombre del concepto principal de la página",
+      "scenario": "Caso práctico peruano breve (2-3 oraciones)",
+      "prompt": "Pregunta de aplicación concreta",
+      "options": [{"id":"a","label":"Opción A"},{"id":"b","label":"Opción B"},{"id":"c","label":"Opción C"}],
+      "correctOptionId": "a",
+      "modelAnswer": "Respuesta modelo breve",
+      "feedbackCorrect": "Por qué acertó",
+      "feedbackIncorrect": "Qué debió considerar"
+    },
+    "retrieval": {
+      "question": "Pregunta de recuperación activa SIN copiar el texto del material",
+      "hint": "Pista opcional muy breve"
+    },
+    "feynman": {
+      "concept": "Concepto a explicar",
+      "audiencePrompt": "Explícale este concepto a un estudiante de primer ciclo."
+    }
+  },
+  "surpriseQuestion": {
+    "question": "Pregunta rápida de repaso (no copiar texto literal)",
+    "timeLimitSec": 10
+  },
+  "oralExamSeed": {
+    "question": "Pregunta oral de profesor universitario",
+    "gradingPoints": ["criterio 1", "criterio 2"],
+    "followUpQuestions": ["repregunta 1"]
+  }
 }
 
 IMPORTANTE: devuelve el objeto de análisis DIRECTAMENTE en la raíz del JSON (con pageFocus, conceptCards, etc.).
@@ -95,19 +127,24 @@ Reglas del JSON:
 - NO mezcles conceptos doctrinarios dentro de citations.
 - examMode.oral y examMode.desarrollo: objetos con question (solo la pregunta), gradingPoints (array) y modelAnswer (respuesta modelo separada). NO pongas la respuesta dentro de question.
 - examMode.test: no reveles la respuesta correcta en el enunciado; usa answerIndex y explanation solo para corrección.
+- activeLearning OBLIGATORIO en explain_page y analyze_page: caso práctico (applyConcept), pregunta de recuperación (retrieval) y prompt Feynman (feynman).
+- retrieval.question: obliga a RECORDAR, no copies frases del PDF.
+- applyConcept: caso jurídico verosímil peruano; 3 opciones cuando sea posible; correctOptionId debe coincidir con una opción.
+- surpriseQuestion: pregunta ultra breve para interrumpir lectura pasiva.
+- oralExamSeed: prepara defensa oral universitaria (sin respuesta modelo en question).
 `.trim();
 
 const ACTION_DIRECTIVES: Record<GuidedStudyTutorAction, string> = {
   analyze_page:
-    "Analiza la página como profesor de cátedra. Detecta TODAS las ideas jurídicas relevantes, genera tarjetas de enseñanza profundas (definición, elementos, efectos, distinción, aplicación), resaltados precisos, ideas clave y modo examen completo.",
+    "Analiza la página como profesor de cátedra. Detecta TODAS las ideas jurídicas relevantes, genera tarjetas de enseñanza profundas (definición, elementos, efectos, distinción, aplicación), resaltados precisos, ideas clave y modo examen completo. INCLUYE activeLearning, surpriseQuestion y oralExamSeed. Si hay EXPEDIENTE ACUMULATIVO, el applyConcept DEBE continuar la narrativa del expediente con la fase indicada.",
   exam_essentials:
     "Filtra al 20% esencial para examen (regla 80/20). Solo keyLearning, highlights y conceptCards con essential:true. Reduce secondaryMentions al mínimo. Mantén explanation sustantiva aunque sea concisa.",
   exam_mode:
     "Genera modo examen ampliado: oral, desarrollo, test, conceptos memorables y errores frecuentes. Mantén conceptCards solo si son indispensables para responder.",
   explain_page:
-    "ENSEÑA la página completa como clase magistral: prioriza aprendizaje jurídico profundo. Cada conceptCard debe tener explanation de 4-8 oraciones con definición, requisitos, efectos, distinciones y aplicación. Conecta con el capítulo indicado.",
+    "ENSEÑA la página completa como clase magistral: prioriza aprendizaje jurídico profundo. Cada conceptCard debe tener explanation de 4-8 oraciones con definición, requisitos, efectos, distinciones y aplicación. Conecta con el capítulo indicado. INCLUYE activeLearning completo (caso práctico, recuperación activa, Feynman), surpriseQuestion y oralExamSeed. Si hay EXPEDIENTE ACUMULATIVO, continúa el caso en applyConcept.",
   explain_chapter:
-    "ENSEÑA el CAPÍTULO COMPLETO como clase magistral integrada: sintetiza el hilo conductor del capítulo, los institutos que lo atraviesan y cómo se relacionan entre páginas. Genera conceptCards por cada instituto jurídico central del capítulo (no por cada párrafo). El pageFocus debe resumir el objetivo del capítulo entero. Prioriza profundidad y visión panorámica para estudiar.",
+    "ENSEÑA el CAPÍTULO COMPLETO como clase magistral integrada: sintetiza el hilo conductor del capítulo, los institutos que lo atraviesan y cómo se relacionan entre páginas. Genera conceptCards por cada instituto jurídico central del capítulo (no por cada párrafo). El pageFocus debe resumir el objetivo del capítulo entero. Prioriza profundidad y visión panorámica para estudiar. INCLUYE activeLearning adaptado al capítulo.",
   examples:
     "Amplía los conceptCards con ejemplos más claros y variados. Mantén el resto del JSON con profundidad didáctica.",
   peru_law:
@@ -131,7 +168,7 @@ const ACTION_DIRECTIVES: Record<GuidedStudyTutorAction, string> = {
   civil_code:
     "Enriquece peruLaw y citations con Código Civil peruano de la base oficial indexada.",
   custom:
-    "Responde DIRECTAMENTE la pregunta del estudiante en customReply (texto plano, 3-6 oraciones mínimo si es conceptual). customReply es OBLIGATORIO y no puede ir vacío.",
+    "Responde la pregunta del estudiante en customReply. Si el modo socrático está activo, guía con preguntas antes de explicar. Si no, responde con rigor pero sin dar todo de golpe si detectas confusión.",
 };
 
 export function buildTutorUserPrompt(input: {
@@ -150,6 +187,9 @@ export function buildTutorUserPrompt(input: {
   jurisprudenceBlock?: string;
   strictNormativeMode?: boolean;
   structured?: boolean;
+  teachingStyle?: ProfessorTeachingStyle;
+  caseNarrative?: CaseNarrativeThread;
+  socraticMode?: boolean;
 }): string {
   const directive =
     input.action === "custom" && input.customPrompt?.trim()
@@ -182,6 +222,19 @@ export function buildTutorUserPrompt(input: {
     "",
     `INSTRUCCIÓN: ${directive}`,
   ].filter(Boolean);
+
+  if (input.teachingStyle) {
+    contextParts.push("", buildProfessorStylePrompt(input.teachingStyle));
+  }
+
+  const narrativeBlock = buildCaseNarrativePromptBlock(input.caseNarrative);
+  if (narrativeBlock) {
+    contextParts.push("", narrativeBlock);
+  }
+
+  if (input.socraticMode && input.action === "custom") {
+    contextParts.push("", SOCRATIC_CUSTOM_DIRECTIVE);
+  }
 
   if (input.structured) {
     if (input.action === "custom") {

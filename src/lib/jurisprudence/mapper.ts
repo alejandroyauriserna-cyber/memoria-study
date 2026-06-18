@@ -24,6 +24,10 @@ export type JurisprudenceDocumentRow = {
   rejection_reason?: string | null;
   file_name?: string | null;
   extracted_text?: string | null;
+  sala?: string | null;
+  distrito_judicial?: string | null;
+  asunto_principal?: string | null;
+  numero_documento?: string | null;
   created_at?: string;
   updated_at?: string;
 };
@@ -41,6 +45,10 @@ export function jurisprudenceRowToRecord(row: JurisprudenceDocumentRow): Jurispr
     keywords: row.keywords ?? [],
     pdfUrl: row.pdf_url,
     expediente: row.expediente ?? undefined,
+    sala: row.sala ?? undefined,
+    distritoJudicial: row.distrito_judicial ?? undefined,
+    asuntoPrincipal: row.asunto_principal ?? undefined,
+    numeroDocumento: row.numero_documento ?? undefined,
     isCommunityContribution: Boolean(row.submitted_by),
     submittedBy: row.submitted_by ?? undefined,
     status: row.status ?? undefined,

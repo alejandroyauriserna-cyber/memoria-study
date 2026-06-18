@@ -281,13 +281,6 @@ export function ProfessorLessonView({
         conceptualLinks={analysis.conceptualNormLinks}
         notice={analysis.normativeNotice}
       />
-
-      {analysis.comprehensionQuestion ? (
-        <div className="gs-comprehension-box">
-          <p className="text-xs font-semibold text-[#FF8A00]">¿Entendiste este concepto?</p>
-          <p className="mt-1 text-sm text-foreground">{analysis.comprehensionQuestion}</p>
-        </div>
-      ) : null}
     </div>
   );
 }

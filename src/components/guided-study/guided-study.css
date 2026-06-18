@@ -1084,3 +1084,899 @@ html:not(.dark) .gs-error-item {
 html:not(.dark) .gs-pdf-viewer-canvas {
   background: var(--surface-strong);
 }
+
+/* —— Learning Engine 2026 —— */
+
+.gs-learning-engine {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.gs-le-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.85rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--border));
+  background: color-mix(in srgb, var(--accent) 6%, var(--card));
+}
+
+.gs-le-head-title {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.gs-le-head-sub {
+  font-size: 0.6875rem;
+  color: var(--muted-foreground);
+}
+
+.gs-le-block {
+  border-radius: 0.85rem;
+  border: 1px solid var(--border);
+  background: var(--card);
+  padding: 0.75rem;
+}
+
+.gs-le-block--apply {
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
+}
+
+.gs-le-block--done {
+  opacity: 0.85;
+}
+
+.gs-le-kicker {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+}
+
+.gs-le-studied {
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+
+.gs-le-scenario,
+.gs-le-prompt {
+  margin-top: 0.5rem;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--foreground);
+}
+
+.gs-le-hint {
+  margin-top: 0.35rem;
+  font-size: 0.6875rem;
+  color: var(--muted-foreground);
+}
+
+.gs-le-options {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  list-style: none;
+  padding: 0;
+}
+
+.gs-le-option {
+  width: 100%;
+  text-align: left;
+  border-radius: 0.65rem;
+  border: 1px solid var(--border);
+  background: var(--muted);
+  padding: 0.55rem 0.65rem;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--foreground);
+  cursor: pointer;
+}
+
+.gs-le-option--picked {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  background: color-mix(in srgb, var(--accent) 8%, var(--card));
+}
+
+.gs-le-option--correct {
+  border-color: rgba(34, 197, 94, 0.45);
+  background: rgba(34, 197, 94, 0.12);
+}
+
+.gs-le-option--wrong {
+  border-color: rgba(248, 113, 113, 0.45);
+  background: rgba(248, 113, 113, 0.1);
+}
+
+.gs-le-textarea {
+  margin-top: 0.5rem;
+  width: 100%;
+  border-radius: 0.65rem;
+  border: 1px solid var(--border);
+  background: var(--background);
+  padding: 0.55rem 0.65rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--foreground);
+  resize: vertical;
+}
+
+.gs-le-submit {
+  margin-top: 0.55rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  width: 100%;
+  min-height: 2.35rem;
+  border-radius: 0.65rem;
+  border: none;
+  background: var(--accent);
+  color: var(--accent-foreground);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.gs-le-submit:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.gs-le-submit--secondary {
+  background: color-mix(in srgb, var(--accent) 12%, var(--card));
+  color: var(--foreground);
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--border));
+}
+
+.gs-le-feedback {
+  margin-top: 0.55rem;
+  border-radius: 0.65rem;
+  padding: 0.55rem 0.65rem;
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.gs-le-feedback.is-ok {
+  background: rgba(34, 197, 94, 0.12);
+  color: #15803d;
+}
+
+.gs-le-feedback.is-warn {
+  background: rgba(251, 191, 36, 0.12);
+  color: #b45309;
+}
+
+.gs-le-feedback.is-neutral {
+  background: var(--muted);
+  color: var(--foreground);
+}
+
+.gs-le-feynman-result {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.gs-le-mastery-pill {
+  display: inline-flex;
+  width: fit-content;
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  background: color-mix(in srgb, var(--accent) 14%, var(--card));
+  color: var(--accent);
+}
+
+.gs-le-eval-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--muted-foreground);
+}
+
+.gs-le-eval-list {
+  margin-top: 0.25rem;
+  padding-left: 1rem;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--foreground);
+}
+
+.gs-le-done-label {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+
+.gs-mastery-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  max-width: 100%;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
+  background: color-mix(in srgb, var(--accent) 8%, var(--card));
+  padding: 0.2rem 0.55rem;
+  font-size: 0.625rem;
+  color: var(--foreground);
+}
+
+.gs-mastery-badge strong {
+  color: var(--accent);
+}
+
+.gs-mastery-badge-sub {
+  color: var(--muted-foreground);
+}
+
+.gs-mastery-badge--empty {
+  opacity: 0.85;
+}
+
+.gs-surprise-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+}
+
+.gs-surprise-card {
+  position: relative;
+  width: min(100%, 22rem);
+  border-radius: 1rem;
+  border: 1px solid color-mix(in srgb, #ff8a00 35%, var(--border));
+  background: var(--card);
+  padding: 1rem;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+}
+
+.gs-surprise-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  border: none;
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+
+.gs-surprise-kicker {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #ff8a00;
+}
+
+.gs-surprise-timer {
+  margin-top: 0.35rem;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.gs-surprise-question {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--foreground);
+}
+
+.gs-oral-arch-toggle {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.45rem;
+  border: none;
+  background: transparent;
+  padding: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--foreground);
+  cursor: pointer;
+}
+
+.gs-oral-arch-badge {
+  margin-left: auto;
+  border-radius: 999px;
+  padding: 0.15rem 0.45rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  background: var(--muted);
+  color: var(--muted-foreground);
+}
+
+.gs-oral-arch-body {
+  margin-top: 0.65rem;
+}
+
+/* —— Tutor narrado (TTS) —— */
+
+.gs-narration {
+  margin-bottom: 0.5rem;
+}
+
+.gs-narration-trigger {
+  display: flex;
+  width: 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.85rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--accent) 10%, var(--card)),
+    var(--card)
+  );
+  padding: 0.65rem 0.75rem;
+  text-align: left;
+  color: var(--foreground);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.gs-narration-trigger:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.gs-narration-trigger span:first-of-type {
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.gs-narration-trigger-sub {
+  width: 100%;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+}
+
+.gs-narration-player {
+  border-radius: 0.85rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
+  background: var(--card);
+  padding: 0.65rem 0.75rem;
+}
+
+.gs-narration-player-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.gs-narration-player-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.gs-narration-player-meta {
+  font-size: 0.6875rem;
+  color: var(--muted-foreground);
+}
+
+.gs-narration-progress {
+  margin-top: 0.5rem;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--muted);
+  overflow: hidden;
+}
+
+.gs-narration-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width 0.35s ease;
+}
+
+.gs-narration-controls {
+  margin-top: 0.55rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.gs-narration-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.6rem;
+  border: 1px solid var(--border);
+  background: var(--muted);
+  color: var(--foreground);
+  cursor: pointer;
+}
+
+.gs-narration-btn--primary {
+  background: var(--accent);
+  color: var(--accent-foreground);
+  border-color: transparent;
+}
+
+.gs-narration-rates {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 0.25rem;
+}
+
+.gs-narration-rate {
+  min-width: 2.25rem;
+  height: 1.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  background: transparent;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+
+.gs-narration-rate.is-active {
+  background: color-mix(in srgb, var(--accent) 14%, var(--card));
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+}
+
+/* —— Voz conversacional (Fase 2) —— */
+
+.gs-voice-session {
+  margin-top: 0.65rem;
+  border-radius: 0.85rem;
+  border: 1px dashed color-mix(in srgb, var(--border) 90%, transparent);
+  background: color-mix(in srgb, var(--muted) 40%, transparent);
+  padding: 0.65rem 0.75rem;
+}
+
+.gs-voice-session-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted-foreground);
+}
+
+.gs-voice-session-badge {
+  margin-left: 0.35rem;
+  border-radius: 999px;
+  padding: 0.1rem 0.4rem;
+  font-size: 0.5625rem;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.gs-voice-session-hint {
+  margin-top: 0.35rem;
+  font-size: 0.6875rem;
+  line-height: 1.45;
+  color: var(--muted-foreground);
+}
+
+.gs-voice-mic-btn {
+  margin-top: 0.55rem;
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+  background: var(--card);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--foreground);
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+}
+
+.gs-voice-mic-btn.is-listening {
+  background: color-mix(in srgb, var(--accent) 16%, var(--card));
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.gs-voice-turns {
+  margin-top: 0.55rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  list-style: none;
+  padding: 0;
+}
+
+.gs-voice-turn {
+  border-radius: 0.65rem;
+  padding: 0.45rem 0.55rem;
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.gs-voice-turn span {
+  display: block;
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted-foreground);
+}
+
+.gs-voice-turn--student {
+  background: var(--muted);
+}
+
+.gs-voice-turn--professor {
+  background: color-mix(in srgb, var(--accent) 8%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border));
+}
+
+@media (max-width: 767px) {
+  .gs-narration-player {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.08);
+  }
+}
+
+/* —— Simulación oral —— */
+.gs-oral-sim-trigger {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.85rem;
+  border: 1px solid color-mix(in srgb, #ffd600 35%, var(--border));
+  background: linear-gradient(135deg, color-mix(in srgb, #ffd600 12%, var(--card)), var(--card));
+  padding: 0.65rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.gs-oral-sim-badge {
+  margin-left: auto;
+  border-radius: 999px;
+  padding: 0.1rem 0.45rem;
+  font-size: 0.5625rem;
+  background: color-mix(in srgb, #ffd600 20%, transparent);
+  color: #b8860b;
+}
+
+.gs-oral-sim-panel {
+  border-radius: 0.85rem;
+  border: 1px solid color-mix(in srgb, #ffd600 30%, var(--border));
+  background: var(--card);
+  padding: 0.75rem;
+}
+
+.gs-oral-sim-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.gs-oral-sim-title {
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.gs-oral-sim-sub {
+  font-size: 0.6875rem;
+  color: var(--muted-foreground);
+}
+
+.gs-oral-sim-close {
+  margin-left: auto;
+  font-size: 1.25rem;
+  line-height: 1;
+  color: var(--muted-foreground);
+}
+
+.gs-oral-sim-question {
+  margin-top: 0.55rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.gs-oral-sim-start {
+  margin-top: 0.55rem;
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.5rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-foreground);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.gs-oral-sim-status {
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+
+.gs-oral-sim-eval {
+  margin-top: 0.55rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.gs-oral-sim-eval-block {
+  border-radius: 0.65rem;
+  padding: 0.45rem 0.55rem;
+  font-size: 0.75rem;
+}
+
+.gs-oral-sim-eval-block.is-ok {
+  background: color-mix(in srgb, #22c55e 12%, var(--card));
+}
+
+.gs-oral-sim-eval-block.is-warn {
+  background: color-mix(in srgb, #f59e0b 12%, var(--card));
+}
+
+.gs-oral-sim-eval-block.is-error {
+  background: color-mix(in srgb, #ef4444 10%, var(--card));
+}
+
+.gs-oral-sim-eval-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+.gs-oral-sim-score {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+/* —— Estilo profesor —— */
+.gs-prof-style {
+  position: relative;
+}
+
+.gs-prof-style-trigger {
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  padding: 0.2rem 0.45rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  background: var(--muted);
+  max-width: 7.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gs-prof-style-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.25rem);
+  z-index: 20;
+  min-width: 11rem;
+  border-radius: 0.65rem;
+  border: 1px solid var(--border);
+  background: var(--card);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  list-style: none;
+  padding: 0.25rem;
+}
+
+.gs-prof-style-menu button {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  text-align: left;
+  border-radius: 0.5rem;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.6875rem;
+}
+
+.gs-prof-style-menu button.is-active {
+  background: color-mix(in srgb, var(--accent) 12%, var(--card));
+}
+
+.gs-prof-style-menu button span {
+  color: var(--muted-foreground);
+  font-weight: 400;
+}
+
+/* —— Continuidad / repaso / diagnóstico —— */
+.gs-continuity-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
+  background: color-mix(in srgb, var(--accent) 8%, var(--card));
+  padding: 0.55rem 0.65rem;
+}
+
+.gs-continuity-review {
+  border-radius: 999px;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.gs-continuity-dismiss {
+  color: var(--muted-foreground);
+}
+
+.gs-spaced-review {
+  margin-top: 0.35rem;
+  border-radius: 0.75rem;
+  border: 1px dashed color-mix(in srgb, var(--accent) 35%, var(--border));
+  background: var(--card);
+  padding: 0.65rem 0.75rem;
+}
+
+.gs-spaced-review-kicker {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+}
+
+.gs-spaced-review-prompt {
+  margin-top: 0.35rem;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+.gs-spaced-review-actions {
+  margin-top: 0.45rem;
+  display: flex;
+  gap: 0.35rem;
+}
+
+.gs-spaced-skip {
+  font-size: 0.6875rem;
+  color: var(--muted-foreground);
+}
+
+.gs-diagnosis-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  padding: 1rem;
+}
+
+.gs-diagnosis-panel {
+  width: min(100%, 28rem);
+  max-height: 85vh;
+  overflow-y: auto;
+  border-radius: 1rem;
+  border: 1px solid var(--border);
+  background: var(--card);
+  padding: 1rem;
+}
+
+.gs-diagnosis-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.gs-diagnosis-head h3 {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.gs-diagnosis-summary {
+  margin-top: 0.65rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--muted-foreground);
+}
+
+.gs-diagnosis-section {
+  margin-top: 0.65rem;
+  border-radius: 0.65rem;
+  padding: 0.55rem 0.65rem;
+  font-size: 0.75rem;
+}
+
+.gs-diagnosis-section.is-ok {
+  background: color-mix(in srgb, #22c55e 10%, var(--card));
+}
+
+.gs-diagnosis-section.is-warn {
+  background: color-mix(in srgb, #f59e0b 10%, var(--card));
+}
+
+.gs-diagnosis-section.is-risk {
+  background: color-mix(in srgb, #ef4444 8%, var(--card));
+}
+
+.gs-diagnosis-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 700;
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+}
+
+.gs-diagnosis-actions {
+  margin-top: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.gs-diagnosis-btn {
+  min-height: 2.5rem;
+  border-radius: 0.65rem;
+  background: var(--accent);
+  color: var(--accent-foreground);
+  font-weight: 700;
+  font-size: 0.8125rem;
+}
+
+.gs-diagnosis-btn--ghost {
+  background: var(--muted);
+  color: var(--foreground);
+}
+
+.gs-le-narrative-phase {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.gs-le-narrative-continues {
+  font-size: 0.6875rem;
+  color: var(--muted-foreground);
+  font-style: italic;
+}
