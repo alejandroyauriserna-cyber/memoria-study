@@ -258,7 +258,7 @@ export function ProfessorLessonView({
           const highlight = card.highlightId
             ? analysis.highlights.find((h) => h.id === card.highlightId)
             : undefined;
-          const pdfLinkable = Boolean(card.highlightId && highlight?.findable !== false);
+          const pdfLinkable = Boolean(card.highlightId && highlight?.findable === true);
 
           return (
             <ConceptCard
@@ -269,7 +269,7 @@ export function ProfessorLessonView({
               pdfLinkable={pdfLinkable}
               onToggle={() => {
                 setExpandedId((id) => (id === card.id ? null : card.id));
-                if (pdfLinkable && card.highlightId) onConceptClick?.(card.highlightId);
+                if (card.highlightId) onConceptClick?.(card.highlightId);
               }}
             />
           );

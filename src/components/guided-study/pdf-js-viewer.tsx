@@ -17,16 +17,17 @@ export function PdfJsViewer({
   pageNumber,
   zoom,
   searchQuery,
-  highlightPhrase,
+  locatePhrase,
 }: {
   fileUrl: string;
   pageNumber: number;
   zoom: number;
   searchQuery?: string;
-  highlightPhrase?: string | null;
+  locatePhrase?: string | null;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const textLayerRef = useRef<HTMLDivElement>(null);
+  const renderGenRef = useRef(0);
   const [doc, setDoc] = useState<PDFDocumentProxy | null>(null);
   const [error, setError] = useState("");
   const [rendering, setRendering] = useState(false);
@@ -52,10 +53,13 @@ export function PdfJsViewer({
 
   const renderPage = useCallback(async () => {
     if (!doc || !canvasRef.current) return;
+    const generation = ++renderGenRef.current;
     setRendering(true);
 
     try {
       const page = await doc.getPage(pageNumber);
+      if (generation !== renderGenRef.current) return;
+
       const viewport = page.getViewport({ scale: zoom / 100 });
       const canvas = canvasRef.current;
       const context = canvas.getContext("2d");
@@ -65,35 +69,51 @@ export function PdfJsViewer({
       canvas.width = viewport.width;
 
       await page.render({ canvasContext: context, viewport }).promise;
+      if (generation !== renderGenRef.current) return;
 
       const textContent = await page.getTextContent();
+      if (generation !== renderGenRef.current) return;
+
       const strings = textContent.items
         .map((item) => ("str" in item ? item.str : ""))
         .join(" ");
 
       if (textLayerRef.current) {
-        const needle = highlightPhrase?.trim() || searchQuery?.trim() || "";
+        const manualSearch = searchQuery?.trim() ?? "";
+        const autoLocate = locatePhrase?.trim() ?? "";
+        const needle = manualSearch.length >= 3 ? manualSearch : autoLocate;
         const match = needle.length >= 3 ? findPhraseInPageText(strings, needle) : null;
         const found = match !== null;
 
         textLayerRef.current.innerHTML = "";
         const marker = document.createElement("div");
         marker.className = found ? "gs-pdf-text-hit" : "gs-pdf-text-miss";
-        marker.textContent = found
-          ? `Coincidencia encontrada en la página ${pageNumber}`
-          : highlightPhrase?.trim() && needle.length >= 3
-            ? "Este fragmento no aparece en el texto extraíble del PDF (puede ser escaneado o reformulado por la IA)."
-            : needle.length >= 3
-              ? `Busca «${needle.slice(0, 60)}» en el texto de la página`
-              : "";
+
+        if (found) {
+          marker.textContent = manualSearch
+            ? `Coincidencia: «${match.matched.slice(0, 72)}»`
+            : `Fragmento localizado en la página ${pageNumber}`;
+        } else if (manualSearch.length >= 3) {
+          marker.textContent = `No se encontró «${manualSearch.slice(0, 60)}» en el texto extraíble.`;
+        } else if (autoLocate.length >= 3) {
+          marker.textContent =
+            "El fragmento del concepto no aparece en el texto extraíble del PDF (escaneado o reformulado).";
+        } else {
+          marker.textContent = "";
+        }
+
         if (marker.textContent) textLayerRef.current.appendChild(marker);
       }
     } catch {
-      setError("Error al renderizar la página.");
+      if (generation === renderGenRef.current) {
+        setError("Error al renderizar la página.");
+      }
     } finally {
-      setRendering(false);
+      if (generation === renderGenRef.current) {
+        setRendering(false);
+      }
     }
-  }, [doc, pageNumber, zoom, highlightPhrase, searchQuery]);
+  }, [doc, pageNumber, zoom, locatePhrase, searchQuery]);
 
   useEffect(() => {
     void renderPage();

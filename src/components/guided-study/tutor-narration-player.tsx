@@ -35,7 +35,7 @@ const MICRO_ACTIONS: NarrationMicroAction[] = [
   "repeat_main",
 ];
 
-const RATES = [1, 1.25, 1.5] as const;
+const RATES = [1, 1.5, 2] as const;
 
 function pickPrimaryConcept(analysis: PageProfessorAnalysis): string {
   return analysis.conceptCards[0]?.concept ?? analysis.pageFocus;

@@ -12,17 +12,22 @@ import {
 } from "lucide-react";
 import { PdfJsViewer } from "@/components/guided-study/pdf-js-viewer";
 
+export type PdfConceptFocus = {
+  label: string;
+  locatePhrase: string | null;
+};
+
 export function PdfViewerPanel({
   fileUrl,
   pageNumber,
   totalPages,
-  highlightPhrase,
+  conceptFocus,
   onPageChange,
 }: {
   fileUrl: string;
   pageNumber: number;
   totalPages: number;
-  highlightPhrase?: string | null;
+  conceptFocus?: PdfConceptFocus | null;
   onPageChange: (page: number) => void;
 }) {
   const [zoom, setZoom] = useState(100);
@@ -37,13 +42,6 @@ export function PdfViewerPanel({
   const goNext = useCallback(() => {
     if (pageNumber < totalPages) onPageChange(pageNumber + 1);
   }, [pageNumber, totalPages, onPageChange]);
-
-  useEffect(() => {
-    if (highlightPhrase?.trim()) {
-      const snippet = highlightPhrase.trim().slice(0, 80);
-      setSearchQuery(snippet);
-    }
-  }, [highlightPhrase]);
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -126,7 +124,7 @@ export function PdfViewerPanel({
           <input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Buscar en la página"
+            placeholder="Buscar en la página (opcional)"
             className="h-8 w-full rounded-lg border border-border bg-muted pl-8 pr-3 text-xs text-foreground placeholder:text-muted-foreground"
           />
         </div>
@@ -142,14 +140,20 @@ export function PdfViewerPanel({
       </div>
 
       <div className="gs-pdf-viewer-canvas relative min-h-0 flex-1 bg-surface-strong">
-        {highlightPhrase?.trim() ? (
+        {conceptFocus ? (
           <div className="gs-pdf-highlight-bar">
             <span className="text-[10px] font-semibold uppercase tracking-wide text-accent">
-              Fragmento del concepto
+              {conceptFocus.locatePhrase ? "Concepto en el PDF" : "Concepto seleccionado"}
             </span>
             <p className="mt-0.5 line-clamp-2 text-xs leading-5 text-foreground">
-              {highlightPhrase.trim()}
+              {conceptFocus.label}
             </p>
+            {!conceptFocus.locatePhrase ? (
+              <p className="mt-1 text-[10px] leading-4 text-muted-foreground">
+                Este concepto no tiene texto localizable en el PDF (explicación reformulada por el
+                profesor IA).
+              </p>
+            ) : null}
           </div>
         ) : null}
         <PdfJsViewer
@@ -157,7 +161,7 @@ export function PdfViewerPanel({
           pageNumber={pageNumber}
           zoom={zoom}
           searchQuery={searchQuery}
-          highlightPhrase={highlightPhrase}
+          locatePhrase={conceptFocus?.locatePhrase ?? null}
         />
       </div>
     </div>

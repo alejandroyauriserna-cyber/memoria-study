@@ -34,7 +34,8 @@ export function CompactConceptChips({
           const colors = hl ? HIGHLIGHT_COLORS[hl.category as HighlightCategory] : HIGHLIGHT_COLORS.concepto;
           const active = item.highlightId === activeHighlightId;
 
-          const clickable = Boolean(item.highlightId && hl?.findable !== false);
+          const clickable = Boolean(item.highlightId);
+          const pdfLinkable = hl?.findable === true;
 
           return (
             <button
@@ -42,9 +43,11 @@ export function CompactConceptChips({
               type="button"
               disabled={!clickable}
               title={
-                clickable
-                  ? "Ver en el PDF"
-                  : "Sin coincidencia localizable en el texto de esta página"
+                pdfLinkable
+                  ? "Enfocar y localizar en el PDF"
+                  : clickable
+                    ? "Enfocar concepto (sin texto localizable en el PDF)"
+                    : "Sin coincidencia localizable en el texto de esta página"
               }
               onClick={() => clickable && item.highlightId && onSelect?.(item.highlightId)}
               className={`gs-concept-chip ${active ? "gs-concept-chip--active" : ""}${clickable ? "" : " gs-concept-chip--static"}`}

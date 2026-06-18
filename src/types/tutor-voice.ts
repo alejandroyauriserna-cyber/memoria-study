@@ -30,7 +30,7 @@ export const NARRATION_MICRO_ACTION_LABELS: Record<
   repeat_main: { emoji: "🔄", label: "Repetir idea principal" },
 };
 
-export type TutorSpeechRate = 1 | 1.25 | 1.5;
+export type TutorSpeechRate = 1 | 1.5 | 2;
 
 export type TutorSpeechStatus = "idle" | "loading" | "ready" | "playing" | "paused" | "error";
 

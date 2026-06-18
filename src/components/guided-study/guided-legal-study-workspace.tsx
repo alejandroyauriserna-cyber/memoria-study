@@ -658,11 +658,18 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
   const chapterMode =
     tutorScope.type === "chapter" && scopesMatch(analyzedScope, tutorScope);
 
-  const highlightPhrase = useMemo(() => {
+  const pdfConceptFocus = useMemo(() => {
     if (!activeHighlightId || !tutorState.analysis) return null;
-    return (
-      tutorState.analysis.highlights.find((h) => h.id === activeHighlightId)?.phrase ?? null
-    );
+    const hl = tutorState.analysis.highlights.find((h) => h.id === activeHighlightId);
+    if (!hl) return null;
+    const label =
+      tutorState.analysis.keyLearning.find((k) => k.highlightId === activeHighlightId)?.label ??
+      hl.phrase.slice(0, 80);
+    return {
+      label,
+      /** Solo intentar localizar en el PDF si la IA marcó el fragmento como recuperable. */
+      locatePhrase: hl.findable === true ? hl.phrase : null,
+    };
   }, [activeHighlightId, tutorState.analysis]);
 
   function persistSourceEnabled(sourceId: string) {
@@ -1127,7 +1134,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
               fileUrl={material.fileUrl}
               pageNumber={currentPage}
               totalPages={material.totalPages}
-              highlightPhrase={highlightPhrase}
+              conceptFocus={pdfConceptFocus}
               onPageChange={handlePageChange}
             />
           </div>
