@@ -434,7 +434,7 @@ export function buildNodeStudyDetail(
     examMatch?.question ||
     reviewMatch?.question ||
     context.reviewQuestions?.find((q) => includesTerm(q, node.label)) ||
-    `¿Puedes definir «${node.label}» y dar un ejemplo del PDF?`;
+    `Sin mirar apuntes: ¿puedes definir «${node.label}» con precisión y dar un supuesto del PDF donde se aplique?`;
 
   const commonMistake =
     context.aiAnalysis?.recommendations?.find((r) => includesTerm(r, node.label)) ||

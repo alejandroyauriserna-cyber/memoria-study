@@ -133,9 +133,10 @@ export function TutorNarrationPlayer({
   }, [speech]);
 
   const handleResume = useCallback(() => {
+    if (isStarting || startupPhase !== null || !speech.canPlay) return;
     setPlaybackUiPaused(false);
     void (speech.lessonSuspended ? speech.resumeLesson() : speech.play());
-  }, [speech]);
+  }, [speech, isStarting, startupPhase]);
 
   const handleSeek = useCallback(
     (deltaSec: number) => {
@@ -294,7 +295,6 @@ export function TutorNarrationPlayer({
 
   const loadNarrationScript = useCallback(async (): Promise<boolean> => {
     setLoadError(null);
-    speech.setStatus("loading");
 
     try {
       const res = await fetch("/api/guided-study/tutor/narration", {
@@ -337,7 +337,6 @@ export function TutorNarrationPlayer({
     } catch (caught) {
       const message = caught instanceof Error ? caught.message : "Error de narración";
       setLoadError(message);
-      speech.setStatus("error");
       return false;
     }
   }, [
@@ -356,7 +355,6 @@ export function TutorNarrationPlayer({
 
     setIsStarting(true);
     setLoadError(null);
-    speech.setStatus("loading");
 
     try {
       const cached = loadNarrationCache(materialId, scopeKey, narrationStyle);
@@ -497,12 +495,18 @@ export function TutorNarrationPlayer({
     return <p className="professor-ai-unsupported">La narración no está disponible en este navegador.</p>;
   }
 
-  const showPlayer = speech.status !== "idle" && speech.status !== "error";
-  const isBootstrapping = isStarting || speech.status === "loading" || startupPhase !== null;
+  const showPlayer =
+    speech.status === "ready" ||
+    speech.status === "playing" ||
+    speech.status === "paused" ||
+    speech.lessonSuspended ||
+    speech.awaitingResume;
+  const isBootstrapping = isStarting || startupPhase !== null;
   const startupMessage = startupPhase ? lessonStartupLabel(startupPhase, classMode) : null;
   const displayError = loadError ?? speech.error ?? voiceSession.error;
   const styleMeta = NARRATION_STYLE_META[narrationStyle];
   const busy =
+    isBootstrapping ||
     interruptLoading ||
     voiceSession.isProcessing ||
     voiceSession.isTranscribing ||
@@ -521,8 +525,7 @@ export function TutorNarrationPlayer({
     isBootstrapping ||
     interruptLoading ||
     voiceSession.isProcessing ||
-    voiceSession.isTranscribing ||
-    speech.status === "loading";
+    voiceSession.isTranscribing;
 
   const canInteract =
     showPlayer &&
@@ -740,7 +743,7 @@ export function TutorNarrationPlayer({
                     type="button"
                     className="professor-ai-playback professor-ai-playback--primary"
                     onClick={handleResume}
-                    disabled={busy}
+                    disabled={busy || !speech.canPlay}
                   >
                     <Play size={16} />
                     Continuar

@@ -6,10 +6,10 @@ const MAX_HIERARCHY_BRANCHES = 12;
 const MAX_TIMELINE_EVENTS = 10;
 const MAX_FLOW_STEPS = 10;
 const MAX_FLOW_NODES = 12;
-const MAX_FLASHCARDS = 12;
-const MAX_REVIEW_QUESTIONS = 10;
-const MAX_KEY_CONCEPTS = 8;
-const MAX_EXAM_QUESTIONS = 8;
+const MAX_FLASHCARDS = 16;
+const MAX_REVIEW_QUESTIONS = 16;
+const MAX_KEY_CONCEPTS = 12;
+const MAX_EXAM_QUESTIONS = 12;
 
 const organizerFlashcardSchema = z.object({
   question: z.string().min(5),

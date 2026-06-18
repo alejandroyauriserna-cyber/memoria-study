@@ -61,7 +61,7 @@ export function OrganizerFloatSheet({
               </div>
             ) : null}
             <div
-              className={`organizer-studio-panel min-h-0 flex-1 ${fullscreen ? "flex flex-col" : "overflow-y-auto p-4 sm:p-5"}`}
+              className={`organizer-studio-panel org-panel-scroll-host min-h-0 flex-1 ${fullscreen ? "flex flex-col" : "overflow-y-auto p-4 sm:p-5"}`}
             >
               {children}
             </div>

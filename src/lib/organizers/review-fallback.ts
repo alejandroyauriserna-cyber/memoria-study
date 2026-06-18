@@ -1,5 +1,6 @@
 import type { StoredOrganizerContent } from "@/lib/ai/organizer-schema";
 import type { OrganizerContent } from "@/lib/organizers/parse-content";
+import { buildPedagogicalReviewQuestions } from "@/lib/organizers/pedagogical-questions";
 
 type ReviewBundle = NonNullable<StoredOrganizerContent["reviewBundle"]>;
 
@@ -20,16 +21,27 @@ export function buildReviewBundleFallback(input: {
   const keyConcepts =
     input.reviewBundle?.keyConcepts?.length
       ? input.reviewBundle.keyConcepts
-      : input.conceptNodes?.slice(0, 8) ??
-        input.visualConceptTitles?.slice(0, 8) ??
-        input.detectedConcepts?.slice(0, 8) ??
-        input.flashcards?.slice(0, 6).map((c) => c.question ?? c.answer ?? "").filter(Boolean) ??
+      : input.conceptNodes?.slice(0, 12) ??
+        input.visualConceptTitles?.slice(0, 12) ??
+        input.detectedConcepts?.slice(0, 12) ??
+        input.flashcards?.slice(0, 8).map((c) => c.question ?? c.answer ?? "").filter(Boolean) ??
         splitSummaryConcepts(input.summary);
+
+  const mapTitle =
+    input.conceptNodes?.[0] ??
+    input.visualConceptTitles?.[0] ??
+    "este organizador";
 
   const questions =
     input.reviewBundle?.questions?.length
       ? input.reviewBundle.questions
-      : buildQuestionsFromLegacy(input.reviewQuestions, input.flashcards);
+      : buildQuestionsFromLegacy(
+          input.reviewQuestions,
+          input.flashcards,
+          keyConcepts,
+          mapTitle,
+          input.summary,
+        );
 
   const examQuestions =
     input.reviewBundle?.examQuestions?.length
@@ -55,6 +67,9 @@ function splitSummaryConcepts(summary?: string): string[] {
 function buildQuestionsFromLegacy(
   legacy: string[] | undefined,
   flashcards: Array<{ question?: string; answer?: string }> | undefined,
+  keyConcepts: string[],
+  mapTitle: string,
+  summary?: string,
 ): ReviewBundle["questions"] {
   const fromLegacy = (legacy ?? []).map((question, index) => ({
     question,
@@ -69,9 +84,11 @@ function buildQuestionsFromLegacy(
     options: undefined,
   }));
 
-  const fromFlashcards = (flashcards ?? []).slice(0, 6).map((card, index) => ({
-    question: card.question ?? `¿Qué es ${card.answer?.slice(0, 40)}?`,
-    answer: card.answer ?? "Consulta el organizador visual para la respuesta completa.",
+  const fromFlashcards = (flashcards ?? []).slice(0, 10).map((card, index) => ({
+    question:
+      card.question?.trim() ||
+      `Recuperación: resume en tus palabras «${card.answer?.slice(0, 48) ?? "este concepto"}».`,
+    answer: card.answer ?? "Consulta el organizador visual y el PDF para la respuesta completa.",
     difficulty: (index % 3 === 0 ? "basico" : index % 3 === 1 ? "intermedio" : "avanzado") as
       | "basico"
       | "intermedio"
@@ -82,11 +99,45 @@ function buildQuestionsFromLegacy(
 
   const merged = [...fromLegacy, ...fromFlashcards];
   const seen = new Set<string>();
-  return merged.filter((item) => {
+  const deduped: NonNullable<ReviewBundle["questions"]> = merged.filter((item) => {
     if (seen.has(item.question)) return false;
     seen.add(item.question);
     return true;
-  }).slice(0, 12);
+  });
+
+  if (deduped.length >= 8 || keyConcepts.length < 2) {
+    return deduped.slice(0, 16);
+  }
+
+  const descriptions = new Map<string, string>();
+  for (const card of flashcards ?? []) {
+    if (card.question && card.answer) {
+      descriptions.set(card.question, card.answer);
+    }
+  }
+
+  const pedagogical = buildPedagogicalReviewQuestions({
+    concepts: keyConcepts,
+    mapTitle,
+    descriptions,
+    summary,
+    maxQuestions: 16,
+  });
+
+  for (const item of pedagogical) {
+    if (deduped.length >= 16) break;
+    if (seen.has(item.question)) continue;
+    seen.add(item.question);
+    deduped.push({
+      question: item.question,
+      answer: item.answer,
+      difficulty: item.difficulty,
+      type: item.type,
+      options: undefined,
+    });
+  }
+
+  return deduped.slice(0, 16);
 }
 
 function buildExamQuestions(
@@ -98,7 +149,7 @@ function buildExamQuestions(
   const exam: NonNullable<ReviewBundle["examQuestions"]> = [];
 
   for (const card of flashcards ?? []) {
-    if (!card.question || !card.answer || exam.length >= 6) break;
+    if (!card.question || !card.answer || exam.length >= 10) break;
     const wrong = keyConcepts.filter((c) => c !== card.answer).slice(0, 2);
     exam.push({
       question: card.question,
@@ -110,7 +161,7 @@ function buildExamQuestions(
   }
 
   for (const q of legacy ?? []) {
-    if (exam.length >= 8) break;
+    if (exam.length >= 12) break;
     exam.push({
       question: q,
       type: "verdadero_falso",
@@ -130,7 +181,7 @@ function buildExamQuestions(
     });
   }
 
-  return exam.slice(0, 8);
+  return exam.slice(0, 12);
 }
 
 function shuffle<T>(items: T[]): T[] {

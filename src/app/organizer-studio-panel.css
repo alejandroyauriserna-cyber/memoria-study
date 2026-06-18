@@ -325,3 +325,184 @@ html:not(.dark) .organizers-studio .org-panel-tab-active {
   color: var(--org-accent);
   backdrop-filter: blur(12px);
 }
+
+/* Scroll táctil en paneles (iOS / iPad) sin arrastrar el mapa */
+.org-panel-scroll-host {
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  overscroll-behavior: contain;
+}
+
+.org-speak {
+  margin-bottom: 0.75rem;
+}
+
+.org-speak--compact {
+  margin-bottom: 0;
+}
+
+.org-speak__btn {
+  display: inline-flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--org-accent-border-strong);
+  background: var(--org-accent-soft);
+  padding: 0.625rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--org-accent);
+  transition: opacity 0.15s, background 0.15s, border-color 0.15s;
+}
+
+.org-speak__btn:hover:not(:disabled) {
+  background: var(--org-accent-bg);
+}
+
+.org-speak__btn:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.org-speak__btn.is-playing {
+  border-color: rgba(0, 191, 255, 0.35);
+  color: #00bfff;
+}
+
+.org-speak__error {
+  margin-top: 0.375rem;
+  font-size: 0.6875rem;
+  line-height: 1.25rem;
+  color: #f87171;
+}
+
+/* Modo estudio guiado — respeta tema claro/oscuro del organizador */
+.org-guided-study__kicker {
+  color: var(--org-accent);
+}
+
+.org-guided-study__exit {
+  color: var(--org-panel-text-muted);
+}
+
+.org-guided-study__exit:hover {
+  color: var(--org-accent);
+}
+
+.org-guided-study__progress-track {
+  background: var(--org-accent-soft);
+}
+
+.org-guided-study__progress-bar {
+  background: linear-gradient(90deg, var(--org-accent), #00bfff);
+}
+
+.org-guided-study__chip {
+  color: var(--org-panel-text-muted);
+}
+
+.org-guided-study__chip.is-active {
+  background: var(--org-accent-bg);
+  color: var(--org-accent);
+}
+
+.org-guided-study__chip.is-done {
+  background: var(--org-accent-soft);
+  color: var(--org-accent);
+  opacity: 0.85;
+}
+
+.org-guided-study__card {
+  border: 1px solid var(--org-accent-border);
+  background: var(--org-panel-block);
+}
+
+.org-guided-study__body {
+  color: var(--org-panel-text-soft);
+}
+
+.org-guided-study__hint {
+  color: var(--org-panel-text-muted);
+}
+
+.org-guided-study__reveal {
+  border: 1px dashed var(--org-accent-border-strong);
+  background: var(--org-accent-soft);
+}
+
+.org-guided-study__reveal:hover {
+  border-color: var(--org-accent);
+  background: var(--org-accent-bg);
+}
+
+.org-guided-study__reveal-icon {
+  color: var(--org-accent);
+}
+
+.org-guided-study__nav-btn {
+  border: 1px solid var(--org-accent-border);
+  color: var(--org-panel-text);
+}
+
+.org-guided-study__nav-btn:hover:not(:disabled) {
+  color: var(--org-accent);
+  border-color: var(--org-accent-border-strong);
+}
+
+.org-guided-study__nav-btn--primary {
+  border-color: transparent;
+  background: var(--org-accent-bg);
+  color: var(--org-accent);
+}
+
+.org-guided-study__nav-btn--primary:hover {
+  background: var(--org-accent-soft);
+}
+
+.org-guided-study__launch {
+  border: 1px solid var(--org-accent-border-strong);
+  background: var(--org-accent-soft);
+  color: var(--org-accent);
+}
+
+.org-guided-study__launch:hover {
+  background: var(--org-accent-bg);
+}
+
+/* Matching pairs premium → organizer-match-premium.css */
+
+.org-study-mode__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.org-study-mode__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--org-accent-border);
+  padding: 0.5rem 0.875rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--org-panel-text-muted);
+  background: transparent;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.org-study-mode__tab.is-active {
+  border-color: var(--org-accent-border-strong);
+  background: var(--org-accent-soft);
+  color: var(--org-accent);
+}
+
+.org-study-mode__tab-count {
+  border-radius: 999px;
+  background: var(--org-accent-bg);
+  padding: 0.125rem 0.4375rem;
+  font-size: 0.625rem;
+}

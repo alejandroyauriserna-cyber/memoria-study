@@ -52,6 +52,7 @@ export function ConceptMapCanvas({
   studyContext = {},
   onNodeSelect,
   onConceptStudied,
+  panLocked = false,
 }: {
   title?: string;
   nodes: string[];
@@ -61,6 +62,8 @@ export function ConceptMapCanvas({
   studyContext?: OrganizerStudyContext;
   onNodeSelect?: (node: StudyMapNode | null, detail: NodeStudyDetail | null) => void;
   onConceptStudied?: (label: string) => void;
+  /** Bloquea arrastre del mapa (p. ej. panel lateral o sheet abierto en móvil). */
+  panLocked?: boolean;
 }) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 });
@@ -168,6 +171,7 @@ export function ConceptMapCanvas({
   }
 
   function onCanvasPointerDown(event: React.PointerEvent) {
+    if (panLocked || selectedNodeId) return;
     if ((event.target as HTMLElement).closest("[data-study-node]")) return;
     if ((event.target as HTMLElement).closest("[data-study-panel]")) return;
     setCanvasDragging(true);
@@ -286,7 +290,7 @@ export function ConceptMapCanvas({
         ) : null}
 
         <div
-          className={`absolute inset-0 touch-none ${canvasDragging ? "cursor-grabbing" : nodeDraggingId ? "cursor-move" : "cursor-grab"}`}
+          className={`absolute inset-0 ${panLocked || selectedNodeId ? "touch-pan-y" : "touch-none"} ${canvasDragging ? "cursor-grabbing" : nodeDraggingId ? "cursor-move" : panLocked || selectedNodeId ? "cursor-default" : "cursor-grab"}`}
           onPointerDown={onCanvasPointerDown}
           onPointerMove={onCanvasPointerMove}
           onPointerUp={onCanvasPointerUp}
@@ -449,7 +453,8 @@ export function ConceptMapCanvas({
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: "100%", opacity: 0 }}
               transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              className="org-panel-drawer organizer-studio-panel absolute inset-y-0 right-0 z-40 w-[min(100%,400px)] p-3"
+              className="org-panel-drawer organizer-studio-panel org-panel-scroll-host absolute inset-y-0 right-0 z-40 flex min-h-0 w-[min(100%,400px)] flex-col p-3"
+              onPointerDown={(event) => event.stopPropagation()}
             >
               <StudyAssistantPanel
                 embedded

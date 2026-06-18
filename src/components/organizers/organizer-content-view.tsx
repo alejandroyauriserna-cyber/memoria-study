@@ -8,7 +8,7 @@ import {
 import { convertLegacyFlowChart } from "@/lib/organizers/flow-map-layout";
 import { mergeReviewContent } from "@/lib/organizers/review-fallback";
 import { ConceptMapCanvas } from "@/components/organizers/sections/concept-map-canvas";
-import { FlashcardPremium } from "@/components/organizers/sections/flashcard-premium";
+import { OrganizerStudyMode } from "@/components/organizers/sections/organizer-study-mode";
 import { FlowProcessMap } from "@/components/organizers/sections/flow-process-map";
 import { StudyPathInteractive } from "@/components/organizers/sections/study-path-interactive";
 import { OrganizerFloatSheet } from "@/components/organizers/sections/organizer-float-sheet";
@@ -20,6 +20,8 @@ import { EasyExplanationBlock } from "@/components/organizers/sections/organizer
 import { ReviewPremiumModule } from "@/components/organizers/sections/review-premium-module";
 import { TimelineModern } from "@/components/organizers/sections/timeline-modern";
 import { PedagogicalOrganizerPoster } from "@/components/organizers/sections/pedagogical-organizer-poster";
+import { OrganizerSpeakButton } from "@/components/organizers/sections/organizer-speak-button";
+import { buildOrganizerSpeakScript } from "@/lib/organizers/build-speak-script";
 import { VisualIaPanel } from "@/components/organizers/sections/visual-ia-panel";
 import { VisualMindMapPanel } from "@/components/organizers/sections/visual-mind-map-panel";
 import { VisualPremiumPromptPanel } from "@/components/organizers/sections/visual-premium-prompt-panel";
@@ -135,6 +137,7 @@ export function OrganizerContentView({
           mapKey={mapKey}
           studyContext={studyContext}
           onConceptStudied={handleConceptStudied}
+          panLocked={activePanel !== null}
         />
 
         <OrganizerStudioDock active={activePanel} onSelect={handlePanelSelect} />
@@ -145,6 +148,14 @@ export function OrganizerContentView({
           wide
           onClose={() => setActivePanel(null)}
         >
+          <OrganizerSpeakButton
+            script={buildOrganizerSpeakScript({
+              title: parsed.conceptMap?.title ?? parsed.hierarchy?.root,
+              summary: parsed.summary,
+              simplifiedExplanation: parsed.simplifiedExplanation,
+            })}
+            label="Escuchar resumen"
+          />
           {parsed.summary ? (
             <PedagogicalOrganizerPoster
               title={parsed.conceptMap?.title ?? parsed.hierarchy?.root ?? "Organizador visual"}
@@ -273,8 +284,17 @@ export function OrganizerContentView({
           wide
           onClose={() => setActivePanel(null)}
         >
-          {parsed.flashcards?.length ? (
-            <FlashcardPremium flashcards={parsed.flashcards} deckKey={analyticsKey} quizlet />
+          {parsed.flashcards?.length || parsed.visualSummary?.conceptCards?.length ? (
+            <OrganizerStudyMode
+              flashcards={parsed.flashcards ?? []}
+              deckKey={analyticsKey}
+              studySources={{
+                visualSummary: parsed.visualSummary,
+                reviewBundle: reviewBundle,
+                flowProcess: parsed.flowProcess,
+              }}
+              embedded
+            />
           ) : null}
         </OrganizerFloatSheet>
 
@@ -333,8 +353,16 @@ export function OrganizerContentView({
         />
       ) : null}
       {timelineEvents.length ? <TimelineModern events={timelineEvents} /> : null}
-      {parsed.flashcards?.length ? (
-        <FlashcardPremium flashcards={parsed.flashcards} deckKey={analyticsKey} quizlet />
+      {parsed.flashcards?.length || parsed.visualSummary?.conceptCards?.length ? (
+        <OrganizerStudyMode
+          flashcards={parsed.flashcards ?? []}
+          deckKey={analyticsKey}
+          studySources={{
+            visualSummary: parsed.visualSummary,
+            reviewBundle: reviewBundle,
+            flowProcess: parsed.flowProcess,
+          }}
+        />
       ) : null}
       <ReviewPremiumModule reviewBundle={reviewBundle} onAnswerRecorded={recordAnswer} />
     </div>

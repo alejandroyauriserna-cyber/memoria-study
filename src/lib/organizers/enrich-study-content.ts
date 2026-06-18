@@ -1,9 +1,14 @@
 import { extractCorroboratedTimeline } from "@/lib/organizers/extract-corroborated-timeline";
+import {
+  buildPedagogicalFlashcards,
+  buildPedagogicalReviewQuestions,
+} from "@/lib/organizers/pedagogical-questions";
 
 const MAX_CONCEPT_NODES = 14;
-const MAX_KEY_CONCEPTS = 8;
-const MIN_STUDY_FLASHCARDS = 8;
-const MAX_STUDY_FLASHCARDS = 12;
+const MAX_KEY_CONCEPTS = 12;
+const MIN_STUDY_FLASHCARDS = 10;
+const MAX_STUDY_FLASHCARDS = 16;
+const MAX_REVIEW_QUESTIONS = 16;
 
 type StudyOrganizerContent = {
   summary?: string;
@@ -173,36 +178,23 @@ function synthesizeFlashcards(
   summary: string | undefined,
   existing: NonNullable<StudyOrganizerContent["flashcards"]>,
 ) {
-  const cards = [...existing];
-  const seen = new Set(
-    cards.map((card) => normalizeConceptLabel(card.question ?? "").toLowerCase()).filter(Boolean),
-  );
+  const existingCards = existing
+    .filter((card) => card.question?.trim() && card.answer?.trim())
+    .map((card) => ({
+      question: card.question!.trim(),
+      answer: card.answer!.trim(),
+      difficulty: card.difficulty ?? difficultyAt(0),
+    }));
 
-  const templates = [
-    (concept: string) => `¿Qué es «${concept}» en ${mapTitle}?`,
-    (concept: string) => `¿Cómo se relaciona «${concept}» con el tema principal?`,
-    (concept: string) => `Menciona un supuesto donde aplique «${concept}».`,
-  ];
-
-  for (const concept of nodes) {
-    if (cards.length >= MAX_STUDY_FLASHCARDS) break;
-
-    for (const buildQuestion of templates) {
-      if (cards.length >= MIN_STUDY_FLASHCARDS && cards.length >= nodes.length) break;
-      const question = buildQuestion(concept);
-      const key = question.toLowerCase();
-      if (seen.has(key)) continue;
-      seen.add(key);
-      cards.push({
-        question,
-        answer:
-          descriptions.get(concept) ?? fallbackDescription(concept, mapTitle, summary),
-        difficulty: difficultyAt(cards.length),
-      });
-    }
-  }
-
-  return cards.slice(0, MAX_STUDY_FLASHCARDS);
+  return buildPedagogicalFlashcards({
+    concepts: nodes,
+    mapTitle,
+    descriptions,
+    summary,
+    existing: existingCards,
+    minCards: MIN_STUDY_FLASHCARDS,
+    maxCards: MAX_STUDY_FLASHCARDS,
+  });
 }
 
 function synthesizeReviewQuestions(
@@ -211,13 +203,13 @@ function synthesizeReviewQuestions(
   descriptions: Map<string, string>,
   summary: string | undefined,
 ) {
-  return nodes.slice(0, MAX_KEY_CONCEPTS).map((concept, index) => ({
-    question: `Explica «${concept}» y su importancia dentro de ${mapTitle}.`,
-    answer:
-      descriptions.get(concept) ?? fallbackDescription(concept, mapTitle, summary),
-    difficulty: difficultyAt(index),
-    type: "abierta" as const,
-  }));
+  return buildPedagogicalReviewQuestions({
+    concepts: nodes.slice(0, MAX_KEY_CONCEPTS),
+    mapTitle,
+    descriptions,
+    summary,
+    maxQuestions: MAX_REVIEW_QUESTIONS,
+  });
 }
 
 function applyCorroboratedTimeline<T extends StudyOrganizerContent>(content: T): T {
@@ -369,7 +361,7 @@ export function enrichOrganizerStudySurfaces<T extends StudyOrganizerContent>(
   const questionSeen = new Set(existingQuestions.map((q) => q.question.toLowerCase()));
   const mergedQuestions = [...existingQuestions];
   for (const item of synthesizedQuestions) {
-    if (mergedQuestions.length >= MAX_KEY_CONCEPTS) break;
+    if (mergedQuestions.length >= MAX_REVIEW_QUESTIONS) break;
     if (questionSeen.has(item.question.toLowerCase())) continue;
     questionSeen.add(item.question.toLowerCase());
     mergedQuestions.push(item);

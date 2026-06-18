@@ -25,11 +25,11 @@ const STEP_META: Record<
   GuidedStudyStep,
   { label: string; icon: typeof BookOpen; color: string }
 > = {
-  concept: { label: "Concepto", icon: Target, color: "#00FFD5" },
+  concept: { label: "Concepto", icon: Target, color: "var(--org-accent)" },
   explanation: { label: "Explicación", icon: Lightbulb, color: "#00BFFF" },
-  example: { label: "Ejemplo", icon: GraduationCap, color: "#00FFD5" },
+  example: { label: "Ejemplo", icon: GraduationCap, color: "var(--org-accent)" },
   question: { label: "Pregunta", icon: HelpCircle, color: "#FF8A00" },
-  answer: { label: "Respuesta", icon: CheckCircle2, color: "#00FFD5" },
+  answer: { label: "Respuesta", icon: CheckCircle2, color: "var(--org-accent)" },
 };
 
 export function GuidedStudyWalkthrough({
@@ -110,26 +110,22 @@ export function GuidedStudyWalkthrough({
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="org-guided-study flex flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
-        <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#00FFD5]">
+        <p className="org-guided-study__kicker flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]">
           <Sparkles size={12} />
           Modo estudio guiado
         </p>
         {onClose ? (
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-xs text-muted-foreground hover:text-[#00FFD5]"
-          >
+          <button type="button" onClick={onClose} className="org-guided-study__exit text-xs">
             Salir
           </button>
         ) : null}
       </div>
 
-      <div className="h-1.5 overflow-hidden rounded-full bg-[rgba(0,255,213,0.08)]">
+      <div className="org-guided-study__progress-track h-1.5 overflow-hidden rounded-full">
         <motion.div
-          className="h-full rounded-full bg-gradient-to-r from-[#00FFD5] to-[#00BFFF]"
+          className="org-guided-study__progress-bar h-full rounded-full"
           animate={{ width: `${progress}%` }}
           transition={{ type: "spring", stiffness: 200, damping: 24 }}
         />
@@ -142,12 +138,8 @@ export function GuidedStudyWalkthrough({
           return (
             <span
               key={item}
-              className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
-                active
-                  ? "bg-[rgba(0,255,213,0.18)] text-[#00FFD5]"
-                  : done
-                    ? "bg-[rgba(0,255,213,0.08)] text-[#00FFD5]/70"
-                    : "text-muted-foreground"
+              className={`org-guided-study__chip rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider${
+                active ? " is-active" : done ? " is-done" : ""
               }`}
             >
               {STEP_META[item].label}
@@ -162,9 +154,12 @@ export function GuidedStudyWalkthrough({
           initial={{ opacity: 0, x: 12 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -12 }}
-          className="rounded-2xl border border-[rgba(0,255,213,0.15)] bg-[rgba(7,19,26,0.55)] p-5"
+          className="org-guided-study__card rounded-2xl p-5"
         >
-          <p className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider" style={{ color: meta.color }}>
+          <p
+            className="org-guided-study__step-label mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider"
+            style={{ color: meta.color }}
+          >
             <Icon size={12} />
             {content.title}
           </p>
@@ -172,16 +167,16 @@ export function GuidedStudyWalkthrough({
             <button
               type="button"
               onClick={() => setRevealedAnswer(true)}
-              className="flex min-h-32 w-full flex-col items-center justify-center rounded-xl border border-dashed border-[rgba(0,255,213,0.25)] px-4 py-8 text-center transition hover:border-[rgba(0,255,213,0.45)] hover:bg-[rgba(0,255,213,0.05)]"
+              className="org-guided-study__reveal flex min-h-32 w-full flex-col items-center justify-center rounded-xl px-4 py-8 text-center transition"
             >
-              <HelpCircle size={28} className="mb-3 text-[#00FFD5]" />
+              <HelpCircle size={28} className="org-guided-study__reveal-icon mb-3" />
               <p className="text-sm text-muted-foreground">{content.body}</p>
             </button>
           ) : (
-            <p className="whitespace-pre-line text-sm leading-7 text-[#F5F7FA]/90">{content.body}</p>
+            <p className="org-guided-study__body whitespace-pre-line text-sm leading-7">{content.body}</p>
           )}
           {content.hint ? (
-            <p className="mt-4 flex items-start gap-1.5 text-xs leading-5 text-muted-foreground">
+            <p className="org-guided-study__hint mt-4 flex items-start gap-1.5 text-xs leading-5">
               <AlertTriangle size={12} className="mt-0.5 shrink-0 text-[#FF8A00]" />
               {content.hint}
             </p>
@@ -194,7 +189,7 @@ export function GuidedStudyWalkthrough({
           type="button"
           onClick={goPrev}
           disabled={stepIndex === 0}
-          className="flex items-center gap-1 rounded-xl border border-[rgba(0,255,213,0.15)] px-3 py-2 text-xs font-semibold text-[#F5F7FA] transition hover:text-[#00FFD5] disabled:opacity-40"
+          className="org-guided-study__nav-btn flex items-center gap-1 rounded-xl px-3 py-2 text-xs font-semibold disabled:opacity-40"
         >
           <ArrowLeft size={14} />
           Anterior
@@ -205,7 +200,7 @@ export function GuidedStudyWalkthrough({
         <button
           type="button"
           onClick={goNext}
-          className="flex items-center gap-1 rounded-xl bg-[rgba(0,255,213,0.15)] px-3 py-2 text-xs font-semibold text-[#00FFD5] transition hover:bg-[rgba(0,255,213,0.22)]"
+          className="org-guided-study__nav-btn org-guided-study__nav-btn--primary flex items-center gap-1 rounded-xl px-3 py-2 text-xs font-semibold"
         >
           {stepIndex === STEPS.length - 1 && revealedAnswer ? "Completar" : "Siguiente"}
           <ArrowRight size={14} />
@@ -225,7 +220,7 @@ export function GuidedStudyLaunchButton({
     <button
       type="button"
       onClick={onClick}
-      className="flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-[rgba(0,255,213,0.25)] bg-[rgba(0,255,213,0.08)] text-[11px] font-semibold text-[#00FFD5] transition hover:bg-[rgba(0,255,213,0.14)]"
+      className="org-guided-study__launch flex h-9 w-full items-center justify-center gap-1.5 rounded-lg text-[11px] font-semibold transition"
     >
       <ChevronRight size={13} />
       Iniciar modo estudio

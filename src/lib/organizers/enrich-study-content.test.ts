@@ -55,9 +55,9 @@ describe("enrichOrganizerStudySurfaces", () => {
     expect(enriched.hierarchy?.branches?.length).toBeGreaterThanOrEqual(5);
     expect(enriched.flowProcess?.nodes?.length).toBeGreaterThanOrEqual(4);
     expect(enriched.flowProcess?.edges?.length).toBeGreaterThanOrEqual(3);
-    expect(enriched.flashcards?.length).toBeGreaterThanOrEqual(8);
+    expect(enriched.flashcards?.length).toBeGreaterThanOrEqual(10);
     expect(enriched.aiAnalysis?.conceptsDetected?.length).toBeGreaterThanOrEqual(5);
-    expect(enriched.reviewBundle?.questions?.length).toBeGreaterThanOrEqual(5);
+    expect(enriched.reviewBundle?.questions?.length).toBeGreaterThanOrEqual(8);
   });
 
   it("adds corroborated timeline when dates exist in summary", () => {

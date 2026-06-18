@@ -19,6 +19,8 @@ import {
   GuidedStudyLaunchButton,
   GuidedStudyWalkthrough,
 } from "@/components/organizers/sections/guided-study-walkthrough";
+import { OrganizerSpeakButton } from "@/components/organizers/sections/organizer-speak-button";
+import { buildNodeSpeakScript } from "@/lib/organizers/build-speak-script";
 import type { NodeStudyDetail, StudyBranch, StudyMapNode } from "@/lib/organizers/concept-map-study";
 import { branchForId } from "@/lib/organizers/concept-map-study";
 
@@ -68,6 +70,7 @@ export function StudyAssistantPanel({
   const BranchIcon = branch.icon;
   const [collapsed, setCollapsed] = useState(false);
   const [guidedMode, setGuidedMode] = useState(false);
+  const speakScript = buildNodeSpeakScript(detail);
 
   const content = (
     <>
@@ -108,8 +111,12 @@ export function StudyAssistantPanel({
         </div>
       </div>
 
+      <div className="border-b border-[var(--org-accent-border)] px-4 py-2">
+        <OrganizerSpeakButton script={speakScript} label="Escuchar explicación" compact />
+      </div>
+
       {guidedMode ? (
-        <div className="flex-1 overflow-y-auto px-4 py-3">
+        <div className="org-panel-scroll-host flex-1 overflow-y-auto px-4 py-3">
           <GuidedStudyWalkthrough
             conceptLabel={node.label}
             detail={detail}
@@ -119,7 +126,7 @@ export function StudyAssistantPanel({
         </div>
       ) : (
         <>
-      <div className="flex-1 space-y-4 overflow-y-auto px-4 py-3">
+      <div className="org-panel-scroll-host flex-1 space-y-4 overflow-y-auto px-4 py-3">
         <Section icon={<BookOpen size={11} />} label="Resumen IA" color="#00FFD5">
           {detail.summary}
         </Section>

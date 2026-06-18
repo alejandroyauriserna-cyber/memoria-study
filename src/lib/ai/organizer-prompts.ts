@@ -40,11 +40,11 @@ Requisitos por sección:
   * legalTables: tablas con headers y rows cuando el PDF lo permita.
 - flowProcess: OBLIGATORIO cuando el PDF describe un proceso, método o cadena de razonamiento (interpretación, procedimiento, etapas). nodes (id, label, explanation, legalBasis, example, relatedConcepts) + edges conectados en orden lógico (mínimo 4 nodos).
 - hierarchy: OBLIGATORIO cuando hay varios temas. root = título central del material; branches = lista de 4-12 subtemas/conceptos del PDF (los mismos que conceptMap.nodes).
-- reviewBundle: keyConcepts (mínimo 4-8 si el PDF lo permite) + questions (una por concepto clave, respuestas de al menos 10 caracteres) + examQuestions.
+- reviewBundle: keyConcepts (mínimo 6-12 si el PDF lo permite) + questions (mínimo 10 preguntas variadas: definición, caso práctico, distinción conceptual y relevancia en examen; respuestas de al menos 15 caracteres basadas en el PDF) + examQuestions (mínimo 6: opción múltiple, V/F y casos prácticos).
 - conceptMap: OBLIGATORIO cuando el PDF tiene varios temas. nodes debe listar los mismos conceptos clave que keyConcepts, hierarchy.branches y conceptCards (mínimo 4, máximo 14).
 - aiAnalysis.conceptsDetected: lista explícita de 4-8 temas/conceptos identificados en el PDF (mismos nombres que keyConcepts y conceptMap.nodes).
 - keyConcepts, conceptMap.nodes, hierarchy.branches, visualSummary.conceptCards y aiAnalysis.conceptsDetected deben referir los MISMOS conceptos del PDF (sin duplicar con nombres distintos).
-- flashcards: OBLIGATORIO cuando hay suficiente contenido. Mínimo 8 tarjetas con question/answer de al menos 10 caracteres, cubriendo los conceptos principales del PDF.
+- flashcards: OBLIGATORIO cuando hay suficiente contenido. Mínimo 10 tarjetas con preguntas variadas (definición, aplicación, distinción, examen oral), question/answer de al menos 15 caracteres, cubriendo los conceptos principales del PDF. Evita repetir la misma estructura «¿Qué es X?» en todas.
 - timeline: OBLIGATORIO cuando el PDF menciona fechas, años, siglos, etapas históricas o hitos cronológicos verificables. events con date (año/fecha exacta del PDF) + label (hecho real del documento). PROHIBIDO inventar fechas. Si no hay ninguna fecha o cronología en el PDF, envía null.
 - Si una sección opcional no puede completarse con calidad, envía null en esa sección (no inventes datos cortos).
 
