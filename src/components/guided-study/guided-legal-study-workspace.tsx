@@ -23,6 +23,7 @@ import { filterAnalysisForExamMode } from "@/lib/guided-study/legal-tutor";
 import { ensureActiveLearning } from "@/lib/guided-study/ensure-active-learning";
 import {
   buildSourceFingerprint,
+  buildTutorCacheKey,
   findPracticePageCache,
   loadTutorCache,
   saveTutorCache,
@@ -74,6 +75,7 @@ import {
 } from "@/lib/guided-study/spaced-repetition";
 import { getContinuityGreeting } from "@/lib/guided-study/session-continuity";
 import { recordNarrationMicroAction, buildNarrationMemoryPrompt, getNarrationMemory } from "@/lib/guided-study/tutor-voice/narration-session-memory";
+import { clearNarrationCacheForScope } from "@/lib/guided-study/tutor-voice/narration-cache";
 import { MasteryProgressBadge } from "@/components/guided-study/mastery-progress-badge";
 import { SurpriseQuestionOverlay } from "@/components/guided-study/surprise-question-overlay";
 import { SessionDiagnosisPanel } from "@/components/guided-study/session-diagnosis-panel";
@@ -274,6 +276,9 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
       setAnalyzedScope(scope);
       setTutorScope(scope);
       setSourcesStale(false);
+      if (result.analysis) {
+        clearNarrationCacheForScope(materialId, buildTutorCacheKey(scope, false));
+      }
       saveTutorCache(materialId, scope, examOnly, buildSourceFingerprint(settings), {
         analysis: result.analysis,
         activeSources: result.activeSources,
@@ -693,6 +698,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
   const defaultTutorAction = examOnly ? "exam_essentials" : "explain_page";
 
   function handleRefreshExplanation() {
+    clearNarrationCacheForScope(materialId, buildTutorCacheKey(tutorScope, false));
     void askTutor(
       tutorScope.type === "chapter" ? "explain_chapter" : defaultTutorAction,
       {

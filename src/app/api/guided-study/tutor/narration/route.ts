@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { generateTextWithFallback } from "@/lib/ai/generate-text-with-fallback";
-import { GUIDED_STUDY_AI_PROVIDER_TIMEOUT_MS } from "@/lib/guided-study/timeouts";
+import { GUIDED_STUDY_AI_PROVIDER_TIMEOUT_MS, GUIDED_STUDY_NARRATION_MAGISTRAL_TIMEOUT_MS } from "@/lib/guided-study/timeouts";
 import {
   buildPedagogicalSourceSummary,
   buildNarrationSystemPrompt,
@@ -117,11 +117,16 @@ export async function POST(request: Request) {
       style: body.narrationStyle,
     })}`;
 
+    const narrationTimeoutMs =
+      body.narrationStyle === "magistral"
+        ? GUIDED_STUDY_NARRATION_MAGISTRAL_TIMEOUT_MS
+        : GUIDED_STUDY_AI_PROVIDER_TIMEOUT_MS;
+
     const { text: raw } = await generateTextWithFallback({
       prompt,
       temperature: body.narrationStyle === "magistral" ? 0.6 : 0.55,
       json: false,
-      timeoutMs: GUIDED_STUDY_AI_PROVIDER_TIMEOUT_MS,
+      timeoutMs: narrationTimeoutMs,
     });
 
     const script = sanitizeNarrationScript(raw);

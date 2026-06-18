@@ -606,6 +606,7 @@ export function LegalTutorPanel({
                   <>
                     {analysis && materialId && tutorScope ? (
                       <TutorNarrationPlayer
+                        key={`narr-${materialId}-${pageNum}-${analysis.pageFocus.slice(0, 48)}-${analysis.conceptCards.length}`}
                         materialId={materialId}
                         pageNumber={pageNum}
                         scope={tutorScope}
