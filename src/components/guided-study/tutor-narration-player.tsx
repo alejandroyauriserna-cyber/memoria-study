@@ -341,6 +341,13 @@ export function TutorNarrationPlayer({
     void speech.resumeLesson();
   }, [speech]);
 
+  const handleSpeakClarification = useCallback(
+    async (text: string) => {
+      await speech.playSnippet(text);
+    },
+    [speech],
+  );
+
   const submitFreeQuestion = useCallback(() => {
     const text = askText.trim();
     if (text.length < 3 || interruptLoading) return;
@@ -419,7 +426,8 @@ export function TutorNarrationPlayer({
     interruptLoading ||
     voiceSession.isProcessing ||
     voiceSession.isTranscribing ||
-    voiceSession.isSpeaking;
+    voiceSession.isSpeaking ||
+    speech.isSnippet;
   const inPracticePause = Boolean(activeCheckpoint);
   const liveStatus = statusLabel(voiceSession, micPressed, interruptLoading);
   const orbSpeaking =
@@ -582,6 +590,7 @@ export function TutorNarrationPlayer({
               checkpoint={activeCheckpoint}
               referenceContext={referenceContext}
               onContinue={handleContinueCheckpoint}
+              onSpeakClarification={handleSpeakClarification}
               disabled={busy}
             />
           ) : speech.awaitingResume ? (

@@ -9,6 +9,7 @@ const FeynmanEvalSchema = z.object({
   masteryLevel: z.enum(["bajo", "medio", "alto"]).default("medio"),
   masteryScore: z.number().min(0).max(100).default(50),
   summary: z.string().default(""),
+  clarification: z.string().default(""),
 });
 
 const RetrievalEvalSchema = z.object({
@@ -16,6 +17,7 @@ const RetrievalEvalSchema = z.object({
   feedback: z.string().default(""),
   keyPointsMentioned: z.array(z.string()).default([]),
   missingPoints: z.array(z.string()).default([]),
+  clarification: z.string().default(""),
 });
 
 export async function evaluateFeynmanExplanation(input: {
@@ -41,7 +43,8 @@ Responde SOLO JSON:
   "gaps": ["qué faltó mencionar"],
   "masteryLevel": "bajo|medio|alto",
   "masteryScore": 0-100,
-  "summary": "una frase de cierre motivadora"
+  "summary": "una frase de cierre motivadora",
+  "clarification": "si masteryScore < 75 o hay gaps, explica en 3-5 frases claras lo esencial que el estudiante debe entender para cerrar esas carencias; si dominó el tema, cadena vacía"
 }`;
 
   const { text: raw } = await generateTextWithFallback({
@@ -59,7 +62,13 @@ export async function evaluateRetrievalAnswer(input: {
   question: string;
   studentAnswer: string;
   referenceContext: string;
-}): Promise<{ score: number; feedback: string; keyPointsMentioned: string[]; missingPoints: string[] }> {
+}): Promise<{
+  score: number;
+  feedback: string;
+  keyPointsMentioned: string[];
+  missingPoints: string[];
+  clarification: string;
+}> {
   const prompt = `Evalúa una respuesta de recuperación activa en Derecho peruano.
 No copies el material; compara comprensión.
 
@@ -74,7 +83,8 @@ JSON:
   "score": 0-100,
   "feedback": "retroalimentación breve y útil",
   "keyPointsMentioned": ["..."],
-  "missingPoints": ["..."]
+  "missingPoints": ["conceptos o ideas que omitió o expresó mal"],
+  "clarification": "si score < 75 o hay missingPoints, explica en 3-5 frases pedagógicas lo que debe entender para corregir esas carencias; tono de profesor, no copies el material literal; si dominó el tema, cadena vacía"
 }`;
 
   const { text: raw } = await generateTextWithFallback({

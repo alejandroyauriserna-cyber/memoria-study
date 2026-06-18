@@ -286,6 +286,7 @@ export type FeynmanEvaluation = {
   masteryLevel: "bajo" | "medio" | "alto";
   masteryScore: number;
   summary: string;
+  clarification?: string;
 };
 
 export type PageProfessorAnalysis = {
