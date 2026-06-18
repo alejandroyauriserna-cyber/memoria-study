@@ -452,21 +452,48 @@
   position: absolute;
   inset: 0;
   border: none;
-  background: rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(4px);
+  background: rgba(7, 19, 26, 0.55);
+  backdrop-filter: blur(6px);
   cursor: pointer;
 }
 
 .professor-sheet {
   position: relative;
   z-index: 1;
+  overflow: hidden;
   width: min(100%, 420px);
-  border-radius: 24px 24px 20px 20px;
-  padding: 0.85rem 1rem 1.15rem;
-  border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
-  background: color-mix(in srgb, var(--card) 94%, var(--background));
-  box-shadow: 0 -12px 48px rgba(0, 0, 0, 0.2);
+  border-radius: 28px 28px 24px 24px;
+  padding: 0.85rem 1.15rem 1.2rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 14%, var(--border));
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--accent) 10%, transparent), transparent 45%),
+    linear-gradient(180deg, color-mix(in srgb, var(--card) 96%, white), color-mix(in srgb, var(--card) 88%, var(--muted)));
+  backdrop-filter: blur(24px);
+  box-shadow:
+    0 -20px 60px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 color-mix(in srgb, white 60%, transparent);
   animation: professorSheetUp 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.professor-sheet::before {
+  content: "";
+  position: absolute;
+  top: -100px;
+  right: -60px;
+  width: 240px;
+  height: 240px;
+  border-radius: 999px;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--accent) 16%, transparent),
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+.professor-sheet > * {
+  position: relative;
+  z-index: 1;
 }
 
 @keyframes professorSheetUp {
@@ -483,22 +510,128 @@
 .professor-sheet__handle {
   width: 2.5rem;
   height: 0.28rem;
-  margin: 0 auto 0.75rem;
+  margin: 0 auto 0.85rem;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--foreground) 18%, transparent);
+  background: color-mix(in srgb, var(--accent) 28%, var(--foreground));
+  opacity: 0.35;
+}
+
+.professor-sheet__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.15rem;
+}
+
+.professor-sheet__avatar {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  color: var(--accent-foreground);
+  background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 45%, white));
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+.professor-sheet__header-body {
+  min-width: 0;
+  flex: 1;
 }
 
 .professor-sheet__title {
-  font-size: 0.92rem;
+  font-size: 0.95rem;
   font-weight: 800;
+  letter-spacing: -0.02em;
   color: var(--foreground);
 }
 
 .professor-sheet__subtitle {
-  margin-top: 0.25rem;
+  margin-top: 0.2rem;
   font-size: 0.72rem;
   line-height: 1.45;
+  font-weight: 500;
   color: var(--muted-foreground);
+}
+
+.professor-sheet__section {
+  margin-top: 0.95rem;
+}
+
+.professor-sheet__kicker {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.professor-sheet__styles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.professor-sheet__rates {
+  display: inline-flex;
+  gap: 0.2rem;
+  padding: 0.28rem;
+  border-radius: 0.85rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 14%, var(--border));
+  background: color-mix(in srgb, var(--muted) 55%, var(--card));
+}
+
+.professor-sheet__rate {
+  min-width: 2.85rem;
+  height: 2rem;
+  border: none;
+  border-radius: 0.65rem;
+  background: transparent;
+  font-size: 0.72rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.professor-sheet__rate.is-active {
+  background: var(--card);
+  color: var(--accent);
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.professor-sheet__divider {
+  height: 1px;
+  margin: 1rem 0 0.85rem;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 22%, var(--border)), transparent);
+}
+
+.professor-sheet__stop {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 2.65rem;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, #ef4444 32%, var(--border));
+  background: color-mix(in srgb, #ef4444 8%, var(--card));
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #f87171;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.professor-sheet__stop:hover {
+  background: color-mix(in srgb, #ef4444 14%, var(--card));
+  border-color: color-mix(in srgb, #ef4444 45%, var(--border));
 }
 
 .professor-sheet__list {
@@ -537,6 +670,7 @@
   cursor: not-allowed;
 }
 
+/* Legacy pill styles — help sheet fallback */
 .professor-sheet__section-label {
   margin-top: 0.85rem;
   font-size: 0.65rem;
@@ -570,6 +704,7 @@
   color: var(--accent);
 }
 
+/* Legacy danger — unused by settings sheet */
 .professor-sheet__danger {
   width: 100%;
   margin-top: 1rem;
@@ -592,6 +727,196 @@ html:not(.dark) .professor-ai-card {
     inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
+/* Modo claro — contraste legible en textos y controles */
+html:not(.dark) .professor-ai-title,
+html:not(.dark) .professor-ai-meta-pill,
+html:not(.dark) .professor-ai-style-chip strong,
+html:not(.dark) .professor-ai-input,
+html:not(.dark) .professor-ai-reply,
+html:not(.dark) .professor-sheet__title,
+html:not(.dark) .professor-sheet__option,
+html:not(.dark) .professor-sheet__pill,
+html:not(.dark) .professor-sheet .professor-ai-style-chip strong {
+  color: #0f172a;
+}
+
+html:not(.dark) .professor-sheet__subtitle,
+html:not(.dark) .professor-sheet__section-label,
+html:not(.dark) .professor-sheet .professor-ai-style-chip small {
+  color: rgba(15, 23, 42, 0.62);
+}
+
+html:not(.dark) .professor-sheet__kicker {
+  color: color-mix(in srgb, var(--accent) 82%, #0f172a);
+}
+
+html:not(.dark) .professor-sheet__avatar {
+  color: #041418;
+}
+
+html:not(.dark) .professor-sheet__rates {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: color-mix(in srgb, var(--accent) 22%, #cbd5e1);
+}
+
+html:not(.dark) .professor-sheet__rate {
+  color: rgba(15, 23, 42, 0.55);
+}
+
+html:not(.dark) .professor-sheet__rate.is-active {
+  color: color-mix(in srgb, var(--accent) 78%, #0f172a);
+  background: #ffffff;
+}
+
+html:not(.dark) .professor-sheet__stop {
+  color: #b91c1c;
+  background: color-mix(in srgb, #ef4444 6%, #ffffff);
+  border-color: color-mix(in srgb, #ef4444 28%, #e2e8f0);
+}
+
+html:not(.dark) .professor-sheet {
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--accent) 10%, transparent), transparent 45%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.9));
+  border-color: color-mix(in srgb, var(--accent) 22%, #e2e8f0);
+  box-shadow:
+    0 -20px 60px rgba(15, 23, 42, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+html:not(.dark) .professor-sheet-backdrop {
+  background: rgba(15, 23, 42, 0.35);
+}
+
+html:not(.dark) .professor-sheet__pill.is-active {
+  color: color-mix(in srgb, var(--accent) 75%, #0f172a);
+}
+
+html:not(.dark) .professor-ai-subtitle,
+html:not(.dark) .professor-ai-meta,
+html:not(.dark) .professor-ai-style-chip small,
+html:not(.dark) .professor-ai-status,
+html:not(.dark) .professor-ai-unsupported {
+  color: rgba(15, 23, 42, 0.62);
+}
+
+html:not(.dark) .professor-ai-icon-btn {
+  color: rgba(15, 23, 42, 0.55);
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(15, 23, 42, 0.12);
+}
+
+html:not(.dark) .professor-ai-icon-btn:hover {
+  color: #0f172a;
+  background: color-mix(in srgb, var(--accent) 10%, #ffffff);
+}
+
+html:not(.dark) .professor-ai-playback {
+  color: #0f172a;
+  background: rgba(255, 255, 255, 0.95);
+  border-color: color-mix(in srgb, var(--accent) 32%, #cbd5e1);
+}
+
+html:not(.dark) .professor-ai-playback svg {
+  color: #0f172a;
+  stroke: #0f172a;
+}
+
+html:not(.dark) .professor-ai-playback:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 12%, #ffffff);
+  border-color: color-mix(in srgb, var(--accent) 42%, #94a3b8);
+}
+
+html:not(.dark) .professor-ai-playback--primary,
+html:not(.dark) .help-button,
+html:not(.dark) .professor-ai-start,
+html:not(.dark) .professor-ai-mic {
+  color: #041418;
+}
+
+html:not(.dark) .professor-ai-playback--primary svg,
+html:not(.dark) .professor-ai-start svg,
+html:not(.dark) .professor-ai-mic svg {
+  color: #041418;
+  stroke: #041418;
+}
+
+html:not(.dark) .professor-ai-avatar {
+  color: #041418;
+}
+
+html:not(.dark) .professor-ai-ask {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: color-mix(in srgb, var(--accent) 22%, #cbd5e1);
+}
+
+html:not(.dark) .professor-ai-input::placeholder {
+  color: rgba(15, 23, 42, 0.45);
+}
+
+/* Modo oscuro — refuerzo de contraste */
+html.dark .professor-ai-title,
+html.dark .professor-ai-meta-pill,
+html.dark .professor-ai-style-chip strong,
+html.dark .professor-ai-input,
+html.dark .professor-ai-reply,
+html.dark .professor-sheet__title,
+html.dark .professor-sheet__option,
+html.dark .professor-sheet .professor-ai-style-chip strong {
+  color: #f5f7fa;
+}
+
+html.dark .professor-sheet__subtitle,
+html.dark .professor-sheet .professor-ai-style-chip small {
+  color: rgba(245, 247, 250, 0.62);
+}
+
+html.dark .professor-sheet__avatar {
+  color: #07131a;
+}
+
+html.dark .professor-sheet__rate.is-active {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--card) 92%, #07131a);
+}
+
+html.dark .professor-sheet__stop {
+  color: #fca5a5;
+}
+
+html.dark .professor-sheet {
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--accent) 10%, transparent), transparent 45%),
+    linear-gradient(180deg, color-mix(in srgb, var(--card) 95%, #07131a), color-mix(in srgb, var(--card) 80%, #0d1f27));
+  box-shadow:
+    0 -20px 60px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+html.dark .professor-ai-playback {
+  color: #f5f7fa;
+  background: color-mix(in srgb, var(--card) 85%, transparent);
+}
+
+html.dark .professor-ai-playback svg {
+  color: #f5f7fa;
+  stroke: #f5f7fa;
+}
+
+html.dark .professor-ai-playback--primary,
+html.dark .help-button,
+html.dark .professor-ai-start,
+html.dark .professor-ai-mic {
+  color: #07131a;
+}
+
+html.dark .professor-ai-playback--primary svg,
+html.dark .professor-ai-start svg,
+html.dark .professor-ai-mic svg {
+  color: #07131a;
+  stroke: #07131a;
+}
+
 html.dark .professor-ai-card {
   background:
     radial-gradient(circle at top right, color-mix(in srgb, var(--accent) 10%, transparent), transparent 45%),
@@ -599,7 +924,8 @@ html.dark .professor-ai-card {
 }
 
 @media (max-width: 640px) {
-  .professor-ai-idle-styles {
+  .professor-ai-idle-styles,
+  .professor-sheet__styles {
     grid-template-columns: 1fr;
   }
 }

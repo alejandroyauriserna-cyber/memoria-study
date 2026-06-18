@@ -91,7 +91,22 @@ export function TutorNarrationPlayer({
   const [micPressed, setMicPressed] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [playbackUiPaused, setPlaybackUiPaused] = useState(false);
   const micPressRef = useRef(false);
+
+  useEffect(() => {
+    if (speech.isPlaying) setPlaybackUiPaused(false);
+  }, [speech.isPlaying]);
+
+  const handlePause = useCallback(() => {
+    setPlaybackUiPaused(true);
+    speech.pause();
+  }, [speech]);
+
+  const handleResume = useCallback(() => {
+    setPlaybackUiPaused(false);
+    void (speech.lessonSuspended ? speech.resumeLesson() : speech.play());
+  }, [speech]);
 
   useEffect(() => {
     setNarrationStyle(loadNarrationStyle());
@@ -314,7 +329,12 @@ export function TutorNarrationPlayer({
     voiceSession.isTranscribing ||
     voiceSession.isSpeaking;
   const liveStatus = statusLabel(voiceSession, micPressed, interruptLoading);
-  const orbSpeaking = speech.isPlaying && !speech.isSnippet && !voiceSession.isListening && !micPressed;
+  const orbSpeaking =
+    speech.isPlaying &&
+    !playbackUiPaused &&
+    !speech.isSnippet &&
+    !voiceSession.isListening &&
+    !micPressed;
   const orbListening = voiceSession.isListening || micPressed;
   const orbThinking =
     interruptLoading || voiceSession.isProcessing || voiceSession.isTranscribing || speech.status === "loading";
@@ -438,8 +458,8 @@ export function TutorNarrationPlayer({
               <Play size={16} />
               Continuar explicación
             </button>
-          ) : speech.isPlaying ? (
-            <button type="button" className="professor-ai-playback" onClick={speech.pause}>
+          ) : speech.isPlaying && !playbackUiPaused ? (
+            <button type="button" className="professor-ai-playback" onClick={handlePause}>
               <Pause size={16} />
               Pausar
             </button>
@@ -447,7 +467,7 @@ export function TutorNarrationPlayer({
             <button
               type="button"
               className="professor-ai-playback professor-ai-playback--primary"
-              onClick={() => void (speech.lessonSuspended ? speech.resumeLesson() : speech.play())}
+              onClick={handleResume}
               disabled={busy}
             >
               <Play size={16} />

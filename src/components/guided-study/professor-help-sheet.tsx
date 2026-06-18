@@ -1,5 +1,6 @@
 "use client";
 
+import { Sparkles } from "lucide-react";
 import { NARRATION_MICRO_ACTION_LABELS, type NarrationMicroAction } from "@/types/tutor-voice";
 
 const ACTIONS: NarrationMicroAction[] = [
@@ -38,8 +39,19 @@ export function ProfessorHelpSheet({
         aria-label="Ayúdame a entender"
       >
         <div className="professor-sheet__handle" aria-hidden />
-        <p className="professor-sheet__title">✨ Ayúdame a entender</p>
-        <p className="professor-sheet__subtitle">Elige cómo quieres que el profesor te apoye.</p>
+
+        <header className="professor-sheet__header">
+          <div className="professor-sheet__avatar" aria-hidden>
+            <Sparkles size={20} strokeWidth={2.25} />
+          </div>
+          <div className="professor-sheet__header-body">
+            <p className="professor-sheet__title">Ayúdame a entender</p>
+            <p className="professor-sheet__subtitle">
+              Elige cómo quieres que el profesor te apoye en este momento.
+            </p>
+          </div>
+        </header>
+
         <ul className="professor-sheet__list">
           {ACTIONS.map((action) => {
             const meta = NARRATION_MICRO_ACTION_LABELS[action];

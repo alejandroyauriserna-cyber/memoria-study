@@ -34,6 +34,7 @@ export function useTutorSpeech() {
   const keepAliveAudioRef = useRef<HTMLAudioElement | null>(null);
   const rateRef = useRef<TutorSpeechRate>(1);
   const intentionalCancelRef = useRef(false);
+  const userPausedRef = useRef(false);
   const suspendedRef = useRef<{
     script: string;
     chunks: string[];
@@ -133,6 +134,7 @@ export function useTutorSpeech() {
   const startResumeGuard = useCallback(() => {
     clearResumeGuard();
     resumeGuardRef.current = setInterval(() => {
+      if (userPausedRef.current) return;
       if (!window.speechSynthesis.speaking) return;
       if (window.speechSynthesis.paused) {
         window.speechSynthesis.resume();
@@ -160,6 +162,7 @@ export function useTutorSpeech() {
       }
     }
     suspendedRef.current = null;
+    userPausedRef.current = false;
     setLessonSuspended(false);
     setAwaitingResume(false);
     setIsSnippet(false);
@@ -182,6 +185,7 @@ export function useTutorSpeech() {
 
     function onVisibility() {
       if (document.visibilityState === "visible" && status === "playing") {
+        if (userPausedRef.current) return;
         if (window.speechSynthesis.paused) {
           window.speechSynthesis.resume();
         }
@@ -252,6 +256,7 @@ export function useTutorSpeech() {
         utterance.onstart = () => {
           chunkIndexRef.current = globalIndex;
           utteranceRef.current = utterance;
+          userPausedRef.current = false;
 
           if (globalIndex === fromIndex) {
             setStatus("playing");
@@ -333,6 +338,7 @@ export function useTutorSpeech() {
 
     if (status === "paused" && !awaitingResume && !lessonSuspended) {
       if (window.speechSynthesis.paused) {
+        userPausedRef.current = false;
         window.speechSynthesis.resume();
         setStatus("playing");
         startTick();
@@ -495,6 +501,7 @@ export function useTutorSpeech() {
     setElapsedSec(saved.elapsedSec);
     startedAtRef.current = saved.startedAt;
     suspendedRef.current = null;
+    userPausedRef.current = false;
     setLessonSuspended(false);
     setAwaitingResume(false);
     setIsSnippet(false);
@@ -515,10 +522,20 @@ export function useTutorSpeech() {
   }, [supported, play, cancelSpeech, queueChunks, finishPlayback]);
 
   const pause = useCallback(() => {
-    if (!supported || status !== "playing") return;
-    window.speechSynthesis.pause();
-    clearTick();
+    if (!supported) return;
+
+    const canPause =
+      window.speechSynthesis.speaking || status === "playing" || status === "paused";
+    if (!canPause) return;
+
+    userPausedRef.current = true;
     clearResumeGuard();
+    clearTick();
+
+    if (window.speechSynthesis.speaking) {
+      window.speechSynthesis.pause();
+    }
+
     setStatus("paused");
     void releaseWakeLock();
     stopKeepAlive();
