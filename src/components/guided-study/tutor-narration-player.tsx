@@ -28,6 +28,7 @@ import {
   NARRATION_STYLE_META,
   NARRATION_STYLES,
 } from "@/lib/guided-study/tutor-voice/narration-style";
+import { formatSpeechDuration } from "@/lib/guided-study/tutor-voice/estimate-duration";
 import { primeSpanishVoice } from "@/lib/guided-study/tutor-voice/speech-synthesis";
 import { useTutorSpeech } from "@/hooks/use-tutor-speech";
 import { useTutorVoiceSession } from "@/hooks/use-tutor-voice-session";
@@ -115,6 +116,8 @@ export function TutorNarrationPlayer({
   const [activeCheckpoint, setActiveCheckpoint] = useState<NarrationCheckpoint | null>(null);
   const [startupPhase, setStartupPhase] = useState<LessonStartupPhase | null>(null);
   const [isStarting, setIsStarting] = useState(false);
+  const [skipHint, setSkipHint] = useState<string | null>(null);
+  const skipHintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const micPressRef = useRef(false);
   const firedCheckpointsRef = useRef(new Set<string>());
   const activeCheckpointRef = useRef<NarrationCheckpoint | null>(null);
@@ -133,6 +136,24 @@ export function TutorNarrationPlayer({
     setPlaybackUiPaused(false);
     void (speech.lessonSuspended ? speech.resumeLesson() : speech.play());
   }, [speech]);
+
+  const handleSeek = useCallback(
+    (deltaSec: number) => {
+      void speech.seekBySeconds(deltaSec).then((pos) => {
+        if (pos === null) return;
+        if (skipHintTimerRef.current) clearTimeout(skipHintTimerRef.current);
+        setSkipHint(`Reanudando desde ${formatSpeechDuration(pos)}`);
+        skipHintTimerRef.current = setTimeout(() => setSkipHint(null), 2500);
+      });
+    },
+    [speech],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (skipHintTimerRef.current) clearTimeout(skipHintTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     setNarrationStyle(loadNarrationStyle());
@@ -508,6 +529,14 @@ export function TutorNarrationPlayer({
     !inPracticePause &&
     (speech.isPlaying || speech.isPaused || speech.awaitingResume || speech.lessonSuspended);
 
+  const canSeekListen =
+    classMode === "listen" &&
+    !activeCheckpoint &&
+    !speech.awaitingResume &&
+    !speech.isSnippet &&
+    !speech.lessonSuspended &&
+    (speech.status === "playing" || speech.status === "paused");
+
   return (
     <section className="professor-ai" aria-label="Profesor IA">
       {!showPlayer ? (
@@ -677,31 +706,70 @@ export function TutorNarrationPlayer({
               onSpeakClarification={handleSpeakClarification}
               disabled={busy}
             />
-          ) : speech.awaitingResume ? (
-            <button
-              type="button"
-              className="professor-ai-playback professor-ai-playback--primary"
-              onClick={() => void speech.resumeLesson()}
-            >
-              <Play size={16} />
-              Continuar explicación
-            </button>
-          ) : speech.isPlaying && !playbackUiPaused ? (
-            <button type="button" className="professor-ai-playback" onClick={handlePause}>
-              <Pause size={16} />
-              Pausar
-            </button>
           ) : (
-            <button
-              type="button"
-              className="professor-ai-playback professor-ai-playback--primary"
-              onClick={handleResume}
-              disabled={busy}
-            >
-              <Play size={16} />
-              Continuar
-            </button>
+            <div className="professor-ai-playback-row">
+              {canSeekListen ? (
+                <button
+                  type="button"
+                  className="professor-ai-skip"
+                  aria-label="Retroceder 30 segundos"
+                  disabled={busy || speech.elapsedSec <= 0}
+                  onClick={() => handleSeek(-30)}
+                >
+                  −30 s
+                </button>
+              ) : null}
+
+              <div className="professor-ai-playback-main">
+                {speech.awaitingResume ? (
+                  <button
+                    type="button"
+                    className="professor-ai-playback professor-ai-playback--primary"
+                    onClick={() => void speech.resumeLesson()}
+                  >
+                    <Play size={16} />
+                    Continuar explicación
+                  </button>
+                ) : speech.isPlaying && !playbackUiPaused ? (
+                  <button type="button" className="professor-ai-playback" onClick={handlePause}>
+                    <Pause size={16} />
+                    Pausar
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="professor-ai-playback professor-ai-playback--primary"
+                    onClick={handleResume}
+                    disabled={busy}
+                  >
+                    <Play size={16} />
+                    Continuar
+                  </button>
+                )}
+              </div>
+
+              {canSeekListen ? (
+                <button
+                  type="button"
+                  className="professor-ai-skip"
+                  aria-label="Adelantar 30 segundos"
+                  disabled={
+                    busy ||
+                    speech.elapsedSec >= Math.max(0, speech.estimatedDurationSec - 2)
+                  }
+                  onClick={() => handleSeek(30)}
+                >
+                  +30 s
+                </button>
+              ) : null}
+            </div>
           )}
+
+          {skipHint ? (
+            <p className="professor-ai-skip-hint" role="status" aria-live="polite">
+              {skipHint}
+            </p>
+          ) : null}
 
           {canInteract ? (
             <>

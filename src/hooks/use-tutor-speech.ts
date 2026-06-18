@@ -15,7 +15,10 @@ import {
   buildSpeechChunks,
   normalizeSpeechScript,
 } from "@/lib/guided-study/tutor-voice/speech-chunks";
-import { sliceScriptByElapsedProgress } from "@/lib/guided-study/tutor-voice/resume-offset";
+import {
+  clampElapsedSec,
+  sliceScriptByElapsedProgress,
+} from "@/lib/guided-study/tutor-voice/resume-offset";
 import { narrationPlaybackErrorMessage } from "@/lib/guided-study/tutor-voice/lesson-startup";
 import type { TutorSpeechRate, TutorSpeechStatus } from "@/types/tutor-voice";
 
@@ -691,6 +694,81 @@ export function useTutorSpeech() {
     ],
   );
 
+  const seekBySeconds = useCallback(
+    async (deltaSec: number): Promise<number | null> => {
+      if (!supported || !scriptRef.current || deltaSec === 0) return null;
+      if (isSnippet || awaitingResume || lessonSuspended) return null;
+      if (status !== "playing" && status !== "paused") return null;
+
+      const fullScript = scriptRef.current;
+      const totalDuration =
+        estimatedDurationSec ||
+        estimateSpeechDurationSec(countWordsLocal(fullScript), rateRef.current);
+
+      const currentElapsed =
+        startedAtRef.current > 0
+          ? Math.floor((Date.now() - startedAtRef.current) / 1000)
+          : elapsedSec;
+      const newElapsed = clampElapsedSec(currentElapsed + deltaSec, totalDuration);
+
+      if (newElapsed === currentElapsed) return newElapsed;
+
+      const wasPlaying = status === "playing";
+
+      cancelSpeech();
+      clearResumeGuard();
+      clearTick();
+      utteranceRef.current = null;
+
+      setElapsedSec(newElapsed);
+      startedAtRef.current = Date.now() - newElapsed * 1000;
+
+      const remaining = sliceScriptByElapsedProgress(
+        fullScript,
+        newElapsed,
+        rateRef.current,
+      );
+
+      if (!remaining.trim() || newElapsed >= totalDuration - 1) {
+        if (wasPlaying) {
+          finishPlayback();
+        } else {
+          setStatus("ready");
+          setElapsedSec(totalDuration);
+        }
+        return newElapsed;
+      }
+
+      chunksRef.current = buildSpeechChunks(remaining);
+      chunkIndexRef.current = 0;
+
+      if (wasPlaying) {
+        userPausedRef.current = false;
+        const voice = getCachedSpanishVoice() ?? (await waitForVoices(1500));
+        queueChunks(chunksRef.current, voice, 0);
+      } else {
+        userPausedRef.current = true;
+        setStatus("paused");
+      }
+
+      return newElapsed;
+    },
+    [
+      supported,
+      isSnippet,
+      awaitingResume,
+      lessonSuspended,
+      status,
+      estimatedDurationSec,
+      elapsedSec,
+      cancelSpeech,
+      clearResumeGuard,
+      clearTick,
+      finishPlayback,
+      queueChunks,
+    ],
+  );
+
   const loadScript = useCallback((script: string, durationSec: number) => {
     const normalized = normalizeSpeechScript(script);
     scriptRef.current = normalized;
@@ -731,6 +809,7 @@ export function useTutorSpeech() {
     suspendLesson,
     playSnippet,
     resumeLesson,
+    seekBySeconds,
     isPlaying: status === "playing",
     isPaused: status === "paused",
     canPlay: Boolean(scriptRef.current) && status !== "loading",

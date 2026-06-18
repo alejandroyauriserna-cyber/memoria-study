@@ -11,6 +11,12 @@ function countWords(text: string): number {
   return text.trim().split(/\s+/).filter(Boolean).length;
 }
 
+/** Limita el tiempo transcurrido al rango válido del guion. */
+export function clampElapsedSec(elapsedSec: number, totalDurationSec: number): number {
+  if (totalDurationSec <= 0) return Math.max(0, elapsedSec);
+  return Math.max(0, Math.min(elapsedSec, Math.max(0, totalDurationSec - 1)));
+}
+
 /** Devuelve el guion restante a partir del progreso estimado por tiempo. */
 export function sliceScriptByElapsedProgress(
   script: string,

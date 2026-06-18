@@ -217,6 +217,54 @@
   background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 22%, var(--border)), transparent);
 }
 
+.professor-ai-playback-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+.professor-ai-playback-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.professor-ai-skip {
+  flex: 0 0 auto;
+  min-width: 4.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.65rem;
+  min-height: 2.75rem;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
+  background: color-mix(in srgb, var(--card) 72%, transparent);
+  color: var(--foreground);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.professor-ai-skip:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 10%, var(--card));
+  border-color: color-mix(in srgb, var(--accent) 32%, var(--border));
+}
+
+.professor-ai-skip:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.professor-ai-skip-hint {
+  margin: 0.45rem 0 0;
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--foreground) 72%, var(--muted-foreground));
+}
+
 .professor-ai-playback {
   width: 100%;
   display: inline-flex;
