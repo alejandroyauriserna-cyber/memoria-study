@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, Mic, MicOff, Pause, Play, Send, Square, Volume2 } from "lucide-react";
+import { Loader2, Mic, MoreHorizontal, Pause, Play, Volume2 } from "lucide-react";
 import { buildTutorCacheKey, type TutorCacheScope } from "@/lib/guided-study/tutor-cache";
 import {
   buildNarrationMemoryPrompt,
@@ -15,41 +15,46 @@ import {
   loadNarrationStyle,
   saveNarrationStyle,
   NARRATION_STYLE_META,
+  NARRATION_STYLES,
 } from "@/lib/guided-study/tutor-voice/narration-style";
 import { useTutorSpeech } from "@/hooks/use-tutor-speech";
 import { useTutorVoiceSession } from "@/hooks/use-tutor-voice-session";
-import { NarrationStylePicker } from "@/components/guided-study/narration-style-picker";
+import { ProfessorHelpSheet } from "@/components/guided-study/professor-help-sheet";
+import { ProfessorSettingsSheet } from "@/components/guided-study/professor-settings-sheet";
+import { ProfessorVoiceOrb } from "@/components/guided-study/professor-voice-orb";
 import type { GuidedStudySession, PageProfessorAnalysis } from "@/types/guided-legal-study";
-import {
-  NARRATION_MICRO_ACTION_LABELS,
-  type NarrationInterruptAction,
-  type NarrationMicroAction,
-  type NarrationStyle,
-} from "@/types/tutor-voice";
-
-const MICRO_ACTIONS: NarrationMicroAction[] = [
-  "example",
-  "simpler",
-  "casacion",
-  "exam",
-  "repeat_main",
-];
-
-const RATES = [1, 1.5, 2] as const;
+import type { NarrationInterruptAction, NarrationMicroAction, NarrationStyle } from "@/types/tutor-voice";
+import "./professor-ai.css";
 
 function pickPrimaryConcept(analysis: PageProfessorAnalysis): string {
   return analysis.conceptCards[0]?.concept ?? analysis.pageFocus;
 }
 
-function voicePhaseLabel(
+function shortStyleLabel(style: NarrationStyle): string {
+  const meta = NARRATION_STYLE_META[style];
+  if (style === "quick") return `${meta.emoji} Rápida`;
+  if (style === "magistral") return `${meta.emoji} Magistral`;
+  return `${meta.emoji} Normal`;
+}
+
+function formatRemaining(estimatedSec: number, elapsedSec: number): string {
+  const rem = Math.max(0, estimatedSec - elapsedSec);
+  if (rem < 60) return `~${rem} s restantes`;
+  const m = Math.floor(rem / 60);
+  const s = rem % 60;
+  return s > 0 ? `~${m} min ${s} s restantes` : `~${m} min restantes`;
+}
+
+function statusLabel(
   voice: ReturnType<typeof useTutorVoiceSession>,
   micPressed: boolean,
+  interruptLoading: boolean,
 ): string | null {
-  if (voice.isListening) return "🔴 Grabando… habla ahora";
-  if (voice.isArming || micPressed) return "Preparando micrófono…";
-  if (voice.isTranscribing) return "Transcribiendo lo que dijiste…";
-  if (voice.isProcessing) return "El profesor está pensando tu pregunta…";
+  if (voice.isListening || micPressed) return "Escuchando tu pregunta…";
+  if (voice.isTranscribing) return "Transcribiendo…";
+  if (voice.isProcessing || interruptLoading) return "El profesor está pensando…";
   if (voice.isSpeaking) return "El profesor te responde…";
+  if (voice.interimTranscript) return `«${voice.interimTranscript}»`;
   return null;
 }
 
@@ -84,6 +89,8 @@ export function TutorNarrationPlayer({
   const [lastReply, setLastReply] = useState<string | null>(null);
   const [askText, setAskText] = useState("");
   const [micPressed, setMicPressed] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const micPressRef = useRef(false);
 
   useEffect(() => {
@@ -162,11 +169,7 @@ export function TutorNarrationPlayer({
       try {
         const { reply, primaryConcept } = await fetchInterruptReply(input);
         setLastReply(reply);
-        onNarrationMemoryUpdate?.(
-          input.action,
-          primaryConcept,
-          input.studentMessage,
-        );
+        onNarrationMemoryUpdate?.(input.action, primaryConcept, input.studentMessage);
         await speech.playSnippet(reply);
       } catch (caught) {
         const message = caught instanceof Error ? caught.message : "Error al interrumpir la clase";
@@ -275,6 +278,21 @@ export function TutorNarrationPlayer({
     void runInterrupt({ action: "free", studentMessage: text });
   }, [askText, interruptLoading, runInterrupt]);
 
+  const handleMicroAction = useCallback(
+    (action: NarrationMicroAction) => {
+      void runInterrupt({ action });
+    },
+    [runInterrupt],
+  );
+
+  const handleStop = useCallback(() => {
+    speech.stop();
+    speech.reset();
+    setLastReply(null);
+    setAskText("");
+    setSettingsOpen(false);
+  }, [speech]);
+
   useEffect(() => {
     speech.stop();
     speech.reset();
@@ -285,87 +303,122 @@ export function TutorNarrationPlayer({
   }, [scopeKey, materialId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!speech.supported) {
-    return (
-      <p className="gs-narration-unsupported text-[10px] text-muted-foreground">
-        La narración no está disponible en este navegador.
-      </p>
-    );
+    return <p className="professor-ai-unsupported">La narración no está disponible en este navegador.</p>;
   }
 
   const showPlayer = speech.status !== "idle" && speech.status !== "error";
   const styleMeta = NARRATION_STYLE_META[narrationStyle];
-  const showInteractive =
-    showPlayer &&
-    (speech.isPlaying ||
-      speech.isPaused ||
-      speech.awaitingResume ||
-      speech.lessonSuspended);
   const busy =
     interruptLoading ||
     voiceSession.isProcessing ||
     voiceSession.isTranscribing ||
     voiceSession.isSpeaking;
-  const voiceStatus = voicePhaseLabel(voiceSession, micPressed);
+  const liveStatus = statusLabel(voiceSession, micPressed, interruptLoading);
+  const orbSpeaking = speech.isPlaying && !speech.isSnippet && !voiceSession.isListening && !micPressed;
+  const orbListening = voiceSession.isListening || micPressed;
+  const orbThinking =
+    interruptLoading || voiceSession.isProcessing || voiceSession.isTranscribing || speech.status === "loading";
+
+  const canInteract =
+    showPlayer &&
+    (speech.isPlaying || speech.isPaused || speech.awaitingResume || speech.lessonSuspended);
 
   return (
-    <section className="gs-narration" aria-label="Profesor particular interactivo">
-      <NarrationStylePicker
-        value={narrationStyle}
-        onChange={handleStyleChange}
-        disabled={disabled || speech.status === "loading" || speech.isPlaying}
-        compact={showPlayer}
-      />
-
+    <section className="professor-ai" aria-label="Profesor IA">
       {!showPlayer ? (
-        <button
-          type="button"
-          disabled={disabled || speech.status === "loading"}
-          className="gs-narration-trigger"
-          onClick={() => void fetchNarration().then(() => speech.play())}
-        >
-          {speech.status === "loading" ? (
-            <Loader2 size={16} className="animate-spin" />
-          ) : (
-            <Volume2 size={16} />
-          )}
-          <span>Escuchar al profesor</span>
-          {speech.status === "loading" ? (
-            <span className="gs-narration-trigger-sub">
-              Preparando {styleMeta.label.toLowerCase()}…
-            </span>
-          ) : (
-            <span className="gs-narration-trigger-sub">
-              Clase interactiva · interrumpe con voz o texto · {styleMeta.duration}
-            </span>
-          )}
-        </button>
-      ) : (
-        <div
-          className={`gs-narration-player ${speech.isPlaying ? "is-playing" : ""} ${speech.isPaused ? "is-paused" : ""}`}
-        >
-          <div className="gs-narration-header">
-            <div className="gs-narration-avatar" aria-hidden>
-              <Volume2 size={18} strokeWidth={2.25} />
+        <div className="professor-ai-card">
+          <div className="professor-ai-header">
+            <div className="professor-ai-avatar" aria-hidden>
+              <Volume2 size={22} strokeWidth={2.25} />
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="gs-narration-title">Profesor particular</p>
-              <p className="gs-narration-subtitle">
-                {styleMeta.emoji} {styleMeta.label} · ~{speech.durationLabel}
-                {speech.isPlaying || speech.isPaused ? ` · ${speech.elapsedSec}s` : null}
-                {speech.isSnippet ? " · Respondiendo…" : null}
-                {speech.backgroundMode ? " · Modo podcast" : null}
-              </p>
+            <div className="professor-ai-header__body">
+              <p className="professor-ai-title">Profesor IA</p>
+              <p className="professor-ai-subtitle">Explicando esta página</p>
+              <div className="professor-ai-meta">
+                <span className="professor-ai-meta-pill">{shortStyleLabel(narrationStyle)}</span>
+                <span>{styleMeta.duration}</span>
+              </div>
             </div>
           </div>
 
-          <div className="gs-wave" aria-hidden>
-            {Array.from({ length: 6 }).map((_, i) => (
-              <span key={i} />
-            ))}
+          <div className="professor-ai-idle-styles" role="radiogroup" aria-label="Profundidad de la explicación">
+            {NARRATION_STYLES.map((style) => {
+              const meta = NARRATION_STYLE_META[style];
+              const active = narrationStyle === style;
+              return (
+                <button
+                  key={style}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  disabled={disabled || speech.status === "loading"}
+                  className={`professor-ai-style-chip${active ? " is-active" : ""}`}
+                  onClick={() => handleStyleChange(style)}
+                >
+                  <strong>
+                    {meta.emoji} {meta.label.replace("Explicación ", "").replace("Clase ", "")}
+                  </strong>
+                  <small>{meta.duration}</small>
+                </button>
+              );
+            })}
           </div>
+
+          <ProfessorVoiceOrb active={false} />
+
+          <button
+            type="button"
+            className="professor-ai-start"
+            disabled={disabled || speech.status === "loading"}
+            onClick={() => void fetchNarration().then(() => speech.play())}
+          >
+            {speech.status === "loading" ? (
+              <>
+                <Loader2 size={16} className="animate-spin" />
+                Preparando explicación…
+              </>
+            ) : (
+              <>
+                <Play size={16} />
+                Escuchar explicación
+              </>
+            )}
+          </button>
+        </div>
+      ) : (
+        <div className="professor-ai-card">
+          <div className="professor-ai-header">
+            <div className="professor-ai-avatar" aria-hidden>
+              <Volume2 size={22} strokeWidth={2.25} />
+            </div>
+            <div className="professor-ai-header__body">
+              <p className="professor-ai-title">Profesor IA</p>
+              <p className="professor-ai-subtitle">Explicando esta página</p>
+              <div className="professor-ai-meta">
+                <span className="professor-ai-meta-pill">{shortStyleLabel(narrationStyle)}</span>
+                <span>{formatRemaining(speech.estimatedDurationSec, speech.elapsedSec)}</span>
+              </div>
+            </div>
+            <div className="professor-ai-header__actions">
+              <button
+                type="button"
+                className="professor-ai-icon-btn"
+                aria-label="Ajustes de audio"
+                onClick={() => setSettingsOpen(true)}
+              >
+                <MoreHorizontal size={16} />
+              </button>
+            </div>
+          </div>
+
+          <ProfessorVoiceOrb
+            active={orbSpeaking}
+            listening={orbListening}
+            thinking={orbThinking && !orbSpeaking}
+          />
 
           <div
-            className="gs-narration-progress"
+            className="professor-ai-progress"
             role="progressbar"
             aria-valuenow={speech.progressPercent}
             aria-valuemin={0}
@@ -374,32 +427,49 @@ export function TutorNarrationPlayer({
             <span style={{ width: `${speech.progressPercent}%` }} />
           </div>
 
-          {showInteractive ? (
+          <div className="professor-ai-divider" />
+
+          {speech.awaitingResume ? (
+            <button
+              type="button"
+              className="professor-ai-playback professor-ai-playback--primary"
+              onClick={() => void speech.resumeLesson()}
+            >
+              <Play size={16} />
+              Continuar explicación
+            </button>
+          ) : speech.isPlaying ? (
+            <button type="button" className="professor-ai-playback" onClick={speech.pause}>
+              <Pause size={16} />
+              Pausar
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="professor-ai-playback professor-ai-playback--primary"
+              onClick={() => void (speech.lessonSuspended ? speech.resumeLesson() : speech.play())}
+              disabled={busy}
+            >
+              <Play size={16} />
+              Continuar
+            </button>
+          )}
+
+          {canInteract ? (
             <>
-              <div className="gs-narration-microactions" role="group" aria-label="Atajos al profesor">
-                {MICRO_ACTIONS.map((action) => {
-                  const meta = NARRATION_MICRO_ACTION_LABELS[action];
-                  return (
-                    <button
-                      key={action}
-                      type="button"
-                      className="gs-narration-micro"
-                      disabled={busy || speech.isSnippet || voiceSession.isListening}
-                      onClick={() => void runInterrupt({ action })}
-                    >
-                      {interruptLoading ? (
-                        <Loader2 size={12} className="animate-spin" />
-                      ) : (
-                        meta.emoji
-                      )}
-                      <span>{meta.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
+              <div className="professor-ai-divider" />
+
+              <button
+                type="button"
+                className="help-button"
+                disabled={busy || speech.isSnippet}
+                onClick={() => setHelpOpen(true)}
+              >
+                ✨ Ayúdame a entender
+              </button>
 
               <form
-                className="gs-narration-ask"
+                className="professor-ai-ask"
                 onSubmit={(e) => {
                   e.preventDefault();
                   submitFreeQuestion();
@@ -407,50 +477,19 @@ export function TutorNarrationPlayer({
               >
                 <input
                   type="text"
-                  className="gs-narration-ask-input"
-                  placeholder="No entiendo esto… o haz una pregunta puntual"
+                  className="professor-ai-input"
+                  placeholder="Pregúntale al profesor sobre esta página…"
                   value={askText}
                   disabled={busy || speech.isSnippet || voiceSession.isListening}
                   onChange={(e) => setAskText(e.target.value)}
                   aria-label="Pregunta al profesor"
                 />
-                <button
-                  type="submit"
-                  className="gs-narration-ask-send"
-                  disabled={busy || askText.trim().length < 3 || speech.isSnippet}
-                  aria-label="Enviar pregunta"
-                >
-                  <Send size={14} />
-                </button>
-              </form>
-
-              {voiceSession.supported ? (
-                <>
-                  {voiceStatus ? (
-                    <p
-                      className={`gs-narration-voice-status ${
-                        voiceSession.isListening ? "is-recording" : ""
-                      } ${voiceSession.isProcessing ? "is-thinking" : ""}`}
-                      role="status"
-                      aria-live="polite"
-                    >
-                      {voiceSession.isProcessing || voiceSession.isTranscribing ? (
-                        <Loader2 size={12} className="animate-spin" />
-                      ) : null}
-                      {voiceStatus}
-                    </p>
-                  ) : null}
-
-                  {voiceSession.interimTranscript ? (
-                    <p className="gs-narration-voice-interim" aria-live="polite">
-                      «{voiceSession.interimTranscript}»
-                    </p>
-                  ) : null}
-
+                {voiceSession.supported ? (
                   <button
                     type="button"
-                    className={`gs-narration-voice-mic ${voiceSession.isListening || micPressed ? "is-listening" : ""}`}
+                    className={`professor-ai-mic${orbListening ? " is-active" : ""}`}
                     disabled={disabled || busy || speech.isSnippet}
+                    aria-label="Mantén pulsado para preguntar con voz"
                     onPointerDown={(e) => {
                       e.preventDefault();
                       handleVoicePress();
@@ -463,104 +502,53 @@ export function TutorNarrationPlayer({
                   >
                     {voiceSession.isProcessing || voiceSession.isTranscribing ? (
                       <Loader2 size={18} className="animate-spin" />
-                    ) : voiceSession.isListening || micPressed ? (
-                      <MicOff size={18} />
                     ) : (
                       <Mic size={18} />
                     )}
-                    <span>
-                      {voiceSession.isListening
-                        ? "Suelta para enviar tu pregunta"
-                        : voiceSession.isTranscribing
-                          ? "Transcribiendo…"
-                          : voiceSession.isProcessing
-                            ? "Procesando tu pregunta…"
-                            : voiceSession.isSpeaking
-                              ? "Escuchando al profesor…"
-                              : "Mantén pulsado y pregunta en voz alta"}
-                    </span>
                   </button>
-                </>
+                ) : null}
+              </form>
+
+              {liveStatus ? (
+                <p
+                  className={`professor-ai-status${orbListening ? " is-live" : ""}`}
+                  role="status"
+                  aria-live="polite"
+                >
+                  {liveStatus}
+                </p>
               ) : null}
 
-              {voiceSession.turns.length ? (
-                <ul className="gs-narration-turns">
-                  {voiceSession.turns.slice(-2).map((turn) => (
-                    <li key={turn.id} className={`gs-narration-turn gs-narration-turn--${turn.role}`}>
-                      <span>{turn.role === "student" ? "Tú" : "Profesor"}</span>
-                      <p>{turn.text}</p>
-                    </li>
-                  ))}
-                </ul>
+              {lastReply && speech.awaitingResume ? (
+                <p className="professor-ai-reply">{lastReply}</p>
               ) : null}
             </>
           ) : null}
-
-          {lastReply && speech.awaitingResume ? (
-            <p className="gs-narration-micro-reply">{lastReply}</p>
-          ) : null}
-
-          <div className="gs-narration-controls">
-            {speech.awaitingResume ? (
-              <button
-                type="button"
-                className="gs-narration-btn gs-narration-btn--primary gs-narration-btn--wide"
-                onClick={() => void speech.resumeLesson()}
-              >
-                <Play size={16} />
-                <span>Continuar explicación</span>
-              </button>
-            ) : speech.isPlaying ? (
-              <button type="button" className="gs-narration-btn" onClick={speech.pause} aria-label="Pausar">
-                <Pause size={16} />
-              </button>
-            ) : (
-              <button
-                type="button"
-                className="gs-narration-btn gs-narration-btn--primary"
-                onClick={() => void (speech.lessonSuspended ? speech.resumeLesson() : speech.play())}
-                aria-label={speech.isPaused ? "Continuar" : "Reproducir"}
-                disabled={busy}
-              >
-                <Play size={16} />
-              </button>
-            )}
-
-            {!speech.awaitingResume ? (
-              <button
-                type="button"
-                className="gs-narration-btn gs-narration-btn--stop"
-                onClick={speech.stop}
-                title="Detener la clase y volver al inicio del reproductor"
-                aria-label="Detener clase"
-                disabled={busy}
-              >
-                <Square size={14} />
-                <span>Detener</span>
-              </button>
-            ) : null}
-
-            <div className="gs-narration-rates" role="group" aria-label="Velocidad">
-              {RATES.map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  className={`gs-narration-rate ${speech.rate === r ? "is-active" : ""}`}
-                  onClick={() => speech.setSpeechRate(r)}
-                  disabled={interruptLoading}
-                >
-                  {r}x
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       )}
 
+      <ProfessorHelpSheet
+        open={helpOpen}
+        loading={interruptLoading}
+        onClose={() => setHelpOpen(false)}
+        onSelect={handleMicroAction}
+      />
+
+      <ProfessorSettingsSheet
+        open={settingsOpen}
+        style={narrationStyle}
+        rate={speech.rate}
+        onClose={() => setSettingsOpen(false)}
+        onStyleChange={(style) => {
+          handleStyleChange(style);
+          setSettingsOpen(false);
+        }}
+        onRateChange={(rate) => speech.setSpeechRate(rate)}
+        onStop={handleStop}
+      />
+
       {loadError || speech.error || voiceSession.error ? (
-        <p className="mt-1 text-[10px] text-red-500">
-          {loadError ?? speech.error ?? voiceSession.error}
-        </p>
+        <p className="professor-ai-error">{loadError ?? speech.error ?? voiceSession.error}</p>
       ) : null}
     </section>
   );
