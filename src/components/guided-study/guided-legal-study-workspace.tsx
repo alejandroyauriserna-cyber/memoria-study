@@ -74,13 +74,17 @@ import {
   markSpacedReviewDone,
 } from "@/lib/guided-study/spaced-repetition";
 import { getContinuityGreeting } from "@/lib/guided-study/session-continuity";
-import { recordNarrationMicroAction, buildNarrationMemoryPrompt, getNarrationMemory } from "@/lib/guided-study/tutor-voice/narration-session-memory";
+import {
+  buildNarrationMemoryPrompt,
+  getNarrationMemory,
+  recordNarrationInterrupt,
+} from "@/lib/guided-study/tutor-voice/narration-session-memory";
 import { clearNarrationCacheForScope } from "@/lib/guided-study/tutor-voice/narration-cache";
 import { MasteryProgressBadge } from "@/components/guided-study/mastery-progress-badge";
 import { SurpriseQuestionOverlay } from "@/components/guided-study/surprise-question-overlay";
 import { SessionDiagnosisPanel } from "@/components/guided-study/session-diagnosis-panel";
 import { SpacedReviewBanner } from "@/components/guided-study/spaced-review-banner";
-import type { NarrationMicroAction } from "@/types/tutor-voice";
+import type { NarrationInterruptAction } from "@/types/tutor-voice";
 import type { GuidedStudySession, OralDefenseEvaluation, ProfessorTeachingStyle, SurpriseQuestion } from "@/types/guided-legal-study";
 import {
   fetchCloudGuidedStudySession,
@@ -858,7 +862,11 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
     setStudySession(updated);
   }
 
-  function handleNarrationMemoryUpdate(action: NarrationMicroAction, primaryConcept: string) {
+  function handleNarrationMemoryUpdate(
+    action: NarrationInterruptAction,
+    primaryConcept: string,
+    studentMessage?: string,
+  ) {
     const base =
       studySession ??
       loadGuidedStudySession(materialId) ?? {
@@ -867,7 +875,12 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
         understoodPages: [],
         lastUpdated: new Date().toISOString(),
       };
-    const updated = recordNarrationMicroAction(base, action, primaryConcept);
+    const updated = recordNarrationInterrupt(base, {
+      action,
+      primaryConcept,
+      pageNumber: currentPage,
+      studentMessage,
+    });
     saveGuidedStudySession(updated);
     setStudySession(updated);
   }

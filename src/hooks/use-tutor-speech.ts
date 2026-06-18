@@ -290,14 +290,36 @@ export function useTutorSpeech() {
 
   const play = useCallback(async (): Promise<void> => {
     if (!scriptRef.current) return;
-    if (status === "paused" && window.speechSynthesis.paused) {
-      window.speechSynthesis.resume();
-      setStatus("playing");
-      startTick();
-      startResumeGuard();
-      void requestWakeLock();
-      startKeepAlive();
-      return;
+
+    if (status === "paused" && !awaitingResume && !lessonSuspended) {
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+        setStatus("playing");
+        startTick();
+        startResumeGuard();
+        void requestWakeLock();
+        startKeepAlive();
+        return;
+      }
+
+      const idx = chunkIndexRef.current;
+      const chunks = chunksRef.current.length
+        ? chunksRef.current
+        : buildSpeechChunks(scriptRef.current);
+      chunksRef.current = chunks;
+
+      if (chunks.length && (idx > 0 || elapsedSec > 0)) {
+        if (!supported) return;
+        window.speechSynthesis.cancel();
+        const voice = getCachedSpanishVoice() ?? (await waitForVoices());
+        if (!startedAtRef.current && elapsedSec > 0) {
+          startedAtRef.current = Date.now() - elapsedSec * 1000;
+        } else if (!startedAtRef.current) {
+          startedAtRef.current = Date.now();
+        }
+        queueChunks(chunks, voice, idx);
+        return;
+      }
     }
 
     if (!supported) return;
@@ -308,19 +330,39 @@ export function useTutorSpeech() {
     chunksRef.current = chunks;
     chunkIndexRef.current = 0;
     startedAtRef.current = Date.now();
+    setElapsedSec(0);
     queueChunks(chunks, voice, 0);
-  }, [status, supported, startTick, queueChunks, startResumeGuard, requestWakeLock, startKeepAlive]);
+  }, [
+    status,
+    awaitingResume,
+    lessonSuspended,
+    elapsedSec,
+    supported,
+    startTick,
+    queueChunks,
+    startResumeGuard,
+    requestWakeLock,
+    startKeepAlive,
+  ]);
 
   const suspendLesson = useCallback(() => {
     if (!scriptRef.current || suspendedRef.current) return;
-    window.speechSynthesis.cancel();
+
+    if (status === "playing" || window.speechSynthesis.speaking) {
+      window.speechSynthesis.cancel();
+    }
+
+    if (!chunksRef.current.length) {
+      chunksRef.current = buildSpeechChunks(scriptRef.current);
+    }
+
     suspendedRef.current = {
       script: scriptRef.current,
       chunks: [...chunksRef.current],
       chunkIndex: chunkIndexRef.current,
       estimatedDurationSec,
       elapsedSec,
-      startedAt: startedAtRef.current || Date.now(),
+      startedAt: startedAtRef.current || Date.now() - elapsedSec * 1000,
     };
     clearTick();
     clearResumeGuard();
@@ -331,6 +373,7 @@ export function useTutorSpeech() {
     setIsSnippet(false);
     setStatus("paused");
   }, [
+    status,
     estimatedDurationSec,
     elapsedSec,
     clearTick,
@@ -449,26 +492,65 @@ export function useTutorSpeech() {
 
   const setSpeechRate = useCallback(
     (next: TutorSpeechRate) => {
+      if (next === rateRef.current) return;
       setRate(next);
-      if (scriptRef.current) {
-        const wc = countWordsLocal(scriptRef.current);
-        setEstimatedDurationSec(estimateSpeechDurationSec(wc, next));
+      rateRef.current = next;
+
+      const fullScript = scriptRef.current;
+      if (fullScript) {
+        setEstimatedDurationSec(
+          estimateSpeechDurationSec(countWordsLocal(fullScript), next),
+        );
       }
-      if (status === "playing" || status === "paused") {
-        const chunks = chunksRef.current;
-        const idx = chunkIndexRef.current;
-        const remaining = chunks.slice(idx).join(" ");
-        stop();
-        if (remaining) {
-          scriptRef.current = remaining;
-          chunksRef.current = buildSpeechChunks(remaining);
-          chunkIndexRef.current = 0;
-          setStatus("ready");
-          void play();
-        }
+
+      if (status !== "playing" && status !== "paused") return;
+      if (isSnippet) return;
+
+      const wasPlaying = status === "playing";
+      const savedIdx = chunkIndexRef.current;
+      const savedElapsed = elapsedSec;
+      const savedStartedAt =
+        startedAtRef.current || Date.now() - savedElapsed * 1000;
+
+      window.speechSynthesis.cancel();
+      clearResumeGuard();
+
+      if (!chunksRef.current.length && fullScript) {
+        chunksRef.current = buildSpeechChunks(fullScript);
+      }
+
+      chunkIndexRef.current = savedIdx;
+      setElapsedSec(savedElapsed);
+      startedAtRef.current = savedStartedAt;
+
+      if (wasPlaying && chunksRef.current.length) {
+        void (async () => {
+          const voice = getCachedSpanishVoice() ?? (await waitForVoices());
+          setStatus("playing");
+          setError(null);
+          startTick();
+          void requestWakeLock();
+          startKeepAlive();
+          startResumeGuard();
+          setupMediaSession("Clase narrada — MemoriaStudy");
+          queueChunks(chunksRef.current, voice, savedIdx);
+        })();
+      } else {
+        setStatus("paused");
       }
     },
-    [status, stop, play],
+    [
+      status,
+      isSnippet,
+      elapsedSec,
+      clearResumeGuard,
+      startTick,
+      requestWakeLock,
+      startKeepAlive,
+      startResumeGuard,
+      setupMediaSession,
+      queueChunks,
+    ],
   );
 
   const loadScript = useCallback((script: string, durationSec: number) => {

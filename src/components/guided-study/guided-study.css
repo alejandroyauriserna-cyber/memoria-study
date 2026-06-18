@@ -1867,6 +1867,110 @@ html:not(.dark) .gs-pdf-viewer-canvas {
   gap: 0.4rem;
 }
 
+.gs-narration-ask {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 0.35rem;
+  margin-top: 0.55rem;
+}
+
+.gs-narration-ask-input {
+  flex: 1;
+  min-width: 0;
+  border-radius: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
+  background: color-mix(in srgb, var(--card) 92%, var(--muted));
+  padding: 0.55rem 0.7rem;
+  font-size: 0.72rem;
+  color: var(--foreground);
+}
+
+.gs-narration-ask-input::placeholder {
+  color: var(--muted-foreground);
+}
+
+.gs-narration-ask-send {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: 0.75rem;
+  border: none;
+  background: var(--accent);
+  color: #0a0a0a;
+  cursor: pointer;
+}
+
+.gs-narration-ask-send:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.gs-narration-voice-mic {
+  position: relative;
+  z-index: 1;
+  margin-top: 0.45rem;
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 2.65rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+  background: color-mix(in srgb, var(--card) 90%, var(--muted));
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--foreground);
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+}
+
+.gs-narration-voice-mic.is-listening {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--card));
+  color: var(--accent);
+}
+
+.gs-narration-turns {
+  position: relative;
+  z-index: 1;
+  margin: 0.45rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.gs-narration-turn {
+  border-radius: 0.65rem;
+  padding: 0.4rem 0.55rem;
+  font-size: 0.68rem;
+  line-height: 1.4;
+}
+
+.gs-narration-turn span {
+  display: block;
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted-foreground);
+}
+
+.gs-narration-turn--student {
+  background: var(--muted);
+}
+
+.gs-narration-turn--professor {
+  background: color-mix(in srgb, var(--accent) 8%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
+}
+
 /* —— Voz conversacional (Fase 2) —— */
 
 .gs-voice-session {
@@ -1979,6 +2083,15 @@ html:not(.dark) .gs-pdf-viewer-canvas {
 
   .gs-narration-btn,
   .gs-narration-rate {
+    min-height: 2.5rem;
+  }
+
+  .gs-narration-voice-mic {
+    min-height: 2.85rem;
+  }
+
+  .gs-narration-ask-input {
+    font-size: 0.8rem;
     min-height: 2.5rem;
   }
 }

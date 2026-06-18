@@ -16,6 +16,9 @@ export type NarrationMicroAction =
   | "exam"
   | "repeat_main";
 
+/** Botón predefinido o pregunta libre del estudiante durante la clase. */
+export type NarrationInterruptAction = NarrationMicroAction | "free";
+
 export const NARRATION_MICRO_ACTION_LABELS: Record<
   NarrationMicroAction,
   { emoji: string; label: string }

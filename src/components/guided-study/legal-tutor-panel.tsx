@@ -26,7 +26,6 @@ import { ExamModePanel } from "@/components/guided-study/exam-mode-panel";
 import { CompactConceptChips } from "@/components/guided-study/compact-concept-chips";
 import { LearningEnginePanel } from "@/components/guided-study/learning-engine-panel";
 import { TutorNarrationPlayer } from "@/components/guided-study/tutor-narration-player";
-import { TutorVoiceSessionShell } from "@/components/guided-study/tutor-voice-session-shell";
 import { OralSimulationFlow } from "@/components/guided-study/oral-simulation-flow";
 import { ProfessorStylePicker } from "@/components/guided-study/professor-style-picker";
 import { SessionContinuityBanner } from "@/components/guided-study/session-continuity-banner";
@@ -40,7 +39,7 @@ import type {
   ProfessorTeachingStyle,
   TutorChatMessage,
 } from "@/types/guided-legal-study";
-import type { NarrationMicroAction } from "@/types/tutor-voice";
+import type { NarrationInterruptAction } from "@/types/tutor-voice";
 import type { TutorCacheScope } from "@/lib/guided-study/tutor-cache";
 import { LibrarySetupChecklist } from "@/components/guided-study/library-setup-checklist";
 import { formatSourceSyncLabel } from "@/lib/legal-sources/source-meta";
@@ -324,8 +323,9 @@ export function LegalTutorPanel({
   caseNarrativeTitle?: string;
   studySession?: GuidedStudySession | null;
   onNarrationMemoryUpdate?: (
-    action: NarrationMicroAction,
+    action: NarrationInterruptAction,
     primaryConcept: string,
+    studentMessage?: string,
   ) => void;
 }) {
   const [customPrompt, setCustomPrompt] = useState("");
@@ -654,9 +654,6 @@ export function LegalTutorPanel({
                       />
                     ) : null}
                     {hasExamContent ? <ExamModePanel examMode={analysis.examMode} /> : null}
-                    {onVoiceAsk ? (
-                      <TutorVoiceSessionShell onAskTutor={onVoiceAsk} disabled={loading} />
-                    ) : null}
                   </>
                 )}
               </>
