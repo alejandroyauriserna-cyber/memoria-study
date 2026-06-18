@@ -77,6 +77,7 @@ export function OrganizerMatchingPairsGame({
   const totalPairs = game.stats.totalPairs;
   const matchedCount = game.stats.matchedCount;
   const progressPct = totalPairs > 0 ? Math.round((matchedCount / totalPairs) * 100) : 0;
+  const gridCols = game.tiles.length <= 8 ? 4 : 4;
 
   useEffect(() => {
     if (!timerRunning || won) return;
@@ -130,7 +131,7 @@ export function OrganizerMatchingPairsGame({
 
   return (
     <div
-      className={`org-match-game${won ? " org-match-game--won" : ""}`}
+      className={`org-match-game${won ? " org-match-game--won" : ""}${embedded ? " org-match-game--embedded" : ""}`}
       data-phase={game.phase}
       data-embedded={embedded || undefined}
       aria-label="Juego de memoria concepto y definición"
@@ -193,6 +194,7 @@ export function OrganizerMatchingPairsGame({
         className={`org-match-game__board${boardShaking ? " is-shaking" : ""}`}
         role="grid"
         key={burstKey}
+        style={{ "--org-match-cols": gridCols } as React.CSSProperties}
       >
         {burstKey > 0 ? (
           <div className="org-match-game__particles" aria-hidden>
@@ -245,8 +247,10 @@ export function OrganizerMatchingPairsGame({
               <span className="org-match-game__tile-inner">
                 <span className="org-match-game__tile-face org-match-game__tile-face--front">
                   <span className="org-match-game__tile-glow" aria-hidden />
-                  <Brain className="org-match-game__tile-brain" size={28} strokeWidth={1.6} aria-hidden />
-                  <span className="org-match-game__tile-back-hint">Toca para voltear</span>
+                  <Brain className="org-match-game__tile-brain" size={embedded ? 22 : 28} strokeWidth={1.6} aria-hidden />
+                  {!embedded ? (
+                    <span className="org-match-game__tile-back-hint">Toca para voltear</span>
+                  ) : null}
                 </span>
                 <span className="org-match-game__tile-face org-match-game__tile-face--back">
                   <span className="org-match-game__tile-kind">

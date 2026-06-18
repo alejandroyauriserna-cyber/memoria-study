@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import type { ReactNode } from "react";
@@ -19,6 +20,15 @@ export function OrganizerFloatSheet({
   wide?: boolean;
   fullscreen?: boolean;
 }) {
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+
   return (
     <AnimatePresence>
       {open ? (
@@ -61,7 +71,8 @@ export function OrganizerFloatSheet({
               </div>
             ) : null}
             <div
-              className={`organizer-studio-panel org-panel-scroll-host min-h-0 flex-1 ${fullscreen ? "flex flex-col" : "overflow-y-auto p-4 sm:p-5"}`}
+              className={`organizer-studio-panel org-panel-scroll-host org-float-sheet__body min-h-0 flex-1 overflow-y-auto overscroll-contain ${fullscreen ? "flex flex-col" : "p-4 sm:p-5"}`}
+              onTouchMove={(e) => e.stopPropagation()}
             >
               {children}
             </div>

@@ -289,8 +289,15 @@ export function ConceptMapCanvas({
           </div>
         ) : null}
 
+        {panLocked ? (
+          <div
+            className="organizer-canvas-touch-blocker absolute inset-0 z-[45] touch-none"
+            aria-hidden
+          />
+        ) : null}
+
         <div
-          className={`absolute inset-0 ${panLocked || selectedNodeId ? "touch-pan-y" : "touch-none"} ${canvasDragging ? "cursor-grabbing" : nodeDraggingId ? "cursor-move" : panLocked || selectedNodeId ? "cursor-default" : "cursor-grab"}`}
+          className={`absolute inset-0 ${panLocked || selectedNodeId ? "pointer-events-none touch-none" : "touch-none"} ${canvasDragging ? "cursor-grabbing" : nodeDraggingId ? "cursor-move" : panLocked || selectedNodeId ? "cursor-default" : "cursor-grab"}`}
           onPointerDown={onCanvasPointerDown}
           onPointerMove={onCanvasPointerMove}
           onPointerUp={onCanvasPointerUp}
@@ -453,7 +460,8 @@ export function ConceptMapCanvas({
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: "100%", opacity: 0 }}
               transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              className="org-panel-drawer organizer-studio-panel org-panel-scroll-host absolute inset-y-0 right-0 z-40 flex min-h-0 w-[min(100%,400px)] flex-col p-3"
+              className="org-panel-drawer organizer-studio-panel org-panel-scroll-host absolute inset-y-0 right-0 z-50 flex min-h-0 w-[min(100%,400px)] flex-col p-3"
+              style={{ touchAction: "pan-y" }}
               onPointerDown={(event) => event.stopPropagation()}
             >
               <StudyAssistantPanel
