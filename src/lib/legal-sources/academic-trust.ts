@@ -9,16 +9,11 @@ import {
 } from "@/lib/legal-sources/storage";
 import type { LegalSourcesSettings } from "@/types/legal-sources";
 
-/** Incrementar para volver a mostrar el banner tras una actualización importante. */
-export const ACADEMIC_TRUST_PROMPT_VERSION = "2026.1";
-
 const STORAGE_KEY = "memoria-academic-trust";
 
 export const ACADEMIC_TRUST_CHANGE_EVENT = "memoria-academic-trust-change";
 
 type AcademicTrustState = {
-  dismissedVersion?: string;
-  dismissedAt?: string;
   activatedAt?: string;
 };
 
@@ -48,27 +43,6 @@ export function hasAcademicSourcesActivated(settings?: LegalSourcesSettings): bo
   return getEnabledSources(resolved).length > 0;
 }
 
-export function shouldShowAcademicTrustBanner(settings?: LegalSourcesSettings): boolean {
-  const resolved = settings ?? loadLegalSourcesSettings();
-  if (hasAcademicSourcesActivated(resolved)) return false;
-
-  const state = loadAcademicTrustState();
-  if (state.activatedAt) return false;
-  if (state.dismissedVersion === ACADEMIC_TRUST_PROMPT_VERSION) return false;
-
-  return true;
-}
-
-export function dismissAcademicTrustBanner() {
-  const state = loadAcademicTrustState();
-  saveAcademicTrustState({
-    ...state,
-    dismissedVersion: ACADEMIC_TRUST_PROMPT_VERSION,
-    dismissedAt: new Date().toISOString(),
-  });
-  notifyAcademicTrustChange();
-}
-
 export function activateLegalSourcesFromTrust(
   settings: LegalSourcesSettings,
 ): LegalSourcesSettings {
@@ -94,11 +68,9 @@ export async function activateAcademicTrustSources(): Promise<LegalSourcesSettin
   const next = activateLegalSourcesFromTrust(current);
   saveLegalSourcesSettings(next);
 
-  const state = loadAcademicTrustState();
   saveAcademicTrustState({
-    ...state,
+    ...loadAcademicTrustState(),
     activatedAt: new Date().toISOString(),
-    dismissedVersion: ACADEMIC_TRUST_PROMPT_VERSION,
   });
 
   notifyAcademicTrustChange();

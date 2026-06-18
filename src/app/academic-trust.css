@@ -1,12 +1,11 @@
 /* =========================================================
-   MEMORIASTUDY 2026
-   ACADEMIC TRUST BANNER — dark + light
+   MEMORIASTUDY 2026 — ACADEMIC TRUST CARD
    ========================================================= */
 
-@keyframes ms-academic-enter {
+@keyframes ms-academic-card-enter {
   from {
     opacity: 0;
-    transform: translateY(14px);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
@@ -14,439 +13,313 @@
   }
 }
 
-.ms-academic-banner {
+.ms-academic-card {
   position: relative;
   overflow: hidden;
+  margin-top: 1.5rem;
   border-radius: 32px;
   padding: 1.8rem;
-  border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
+  border: 1px solid color-mix(in srgb, var(--accent) 14%, rgba(255, 255, 255, 0.06));
   background:
     radial-gradient(
       circle at top right,
-      color-mix(in srgb, var(--accent) 14%, transparent),
+      color-mix(in srgb, var(--accent) 10%, transparent),
       transparent 45%
     ),
     radial-gradient(circle at bottom left, rgba(255, 255, 255, 0.04), transparent 40%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
-  backdrop-filter: blur(24px);
+    linear-gradient(135deg, #07131a, #0d1f27);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 20px 60px rgba(0, 0, 0, 0.08);
+    0 20px 60px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
   isolation: isolate;
-  animation: ms-academic-enter 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  color: var(--foreground);
+  animation: ms-academic-card-enter 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  color: #f8fafc;
 }
 
-.ms-academic-banner > * {
+.ms-academic-card > * {
   position: relative;
   z-index: 1;
 }
 
-.ms-academic-banner::before {
+.ms-academic-card::before {
   content: "";
   position: absolute;
-  top: -140px;
-  right: -100px;
+  top: -120px;
+  right: -120px;
   width: 320px;
   height: 320px;
   border-radius: 999px;
   background: radial-gradient(
     circle,
-    color-mix(in srgb, var(--accent) 18%, transparent),
+    color-mix(in srgb, var(--accent) 20%, transparent),
     transparent 70%
   );
   filter: blur(30px);
   pointer-events: none;
 }
 
-.ms-academic-banner::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
-  pointer-events: none;
+.ms-academic-card--active {
+  padding: 1.35rem 1.5rem;
+  border-color: color-mix(in srgb, var(--accent) 22%, rgba(255, 255, 255, 0.08));
+  background:
+    radial-gradient(
+      circle at top right,
+      color-mix(in srgb, var(--accent) 12%, transparent),
+      transparent 50%
+    ),
+    linear-gradient(135deg, #07131a, #0b1a22);
 }
 
-.ms-academic-banner__close {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  z-index: 2;
+.ms-academic-card__active {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.ms-academic-card__active-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  min-width: min(100%, 28rem);
+}
+
+.ms-academic-card__status-icon {
   display: grid;
   place-items: center;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
-  background: color-mix(in srgb, var(--card) 70%, transparent);
-  color: var(--muted-foreground);
-  transition:
-    color 0.2s ease,
-    background 0.2s ease,
-    border-color 0.2s ease;
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: 14px;
+  flex-shrink: 0;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
 }
 
-.ms-academic-banner__close:hover {
-  color: var(--foreground);
-  background: color-mix(in srgb, var(--muted) 80%, var(--card));
-  border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
+.ms-academic-card__status-title {
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+}
+
+.ms-academic-card__status-copy {
+  margin-top: 0.35rem;
+  max-width: 42rem;
+  font-size: 0.84rem;
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.72);
 }
 
 .ms-academic-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.55rem;
-  padding: 0.55rem 0.9rem;
+  gap: 0.45rem;
+  padding: 0.55rem 0.95rem;
   border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 700;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 10%, var(--card));
-  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
-  backdrop-filter: blur(12px);
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
 
 .ms-academic-title {
   margin-top: 1rem;
-  font-size: clamp(1.6rem, 3vw, 2.3rem);
+  color: #ffffff;
+  font-size: clamp(1.6rem, 2vw, 2.3rem);
   font-weight: 900;
-  line-height: 1.08;
+  line-height: 1.05;
   letter-spacing: -0.04em;
-  color: var(--foreground);
-}
-
-.ms-academic-title-gradient {
-  background: linear-gradient(
-    135deg,
-    #f8fafc,
-    color-mix(in srgb, var(--accent) 65%, #ffffff)
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
 }
 
 .ms-academic-description {
   margin-top: 0.9rem;
-  max-width: 700px;
-  line-height: 1.75;
-  color: var(--muted-foreground);
+  max-width: 720px;
+  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.8;
   font-size: 0.95rem;
 }
 
 .ms-academic-benefits {
-  margin-top: 1.25rem;
+  margin-top: 1.2rem;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0.8rem;
   list-style: none;
   padding: 0;
-  margin-bottom: 0;
 }
 
 .ms-academic-benefit {
   display: flex;
   align-items: center;
-  gap: 0.65rem;
-  padding: 0.85rem;
+  gap: 0.7rem;
+  padding: 0.9rem;
   border-radius: 16px;
-  background: color-mix(in srgb, var(--card) 55%, transparent);
-  border: 1px solid color-mix(in srgb, var(--foreground) 8%, transparent);
-  font-size: 0.82rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  color: #ffffff;
+  font-size: 0.84rem;
   font-weight: 600;
-  color: var(--foreground);
 }
 
 .ms-academic-benefit-icon {
-  width: 34px;
-  height: 34px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--accent) 14%, var(--card));
-  color: var(--accent);
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 10px;
   flex-shrink: 0;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
 .ms-academic-actions {
+  margin-top: 1.4rem;
   display: flex;
   gap: 0.75rem;
-  margin-top: 1.4rem;
   flex-wrap: wrap;
 }
 
 .ms-academic-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
   border: none;
-  padding: 0.9rem 1.2rem;
   border-radius: 16px;
+  padding: 0.95rem 1.25rem;
   font-weight: 800;
   color: var(--accent-foreground);
   cursor: pointer;
   background: linear-gradient(
     135deg,
     var(--accent),
-    color-mix(in srgb, var(--accent) 65%, white)
+    color-mix(in srgb, var(--accent) 55%, #ffffff)
   );
-  box-shadow: 0 15px 40px color-mix(in srgb, var(--accent) 28%, transparent);
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease,
-    opacity 0.2s ease;
+  box-shadow: 0 12px 35px color-mix(in srgb, var(--accent) 28%, transparent);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .ms-academic-btn-primary:hover:not(:disabled) {
-  transform: translateY(-2px) scale(1.02);
+  transform: translateY(-2px);
 }
 
 .ms-academic-btn-primary:disabled {
-  opacity: 0.65;
+  opacity: 0.7;
   cursor: wait;
 }
 
 .ms-academic-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
   border-radius: 16px;
-  padding: 0.9rem 1.2rem;
-  border: 1px solid var(--border);
-  background: color-mix(in srgb, var(--card) 40%, transparent);
-  color: var(--foreground);
+  padding: 0.95rem 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #ffffff;
   font-weight: 600;
+  background: rgba(255, 255, 255, 0.02);
   cursor: pointer;
+  text-decoration: none;
   transition:
     background 0.2s ease,
     border-color 0.2s ease;
 }
 
-.ms-academic-btn-secondary:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--accent) 8%, var(--card));
-  border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
+.ms-academic-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: color-mix(in srgb, var(--accent) 25%, rgba(255, 255, 255, 0.1));
 }
 
-.ms-academic-footnote {
-  margin-top: 1.1rem;
-  max-width: 640px;
-  font-size: 0.78rem;
-  line-height: 1.65;
-  color: var(--muted-foreground);
-}
-
-.ms-academic-footnote strong {
-  color: var(--foreground);
-  font-weight: 700;
-}
-
-/* Indicador activo (header / home) */
-
-.ms-academic-sources-badge {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.35rem 0.65rem;
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
-  background: color-mix(in srgb, var(--accent) 10%, var(--card));
-  font-size: 0.68rem;
-  font-weight: 700;
-  color: color-mix(in srgb, var(--accent) 88%, var(--foreground));
-  white-space: nowrap;
-}
-
-.ms-academic-sources-badge svg {
+.ms-academic-card__link-btn {
   flex-shrink: 0;
-  color: var(--accent);
-}
-
-.ms-academic-sources-badge[data-tooltip]::after {
-  content: attr(data-tooltip);
-  position: absolute;
-  top: calc(100% + 0.45rem);
-  right: 0;
-  z-index: 50;
-  width: max-content;
-  max-width: 240px;
-  padding: 0.55rem 0.7rem;
-  border-radius: 0.65rem;
-  border: 1px solid var(--border);
-  background: var(--card);
-  color: var(--muted-foreground);
-  font-size: 0.65rem;
-  font-weight: 500;
-  line-height: 1.45;
-  box-shadow: var(--shadow);
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(-4px);
-  transition:
-    opacity 0.2s ease,
-    transform 0.2s ease;
-}
-
-.ms-academic-sources-badge[data-tooltip]:hover::after,
-.ms-academic-sources-badge[data-tooltip]:focus-visible::after {
-  opacity: 1;
-  transform: translateY(0);
 }
 
 /* ——— Modo claro ——— */
 
-html:not(.dark) .ms-academic-banner {
-  border-color: color-mix(in srgb, var(--accent) 30%, rgba(15, 23, 42, 0.1));
+html:not(.dark) .ms-academic-card {
+  border-color: color-mix(in srgb, var(--accent) 24%, rgba(15, 23, 42, 0.1));
   background:
     radial-gradient(
       circle at top right,
-      color-mix(in srgb, var(--accent) 14%, transparent),
+      color-mix(in srgb, var(--accent) 12%, transparent),
       transparent 48%
     ),
     radial-gradient(
       circle at bottom left,
-      color-mix(in srgb, var(--accent) 8%, transparent),
+      color-mix(in srgb, var(--accent) 6%, transparent),
       transparent 42%
     ),
-    linear-gradient(180deg, #ffffff, color-mix(in srgb, var(--surface-strong) 88%, white));
+    linear-gradient(135deg, #ffffff, color-mix(in srgb, var(--surface-strong) 85%, white));
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.95),
-    0 18px 50px rgba(15, 23, 42, 0.07);
+    0 18px 48px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  color: #0f172a;
 }
 
-html:not(.dark) .ms-academic-banner::before {
-  background: radial-gradient(
-    circle,
-    color-mix(in srgb, var(--accent) 22%, transparent),
-    transparent 72%
-  );
-  opacity: 0.75;
-}
-
-html:not(.dark) .ms-academic-banner::after {
-  background: linear-gradient(
-    90deg,
-    transparent,
-    color-mix(in srgb, var(--accent) 40%, rgba(15, 23, 42, 0.08)),
-    transparent
-  );
-}
-
-html:not(.dark) .ms-academic-banner__close {
-  background: rgba(255, 255, 255, 0.92);
-  border-color: rgba(15, 23, 42, 0.12);
-  color: rgba(15, 23, 42, 0.55);
-}
-
-html:not(.dark) .ms-academic-banner__close:hover {
-  color: var(--foreground);
-  background: #fff;
-  border-color: color-mix(in srgb, var(--accent) 35%, rgba(15, 23, 42, 0.12));
+html:not(.dark) .ms-academic-card--active {
+  background:
+    radial-gradient(
+      circle at top right,
+      color-mix(in srgb, var(--accent) 14%, transparent),
+      transparent 52%
+    ),
+    linear-gradient(135deg, #ffffff, #f0f7fa);
 }
 
 html:not(.dark) .ms-academic-badge {
-  color: color-mix(in srgb, var(--accent) 75%, #0f172a);
+  color: color-mix(in srgb, var(--accent) 78%, #0f172a);
   background: color-mix(in srgb, var(--accent) 12%, white);
-  border-color: color-mix(in srgb, var(--accent) 32%, rgba(15, 23, 42, 0.1));
+  border-color: color-mix(in srgb, var(--accent) 28%, rgba(15, 23, 42, 0.1));
 }
 
-html:not(.dark) .ms-academic-title-gradient {
-  background: linear-gradient(
-    135deg,
-    #0f172a,
-    color-mix(in srgb, var(--accent) 72%, #0f172a)
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+html:not(.dark) .ms-academic-title,
+html:not(.dark) .ms-academic-card__status-title {
+  color: #0f172a;
 }
 
 html:not(.dark) .ms-academic-description,
-html:not(.dark) .ms-academic-footnote {
+html:not(.dark) .ms-academic-card__status-copy {
   color: rgba(15, 23, 42, 0.68);
 }
 
-html:not(.dark) .ms-academic-footnote strong {
-  color: #0f172a;
-}
-
 html:not(.dark) .ms-academic-benefit {
-  background: rgba(255, 255, 255, 0.88);
-  border-color: rgba(15, 23, 42, 0.09);
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(15, 23, 42, 0.08);
   color: #0f172a;
 }
 
-html:not(.dark) .ms-academic-benefit-icon {
-  background: color-mix(in srgb, var(--accent) 16%, white);
-  color: color-mix(in srgb, var(--accent) 80%, #0f172a);
+html:not(.dark) .ms-academic-benefit-icon,
+html:not(.dark) .ms-academic-card__status-icon {
+  background: color-mix(in srgb, var(--accent) 14%, white);
+  color: color-mix(in srgb, var(--accent) 82%, #0f172a);
+  border-color: color-mix(in srgb, var(--accent) 22%, rgba(15, 23, 42, 0.08));
 }
 
 html:not(.dark) .ms-academic-btn-primary {
   color: #ffffff;
-  box-shadow: 0 12px 32px color-mix(in srgb, var(--accent) 32%, transparent);
 }
 
 html:not(.dark) .ms-academic-btn-secondary {
-  background: rgba(255, 255, 255, 0.75);
-  border-color: rgba(15, 23, 42, 0.12);
   color: #0f172a;
+  border-color: rgba(15, 23, 42, 0.12);
+  background: rgba(255, 255, 255, 0.75);
 }
 
-html:not(.dark) .ms-academic-btn-secondary:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--accent) 10%, white);
-  border-color: color-mix(in srgb, var(--accent) 35%, rgba(15, 23, 42, 0.12));
-}
-
-html:not(.dark) .ms-academic-sources-badge {
-  background: color-mix(in srgb, var(--accent) 12%, white);
-  border-color: color-mix(in srgb, var(--accent) 30%, rgba(15, 23, 42, 0.1));
-  color: color-mix(in srgb, var(--accent) 78%, #0f172a);
-}
-
-html:not(.dark) .ms-academic-sources-badge[data-tooltip]::after {
-  background: #ffffff;
-  border-color: rgba(15, 23, 42, 0.1);
-  color: rgba(15, 23, 42, 0.68);
-  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.1);
-}
-
-/* ——— Modo oscuro (refuerzo explícito) ——— */
-
-html.dark .ms-academic-title-gradient {
-  background: linear-gradient(
-    135deg,
-    #f8fafc,
-    color-mix(in srgb, var(--accent) 70%, #ffffff)
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-html.dark .ms-academic-benefit {
-  background: rgba(255, 255, 255, 0.03);
-  border-color: rgba(255, 255, 255, 0.07);
-}
-
-html.dark .ms-academic-btn-secondary {
-  background: rgba(255, 255, 255, 0.03);
-}
-
-html.dark .ms-academic-btn-secondary:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
-}
-
-html.dark .ms-academic-btn-primary {
-  color: var(--accent-foreground);
+html:not(.dark) .ms-academic-btn-secondary:hover {
+  background: color-mix(in srgb, var(--accent) 8%, white);
+  border-color: color-mix(in srgb, var(--accent) 30%, rgba(15, 23, 42, 0.12));
 }
 
 @media (max-width: 768px) {
-  .ms-academic-banner {
-    padding: 1.25rem;
+  .ms-academic-card {
     border-radius: 24px;
-  }
-
-  .ms-academic-title {
-    font-size: 1.55rem;
+    padding: 1.25rem;
   }
 
   .ms-academic-actions {
@@ -454,18 +327,19 @@ html.dark .ms-academic-btn-primary {
   }
 
   .ms-academic-btn-primary,
-  .ms-academic-btn-secondary {
+  .ms-academic-btn-secondary,
+  .ms-academic-card__link-btn {
     width: 100%;
   }
 
-  .ms-academic-sources-badge[data-tooltip]::after {
-    right: auto;
-    left: 0;
+  .ms-academic-card__active {
+    flex-direction: column;
+    align-items: stretch;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ms-academic-banner {
+  .ms-academic-card {
     animation: none;
   }
 }
