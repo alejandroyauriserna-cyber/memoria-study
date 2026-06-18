@@ -93,7 +93,12 @@ export async function POST(request: Request) {
       .trim()
       .replace(/^["']|["']$/g, "")
       .replace(/\*\*/g, "")
-      .replace(/^#+\s*/gm, "");
+      .replace(/^#+\s*/gm, "")
+      .replace(/\n+/g, " ")
+      .replace(/\s{2,}/g, " ")
+      .replace(/\.{2,}/g, ".")
+      .replace(/…/g, ".")
+      .replace(/\s+([,.;:!?])/g, "$1");
 
     if (script.length < 80) {
       return NextResponse.json(

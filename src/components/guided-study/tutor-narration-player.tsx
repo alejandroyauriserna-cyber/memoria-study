@@ -120,19 +120,27 @@ export function TutorNarrationPlayer({
           )}
         </button>
       ) : (
-        <div className="gs-narration-player">
-          <div className="gs-narration-player-head">
-            <Volume2 size={15} className="text-accent" />
+        <div
+          className={`gs-narration-player ${speech.isPlaying ? "is-playing" : ""} ${speech.isPaused ? "is-paused" : ""}`}
+        >
+          <div className="gs-narration-header">
+            <div className="gs-narration-avatar" aria-hidden>
+              <Volume2 size={18} strokeWidth={2.25} />
+            </div>
             <div className="min-w-0 flex-1">
-              <p className="gs-narration-player-title">Clase narrada</p>
-              <p className="gs-narration-player-meta">
+              <p className="gs-narration-title">Profesor IA</p>
+              <p className="gs-narration-subtitle">
                 ~{speech.durationLabel}
-                {speech.isPlaying || speech.isPaused
-                  ? ` · ${speech.elapsedSec}s`
-                  : null}
-                {speech.backgroundMode ? " · Modo podcast" : null}
+                {speech.isPlaying || speech.isPaused ? ` · ${speech.elapsedSec}s` : null}
+                {speech.backgroundMode ? " · Modo podcast" : " · Clase narrada"}
               </p>
             </div>
+          </div>
+
+          <div className="gs-wave" aria-hidden>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <span key={i} />
+            ))}
           </div>
 
           <div

@@ -38,6 +38,8 @@ REGLAS:
 - Prioriza definición, efectos jurídicos y trampa típica de examen.
 - Cierra invitando a aplicar el concepto mentalmente.
 - Solo texto plano del guion.
+- Un solo bloque continuo: sin saltos de línea, sin puntos suspensivos (…) ni pausas dramáticas.
+- Frases cortas y encadenadas; evita párrafos largos separados.
 `.trim();
 }
 

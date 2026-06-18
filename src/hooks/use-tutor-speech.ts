@@ -8,17 +8,14 @@ import {
 import {
   isSpeechSynthesisSupported,
   waitForVoices,
+  getCachedSpanishVoice,
+  primeSpanishVoice,
 } from "@/lib/guided-study/tutor-voice/speech-synthesis";
+import {
+  buildSpeechChunks,
+  normalizeSpeechScript,
+} from "@/lib/guided-study/tutor-voice/speech-chunks";
 import type { TutorSpeechRate, TutorSpeechStatus } from "@/types/tutor-voice";
-
-function splitIntoChunks(text: string): string[] {
-  const parts = text
-    .split(/(?<=[.!?…])\s+/)
-    .map((s) => s.trim())
-    .filter(Boolean);
-  if (parts.length) return parts;
-  return text.trim() ? [text.trim()] : [];
-}
 
 function countWordsLocal(text: string): number {
   return text.trim().split(/\s+/).filter(Boolean).length;
@@ -31,6 +28,7 @@ export function useTutorSpeech() {
   const chunkIndexRef = useRef(0);
   const startedAtRef = useRef(0);
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const resumeGuardRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
   const keepAliveAudioRef = useRef<HTMLAudioElement | null>(null);
   const rateRef = useRef<TutorSpeechRate>(1);
@@ -49,6 +47,13 @@ export function useTutorSpeech() {
     if (tickRef.current) {
       clearInterval(tickRef.current);
       tickRef.current = null;
+    }
+  }, []);
+
+  const clearResumeGuard = useCallback(() => {
+    if (resumeGuardRef.current) {
+      clearInterval(resumeGuardRef.current);
+      resumeGuardRef.current = null;
     }
   }, []);
 
@@ -105,12 +110,23 @@ export function useTutorSpeech() {
     }
   }, []);
 
+  const startResumeGuard = useCallback(() => {
+    clearResumeGuard();
+    resumeGuardRef.current = setInterval(() => {
+      if (!window.speechSynthesis.speaking) return;
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+      }
+    }, 4_000);
+  }, [clearResumeGuard]);
+
   const stop = useCallback(() => {
     if (!supported) return;
     window.speechSynthesis.cancel();
     utteranceRef.current = null;
     chunkIndexRef.current = 0;
     clearTick();
+    clearResumeGuard();
     setElapsedSec(0);
     startedAtRef.current = 0;
     void releaseWakeLock();
@@ -124,7 +140,12 @@ export function useTutorSpeech() {
       }
     }
     setStatus((s) => (s === "loading" ? s : scriptRef.current ? "ready" : "idle"));
-  }, [supported, clearTick, releaseWakeLock, stopKeepAlive]);
+  }, [supported, clearTick, clearResumeGuard, releaseWakeLock, stopKeepAlive]);
+
+  useEffect(() => {
+    if (!supported) return;
+    void primeSpanishVoice();
+  }, [supported]);
 
   useEffect(() => {
     return () => {
@@ -165,16 +186,34 @@ export function useTutorSpeech() {
     setError(null);
   }, [stop]);
 
-  const speakChunk = useCallback(
-    (index: number, voice: SpeechSynthesisVoice | null): Promise<void> => {
-      return new Promise((resolve) => {
-        const chunks = chunksRef.current;
-        if (!supported || index >= chunks.length) {
-          resolve();
-          return;
-        }
+  const finishPlayback = useCallback(() => {
+    clearTick();
+    clearResumeGuard();
+    setElapsedSec(
+      estimateSpeechDurationSec(countWordsLocal(scriptRef.current), rateRef.current),
+    );
+    setStatus("ready");
+    void releaseWakeLock();
+    stopKeepAlive();
+    setBackgroundMode(false);
+    if ("mediaSession" in navigator) {
+      try {
+        navigator.mediaSession.playbackState = "none";
+      } catch {
+        // ignore
+      }
+    }
+  }, [clearTick, clearResumeGuard, releaseWakeLock, stopKeepAlive]);
 
-        const text = chunks[index];
+  const queueChunks = useCallback(
+    (chunks: string[], voice: SpeechSynthesisVoice | null, fromIndex = 0): void => {
+      if (!supported || chunks.length === 0) return;
+
+      const slice = chunks.slice(fromIndex);
+      const lastGlobalIndex = chunks.length - 1;
+
+      slice.forEach((text, localIndex) => {
+        const globalIndex = fromIndex + localIndex;
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = voice?.lang ?? "es-PE";
         if (voice) utterance.voice = voice;
@@ -183,43 +222,35 @@ export function useTutorSpeech() {
         utterance.volume = 1;
 
         utterance.onstart = () => {
-          if (index === 0) {
+          chunkIndexRef.current = globalIndex;
+          utteranceRef.current = utterance;
+
+          if (globalIndex === fromIndex) {
             setStatus("playing");
             setError(null);
             startTick();
             void requestWakeLock();
             startKeepAlive();
+            startResumeGuard();
             setupMediaSession("Clase narrada — MemoriaStudy");
           }
         };
 
         utterance.onend = () => {
-          chunkIndexRef.current = index + 1;
-          if (chunkIndexRef.current < chunks.length) {
-            void speakChunk(chunkIndexRef.current, voice).then(resolve);
-          } else {
-            clearTick();
-            setElapsedSec(
-              estimateSpeechDurationSec(countWordsLocal(scriptRef.current), rateRef.current),
-            );
-            setStatus("ready");
-            void releaseWakeLock();
-            stopKeepAlive();
-            setBackgroundMode(false);
-            resolve();
+          if (globalIndex === lastGlobalIndex) {
+            finishPlayback();
           }
         };
 
         utterance.onerror = () => {
           clearTick();
+          clearResumeGuard();
           setStatus("error");
           setError("No se pudo reproducir el audio.");
           void releaseWakeLock();
           stopKeepAlive();
-          resolve();
         };
 
-        utteranceRef.current = utterance;
         window.speechSynthesis.speak(utterance);
       });
     },
@@ -227,11 +258,14 @@ export function useTutorSpeech() {
       supported,
       startTick,
       clearTick,
+      clearResumeGuard,
       requestWakeLock,
       startKeepAlive,
+      startResumeGuard,
       setupMediaSession,
       releaseWakeLock,
       stopKeepAlive,
+      finishPlayback,
     ],
   );
 
@@ -241,6 +275,7 @@ export function useTutorSpeech() {
       window.speechSynthesis.resume();
       setStatus("playing");
       startTick();
+      startResumeGuard();
       void requestWakeLock();
       startKeepAlive();
       return;
@@ -249,17 +284,19 @@ export function useTutorSpeech() {
     if (!supported) return;
 
     window.speechSynthesis.cancel();
-    const voice = await waitForVoices();
-    chunksRef.current = splitIntoChunks(scriptRef.current);
+    const voice = getCachedSpanishVoice() ?? (await waitForVoices());
+    const chunks = buildSpeechChunks(scriptRef.current);
+    chunksRef.current = chunks;
     chunkIndexRef.current = 0;
     startedAtRef.current = Date.now();
-    await speakChunk(0, voice);
-  }, [status, supported, startTick, speakChunk, requestWakeLock, startKeepAlive]);
+    queueChunks(chunks, voice, 0);
+  }, [status, supported, startTick, queueChunks, startResumeGuard, requestWakeLock, startKeepAlive]);
 
   const pause = useCallback(() => {
     if (!supported || status !== "playing") return;
     window.speechSynthesis.pause();
     clearTick();
+    clearResumeGuard();
     setStatus("paused");
     void releaseWakeLock();
     stopKeepAlive();
@@ -270,7 +307,7 @@ export function useTutorSpeech() {
         // ignore
       }
     }
-  }, [supported, status, clearTick, releaseWakeLock, stopKeepAlive]);
+  }, [supported, status, clearTick, clearResumeGuard, releaseWakeLock, stopKeepAlive]);
 
   const setSpeechRate = useCallback(
     (next: TutorSpeechRate) => {
@@ -280,12 +317,13 @@ export function useTutorSpeech() {
         setEstimatedDurationSec(estimateSpeechDurationSec(wc, next));
       }
       if (status === "playing" || status === "paused") {
-        const text = scriptRef.current;
+        const chunks = chunksRef.current;
         const idx = chunkIndexRef.current;
+        const remaining = chunks.slice(idx).join(" ");
         stop();
-        if (text) {
-          scriptRef.current = text;
-          chunksRef.current = splitIntoChunks(text).slice(idx);
+        if (remaining) {
+          scriptRef.current = remaining;
+          chunksRef.current = buildSpeechChunks(remaining);
           chunkIndexRef.current = 0;
           setStatus("ready");
           void play();
@@ -296,8 +334,9 @@ export function useTutorSpeech() {
   );
 
   const loadScript = useCallback((script: string, durationSec: number) => {
-    scriptRef.current = script;
-    chunksRef.current = splitIntoChunks(script);
+    const normalized = normalizeSpeechScript(script);
+    scriptRef.current = normalized;
+    chunksRef.current = buildSpeechChunks(normalized);
     chunkIndexRef.current = 0;
     setEstimatedDurationSec(durationSec);
     setStatus("ready");

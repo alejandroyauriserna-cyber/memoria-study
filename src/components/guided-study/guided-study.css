@@ -1412,27 +1412,34 @@ html:not(.dark) .gs-pdf-viewer-canvas {
 /* —— Tutor narrado (TTS) —— */
 
 .gs-narration {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.65rem;
 }
 
 .gs-narration-trigger {
-  display: flex;
-  width: 100%;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
   align-items: center;
-  gap: 0.5rem;
-  border-radius: 0.85rem;
-  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--accent) 10%, var(--card)),
-    var(--card)
-  );
-  padding: 0.65rem 0.75rem;
+  column-gap: 0.65rem;
+  row-gap: 0.2rem;
+  width: 100%;
+  border-radius: 1rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--border));
+  background:
+    radial-gradient(ellipse 120% 80% at 0% 0%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 55%),
+    var(--card);
+  padding: 0.75rem 0.85rem;
   text-align: left;
   color: var(--foreground);
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.gs-narration-trigger:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--accent) 48%, var(--border));
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
 .gs-narration-trigger:disabled {
@@ -1440,106 +1447,295 @@ html:not(.dark) .gs-pdf-viewer-canvas {
   cursor: not-allowed;
 }
 
+.gs-narration-trigger > svg {
+  grid-row: 1 / span 2;
+  color: var(--accent);
+}
+
 .gs-narration-trigger span:first-of-type {
   font-size: 0.8125rem;
   font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .gs-narration-trigger-sub {
-  width: 100%;
+  grid-column: 2;
   font-size: 0.6875rem;
   font-weight: 500;
+  line-height: 1.35;
   color: var(--muted-foreground);
 }
 
+/* =========================================================
+   MEMORIASTUDY 2026 — TUTOR IA NARRADO PREMIUM
+   ========================================================= */
+
 .gs-narration-player {
-  border-radius: 0.85rem;
-  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
-  background: var(--card);
-  padding: 0.65rem 0.75rem;
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.4rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
+  background:
+    radial-gradient(
+      circle at top right,
+      color-mix(in srgb, var(--accent) 12%, transparent),
+      transparent 40%
+    ),
+    radial-gradient(
+      circle at bottom left,
+      color-mix(in srgb, var(--accent) 8%, transparent),
+      transparent 45%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--card) 92%, #ffffff 2%) 0%,
+      var(--card) 100%
+    );
+  backdrop-filter: blur(22px);
+  padding: 1rem;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 10px 40px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(255, 255, 255, 0.03);
 }
 
-.gs-narration-player-head {
+.gs-narration-player::before {
+  content: "";
+  position: absolute;
+  width: 280px;
+  height: 280px;
+  top: -120px;
+  right: -80px;
+  border-radius: 999px;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--accent) 18%, transparent),
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+.gs-narration-header {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.8rem;
+  margin-bottom: 0.9rem;
 }
 
-.gs-narration-player-title {
-  font-size: 0.75rem;
-  font-weight: 700;
+.gs-narration-avatar {
+  position: relative;
+  flex-shrink: 0;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 1rem;
+  background: linear-gradient(
+    135deg,
+    var(--accent),
+    color-mix(in srgb, var(--accent) 50%, #fff)
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0a0a0a;
+  box-shadow: 0 0 30px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.gs-narration-player.is-playing .gs-narration-avatar::after {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border-radius: inherit;
+  border: 2px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  animation: gs-avatar-pulse 2s infinite;
+}
+
+.gs-narration-title {
+  font-weight: 800;
+  font-size: 0.95rem;
+  letter-spacing: -0.02em;
   color: var(--foreground);
 }
 
-.gs-narration-player-meta {
-  font-size: 0.6875rem;
+.gs-narration-subtitle {
+  margin-top: 0.15rem;
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
   color: var(--muted-foreground);
+  opacity: 0.85;
+}
+
+.gs-wave {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 3px;
+  height: 34px;
+  margin: 0.8rem 0;
+}
+
+.gs-wave span {
+  width: 4px;
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(
+    180deg,
+    var(--accent),
+    color-mix(in srgb, var(--accent) 50%, #fff)
+  );
+  opacity: 0.45;
+  transition: opacity 0.2s ease;
+}
+
+.gs-narration-player.is-playing .gs-wave span {
+  opacity: 1;
+  animation: gs-wave 1.2s ease-in-out infinite;
+}
+
+.gs-wave span:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.gs-wave span:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+.gs-wave span:nth-child(4) {
+  animation-delay: 0.3s;
+}
+
+.gs-wave span:nth-child(5) {
+  animation-delay: 0.4s;
+}
+
+.gs-wave span:nth-child(6) {
+  animation-delay: 0.5s;
 }
 
 .gs-narration-progress {
-  margin-top: 0.5rem;
-  height: 4px;
-  border-radius: 999px;
-  background: var(--muted);
+  position: relative;
+  z-index: 1;
   overflow: hidden;
+  height: 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted) 60%, transparent);
 }
 
 .gs-narration-progress span {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: var(--accent);
-  transition: width 0.35s ease;
+  background: linear-gradient(
+    90deg,
+    var(--accent),
+    color-mix(in srgb, var(--accent) 60%, #fff)
+  );
+  box-shadow: 0 0 20px color-mix(in srgb, var(--accent) 40%, transparent);
+  transition: width 0.25s linear;
 }
 
 .gs-narration-controls {
-  margin-top: 0.55rem;
+  position: relative;
+  z-index: 1;
+  margin-top: 0.85rem;
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.45rem;
 }
 
 .gs-narration-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: 0.6rem;
-  border: 1px solid var(--border);
-  background: var(--muted);
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.85rem;
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  background: color-mix(in srgb, var(--muted) 55%, var(--card));
   color: var(--foreground);
   cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.gs-narration-btn:active {
+  transform: scale(0.96);
 }
 
 .gs-narration-btn--primary {
-  background: var(--accent);
-  color: var(--accent-foreground);
-  border-color: transparent;
+  border: none;
+  border-radius: 0.95rem;
+  background: linear-gradient(
+    135deg,
+    var(--accent),
+    color-mix(in srgb, var(--accent) 70%, #fff)
+  );
+  color: #0a0a0a;
+  font-weight: 700;
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--accent) 25%, transparent);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.gs-narration-btn--primary:hover {
+  transform: translateY(-2px);
 }
 
 .gs-narration-rates {
   margin-left: auto;
   display: inline-flex;
-  gap: 0.25rem;
+  gap: 0.2rem;
+  padding: 0.25rem;
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--muted) 50%, transparent);
 }
 
 .gs-narration-rate {
-  min-width: 2.25rem;
-  height: 1.75rem;
-  border-radius: 0.5rem;
-  border: 1px solid var(--border);
+  min-width: 2.4rem;
+  height: 1.9rem;
+  border-radius: 0.55rem;
+  border: none;
   background: transparent;
-  font-size: 0.6875rem;
+  font-size: 0.7rem;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
   color: var(--muted-foreground);
   cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
 }
 
 .gs-narration-rate.is-active {
-  background: color-mix(in srgb, var(--accent) 14%, var(--card));
+  background: var(--card);
   color: var(--accent);
-  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes gs-wave {
+  0%,
+  100% {
+    height: 8px;
+  }
+  50% {
+    height: 30px;
+  }
+}
+
+@keyframes gs-avatar-pulse {
+  0% {
+    transform: scale(0.95);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.25);
+    opacity: 0;
+  }
+}
+
+.gs-narration-unsupported {
+  border-radius: 0.75rem;
+  padding: 0.5rem 0.65rem;
+  background: var(--muted);
 }
 
 /* —— Voz conversacional (Fase 2) —— */
@@ -1638,12 +1834,23 @@ html:not(.dark) .gs-pdf-viewer-canvas {
   border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border));
 }
 
-@media (max-width: 767px) {
-  .gs-narration-player {
-    position: sticky;
-    bottom: 0;
-    z-index: 5;
-    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.08);
+@media (max-width: 768px) {
+  .gs-narration-player.is-playing {
+    position: fixed;
+    left: 1rem;
+    right: 1rem;
+    bottom: 1rem;
+    z-index: 100;
+    border-radius: 1.25rem;
+    backdrop-filter: blur(24px);
+    box-shadow:
+      0 25px 60px rgba(0, 0, 0, 0.22),
+      0 0 0 1px color-mix(in srgb, var(--accent) 20%, transparent);
+  }
+
+  .gs-narration-btn,
+  .gs-narration-rate {
+    min-height: 2.5rem;
   }
 }
 
