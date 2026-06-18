@@ -425,6 +425,164 @@
   cursor: wait;
 }
 
+.professor-ai-section-label {
+  margin-top: 1rem;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.professor-ai-class-modes {
+  margin-top: 0.45rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.professor-ai-class-mode {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  padding: 0.6rem 0.65rem;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--card) 85%, transparent);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.professor-ai-class-mode.is-active {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  background: color-mix(in srgb, var(--accent) 10%, var(--card));
+}
+
+.professor-ai-class-mode:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.professor-ai-class-mode strong {
+  font-size: 0.72rem;
+  color: var(--foreground);
+}
+
+.professor-ai-class-mode small {
+  font-size: 0.6rem;
+  line-height: 1.35;
+  color: var(--muted-foreground);
+}
+
+.professor-ai-meta-pill--practice {
+  border-color: color-mix(in srgb, #a78bfa 35%, var(--border));
+  background: color-mix(in srgb, #a78bfa 12%, var(--card));
+}
+
+.professor-practice-checkpoint {
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, #a78bfa 28%, var(--border));
+  background: color-mix(in srgb, #a78bfa 8%, var(--card));
+  padding: 0.85rem 0.9rem;
+}
+
+.professor-practice-checkpoint__kicker {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, #a78bfa 85%, var(--foreground));
+}
+
+.professor-practice-checkpoint__prompt {
+  margin-top: 0.45rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.5;
+  color: var(--foreground);
+}
+
+.professor-practice-checkpoint__hint {
+  margin-top: 0.35rem;
+  font-size: 0.68rem;
+  color: var(--muted-foreground);
+}
+
+.professor-practice-checkpoint__input {
+  margin-top: 0.55rem;
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
+  background: color-mix(in srgb, var(--card) 92%, transparent);
+  padding: 0.55rem 0.65rem;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--foreground);
+  resize: vertical;
+  min-height: 4.5rem;
+}
+
+.professor-practice-checkpoint__feedback {
+  margin-top: 0.55rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 8%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--foreground);
+}
+
+.professor-practice-checkpoint__actions {
+  margin-top: 0.55rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.professor-practice-checkpoint__verify {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 2.4rem;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
+  background: color-mix(in srgb, var(--accent) 10%, var(--card));
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--foreground);
+  cursor: pointer;
+}
+
+.professor-practice-checkpoint__verify:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.professor-practice-checkpoint__skip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 2.2rem;
+  border: none;
+  background: transparent;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+
+.professor-practice-checkpoint__continue {
+  width: 100%;
+}
+
 .professor-ai-unsupported {
   font-size: 0.68rem;
   color: var(--muted-foreground);
@@ -733,6 +891,9 @@ html:not(.dark) .professor-ai-meta-pill,
 html:not(.dark) .professor-ai-style-chip strong,
 html:not(.dark) .professor-ai-input,
 html:not(.dark) .professor-ai-reply,
+html:not(.dark) .professor-ai-class-mode strong,
+html:not(.dark) .professor-practice-checkpoint__prompt,
+html:not(.dark) .professor-practice-checkpoint__feedback,
 html:not(.dark) .professor-sheet__title,
 html:not(.dark) .professor-sheet__option,
 html:not(.dark) .professor-sheet__pill,
@@ -796,7 +957,9 @@ html:not(.dark) .professor-ai-subtitle,
 html:not(.dark) .professor-ai-meta,
 html:not(.dark) .professor-ai-style-chip small,
 html:not(.dark) .professor-ai-status,
-html:not(.dark) .professor-ai-unsupported {
+html:not(.dark) .professor-ai-unsupported,
+html:not(.dark) .professor-ai-class-mode small,
+html:not(.dark) .professor-practice-checkpoint__hint {
   color: rgba(15, 23, 42, 0.62);
 }
 
@@ -926,6 +1089,10 @@ html.dark .professor-ai-card {
 @media (max-width: 640px) {
   .professor-ai-idle-styles,
   .professor-sheet__styles {
+    grid-template-columns: 1fr;
+  }
+
+  .professor-ai-class-modes {
     grid-template-columns: 1fr;
   }
 }

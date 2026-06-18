@@ -9,6 +9,9 @@ export type TutorNarrationScript = {
 
 export type NarrationStyle = "quick" | "normal" | "magistral";
 
+/** Escucha pasiva vs pausas de práctica durante la narración. */
+export type NarrationClassMode = "listen" | "practice";
+
 export type NarrationMicroAction =
   | "example"
   | "simpler"

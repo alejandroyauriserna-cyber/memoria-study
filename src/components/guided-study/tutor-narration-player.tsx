@@ -12,6 +12,12 @@ import {
   saveNarrationCache,
 } from "@/lib/guided-study/tutor-voice/narration-cache";
 import {
+  loadNarrationClassMode,
+  NARRATION_CLASS_MODE_META,
+  saveNarrationClassMode,
+} from "@/lib/guided-study/tutor-voice/narration-class-mode";
+import { buildNarrationCheckpoints, type NarrationCheckpoint } from "@/lib/guided-study/tutor-voice/narration-checkpoints";
+import {
   loadNarrationStyle,
   saveNarrationStyle,
   NARRATION_STYLE_META,
@@ -20,10 +26,16 @@ import {
 import { useTutorSpeech } from "@/hooks/use-tutor-speech";
 import { useTutorVoiceSession } from "@/hooks/use-tutor-voice-session";
 import { ProfessorHelpSheet } from "@/components/guided-study/professor-help-sheet";
+import { ProfessorPracticeCheckpoint } from "@/components/guided-study/professor-practice-checkpoint";
 import { ProfessorSettingsSheet } from "@/components/guided-study/professor-settings-sheet";
 import { ProfessorVoiceOrb } from "@/components/guided-study/professor-voice-orb";
 import type { GuidedStudySession, PageProfessorAnalysis } from "@/types/guided-legal-study";
-import type { NarrationInterruptAction, NarrationMicroAction, NarrationStyle } from "@/types/tutor-voice";
+import type {
+  NarrationClassMode,
+  NarrationInterruptAction,
+  NarrationMicroAction,
+  NarrationStyle,
+} from "@/types/tutor-voice";
 import "./professor-ai.css";
 
 function pickPrimaryConcept(analysis: PageProfessorAnalysis): string {
@@ -84,6 +96,7 @@ export function TutorNarrationPlayer({
   const scopeKey = buildTutorCacheKey(scope, false);
   const speech = useTutorSpeech();
   const [narrationStyle, setNarrationStyle] = useState<NarrationStyle>("normal");
+  const [classMode, setClassMode] = useState<NarrationClassMode>("listen");
   const [loadError, setLoadError] = useState<string | null>(null);
   const [interruptLoading, setInterruptLoading] = useState(false);
   const [lastReply, setLastReply] = useState<string | null>(null);
@@ -92,7 +105,11 @@ export function TutorNarrationPlayer({
   const [helpOpen, setHelpOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [playbackUiPaused, setPlaybackUiPaused] = useState(false);
+  const [activeCheckpoint, setActiveCheckpoint] = useState<NarrationCheckpoint | null>(null);
   const micPressRef = useRef(false);
+  const firedCheckpointsRef = useRef(new Set<string>());
+  const activeCheckpointRef = useRef<NarrationCheckpoint | null>(null);
+  activeCheckpointRef.current = activeCheckpoint;
 
   useEffect(() => {
     if (speech.isPlaying) setPlaybackUiPaused(false);
@@ -110,6 +127,7 @@ export function TutorNarrationPlayer({
 
   useEffect(() => {
     setNarrationStyle(loadNarrationStyle());
+    setClassMode(loadNarrationClassMode());
   }, []);
 
   const sessionMemoryHint = useMemo(
@@ -146,6 +164,20 @@ export function TutorNarrationPlayer({
     [analysis],
   );
 
+  const referenceContext = useMemo(
+    () =>
+      `${analysis.pageFocus}\n${analysis.conceptCards.map((c) => `${c.concept}: ${c.explanation}`).join("\n")}`.slice(
+        0,
+        6000,
+      ),
+    [analysis],
+  );
+
+  const checkpoints = useMemo(
+    () => buildNarrationCheckpoints(analysis, narrationStyle, classMode),
+    [analysis, narrationStyle, classMode],
+  );
+
   const fetchInterruptReply = useCallback(
     async (input: { action: NarrationInterruptAction; studentMessage?: string }) => {
       const primaryConcept = pickPrimaryConcept(analysis);
@@ -170,6 +202,8 @@ export function TutorNarrationPlayer({
   const runInterrupt = useCallback(
     async (input: { action: NarrationInterruptAction; studentMessage?: string }) => {
       if (interruptLoading) return;
+
+      setActiveCheckpoint(null);
 
       if (speech.isPlaying && !speech.isSnippet) {
         speech.suspendLesson();
@@ -282,9 +316,30 @@ export function TutorNarrationPlayer({
       speech.reset();
       setLastReply(null);
       setAskText("");
+      setActiveCheckpoint(null);
+      firedCheckpointsRef.current.clear();
     },
     [speech],
   );
+
+  const handleClassModeChange = useCallback(
+    (mode: NarrationClassMode) => {
+      setClassMode(mode);
+      saveNarrationClassMode(mode);
+      speech.stop();
+      speech.reset();
+      setLastReply(null);
+      setAskText("");
+      setActiveCheckpoint(null);
+      firedCheckpointsRef.current.clear();
+    },
+    [speech],
+  );
+
+  const handleContinueCheckpoint = useCallback(() => {
+    setActiveCheckpoint(null);
+    void speech.resumeLesson();
+  }, [speech]);
 
   const submitFreeQuestion = useCallback(() => {
     const text = askText.trim();
@@ -305,6 +360,8 @@ export function TutorNarrationPlayer({
     speech.reset();
     setLastReply(null);
     setAskText("");
+    setActiveCheckpoint(null);
+    firedCheckpointsRef.current.clear();
     setSettingsOpen(false);
   }, [speech]);
 
@@ -314,8 +371,43 @@ export function TutorNarrationPlayer({
     setLoadError(null);
     setLastReply(null);
     setAskText("");
+    setActiveCheckpoint(null);
+    firedCheckpointsRef.current.clear();
     voiceSession.reset();
   }, [scopeKey, materialId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    firedCheckpointsRef.current.clear();
+    setActiveCheckpoint(null);
+  }, [scopeKey, materialId, narrationStyle, classMode]);
+
+  useEffect(() => {
+    if (classMode !== "practice") return;
+    if (activeCheckpointRef.current) return;
+    if (!speech.isPlaying || speech.isSnippet || interruptLoading) return;
+    if (speech.lessonSuspended || speech.awaitingResume || playbackUiPaused) return;
+
+    const percent = speech.progressPercent;
+    const next = checkpoints.find(
+      (cp) => !firedCheckpointsRef.current.has(cp.id) && percent >= cp.atPercent,
+    );
+    if (!next) return;
+
+    firedCheckpointsRef.current.add(next.id);
+    speech.suspendLesson();
+    setActiveCheckpoint(next);
+  }, [
+    classMode,
+    checkpoints,
+    speech,
+    speech.isPlaying,
+    speech.isSnippet,
+    speech.lessonSuspended,
+    speech.awaitingResume,
+    speech.progressPercent,
+    interruptLoading,
+    playbackUiPaused,
+  ]);
 
   if (!speech.supported) {
     return <p className="professor-ai-unsupported">La narración no está disponible en este navegador.</p>;
@@ -328,6 +420,7 @@ export function TutorNarrationPlayer({
     voiceSession.isProcessing ||
     voiceSession.isTranscribing ||
     voiceSession.isSpeaking;
+  const inPracticePause = Boolean(activeCheckpoint);
   const liveStatus = statusLabel(voiceSession, micPressed, interruptLoading);
   const orbSpeaking =
     speech.isPlaying &&
@@ -341,6 +434,7 @@ export function TutorNarrationPlayer({
 
   const canInteract =
     showPlayer &&
+    !inPracticePause &&
     (speech.isPlaying || speech.isPaused || speech.awaitingResume || speech.lessonSuspended);
 
   return (
@@ -384,6 +478,30 @@ export function TutorNarrationPlayer({
             })}
           </div>
 
+          <p className="professor-ai-section-label">Modo de clase</p>
+          <div className="professor-ai-class-modes" role="radiogroup" aria-label="Modo de clase">
+            {(["listen", "practice"] as const).map((mode) => {
+              const meta = NARRATION_CLASS_MODE_META[mode];
+              const active = classMode === mode;
+              return (
+                <button
+                  key={mode}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  disabled={disabled || speech.status === "loading"}
+                  className={`professor-ai-class-mode${active ? " is-active" : ""}`}
+                  onClick={() => handleClassModeChange(mode)}
+                >
+                  <strong>
+                    {meta.emoji} {meta.label}
+                  </strong>
+                  <small>{meta.description}</small>
+                </button>
+              );
+            })}
+          </div>
+
           <ProfessorVoiceOrb active={false} />
 
           <button
@@ -396,6 +514,11 @@ export function TutorNarrationPlayer({
               <>
                 <Loader2 size={16} className="animate-spin" />
                 Preparando explicación…
+              </>
+            ) : classMode === "practice" ? (
+              <>
+                <Play size={16} />
+                Iniciar clase interactiva
               </>
             ) : (
               <>
@@ -416,6 +539,11 @@ export function TutorNarrationPlayer({
               <p className="professor-ai-subtitle">Explicando esta página</p>
               <div className="professor-ai-meta">
                 <span className="professor-ai-meta-pill">{shortStyleLabel(narrationStyle)}</span>
+                {classMode === "practice" ? (
+                  <span className="professor-ai-meta-pill professor-ai-meta-pill--practice">
+                    {NARRATION_CLASS_MODE_META.practice.emoji} Interactiva
+                  </span>
+                ) : null}
                 <span>{formatRemaining(speech.estimatedDurationSec, speech.elapsedSec)}</span>
               </div>
             </div>
@@ -449,7 +577,14 @@ export function TutorNarrationPlayer({
 
           <div className="professor-ai-divider" />
 
-          {speech.awaitingResume ? (
+          {activeCheckpoint ? (
+            <ProfessorPracticeCheckpoint
+              checkpoint={activeCheckpoint}
+              referenceContext={referenceContext}
+              onContinue={handleContinueCheckpoint}
+              disabled={busy}
+            />
+          ) : speech.awaitingResume ? (
             <button
               type="button"
               className="professor-ai-playback professor-ai-playback--primary"

@@ -337,21 +337,13 @@ export function useTutorSpeech() {
     if (!scriptRef.current) return;
 
     if (status === "paused" && !awaitingResume && !lessonSuspended) {
-      if (window.speechSynthesis.paused) {
-        userPausedRef.current = false;
-        window.speechSynthesis.resume();
-        setStatus("playing");
-        startTick();
-        startResumeGuard();
-        void requestWakeLock();
-        startKeepAlive();
-        return;
-      }
-
-      if (elapsedSec > 0) {
-        await resumeFromElapsed(elapsedSec, rateRef.current);
-        return;
-      }
+      userPausedRef.current = false;
+      const resumeAt =
+        startedAtRef.current > 0
+          ? Math.floor((Date.now() - startedAtRef.current) / 1000)
+          : elapsedSec;
+      await resumeFromElapsed(resumeAt, rateRef.current);
+      return;
     }
 
     if (!supported) return;
@@ -525,16 +517,28 @@ export function useTutorSpeech() {
     if (!supported) return;
 
     const canPause =
-      window.speechSynthesis.speaking || status === "playing" || status === "paused";
+      window.speechSynthesis.speaking ||
+      window.speechSynthesis.pending ||
+      status === "playing" ||
+      status === "paused";
     if (!canPause) return;
 
     userPausedRef.current = true;
     clearResumeGuard();
     clearTick();
 
-    if (window.speechSynthesis.speaking) {
-      window.speechSynthesis.pause();
+    // Congelar posición antes de cortar el audio (pause() del navegador no es instantáneo
+    // con utterances largos; cancel() sí detiene de inmediato).
+    if (startedAtRef.current > 0) {
+      const frozenElapsed = Math.floor((Date.now() - startedAtRef.current) / 1000);
+      setElapsedSec(frozenElapsed);
+      startedAtRef.current = Date.now() - frozenElapsed * 1000;
     }
+
+    if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+      cancelSpeech();
+    }
+    utteranceRef.current = null;
 
     setStatus("paused");
     void releaseWakeLock();
@@ -546,7 +550,7 @@ export function useTutorSpeech() {
         // ignore
       }
     }
-  }, [supported, status, clearTick, clearResumeGuard, releaseWakeLock, stopKeepAlive]);
+  }, [supported, status, clearTick, clearResumeGuard, cancelSpeech, releaseWakeLock, stopKeepAlive]);
 
   const setSpeechRate = useCallback(
     (next: TutorSpeechRate) => {
