@@ -728,6 +728,56 @@
   color: #ef4444;
 }
 
+.professor-ai-startup {
+  margin-top: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
+  background: color-mix(in srgb, var(--accent) 8%, var(--card));
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.professor-ai-alert {
+  margin-top: 0.75rem;
+  border-radius: 14px;
+  padding: 0.75rem 0.85rem;
+  font-size: 0.74rem;
+  line-height: 1.5;
+}
+
+.professor-ai-alert--error {
+  border: 1px solid color-mix(in srgb, #ef4444 35%, var(--border));
+  background: color-mix(in srgb, #ef4444 8%, var(--card));
+  color: #fca5a5;
+}
+
+.professor-ai-alert__action {
+  margin-top: 0.55rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.25rem;
+  padding: 0 0.85rem;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, #ef4444 40%, var(--border));
+  background: color-mix(in srgb, #ef4444 12%, var(--card));
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #fecaca;
+  cursor: pointer;
+}
+
+.professor-ai-alert__action:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 /* —— Bottom sheets —— */
 
 .professor-sheet-root {
@@ -1095,6 +1145,20 @@ html:not(.dark) .professor-ai-unsupported,
 html:not(.dark) .professor-ai-class-mode small,
 html:not(.dark) .professor-practice-checkpoint__hint {
   color: rgba(15, 23, 42, 0.62);
+}
+
+html:not(.dark) .professor-ai-startup {
+  color: #0f172a;
+  background: color-mix(in srgb, var(--accent) 10%, #ffffff);
+}
+
+html:not(.dark) .professor-ai-alert--error {
+  color: #b91c1c;
+  background: color-mix(in srgb, #ef4444 6%, #ffffff);
+}
+
+html:not(.dark) .professor-ai-alert__action {
+  color: #991b1b;
 }
 
 html:not(.dark) .professor-ai-icon-btn {

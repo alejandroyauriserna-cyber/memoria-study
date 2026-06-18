@@ -16,6 +16,7 @@ import {
   normalizeSpeechScript,
 } from "@/lib/guided-study/tutor-voice/speech-chunks";
 import { sliceScriptByElapsedProgress } from "@/lib/guided-study/tutor-voice/resume-offset";
+import { narrationPlaybackErrorMessage } from "@/lib/guided-study/tutor-voice/lesson-startup";
 import type { TutorSpeechRate, TutorSpeechStatus } from "@/types/tutor-voice";
 
 function countWordsLocal(text: string): number {
@@ -56,6 +57,8 @@ export function useTutorSpeech() {
   const [isSnippet, setIsSnippet] = useState(false);
 
   rateRef.current = rate;
+  const statusRef = useRef(status);
+  statusRef.current = status;
 
   const clearTick = useCallback(() => {
     if (tickRef.current) {
@@ -238,8 +241,16 @@ export function useTutorSpeech() {
   }, [clearTick, clearResumeGuard, releaseWakeLock, stopKeepAlive]);
 
   const queueChunks = useCallback(
-    (chunks: string[], voice: SpeechSynthesisVoice | null, fromIndex = 0): void => {
+    (
+      chunks: string[],
+      voice: SpeechSynthesisVoice | null,
+      fromIndex = 0,
+      onFirstChunkStart?: () => void,
+      onFirstChunkError?: (code?: string) => void,
+    ): void => {
       if (!supported || chunks.length === 0) return;
+
+      window.speechSynthesis.resume();
 
       const slice = chunks.slice(fromIndex);
       const lastGlobalIndex = chunks.length - 1;
@@ -266,6 +277,7 @@ export function useTutorSpeech() {
             startKeepAlive();
             startResumeGuard();
             setupMediaSession("Clase narrada — MemoriaStudy");
+            onFirstChunkStart?.();
           }
         };
 
@@ -280,10 +292,14 @@ export function useTutorSpeech() {
           if (event.error === "interrupted" || event.error === "canceled") return;
           clearTick();
           clearResumeGuard();
+          const message = narrationPlaybackErrorMessage(event.error);
           setStatus("error");
-          setError("No se pudo reproducir el audio.");
+          setError(message);
           void releaseWakeLock();
           stopKeepAlive();
+          if (globalIndex === fromIndex) {
+            onFirstChunkError?.(event.error);
+          }
         };
 
         window.speechSynthesis.speak(utterance);
@@ -334,7 +350,12 @@ export function useTutorSpeech() {
   );
 
   const play = useCallback(async (): Promise<void> => {
-    if (!scriptRef.current) return;
+    if (!scriptRef.current) {
+      const message = "No hay guion listo para reproducir.";
+      setError(message);
+      setStatus("error");
+      throw new Error(message);
+    }
 
     if (status === "paused" && !awaitingResume && !lessonSuspended) {
       userPausedRef.current = false;
@@ -346,16 +367,61 @@ export function useTutorSpeech() {
       return;
     }
 
-    if (!supported) return;
+    if (!supported) {
+      const message = "La narración no está disponible en este navegador.";
+      setError(message);
+      setStatus("error");
+      throw new Error(message);
+    }
 
     cancelSpeech();
-    const voice = getCachedSpanishVoice() ?? (await waitForVoices());
+    setError(null);
+
+    const voice = getCachedSpanishVoice() ?? (await waitForVoices(1500));
     const chunks = buildSpeechChunks(scriptRef.current);
+    if (!chunks.length) {
+      const message = "El guion de la clase está vacío.";
+      setError(message);
+      setStatus("error");
+      throw new Error(message);
+    }
+
     chunksRef.current = chunks;
     chunkIndexRef.current = 0;
     startedAtRef.current = Date.now();
     setElapsedSec(0);
-    queueChunks(chunks, voice, 0);
+
+    await new Promise<void>((resolve, reject) => {
+      let settled = false;
+
+      const timer = window.setTimeout(() => {
+        if (settled || statusRef.current === "playing") return;
+        settled = true;
+        cancelSpeech();
+        const message = "El audio tardó demasiado en iniciar. Pulsa Reintentar.";
+        setError(message);
+        setStatus("error");
+        reject(new Error(message));
+      }, 9000);
+
+      queueChunks(
+        chunks,
+        voice,
+        0,
+        () => {
+          if (settled) return;
+          settled = true;
+          window.clearTimeout(timer);
+          resolve();
+        },
+        (code) => {
+          if (settled) return;
+          settled = true;
+          window.clearTimeout(timer);
+          reject(new Error(narrationPlaybackErrorMessage(code)));
+        },
+      );
+    });
   }, [
     status,
     awaitingResume,

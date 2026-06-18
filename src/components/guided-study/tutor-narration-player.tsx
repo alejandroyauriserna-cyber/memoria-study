@@ -18,11 +18,17 @@ import {
 } from "@/lib/guided-study/tutor-voice/narration-class-mode";
 import { buildNarrationCheckpoints, type NarrationCheckpoint } from "@/lib/guided-study/tutor-voice/narration-checkpoints";
 import {
+  lessonStartupLabel,
+  parseNarrationFetchError,
+  type LessonStartupPhase,
+} from "@/lib/guided-study/tutor-voice/lesson-startup";
+import {
   loadNarrationStyle,
   saveNarrationStyle,
   NARRATION_STYLE_META,
   NARRATION_STYLES,
 } from "@/lib/guided-study/tutor-voice/narration-style";
+import { primeSpanishVoice } from "@/lib/guided-study/tutor-voice/speech-synthesis";
 import { useTutorSpeech } from "@/hooks/use-tutor-speech";
 import { useTutorVoiceSession } from "@/hooks/use-tutor-voice-session";
 import { ProfessorHelpSheet } from "@/components/guided-study/professor-help-sheet";
@@ -35,6 +41,7 @@ import type {
   NarrationInterruptAction,
   NarrationMicroAction,
   NarrationStyle,
+  TutorNarrationScript,
 } from "@/types/tutor-voice";
 import "./professor-ai.css";
 
@@ -106,6 +113,8 @@ export function TutorNarrationPlayer({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [playbackUiPaused, setPlaybackUiPaused] = useState(false);
   const [activeCheckpoint, setActiveCheckpoint] = useState<NarrationCheckpoint | null>(null);
+  const [startupPhase, setStartupPhase] = useState<LessonStartupPhase | null>(null);
+  const [isStarting, setIsStarting] = useState(false);
   const micPressRef = useRef(false);
   const firedCheckpointsRef = useRef(new Set<string>());
   const activeCheckpointRef = useRef<NarrationCheckpoint | null>(null);
@@ -128,6 +137,7 @@ export function TutorNarrationPlayer({
   useEffect(() => {
     setNarrationStyle(loadNarrationStyle());
     setClassMode(loadNarrationClassMode());
+    void primeSpanishVoice();
   }, []);
 
   const sessionMemoryHint = useMemo(
@@ -261,15 +271,9 @@ export function TutorNarrationPlayer({
     voiceSession.stopListening();
   }, [voiceSession]);
 
-  const fetchNarration = useCallback(async () => {
-    const cached = loadNarrationCache(materialId, scopeKey, narrationStyle);
-    if (cached) {
-      speech.loadScript(cached.script, cached.estimatedDurationSec);
-      return;
-    }
-
-    speech.setStatus("loading");
+  const loadNarrationScript = useCallback(async (): Promise<boolean> => {
     setLoadError(null);
+    speech.setStatus("loading");
 
     try {
       const res = await fetch("/api/guided-study/tutor/narration", {
@@ -286,16 +290,34 @@ export function TutorNarrationPlayer({
         }),
       });
 
-      const payload = await res.json();
-      if (!res.ok) throw new Error(payload.error ?? "No se pudo generar la clase.");
+      let payload: { narration?: { script: string; estimatedDurationSec: number }; error?: string } =
+        {};
+      try {
+        payload = await res.json();
+      } catch {
+        payload = {};
+      }
 
-      const narration = { ...payload.narration, style: narrationStyle };
+      if (!res.ok) {
+        throw new Error(parseNarrationFetchError(res.status, payload));
+      }
+
+      if (!payload.narration?.script?.trim()) {
+        throw new Error("La clase llegó vacía. Intenta de nuevo en unos segundos.");
+      }
+
+      const narration = {
+        ...payload.narration,
+        style: narrationStyle,
+      } as TutorNarrationScript;
       saveNarrationCache(materialId, scopeKey, narration, narrationStyle);
       speech.loadScript(narration.script, narration.estimatedDurationSec);
+      return true;
     } catch (caught) {
       const message = caught instanceof Error ? caught.message : "Error de narración";
       setLoadError(message);
       speech.setStatus("error");
+      return false;
     }
   }, [
     materialId,
@@ -307,6 +329,40 @@ export function TutorNarrationPlayer({
     analysisPayload,
     speech,
   ]);
+
+  const handleStartLesson = useCallback(async () => {
+    if (disabled || isStarting) return;
+
+    setIsStarting(true);
+    setLoadError(null);
+    speech.setStatus("loading");
+
+    try {
+      const cached = loadNarrationCache(materialId, scopeKey, narrationStyle);
+      if (cached?.script?.trim()) {
+        speech.loadScript(cached.script, cached.estimatedDurationSec);
+        setStartupPhase("preparing_audio");
+      } else {
+        setStartupPhase("generating");
+        const loaded = await loadNarrationScript();
+        if (!loaded) return;
+        setStartupPhase("preparing_audio");
+      }
+
+      await primeSpanishVoice();
+
+      setStartupPhase("starting");
+      await speech.play();
+    } catch (caught) {
+      const message =
+        caught instanceof Error ? caught.message : "No se pudo iniciar la clase narrada.";
+      setLoadError(message);
+      speech.setStatus("error");
+    } finally {
+      setStartupPhase(null);
+      setIsStarting(false);
+    }
+  }, [disabled, isStarting, materialId, scopeKey, narrationStyle, loadNarrationScript, speech]);
 
   const handleStyleChange = useCallback(
     (style: NarrationStyle) => {
@@ -421,6 +477,9 @@ export function TutorNarrationPlayer({
   }
 
   const showPlayer = speech.status !== "idle" && speech.status !== "error";
+  const isBootstrapping = isStarting || speech.status === "loading" || startupPhase !== null;
+  const startupMessage = startupPhase ? lessonStartupLabel(startupPhase, classMode) : null;
+  const displayError = loadError ?? speech.error ?? voiceSession.error;
   const styleMeta = NARRATION_STYLE_META[narrationStyle];
   const busy =
     interruptLoading ||
@@ -438,7 +497,11 @@ export function TutorNarrationPlayer({
     !micPressed;
   const orbListening = voiceSession.isListening || micPressed;
   const orbThinking =
-    interruptLoading || voiceSession.isProcessing || voiceSession.isTranscribing || speech.status === "loading";
+    isBootstrapping ||
+    interruptLoading ||
+    voiceSession.isProcessing ||
+    voiceSession.isTranscribing ||
+    speech.status === "loading";
 
   const canInteract =
     showPlayer &&
@@ -473,7 +536,7 @@ export function TutorNarrationPlayer({
                   type="button"
                   role="radio"
                   aria-checked={active}
-                  disabled={disabled || speech.status === "loading"}
+                  disabled={disabled || isBootstrapping}
                   className={`professor-ai-style-chip${active ? " is-active" : ""}`}
                   onClick={() => handleStyleChange(style)}
                 >
@@ -497,7 +560,7 @@ export function TutorNarrationPlayer({
                   type="button"
                   role="radio"
                   aria-checked={active}
-                  disabled={disabled || speech.status === "loading"}
+                  disabled={disabled || isBootstrapping}
                   className={`professor-ai-class-mode${active ? " is-active" : ""}`}
                   onClick={() => handleClassModeChange(mode)}
                 >
@@ -510,18 +573,39 @@ export function TutorNarrationPlayer({
             })}
           </div>
 
-          <ProfessorVoiceOrb active={false} />
+          <ProfessorVoiceOrb active={isBootstrapping} thinking={isBootstrapping} />
+
+          {displayError && !showPlayer ? (
+            <div className="professor-ai-alert professor-ai-alert--error" role="alert">
+              <p>{displayError}</p>
+              <button
+                type="button"
+                className="professor-ai-alert__action"
+                disabled={isBootstrapping}
+                onClick={() => void handleStartLesson()}
+              >
+                Reintentar
+              </button>
+            </div>
+          ) : null}
+
+          {isBootstrapping && startupMessage ? (
+            <p className="professor-ai-startup" role="status" aria-live="polite">
+              <Loader2 size={14} className="animate-spin" aria-hidden />
+              {startupMessage}
+            </p>
+          ) : null}
 
           <button
             type="button"
             className="professor-ai-start"
-            disabled={disabled || speech.status === "loading"}
-            onClick={() => void fetchNarration().then(() => speech.play())}
+            disabled={disabled || isBootstrapping}
+            onClick={() => void handleStartLesson()}
           >
-            {speech.status === "loading" ? (
+            {isBootstrapping ? (
               <>
                 <Loader2 size={16} className="animate-spin" />
-                Preparando explicación…
+                {startupMessage ?? "Preparando…"}
               </>
             ) : classMode === "practice" ? (
               <>
@@ -711,8 +795,10 @@ export function TutorNarrationPlayer({
         onStop={handleStop}
       />
 
-      {loadError || speech.error || voiceSession.error ? (
-        <p className="professor-ai-error">{loadError ?? speech.error ?? voiceSession.error}</p>
+      {displayError && showPlayer ? (
+        <p className="professor-ai-error" role="alert">
+          {displayError}
+        </p>
       ) : null}
     </section>
   );
