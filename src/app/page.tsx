@@ -14,6 +14,7 @@ import {
   Zap,
 } from "lucide-react";
 import { AppShell } from "@/components/ui/shell";
+import { AcademicTrustExperience } from "@/components/academic-trust/academic-trust-experience";
 import { DashboardOnboarding } from "@/components/dashboard/dashboard-onboarding";
 import { LegalAiHero } from "@/components/home/legal-ai-hero";
 import { TimeGreetingText } from "@/components/home/time-greeting-text";
@@ -93,6 +94,8 @@ export default async function Home() {
             <DashboardOnboarding show />
           </div>
         ) : null}
+
+        {isAuthenticated ? <AcademicTrustExperience variant="home" /> : null}
 
         <section className="ms-home-landing">
           <div className="ms-home-landing-copy">

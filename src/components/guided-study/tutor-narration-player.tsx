@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Mic, MicOff, Pause, Play, Send, Square, Volume2 } from "lucide-react";
 import { buildTutorCacheKey, type TutorCacheScope } from "@/lib/guided-study/tutor-cache";
 import {
@@ -41,6 +41,18 @@ function pickPrimaryConcept(analysis: PageProfessorAnalysis): string {
   return analysis.conceptCards[0]?.concept ?? analysis.pageFocus;
 }
 
+function voicePhaseLabel(
+  voice: ReturnType<typeof useTutorVoiceSession>,
+  micPressed: boolean,
+): string | null {
+  if (voice.isListening) return "🔴 Grabando… habla ahora";
+  if (voice.isArming || micPressed) return "Preparando micrófono…";
+  if (voice.isTranscribing) return "Transcribiendo lo que dijiste…";
+  if (voice.isProcessing) return "El profesor está pensando tu pregunta…";
+  if (voice.isSpeaking) return "El profesor te responde…";
+  return null;
+}
+
 export function TutorNarrationPlayer({
   materialId,
   pageNumber,
@@ -71,6 +83,8 @@ export function TutorNarrationPlayer({
   const [interruptLoading, setInterruptLoading] = useState(false);
   const [lastReply, setLastReply] = useState<string | null>(null);
   const [askText, setAskText] = useState("");
+  const [micPressed, setMicPressed] = useState(false);
+  const micPressRef = useRef(false);
 
   useEffect(() => {
     setNarrationStyle(loadNarrationStyle());
@@ -181,11 +195,19 @@ export function TutorNarrationPlayer({
   });
 
   const handleVoicePress = useCallback(() => {
+    micPressRef.current = true;
+    setMicPressed(true);
     if (speech.isPlaying && !speech.isSnippet) {
       speech.suspendLesson();
     }
     voiceSession.startListening();
   }, [speech, voiceSession]);
+
+  const handleVoiceRelease = useCallback(() => {
+    micPressRef.current = false;
+    setMicPressed(false);
+    voiceSession.stopListening();
+  }, [voiceSession]);
 
   const fetchNarration = useCallback(async () => {
     const cached = loadNarrationCache(materialId, scopeKey, narrationStyle);
@@ -278,7 +300,12 @@ export function TutorNarrationPlayer({
       speech.isPaused ||
       speech.awaitingResume ||
       speech.lessonSuspended);
-  const busy = interruptLoading || voiceSession.isProcessing;
+  const busy =
+    interruptLoading ||
+    voiceSession.isProcessing ||
+    voiceSession.isTranscribing ||
+    voiceSession.isSpeaking;
+  const voiceStatus = voicePhaseLabel(voiceSession, micPressed);
 
   return (
     <section className="gs-narration" aria-label="Profesor particular interactivo">
@@ -325,8 +352,7 @@ export function TutorNarrationPlayer({
               <p className="gs-narration-subtitle">
                 {styleMeta.emoji} {styleMeta.label} · ~{speech.durationLabel}
                 {speech.isPlaying || speech.isPaused ? ` · ${speech.elapsedSec}s` : null}
-                {speech.isSnippet || voiceSession.isSpeaking ? " · Respondiendo…" : null}
-                {voiceSession.isListening ? " · Te escucho…" : null}
+                {speech.isSnippet ? " · Respondiendo…" : null}
                 {speech.backgroundMode ? " · Modo podcast" : null}
               </p>
             </div>
@@ -399,31 +425,62 @@ export function TutorNarrationPlayer({
               </form>
 
               {voiceSession.supported ? (
-                <button
-                  type="button"
-                  className={`gs-narration-voice-mic ${voiceSession.isListening ? "is-listening" : ""}`}
-                  disabled={disabled || busy || speech.isSnippet}
-                  onPointerDown={handleVoicePress}
-                  onPointerUp={() => voiceSession.stopListening()}
-                  onPointerLeave={() => {
-                    if (voiceSession.isListening) voiceSession.stopListening();
-                  }}
-                >
-                  {voiceSession.isProcessing ? (
-                    <Loader2 size={18} className="animate-spin" />
-                  ) : voiceSession.isListening ? (
-                    <MicOff size={18} />
-                  ) : (
-                    <Mic size={18} />
-                  )}
-                  <span>
-                    {voiceSession.isListening
-                      ? "Suelta para enviar"
-                      : voiceSession.isProcessing
-                        ? "El profesor piensa…"
-                        : "Mantén pulsado y pregunta"}
-                  </span>
-                </button>
+                <>
+                  {voiceStatus ? (
+                    <p
+                      className={`gs-narration-voice-status ${
+                        voiceSession.isListening ? "is-recording" : ""
+                      } ${voiceSession.isProcessing ? "is-thinking" : ""}`}
+                      role="status"
+                      aria-live="polite"
+                    >
+                      {voiceSession.isProcessing || voiceSession.isTranscribing ? (
+                        <Loader2 size={12} className="animate-spin" />
+                      ) : null}
+                      {voiceStatus}
+                    </p>
+                  ) : null}
+
+                  {voiceSession.interimTranscript ? (
+                    <p className="gs-narration-voice-interim" aria-live="polite">
+                      «{voiceSession.interimTranscript}»
+                    </p>
+                  ) : null}
+
+                  <button
+                    type="button"
+                    className={`gs-narration-voice-mic ${voiceSession.isListening || micPressed ? "is-listening" : ""}`}
+                    disabled={disabled || busy || speech.isSnippet}
+                    onPointerDown={(e) => {
+                      e.preventDefault();
+                      handleVoicePress();
+                    }}
+                    onPointerUp={handleVoiceRelease}
+                    onPointerCancel={handleVoiceRelease}
+                    onPointerLeave={() => {
+                      if (micPressRef.current) handleVoiceRelease();
+                    }}
+                  >
+                    {voiceSession.isProcessing || voiceSession.isTranscribing ? (
+                      <Loader2 size={18} className="animate-spin" />
+                    ) : voiceSession.isListening || micPressed ? (
+                      <MicOff size={18} />
+                    ) : (
+                      <Mic size={18} />
+                    )}
+                    <span>
+                      {voiceSession.isListening
+                        ? "Suelta para enviar tu pregunta"
+                        : voiceSession.isTranscribing
+                          ? "Transcribiendo…"
+                          : voiceSession.isProcessing
+                            ? "Procesando tu pregunta…"
+                            : voiceSession.isSpeaking
+                              ? "Escuchando al profesor…"
+                              : "Mantén pulsado y pregunta en voz alta"}
+                    </span>
+                  </button>
+                </>
               ) : null}
 
               {voiceSession.turns.length ? (
@@ -472,12 +529,14 @@ export function TutorNarrationPlayer({
             {!speech.awaitingResume ? (
               <button
                 type="button"
-                className="gs-narration-btn"
+                className="gs-narration-btn gs-narration-btn--stop"
                 onClick={speech.stop}
-                aria-label="Detener"
+                title="Detener la clase y volver al inicio del reproductor"
+                aria-label="Detener clase"
                 disabled={busy}
               >
                 <Square size={14} />
+                <span>Detener</span>
               </button>
             ) : null}
 
@@ -488,7 +547,7 @@ export function TutorNarrationPlayer({
                   type="button"
                   className={`gs-narration-rate ${speech.rate === r ? "is-active" : ""}`}
                   onClick={() => speech.setSpeechRate(r)}
-                  disabled={busy}
+                  disabled={interruptLoading}
                 >
                   {r}x
                 </button>

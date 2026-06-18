@@ -27,9 +27,12 @@ export function useTutorVoiceSession({
   onProfessorReply?: (text: string) => void | Promise<void>;
 }) {
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const pendingStopRef = useRef(false);
+  const gotResultRef = useRef(false);
   const [phase, setPhase] = useState<TutorVoiceSessionPhase>("idle");
   const [turns, setTurns] = useState<TutorVoiceTurn[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [interimTranscript, setInterimTranscript] = useState("");
   const supported = isSpeechRecognitionSupported();
 
   const appendTurn = useCallback((role: TutorVoiceTurn["role"], text: string) => {
@@ -44,8 +47,15 @@ export function useTutorVoiceSession({
   }, []);
 
   const stopListening = useCallback(() => {
-    recognitionRef.current?.stop();
-    recognitionRef.current = null;
+    const recognition = recognitionRef.current;
+    if (!recognition) {
+      pendingStopRef.current = true;
+      return;
+    }
+
+    setPhase("transcribing");
+    setInterimTranscript("");
+    recognition.stop();
   }, []);
 
   const startListening = useCallback(() => {
@@ -56,28 +66,55 @@ export function useTutorVoiceSession({
       return;
     }
 
+    if (recognitionRef.current) return;
+
     setError(null);
+    setInterimTranscript("");
+    gotResultRef.current = false;
+    pendingStopRef.current = false;
+    setPhase("arming");
+
     const recognition = new Ctor();
     recognition.lang = "es-PE";
-    recognition.interimResults = false;
+    recognition.interimResults = true;
     recognition.maxAlternatives = 1;
     recognition.continuous = false;
 
-    recognition.onstart = () => setPhase("listening");
+    recognition.onstart = () => {
+      setPhase("listening");
+      if (pendingStopRef.current) {
+        pendingStopRef.current = false;
+        setPhase("transcribing");
+        recognition.stop();
+      }
+    };
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
-      const transcript = event.results[0]?.[0]?.transcript?.trim();
-      if (!transcript) {
-        setPhase("idle");
-        return;
+      let interim = "";
+      let finalText = "";
+
+      for (let i = 0; i < event.results.length; i++) {
+        const result = event.results[i];
+        if (!result) continue;
+        const text = result[0]?.transcript ?? "";
+        if (result.isFinal) finalText += text;
+        else interim += text;
       }
 
+      if (interim.trim()) setInterimTranscript(interim.trim());
+
+      const transcript = (finalText || interim).trim();
+      if (!transcript || !event.results[event.results.length - 1]?.isFinal) return;
+
+      gotResultRef.current = true;
+      setInterimTranscript(transcript);
       appendTurn("student", transcript);
       setPhase("processing");
 
       void onStudentTranscript(transcript)
         .then(async (reply) => {
           appendTurn("professor", reply);
+          setInterimTranscript("");
           setPhase("speaking");
           try {
             await onProfessorReply?.(reply);
@@ -91,17 +128,40 @@ export function useTutorVoiceSession({
         });
     };
 
-    recognition.onerror = () => {
-      setPhase("idle");
-      setError("No se pudo escuchar. Intenta de nuevo.");
+    recognition.onerror = (event: Event) => {
+      const code = (event as Event & { error?: string }).error ?? "unknown";
+      if (code === "no-speech") {
+        setError("No se detectó voz. Mantén pulsado el micrófono un poco más.");
+      } else if (code === "aborted") {
+        setError(null);
+      } else {
+        setError("No se pudo escuchar. Intenta de nuevo o escribe tu pregunta.");
+      }
+      setInterimTranscript("");
+      setPhase(code === "aborted" ? "idle" : "error");
     };
 
     recognition.onend = () => {
       recognitionRef.current = null;
+      if (gotResultRef.current) return;
+      setPhase((current) => {
+        if (current === "processing" || current === "speaking") return current;
+        if (current === "transcribing" || current === "listening" || current === "arming") {
+          setError((prev) => prev ?? "No se captó audio. Mantén pulsado mientras hablas.");
+          return "idle";
+        }
+        return current;
+      });
     };
 
     recognitionRef.current = recognition;
-    recognition.start();
+    try {
+      recognition.start();
+    } catch {
+      recognitionRef.current = null;
+      setError("No se pudo iniciar el micrófono.");
+      setPhase("error");
+    }
   }, [appendTurn, onStudentTranscript, onProfessorReply]);
 
   const markSpeakingDone = useCallback(() => {
@@ -109,22 +169,29 @@ export function useTutorVoiceSession({
   }, []);
 
   const reset = useCallback(() => {
-    stopListening();
+    recognitionRef.current?.abort();
+    recognitionRef.current = null;
+    pendingStopRef.current = false;
+    gotResultRef.current = false;
     setTurns([]);
+    setInterimTranscript("");
     setPhase("idle");
     setError(null);
-  }, [stopListening]);
+  }, []);
 
   return {
     supported,
     phase,
     turns,
     error,
+    interimTranscript,
     startListening,
     stopListening,
     markSpeakingDone,
     reset,
+    isArming: phase === "arming",
     isListening: phase === "listening",
+    isTranscribing: phase === "transcribing",
     isProcessing: phase === "processing",
     isSpeaking: phase === "speaking",
   };

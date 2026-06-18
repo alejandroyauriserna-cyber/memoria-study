@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import "./loading-progress.css";
 import "./home-2026.css";
+import "./academic-trust.css";
 import "./mobile-ios-fixes.css";
 import "./upload-material-modern.css";
 import "./library-modern.css";

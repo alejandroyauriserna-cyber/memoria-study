@@ -11,6 +11,7 @@ import { UserMenu } from "@/components/ui/user-menu";
 import { OfflineSyncBanner } from "@/components/ui/offline-sync-banner";
 import { MobileNavMenu } from "@/components/ui/mobile-nav-menu";
 import { MobileBackButton } from "@/components/ui/mobile-back-button";
+import { AcademicTrustExperience } from "@/components/academic-trust/academic-trust-experience";
 import { JurisprudenceAdminNavLink } from "@/components/jurisprudence/jurisprudence-admin-nav-link";
 
 const NAV = [
@@ -112,6 +113,7 @@ export function AppShell({
           ) : null}
 
           <div className="shell-header-actions flex shrink-0 items-center gap-0.5 sm:gap-2">
+            {!compactShell ? <AcademicTrustExperience variant="header" /> : null}
             <div className="hidden items-center gap-1.5 sm:flex">
               <ThemePicker />
               <ThemeToggle />

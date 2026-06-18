@@ -15,6 +15,7 @@ import {
   buildSpeechChunks,
   normalizeSpeechScript,
 } from "@/lib/guided-study/tutor-voice/speech-chunks";
+import { sliceScriptByElapsedProgress } from "@/lib/guided-study/tutor-voice/resume-offset";
 import type { TutorSpeechRate, TutorSpeechStatus } from "@/types/tutor-voice";
 
 function countWordsLocal(text: string): number {
@@ -32,6 +33,7 @@ export function useTutorSpeech() {
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
   const keepAliveAudioRef = useRef<HTMLAudioElement | null>(null);
   const rateRef = useRef<TutorSpeechRate>(1);
+  const intentionalCancelRef = useRef(false);
   const suspendedRef = useRef<{
     script: string;
     chunks: string[];
@@ -67,6 +69,13 @@ export function useTutorSpeech() {
       resumeGuardRef.current = null;
     }
   }, []);
+
+  const cancelSpeech = useCallback(() => {
+    if (!supported) return;
+    intentionalCancelRef.current = true;
+    window.speechSynthesis.cancel();
+    intentionalCancelRef.current = false;
+  }, [supported]);
 
   const releaseWakeLock = useCallback(async () => {
     try {
@@ -133,7 +142,7 @@ export function useTutorSpeech() {
 
   const stop = useCallback(() => {
     if (!supported) return;
-    window.speechSynthesis.cancel();
+    cancelSpeech();
     utteranceRef.current = null;
     chunkIndexRef.current = 0;
     clearTick();
@@ -155,7 +164,7 @@ export function useTutorSpeech() {
     setAwaitingResume(false);
     setIsSnippet(false);
     setStatus((s) => (s === "loading" ? s : scriptRef.current ? "ready" : "idle"));
-  }, [supported, clearTick, clearResumeGuard, releaseWakeLock, stopKeepAlive]);
+  }, [supported, cancelSpeech, clearTick, clearResumeGuard, releaseWakeLock, stopKeepAlive]);
 
   useEffect(() => {
     if (!supported) return;
@@ -261,7 +270,9 @@ export function useTutorSpeech() {
           }
         };
 
-        utterance.onerror = () => {
+        utterance.onerror = (event) => {
+          if (intentionalCancelRef.current) return;
+          if (event.error === "interrupted" || event.error === "canceled") return;
           clearTick();
           clearResumeGuard();
           setStatus("error");
@@ -288,6 +299,35 @@ export function useTutorSpeech() {
     ],
   );
 
+  const resumeFromElapsed = useCallback(
+    async (fromElapsed: number, fromRate: number): Promise<void> => {
+      const fullScript = scriptRef.current;
+      if (!fullScript || !supported) return;
+
+      const remaining = sliceScriptByElapsedProgress(fullScript, fromElapsed, fromRate);
+      if (!remaining.trim()) {
+        finishPlayback();
+        return;
+      }
+
+      cancelSpeech();
+      const voice = getCachedSpanishVoice() ?? (await waitForVoices());
+      const chunks = buildSpeechChunks(remaining);
+      chunksRef.current = chunks;
+      chunkIndexRef.current = 0;
+
+      if (!startedAtRef.current && fromElapsed > 0) {
+        startedAtRef.current = Date.now() - fromElapsed * 1000;
+      } else if (!startedAtRef.current) {
+        startedAtRef.current = Date.now();
+      }
+
+      setElapsedSec(fromElapsed);
+      queueChunks(chunks, voice, 0);
+    },
+    [supported, cancelSpeech, finishPlayback, queueChunks],
+  );
+
   const play = useCallback(async (): Promise<void> => {
     if (!scriptRef.current) return;
 
@@ -302,29 +342,15 @@ export function useTutorSpeech() {
         return;
       }
 
-      const idx = chunkIndexRef.current;
-      const chunks = chunksRef.current.length
-        ? chunksRef.current
-        : buildSpeechChunks(scriptRef.current);
-      chunksRef.current = chunks;
-
-      if (chunks.length && (idx > 0 || elapsedSec > 0)) {
-        if (!supported) return;
-        window.speechSynthesis.cancel();
-        const voice = getCachedSpanishVoice() ?? (await waitForVoices());
-        if (!startedAtRef.current && elapsedSec > 0) {
-          startedAtRef.current = Date.now() - elapsedSec * 1000;
-        } else if (!startedAtRef.current) {
-          startedAtRef.current = Date.now();
-        }
-        queueChunks(chunks, voice, idx);
+      if (elapsedSec > 0) {
+        await resumeFromElapsed(elapsedSec, rateRef.current);
         return;
       }
     }
 
     if (!supported) return;
 
-    window.speechSynthesis.cancel();
+    cancelSpeech();
     const voice = getCachedSpanishVoice() ?? (await waitForVoices());
     const chunks = buildSpeechChunks(scriptRef.current);
     chunksRef.current = chunks;
@@ -338,18 +364,20 @@ export function useTutorSpeech() {
     lessonSuspended,
     elapsedSec,
     supported,
+    cancelSpeech,
     startTick,
     queueChunks,
     startResumeGuard,
     requestWakeLock,
     startKeepAlive,
+    resumeFromElapsed,
   ]);
 
   const suspendLesson = useCallback(() => {
     if (!scriptRef.current || suspendedRef.current) return;
 
     if (status === "playing" || window.speechSynthesis.speaking) {
-      window.speechSynthesis.cancel();
+      cancelSpeech();
     }
 
     if (!chunksRef.current.length) {
@@ -390,7 +418,7 @@ export function useTutorSpeech() {
         suspendLesson();
       }
 
-      window.speechSynthesis.cancel();
+      cancelSpeech();
       const voice = getCachedSpanishVoice() ?? (await waitForVoices());
       const normalized = normalizeSpeechScript(text);
       const utterance = new SpeechSynthesisUtterance(normalized);
@@ -421,7 +449,9 @@ export function useTutorSpeech() {
           setStatus("paused");
           resolve();
         };
-        utterance.onerror = () => {
+        utterance.onerror = (event) => {
+          if (intentionalCancelRef.current) return;
+          if (event.error === "interrupted" || event.error === "canceled") return;
           clearTick();
           clearResumeGuard();
           setIsSnippet(false);
@@ -458,11 +488,9 @@ export function useTutorSpeech() {
 
     if (!supported) return;
 
-    window.speechSynthesis.cancel();
+    cancelSpeech();
     const voice = getCachedSpanishVoice() ?? (await waitForVoices());
     scriptRef.current = saved.script;
-    chunksRef.current = saved.chunks;
-    chunkIndexRef.current = saved.chunkIndex;
     setEstimatedDurationSec(saved.estimatedDurationSec);
     setElapsedSec(saved.elapsedSec);
     startedAtRef.current = saved.startedAt;
@@ -470,8 +498,21 @@ export function useTutorSpeech() {
     setLessonSuspended(false);
     setAwaitingResume(false);
     setIsSnippet(false);
-    queueChunks(saved.chunks, voice, saved.chunkIndex);
-  }, [supported, play, queueChunks]);
+
+    const remaining = sliceScriptByElapsedProgress(
+      saved.script,
+      saved.elapsedSec,
+      rateRef.current,
+    );
+    if (!remaining.trim()) {
+      finishPlayback();
+      return;
+    }
+
+    chunksRef.current = buildSpeechChunks(remaining);
+    chunkIndexRef.current = 0;
+    queueChunks(chunksRef.current, voice, 0);
+  }, [supported, play, cancelSpeech, queueChunks, finishPlayback]);
 
   const pause = useCallback(() => {
     if (!supported || status !== "playing") return;
@@ -493,6 +534,13 @@ export function useTutorSpeech() {
   const setSpeechRate = useCallback(
     (next: TutorSpeechRate) => {
       if (next === rateRef.current) return;
+
+      const oldRate = rateRef.current;
+      const wasPlaying = status === "playing" || window.speechSynthesis.speaking;
+      const savedElapsed = elapsedSec;
+      const savedStartedAt =
+        startedAtRef.current || Date.now() - savedElapsed * 1000;
+
       setRate(next);
       rateRef.current = next;
 
@@ -506,22 +554,23 @@ export function useTutorSpeech() {
       if (status !== "playing" && status !== "paused") return;
       if (isSnippet) return;
 
-      const wasPlaying = status === "playing";
-      const savedIdx = chunkIndexRef.current;
-      const savedElapsed = elapsedSec;
-      const savedStartedAt =
-        startedAtRef.current || Date.now() - savedElapsed * 1000;
+      const remaining = fullScript
+        ? sliceScriptByElapsedProgress(fullScript, savedElapsed, oldRate)
+        : "";
 
-      window.speechSynthesis.cancel();
+      cancelSpeech();
       clearResumeGuard();
 
-      if (!chunksRef.current.length && fullScript) {
-        chunksRef.current = buildSpeechChunks(fullScript);
-      }
-
-      chunkIndexRef.current = savedIdx;
       setElapsedSec(savedElapsed);
       startedAtRef.current = savedStartedAt;
+
+      if (!remaining.trim()) {
+        if (savedElapsed > 0) finishPlayback();
+        return;
+      }
+
+      chunksRef.current = buildSpeechChunks(remaining);
+      chunkIndexRef.current = 0;
 
       if (wasPlaying && chunksRef.current.length) {
         void (async () => {
@@ -533,7 +582,7 @@ export function useTutorSpeech() {
           startKeepAlive();
           startResumeGuard();
           setupMediaSession("Clase narrada — MemoriaStudy");
-          queueChunks(chunksRef.current, voice, savedIdx);
+          queueChunks(chunksRef.current, voice, 0);
         })();
       } else {
         setStatus("paused");
@@ -543,7 +592,9 @@ export function useTutorSpeech() {
       status,
       isSnippet,
       elapsedSec,
+      cancelSpeech,
       clearResumeGuard,
+      finishPlayback,
       startTick,
       requestWakeLock,
       startKeepAlive,

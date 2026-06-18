@@ -1908,6 +1908,69 @@ html:not(.dark) .gs-pdf-viewer-canvas {
   cursor: not-allowed;
 }
 
+.gs-narration-btn--stop {
+  gap: 0.3rem;
+  padding-inline: 0.55rem;
+  min-width: auto;
+}
+
+.gs-narration-btn--stop span {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.gs-narration-voice-status {
+  position: relative;
+  z-index: 1;
+  margin-top: 0.45rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  border-radius: 0.65rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
+  background: color-mix(in srgb, var(--accent) 8%, var(--card));
+  padding: 0.45rem 0.65rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--foreground);
+  text-align: center;
+}
+
+.gs-narration-voice-status.is-recording {
+  border-color: color-mix(in srgb, #ef4444 55%, var(--accent));
+  background: color-mix(in srgb, #ef4444 12%, var(--card));
+  color: color-mix(in srgb, #ef4444 85%, var(--foreground));
+  animation: gs-mic-pulse 1.2s ease-in-out infinite;
+}
+
+.gs-narration-voice-status.is-thinking {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  color: var(--accent);
+}
+
+.gs-narration-voice-interim {
+  position: relative;
+  z-index: 1;
+  margin: 0.35rem 0 0;
+  text-align: center;
+  font-size: 0.66rem;
+  font-style: italic;
+  line-height: 1.35;
+  color: var(--muted-foreground);
+}
+
+@keyframes gs-mic-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, #ef4444 0%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 4px color-mix(in srgb, #ef4444 18%, transparent);
+  }
+}
+
 .gs-narration-voice-mic {
   position: relative;
   z-index: 1;

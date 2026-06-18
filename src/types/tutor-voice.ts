@@ -37,7 +37,9 @@ export type TutorSpeechStatus = "idle" | "loading" | "ready" | "playing" | "paus
 /** Fase 2 — conversación por voz (STT → Tutor → TTS). */
 export type TutorVoiceSessionPhase =
   | "idle"
+  | "arming"
   | "listening"
+  | "transcribing"
   | "processing"
   | "speaking"
   | "error";
