@@ -9,9 +9,10 @@ import { prepareTextForGeneration } from "@/lib/pdf/extract";
 import { MAX_FILE_SIZE } from "@/lib/pdf/constants";
 
 export const runtime = "nodejs";
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 const MIN_TEXT_CHARS = 80;
+const METADATA_AI_TIMEOUT_MS = 20_000;
 
 export async function POST(request: Request) {
   try {
@@ -59,7 +60,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const { text, method } = await extractDocumentFromBuffer(buffer, file.name);
+    const { text, method } = await extractDocumentFromBuffer(buffer, file.name, {
+      skipOcr: true,
+    });
     const prepared = prepareTextForGeneration(text, 120_000);
 
     console.log("[materials/analyze-upload]", {
@@ -83,6 +86,7 @@ export async function POST(request: Request) {
     const { suggested, confidence } = await extractMaterialUploadMetadata({
       extractedText: prepared.text,
       fileName: file.name,
+      aiTimeoutMs: METADATA_AI_TIMEOUT_MS,
     });
 
     const confidenceValues = [
@@ -98,10 +102,18 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       ok: true,
-      suggested,
+      suggested: {
+        title: suggested.title,
+        description: suggested.description,
+        materialType: suggested.materialType,
+        academic: suggested.academic,
+        detection: suggested.detection,
+        conceptsDetected: suggested.conceptsDetected,
+      },
       confidence,
       overallConfidence,
       needsReview: overallConfidence < 0.65 || !suggested.academic,
+      extractionMethod: method,
     });
   } catch (caught) {
     console.error("[materials/analyze-upload]", caught);

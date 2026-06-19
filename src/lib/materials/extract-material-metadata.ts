@@ -60,10 +60,12 @@ function pickHeaderSample(fullText: string, fileName: string): string {
 export async function extractMaterialUploadMetadata(input: {
   extractedText: string;
   fileName: string;
+  aiTimeoutMs?: number;
 }): Promise<{ suggested: MaterialUploadSuggestion; confidence: MaterialUploadConfidence }> {
   const sample = input.extractedText.slice(0, 120_000);
   const detection = detectCourseFromText(sample);
   const academic = detection ? detectionToSelection(detection) : null;
+  const aiTimeoutMs = input.aiTimeoutMs ?? 20_000;
 
   const prompt = `Eres un asistente de biblioteca jurídica universitaria (UNT — Derecho).
 
@@ -95,7 +97,7 @@ ${pickHeaderSample(sample, input.fileName)}`;
       prompt,
       temperature: 0.15,
       json: true,
-      timeoutMs: 90_000,
+      timeoutMs: aiTimeoutMs,
     });
 
     const parsed = AiMaterialSchema.parse(JSON.parse(raw));

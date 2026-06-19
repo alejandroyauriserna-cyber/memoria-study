@@ -17,6 +17,7 @@ import {
 import type { AcademicSelection } from "@/types/academic";
 import type { CourseDetectionResult } from "@/types/course-detection";
 import { MAX_FILE_SIZE } from "@/lib/pdf/constants";
+import { parseJsonResponse } from "@/lib/api/parse-json-response";
 
 const maxMaterialFileMb = Math.round(MAX_FILE_SIZE / (1024 * 1024));
 
@@ -95,12 +96,18 @@ export function UploadMaterialForm() {
         credentials: "same-origin",
       });
 
-      let payload: { error?: string; suggested?: unknown; overallConfidence?: number; needsReview?: boolean } = {};
-      try {
-        payload = (await response.json()) as typeof payload;
-      } catch {
-        throw new Error("El servidor devolvió una respuesta inválida al analizar el archivo.");
-      }
+      const payload = await parseJsonResponse<{
+        error?: string;
+        suggested?: {
+          title: string;
+          description: string;
+          materialType: MaterialUploadType;
+          academic: AcademicSelection | null;
+          detection: CourseDetectionResult | null;
+        };
+        overallConfidence?: number;
+        needsReview?: boolean;
+      }>(response);
 
       if (!response.ok) {
         if (response.status === 401) {
@@ -109,13 +116,10 @@ export function UploadMaterialForm() {
         throw new Error(payload.error ?? "No se pudo analizar el archivo.");
       }
 
-      const suggested = payload.suggested as {
-        title: string;
-        description: string;
-        materialType: MaterialUploadType;
-        academic: AcademicSelection | null;
-        detection: CourseDetectionResult | null;
-      };
+      const suggested = payload.suggested;
+      if (!suggested) {
+        throw new Error("El servidor no devolvió metadatos sugeridos.");
+      }
 
       setTitle(suggested.title);
       setDescription(suggested.description);

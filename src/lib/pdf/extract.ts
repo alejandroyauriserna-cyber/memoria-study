@@ -16,6 +16,8 @@ type PdfParserError = { parserError: Error } | Error;
 
 export type PdfExtractionOptions = {
   forceScanned?: boolean;
+  /** Evita OCR con Gemini (útil para análisis rápido de metadatos). */
+  skipOcr?: boolean;
   onProgress?: OcrProgressCallback;
 };
 
@@ -264,6 +266,16 @@ export async function extractPdfFromBuffer(
   }
 
   const bestAttempt = attempts.sort((a, b) => b.text.length - a.text.length)[0];
+
+  if (options.skipOcr) {
+    if (bestAttempt?.text) {
+      return { text: bestAttempt.text, method: bestAttempt.method };
+    }
+
+    throw new Error(
+      "No se extrajo texto suficiente sin OCR. Si es un PDF escaneado, conviértelo a texto seleccionable o completa los campos manualmente.",
+    );
+  }
 
   if (pdfParseFailed && env.geminiApiKey) {
     report(onProgress, {
