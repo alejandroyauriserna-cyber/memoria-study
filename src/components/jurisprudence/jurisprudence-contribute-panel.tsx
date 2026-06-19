@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { DragEvent } from "react";
-import { Loader2, Sparkles, Upload, Users, X } from "lucide-react";
+import { Loader2, Scale, Sparkles, Upload, Users, X } from "lucide-react";
 import {
   confidenceClass,
   formatConfidencePct,
@@ -77,9 +77,7 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
   const [success, setSuccess] = useState("");
   const [analyzeMessage, setAnalyzeMessage] = useState("");
 
-  if (!open) return null;
-
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     setFile(null);
     setTitle("");
     setSubmateria("");
@@ -98,82 +96,83 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
     setError("");
     setSuccess("");
     if (fileRef.current) fileRef.current.value = "";
-  };
+  }, []);
 
-  const handleClose = () => {
-    resetForm();
-    onClose();
-  };
+  const applySuggested = useCallback(
+    (
+      suggested: JurisprudenceSuggestedMetadata,
+      confidence: JurisprudenceFieldConfidence,
+      overall: number,
+      asunto?: string | null,
+    ) => {
+      const form = suggestedToContributionForm(suggested);
+      setTitle(form.title);
+      setTipo(form.tipo as typeof tipo);
+      setMateria(form.materia as typeof materia);
+      setSubmateria(form.submateria);
+      setYear(form.year);
+      setOrgano(form.organo);
+      setSummary(form.summary);
+      setKeywords(form.keywords);
+      setExpediente(form.expediente);
+      setAsuntoPrincipal(asunto ?? suggested.asuntoPrincipal ?? "");
+      setAiConfidence(confidence);
+      setAiFilled(markAiFilledFields(confidence));
+      setOverallConfidence(overall);
+      setAnalyzed(true);
+    },
+    [],
+  );
 
-  const applySuggested = (
-    suggested: JurisprudenceSuggestedMetadata,
-    confidence: JurisprudenceFieldConfidence,
-    overall: number,
-    asunto?: string | null,
-  ) => {
-    const form = suggestedToContributionForm(suggested);
-    setTitle(form.title);
-    setTipo(form.tipo as typeof tipo);
-    setMateria(form.materia as typeof materia);
-    setSubmateria(form.submateria);
-    setYear(form.year);
-    setOrgano(form.organo);
-    setSummary(form.summary);
-    setKeywords(form.keywords);
-    setExpediente(form.expediente);
-    setAsuntoPrincipal(asunto ?? suggested.asuntoPrincipal ?? "");
-    setAiConfidence(confidence);
-    setAiFilled(markAiFilledFields(confidence));
-    setOverallConfidence(overall);
-    setAnalyzed(true);
-  };
+  const analyzeSource = useCallback(
+    async (nextFile?: File | null, nextUrl?: string) => {
+      setAnalyzing(true);
+      setError("");
+      setAnalyzeMessage("Leyendo PDF…");
 
-  async function analyzeSource(nextFile?: File | null, nextUrl?: string) {
-    setAnalyzing(true);
-    setError("");
-    setAnalyzeMessage("Leyendo PDF…");
+      try {
+        const formData = new FormData();
+        if (nextFile) {
+          formData.set("file", nextFile);
+        } else if (nextUrl?.trim()) {
+          formData.set("pdfUrl", nextUrl.trim());
+        } else {
+          throw new Error("Selecciona un PDF o pega un enlace oficial.");
+        }
 
-    try {
-      const formData = new FormData();
-      if (nextFile) {
-        formData.set("file", nextFile);
-      } else if (nextUrl?.trim()) {
-        formData.set("pdfUrl", nextUrl.trim());
-      } else {
-        throw new Error("Selecciona un PDF o pega un enlace oficial.");
+        setAnalyzeMessage("La IA está catalogando el documento…");
+
+        const response = await fetch("/api/jurisprudence/analyze-contribution", {
+          method: "POST",
+          body: formData,
+        });
+        const payload = await response.json();
+
+        if (!response.ok) {
+          throw new Error(payload.error ?? "No se pudo analizar el documento.");
+        }
+
+        applySuggested(
+          payload.suggested,
+          payload.confidence as JurisprudenceFieldConfidence,
+          payload.overallConfidence as number,
+          payload.asuntoPrincipal as string | null,
+        );
+
+        setAnalyzeMessage(
+          payload.needsReview
+            ? "Revisa los campos marcados en amarillo antes de enviar."
+            : "Metadatos detectados. Revisa y envía cuando estés listo.",
+        );
+      } catch (caught) {
+        setError(caught instanceof Error ? caught.message : "Error al analizar.");
+        setAnalyzeMessage("");
+      } finally {
+        setAnalyzing(false);
       }
-
-      setAnalyzeMessage("La IA está catalogando el documento…");
-
-      const response = await fetch("/api/jurisprudence/analyze-contribution", {
-        method: "POST",
-        body: formData,
-      });
-      const payload = await response.json();
-
-      if (!response.ok) {
-        throw new Error(payload.error ?? "No se pudo analizar el documento.");
-      }
-
-      applySuggested(
-        payload.suggested,
-        payload.confidence as JurisprudenceFieldConfidence,
-        payload.overallConfidence as number,
-        payload.asuntoPrincipal as string | null,
-      );
-
-      setAnalyzeMessage(
-        payload.needsReview
-          ? "Revisa los campos marcados en amarillo antes de enviar."
-          : "Metadatos detectados. Revisa y envía cuando estés listo.",
-      );
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Error al analizar.");
-      setAnalyzeMessage("");
-    } finally {
-      setAnalyzing(false);
-    }
-  }
+    },
+    [applySuggested],
+  );
 
   const acceptPdfFile = useCallback(
     async (next: File | null | undefined) => {
@@ -186,6 +185,7 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
         setError("El PDF no puede superar 20 MB.");
         return;
       }
+      setUseLink(false);
       setError("");
       setFile(next);
       setAnalyzed(false);
@@ -195,24 +195,27 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
       setAnalyzeMessage("");
       await analyzeSource(next);
     },
-    [],
+    [analyzeSource],
   );
 
   const onDragEnter = useCallback((event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     event.stopPropagation();
-    setIsDragging(true);
-  }, []);
+    if (!useLink) setIsDragging(true);
+  }, [useLink]);
 
   const onDragOver = useCallback((event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     event.stopPropagation();
-    setIsDragging(true);
-  }, []);
+    event.dataTransfer.dropEffect = "copy";
+    if (!useLink) setIsDragging(true);
+  }, [useLink]);
 
   const onDragLeave = useCallback((event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     event.stopPropagation();
+    const next = event.relatedTarget as Node | null;
+    if (next && event.currentTarget.contains(next)) return;
     setIsDragging(false);
   }, []);
 
@@ -221,10 +224,29 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
       event.preventDefault();
       event.stopPropagation();
       setIsDragging(false);
+      if (useLink) return;
       void acceptPdfFile(event.dataTransfer.files?.[0]);
     },
-    [acceptPdfFile],
+    [acceptPdfFile, useLink],
   );
+
+  useEffect(() => {
+    if (!open) return;
+    const blockWindowDrop = (event: globalThis.DragEvent) => {
+      event.preventDefault();
+    };
+    window.addEventListener("dragover", blockWindowDrop);
+    window.addEventListener("drop", blockWindowDrop);
+    return () => {
+      window.removeEventListener("dragover", blockWindowDrop);
+      window.removeEventListener("drop", blockWindowDrop);
+    };
+  }, [open]);
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
 
   const handleFileChange = (next: File | null) => {
     void acceptPdfFile(next);
@@ -276,6 +298,8 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
 
   const canSubmit = analyzed && !analyzing && (useLink ? Boolean(pdfUrl.trim()) : Boolean(file));
 
+  if (!open) return null;
+
   return (
     <div className="bj-contribute-overlay" role="dialog" aria-modal="true" aria-labelledby="bj-contribute-title">
       <button type="button" className="bj-contribute-backdrop" onClick={handleClose} aria-label="Cerrar" />
@@ -298,7 +322,18 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
         </header>
 
         <form className="bj-contribute-form" onSubmit={handleSubmit}>
-          <div className="bj-contribute-source bj-contribute-source--first">
+          <section className="bj-contribute-section">
+            <div className="bj-contribute-section__head">
+              <div>
+                <h3>Documento fuente</h3>
+                <p>Arrastra el PDF o pega un enlace oficial. La IA catalogará la sentencia por ti.</p>
+              </div>
+              <span className="bj-contribute-section__icon" aria-hidden>
+                <Upload size={18} />
+              </span>
+            </div>
+
+            <div className="bj-contribute-source bj-contribute-source--first">
             <div className="bj-contribute-source-tabs">
               <button
                 type="button"
@@ -419,9 +454,20 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
               </div>
             </div>
           ) : null}
+          </section>
 
-          <fieldset className="bj-contribute-grid" disabled={!analyzed || analyzing}>
+          <fieldset className="bj-contribute-section bj-contribute-grid" disabled={!analyzed || analyzing}>
             <legend className="sr-only">Metadatos del aporte</legend>
+
+            <div className="bj-contribute-section__head bj-contribute-section__head--grid">
+              <div>
+                <h3>Metadatos jurídicos</h3>
+                <p>Revisa lo detectado por la IA o edita antes de enviar a moderación.</p>
+              </div>
+              <span className="bj-contribute-section__icon" aria-hidden>
+                <Scale size={18} />
+              </span>
+            </div>
 
             <label className="bj-contribute-field bj-contribute-field--wide">
               <FieldLabel aiFilled={aiFilled.title} confidence={aiConfidence?.title}>
@@ -537,7 +583,7 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
           </fieldset>
 
           {!analyzed && !analyzing ? (
-            <p className="bj-contribute-hint">
+            <p className="bj-contribute-hint bj-contribute-hint--section">
               Primero sube el PDF (o analiza un enlace). La IA completará el formulario por ti.
             </p>
           ) : null}
@@ -556,7 +602,10 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
                   Publicando…
                 </>
               ) : (
-                "Enviar a revisión"
+                <>
+                  <Sparkles size={16} />
+                  Enviar a revisión
+                </>
               )}
             </button>
           </div>
