@@ -24,8 +24,8 @@ export default function UploadMaterialPage() {
             </p>
             <h1>Comparte apuntes con toda la red.</h1>
             <p className="ms-home-lead">
-              Sube PDFs, resúmenes y casos prácticos ubicados en la malla oficial. Tu material queda
-              disponible para compañeros del mismo ciclo y curso.
+              Arrastra tu PDF, la IA detecta curso y descripción, y tu material queda disponible para
+              compañeros del mismo ciclo.
             </p>
             <div className="library-hero-actions" aria-label="Acciones de subida">
               <Link href="/library" className="library-hero-action">
@@ -49,15 +49,15 @@ export default function UploadMaterialPage() {
             </div>
             <div className="upload-hero-steps">
               <div className="upload-hero-step is-active">
-                <GraduationCap size={18} />
-                <span>1. Ubica en malla</span>
+                <Upload size={18} />
+                <span>1. Sube el PDF</span>
+              </div>
+              <div className="upload-hero-step">
+                <Sparkles size={18} />
+                <span>2. IA cataloga</span>
               </div>
               <div className="upload-hero-step">
                 <FileText size={18} />
-                <span>2. Describe el PDF</span>
-              </div>
-              <div className="upload-hero-step">
-                <Upload size={18} />
                 <span>3. Publica en red</span>
               </div>
             </div>

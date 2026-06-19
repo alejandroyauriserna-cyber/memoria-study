@@ -1,15 +1,15 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import type { FormEvent } from "react";
+import { useCallback, useRef, useState } from "react";
+import type { DragEvent, FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { FileText, GraduationCap, Sparkles, Upload } from "lucide-react";
+import { FileText, GraduationCap, Loader2, Sparkles, Upload } from "lucide-react";
 import { LoadingState } from "@/components/ui/loading-state";
 import { useLoadingProgress } from "@/hooks/use-loading-progress";
 import { AcademicNavigator } from "@/components/study/academic-navigator";
+import type { MaterialUploadType } from "@/lib/materials/extract-material-metadata";
 import type { AcademicSelection } from "@/types/academic";
-
-type MaterialType = "apunte" | "resumen" | "pdf" | "caso" | "guia" | "otro";
+import type { CourseDetectionResult } from "@/types/course-detection";
 
 type FieldErrors = {
   title?: string;
@@ -18,7 +18,7 @@ type FieldErrors = {
   file?: string;
 };
 
-const materialTypes: Array<{ value: MaterialType; label: string }> = [
+const materialTypes: Array<{ value: MaterialUploadType; label: string }> = [
   { value: "apunte", label: "Apunte" },
   { value: "resumen", label: "Resumen" },
   { value: "pdf", label: "PDF" },
@@ -27,13 +27,24 @@ const materialTypes: Array<{ value: MaterialType; label: string }> = [
   { value: "otro", label: "Otro" },
 ];
 
+function isPdfFile(file: File): boolean {
+  return file.name.toLowerCase().endsWith(".pdf") || file.type === "application/pdf";
+}
+
 export function UploadMaterialForm() {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [materialType, setMaterialType] = useState<MaterialType>("apunte");
+  const [materialType, setMaterialType] = useState<MaterialUploadType>("apunte");
   const [academic, setAcademic] = useState<AcademicSelection | null>(null);
   const [file, setFile] = useState<File | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analyzed, setAnalyzed] = useState(false);
+  const [detection, setDetection] = useState<CourseDetectionResult | null>(null);
+  const [overallConfidence, setOverallConfidence] = useState<number | null>(null);
+  const [analyzeHint, setAnalyzeHint] = useState("");
   const [status, setStatus] = useState<"idle" | "uploading" | "saved" | "error">("idle");
   const [message, setMessage] = useState("");
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -50,6 +61,112 @@ export function UploadMaterialForm() {
       clearFieldError("course");
     },
     [clearFieldError],
+  );
+
+  const analyzeFile = useCallback(async (selected: File) => {
+    setAnalyzing(true);
+    setAnalyzed(false);
+    setDetection(null);
+    setOverallConfidence(null);
+    setAnalyzeHint("Leyendo PDF…");
+    setMessage("");
+    setStatus("idle");
+
+    try {
+      const formData = new FormData();
+      formData.set("file", selected);
+
+      setAnalyzeHint("La IA está detectando curso, título y descripción…");
+
+      const response = await fetch("/api/materials/analyze-upload", {
+        method: "POST",
+        body: formData,
+      });
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload.error ?? "No se pudo analizar el PDF.");
+      }
+
+      const suggested = payload.suggested as {
+        title: string;
+        description: string;
+        materialType: MaterialUploadType;
+        academic: AcademicSelection | null;
+        detection: CourseDetectionResult | null;
+      };
+
+      setTitle(suggested.title);
+      setDescription(suggested.description);
+      setMaterialType(suggested.materialType);
+      if (suggested.academic) setAcademic(suggested.academic);
+      setDetection(suggested.detection);
+      setOverallConfidence(payload.overallConfidence as number);
+      setAnalyzed(true);
+      setAnalyzeHint(
+        payload.needsReview
+          ? "Revisa curso y descripción antes de publicar."
+          : "Metadatos listos. Puedes editar cualquier campo y compartir.",
+      );
+    } catch (caught) {
+      setAnalyzed(false);
+      setAnalyzeHint("");
+      setMessage(caught instanceof Error ? caught.message : "Error al analizar el PDF.");
+      setStatus("error");
+    } finally {
+      setAnalyzing(false);
+    }
+  }, []);
+
+  const acceptPdfFile = useCallback(
+    (selected: File | null | undefined) => {
+      if (!selected) return;
+      if (!isPdfFile(selected)) {
+        setErrors((current) => ({
+          ...current,
+          file: "Debes seleccionar un archivo PDF.",
+        }));
+        setStatus("error");
+        setMessage("Solo se admiten archivos PDF.");
+        return;
+      }
+
+      setFile(selected);
+      clearFieldError("file");
+      setStatus("idle");
+      setMessage("");
+      void analyzeFile(selected);
+    },
+    [analyzeFile, clearFieldError],
+  );
+
+  const onDragEnter = useCallback((event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragging(true);
+  }, []);
+
+  const onDragOver = useCallback((event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragging(true);
+  }, []);
+
+  const onDragLeave = useCallback((event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragging(false);
+  }, []);
+
+  const onDrop = useCallback(
+    (event: DragEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      setIsDragging(false);
+      const dropped = event.dataTransfer.files?.[0];
+      acceptPdfFile(dropped);
+    },
+    [acceptPdfFile],
   );
 
   const handleSubmit = useCallback(
@@ -72,7 +189,7 @@ export function UploadMaterialForm() {
 
       if (!file) {
         fieldErrors.file = "Debes seleccionar un archivo PDF.";
-      } else if (!file.name.toLowerCase().endsWith(".pdf") && file.type !== "application/pdf") {
+      } else if (!isPdfFile(file)) {
         fieldErrors.file = "Debes seleccionar un archivo PDF.";
       }
 
@@ -141,30 +258,85 @@ export function UploadMaterialForm() {
     [academic, description, file, materialType, title, router],
   );
 
+  const formDisabled = analyzing || !file;
+
   return (
     <form onSubmit={handleSubmit} className="upload-page-workspace">
       <section className="upload-page-panel">
         <div className="upload-page-panel__head">
           <div>
-            <h2>Contexto académico UNT</h2>
-            <p>Ubica el material en la malla oficial antes de subirlo.</p>
+            <h2>Archivo PDF</h2>
+            <p>Arrastra tu PDF al recuadro o selecciónalo. La IA completará título, curso y descripción.</p>
           </div>
           <span className="upload-page-panel__icon" aria-hidden>
-            <GraduationCap size={18} />
+            <Upload size={18} />
           </span>
         </div>
 
-        <div className={`upload-academic-panel ${errors.course ? "rounded-xl ring-1 ring-red-400/60" : ""}`}>
-          <AcademicNavigator value={academic} onChange={handleAcademicChange} />
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".pdf,application/pdf"
+          className="sr-only"
+          onChange={(event) => acceptPdfFile(event.target.files?.[0])}
+        />
+
+        <div
+          role="button"
+          tabIndex={0}
+          className={`upload-dropzone${errors.file ? " is-error" : ""}${isDragging ? " is-dragging" : ""}${file ? " has-file" : ""}`}
+          onClick={() => fileInputRef.current?.click()}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              fileInputRef.current?.click();
+            }
+          }}
+          onDragEnter={onDragEnter}
+          onDragOver={onDragOver}
+          onDragLeave={onDragLeave}
+          onDrop={onDrop}
+        >
+          <Upload size={28} strokeWidth={1.5} />
+          <strong>{file?.name ?? (isDragging ? "Suelta el PDF aquí" : "Arrastra o selecciona tu PDF")}</strong>
+          <span>{file ? "Toca o arrastra otro archivo para cambiar" : "Máximo un archivo · formato PDF"}</span>
         </div>
-        {errors.course ? <p className="upload-field__error">{errors.course}</p> : null}
+        {errors.file ? <p className="upload-field__error">{errors.file}</p> : null}
+
+        {analyzing ? (
+          <div className="upload-analyze-status" role="status">
+            <Loader2 size={18} className="animate-spin" />
+            <div>
+              <p className="upload-analyze-status__title">Analizando material</p>
+              <p className="upload-analyze-status__hint">{analyzeHint}</p>
+            </div>
+          </div>
+        ) : null}
+
+        {!analyzing && analyzed && overallConfidence !== null ? (
+          <div
+            className={`upload-ai-summary ${overallConfidence >= 0.75 ? "is-high" : overallConfidence >= 0.55 ? "is-mid" : "is-low"}`}
+          >
+            <Sparkles size={16} />
+            <div>
+              <p className="upload-ai-summary__title">
+                IA detectó el material · confianza {Math.round(overallConfidence * 100)}%
+              </p>
+              <p className="upload-ai-summary__hint">
+                {analyzeHint}
+                {detection?.courseName ? ` · Curso sugerido: ${detection.courseName}` : ""}
+              </p>
+            </div>
+          </div>
+        ) : null}
       </section>
 
-      <section className="upload-page-panel">
+      <fieldset className="upload-page-panel" disabled={formDisabled}>
+        <legend className="sr-only">Detalles del material</legend>
         <div className="upload-page-panel__head">
           <div>
             <h2>Detalles del material</h2>
-            <p>Título, tipo y descripción para que otros estudiantes lo encuentren.</p>
+            <p>Revisa lo que detectó la IA o edita antes de publicar.</p>
           </div>
           <span className="upload-page-panel__icon" aria-hidden>
             <FileText size={18} />
@@ -194,7 +366,7 @@ export function UploadMaterialForm() {
               <span>Tipo de material</span>
               <select
                 value={materialType}
-                onChange={(event) => setMaterialType(event.target.value as MaterialType)}
+                onChange={(event) => setMaterialType(event.target.value as MaterialUploadType)}
               >
                 {materialTypes.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -222,63 +394,56 @@ export function UploadMaterialForm() {
           </label>
           {errors.description ? <p className="upload-field__error">{errors.description}</p> : null}
         </div>
-      </section>
+      </fieldset>
 
-      <section className="upload-page-panel">
+      <fieldset className="upload-page-panel" disabled={formDisabled}>
+        <legend className="sr-only">Contexto académico UNT</legend>
         <div className="upload-page-panel__head">
           <div>
-            <h2>Archivo PDF</h2>
-            <p>Solo se aceptan documentos PDF listos para estudiar.</p>
+            <h2>Contexto académico UNT</h2>
+            <p>Confirma ciclo y curso en la malla oficial.</p>
           </div>
           <span className="upload-page-panel__icon" aria-hidden>
-            <Upload size={18} />
+            <GraduationCap size={18} />
           </span>
         </div>
 
-        <label className={`upload-dropzone ${errors.file ? "is-error" : ""}`}>
-          <Upload size={28} strokeWidth={1.5} />
-          <strong>{file?.name ?? "Arrastra o selecciona tu PDF"}</strong>
-          <span>{file ? "Toca para cambiar el archivo" : "Máximo un archivo · formato PDF"}</span>
-          <input
-            type="file"
-            accept=".pdf,application/pdf"
-            className="sr-only"
-            onChange={(event) => {
-              const selected = event.target.files?.[0];
-              if (selected) {
-                setFile(selected);
-                clearFieldError("file");
-              }
-            }}
-          />
-        </label>
-        {errors.file ? <p className="upload-field__error">{errors.file}</p> : null}
-
-        <div className="upload-submit-row">
-          <button type="submit" className="upload-submit-btn" disabled={status === "uploading"}>
-            <Sparkles size={16} />
-            {status === "uploading" ? `Subiendo… ${uploadProgress.percent}%` : "Compartir material"}
-          </button>
-          {message ? (
-            <p
-              className={`upload-status ${status === "error" ? "is-error" : status === "saved" ? "is-success" : ""}`}
-            >
-              {message}
-            </p>
-          ) : null}
+        <div className={`upload-academic-panel ${errors.course ? "rounded-xl ring-1 ring-red-400/60" : ""}`}>
+          <AcademicNavigator value={academic} onChange={handleAcademicChange} />
         </div>
+        {errors.course ? <p className="upload-field__error">{errors.course}</p> : null}
+      </fieldset>
 
-        {status === "uploading" ? (
-          <LoadingState
-            active
-            preset="upload"
-            percent={uploadProgress.percent}
-            message={uploadProgress.message}
-            stageLabel={uploadProgress.stageLabel}
-            className="mt-3"
-          />
+      {!file ? (
+        <p className="upload-page-hint">Primero sube un PDF arriba para activar el formulario.</p>
+      ) : null}
+
+      <div className="upload-submit-row">
+        <button
+          type="submit"
+          className="upload-submit-btn"
+          disabled={status === "uploading" || analyzing || !file}
+        >
+          <Sparkles size={16} />
+          {status === "uploading" ? `Subiendo… ${uploadProgress.percent}%` : "Compartir material"}
+        </button>
+        {message ? (
+          <p className={`upload-status ${status === "error" ? "is-error" : status === "saved" ? "is-success" : ""}`}>
+            {message}
+          </p>
         ) : null}
-      </section>
+      </div>
+
+      {status === "uploading" ? (
+        <LoadingState
+          active
+          preset="upload"
+          percent={uploadProgress.percent}
+          message={uploadProgress.message}
+          stageLabel={uploadProgress.stageLabel}
+          className="mt-3"
+        />
+      ) : null}
     </form>
   );
 }
