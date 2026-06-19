@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { askLegalStudyTutor, findChapterForPage } from "@/lib/guided-study/legal-tutor";
-import { getChapterText, getPageText } from "@/lib/guided-study/extract-pages";
+import { resolveTutorPageText } from "@/lib/guided-study/resolve-tutor-page-text";
 import { loadMaterialForGuidedStudy } from "@/lib/guided-study/load-material";
 import { enrichSourceSettings } from "@/lib/legal-sources/server";
 import {
@@ -104,9 +104,16 @@ export async function POST(request: Request) {
     const chapter = chapterById ?? (body.index ? findChapterForPage(body.index, pageNumber) : undefined);
 
     const chapterMode = Boolean(chapterById) || action === "explain_chapter";
-    const pageText = chapterById
-      ? getChapterText(material.pages, chapterById.startPage, chapterById.endPage)
-      : getPageText(material.pages, pageNumber);
+    const pageText = resolveTutorPageText({
+      pages: material.pages,
+      pageNumber,
+      chapter: chapterById
+        ? { startPage: chapterById.startPage, endPage: chapterById.endPage }
+        : chapter
+          ? { startPage: chapter.startPage, endPage: chapter.endPage }
+          : undefined,
+      chapterMode,
+    });
 
     if (chapterMode && action === "analyze_page") {
       action = "explain_chapter";

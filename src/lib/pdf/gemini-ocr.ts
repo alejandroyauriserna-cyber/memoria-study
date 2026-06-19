@@ -163,6 +163,22 @@ export async function ocrSlideImageWithGemini(
   });
 }
 
+export async function ocrPdfSlideChunkWithGemini(
+  pdfBuffer: Buffer,
+  label: string,
+) {
+  if (!env.geminiApiKey) {
+    throw new Error(
+      "OCR no disponible: configura GEMINI_API_KEY para PDFs de diapositivas.",
+    );
+  }
+
+  return ocrBufferWithFallback(env.geminiApiKey, pdfBuffer, label, {
+    mimeType: "application/pdf",
+    prompt: SLIDE_OCR_PROMPT,
+  });
+}
+
 export async function extractTextWithGeminiOcr(
   buffer: Buffer,
   fileName: string,

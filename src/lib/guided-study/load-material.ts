@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { extractPdfFromBuffer } from "@/lib/pdf/extract";
 import { downloadMaterialPdf } from "@/lib/organizers/download-material-pdf";
 import { extractPdfPagesFromBuffer } from "@/lib/guided-study/extract-pages";
+import { extractPdfPagesWithPerPageOcr } from "@/lib/guided-study/extract-pages-ocr";
 import { hasSubstantiveStudyText, cleanPageTextForStudy } from "@/lib/guided-study/prepare-study-page-text";
 import { verifyMaterialAccess } from "@/lib/materials/verify-access";
 import type { PdfPageContent } from "@/types/guided-legal-study";
@@ -36,6 +37,8 @@ async function loadPagesFromDbCache(materialId: string): Promise<PdfPageContent[
 }
 
 async function savePagesToDbCache(materialId: string, pages: PdfPageContent[]) {
+  if (!isGuidedStudyPageCacheUsable(pages)) return;
+
   try {
     const admin = createAdminClient();
     await admin.from("material_pdf_page_cache").upsert({
@@ -47,6 +50,41 @@ async function savePagesToDbCache(materialId: string, pages: PdfPageContent[]) {
   } catch {
     // Non-fatal: in-memory cache still works
   }
+}
+
+async function buildStudyPages(buffer: Buffer, fileName: string): Promise<PdfPageContent[]> {
+  let fallbackText: string | undefined;
+
+  try {
+    const extracted = await extractPdfFromBuffer(buffer, fileName);
+    fallbackText = extracted.text;
+  } catch (error) {
+    console.warn("[guided-study] PDF text extraction failed:", error);
+    fallbackText = undefined;
+  }
+
+  let pages = await extractPdfPagesFromBuffer(buffer, fallbackText);
+  if (isGuidedStudyPageCacheUsable(pages)) {
+    return pages;
+  }
+
+  try {
+    pages = await extractPdfPagesWithPerPageOcr(buffer, fileName);
+    if (isGuidedStudyPageCacheUsable(pages)) {
+      return pages;
+    }
+  } catch (error) {
+    console.warn("[guided-study] per-page slide OCR failed:", error);
+  }
+
+  try {
+    const forced = await extractPdfFromBuffer(buffer, fileName, { forceScanned: true });
+    pages = await extractPdfPagesFromBuffer(buffer, forced.text);
+  } catch (error) {
+    console.warn("[guided-study] forced OCR fallback failed:", error);
+  }
+
+  return pages;
 }
 
 export async function loadMaterialForGuidedStudy(
@@ -99,19 +137,14 @@ export async function loadMaterialForGuidedStudy(
   }
 
   const { buffer } = await downloadMaterialPdf(material.file_url);
-  let fallbackText: string | undefined;
+  const pages = await buildStudyPages(buffer, material.file_name ?? "material.pdf");
 
-  try {
-    const extracted = await extractPdfFromBuffer(
-      buffer,
-      material.file_name ?? "material.pdf",
+  if (!isGuidedStudyPageCacheUsable(pages)) {
+    throw new Error(
+      "No se pudo leer el texto de este PDF de diapositivas. Espera unos minutos y vuelve a abrir el estudio guiado.",
     );
-    fallbackText = extracted.text;
-  } catch {
-    fallbackText = undefined;
   }
 
-  const pages = await extractPdfPagesFromBuffer(buffer, fallbackText);
   pageCache.set(materialId, { pages, loadedAt: Date.now() });
   void savePagesToDbCache(materialId, pages);
 
@@ -135,7 +168,16 @@ export function clearGuidedStudyCache(materialId?: string) {
 }
 
 function isGuidedStudyPageCacheUsable(pages: PdfPageContent[]): boolean {
+  const joined = pages
+    .map((page) => page.text.trim())
+    .filter(Boolean)
+    .join(" ");
+
+  if (joined.length >= 400) {
+    return true;
+  }
+
   const sample = pages.find((page) => page.text.trim().length >= 40)?.text ?? pages[0]?.text ?? "";
   if (!sample.trim()) return false;
-  return hasSubstantiveStudyText(cleanPageTextForStudy(sample)) || sample.length >= 400;
+  return hasSubstantiveStudyText(cleanPageTextForStudy(sample)) || sample.length >= 120;
 }

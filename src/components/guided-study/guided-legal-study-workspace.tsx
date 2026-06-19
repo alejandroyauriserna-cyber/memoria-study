@@ -19,6 +19,7 @@ import {
   GUIDED_STUDY_CLIENT_TIMEOUT_MS,
   guidedStudyClientTimeoutSeconds,
 } from "@/lib/guided-study/timeouts";
+import { parseJsonResponse } from "@/lib/api/parse-json-response";
 import { filterAnalysisForExamMode } from "@/lib/guided-study/legal-tutor";
 import { ensureActiveLearning } from "@/lib/guided-study/ensure-active-learning";
 import {
@@ -220,19 +221,31 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
           signal: controller.signal,
         });
 
-        const payload = await response.json();
+        const payload = await parseJsonResponse<{
+          error?: string;
+          material?: {
+            id: string;
+            title: string;
+            fileName: string;
+            fileUrl: string;
+            courseName: string;
+            cycleLabel: string;
+            totalPages: number;
+          };
+          index?: NonNullable<typeof index>;
+        }>(response);
         if (!response.ok) {
           throw new Error(payload.error ?? "No se pudo analizar el documento.");
         }
 
         if (cancelled) return;
 
-        setMaterial(payload.material);
-        setIndex(payload.index);
+        setMaterial(payload.material ?? null);
+        setIndex(payload.index ?? null);
         setPhase("ready");
 
         const session = loadGuidedStudySession(materialId);
-        if (session?.currentPage) {
+        if (session?.currentPage && payload.material?.totalPages) {
           setCurrentPage(Math.min(session.currentPage, payload.material.totalPages));
         }
       } catch (caught) {
@@ -397,7 +410,13 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
           signal: controller.signal,
         });
 
-        const payload = await response.json();
+        const payload = await parseJsonResponse<{
+          error?: string;
+          customReply?: string;
+          chatMessage?: ReturnType<typeof createClientTutorChatMessage>;
+          fromChatCache?: boolean;
+          activeSources?: import("@/types/legal-sources").LegalSourceAttribution[];
+        }>(response);
         if (!response.ok) {
           throw new Error(payload.error ?? "Error del tutor.");
         }
@@ -418,7 +437,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
         if (payload.activeSources?.length) {
           setTutorState((prev) => ({
             ...prev,
-            activeSources: payload.activeSources,
+            activeSources: payload.activeSources ?? [],
           }));
         }
       } catch (caught) {
@@ -483,7 +502,13 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
           signal: controller.signal,
         });
 
-        const payload = await response.json();
+        const payload = await parseJsonResponse<{
+          error?: string;
+          customReply?: string;
+          chatMessage?: ReturnType<typeof createClientTutorChatMessage>;
+          fromChatCache?: boolean;
+          activeSources?: import("@/types/legal-sources").LegalSourceAttribution[];
+        }>(response);
         if (!response.ok) {
           throw new Error(payload.error ?? "Error del tutor.");
         }
@@ -504,7 +529,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
         if (payload.activeSources?.length) {
           setTutorState((prev) => ({
             ...prev,
-            activeSources: payload.activeSources,
+            activeSources: payload.activeSources ?? [],
           }));
         }
 
@@ -583,7 +608,12 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
           signal: controller.signal,
         });
 
-        const payload = await response.json();
+        const payload = await parseJsonResponse<{
+          error?: string;
+          analysis?: import("@/types/guided-legal-study").PageProfessorAnalysis;
+          customReply?: string;
+          activeSources?: import("@/types/legal-sources").LegalSourceAttribution[];
+        }>(response);
         if (!response.ok) {
           throw new Error(payload.error ?? "Error del tutor.");
         }
