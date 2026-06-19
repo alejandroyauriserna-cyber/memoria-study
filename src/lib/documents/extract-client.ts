@@ -4,6 +4,7 @@ import {
   detectStudyDocumentKind,
   isLegacyPptFile,
 } from "@/lib/documents/kinds";
+import { ocrPdfSlidesClient } from "@/lib/documents/ocr-pdf-slides-client";
 
 const MAX_PDF_PAGES = 60;
 const MIN_USEFUL_TEXT = 80;
@@ -41,15 +42,14 @@ async function extractPdfTextClient(file: File) {
   return parts.join("\n\n").trim();
 }
 
-function pptConvertedPdfHint(fileName: string) {
-  if (!/\.pdf$/i.test(fileName)) return null;
-  return (
-    "Este PDF parece exportado desde PowerPoint y no tiene texto seleccionable (solo imágenes). " +
-    "Sube el archivo .pptx original en lugar del PDF convertido."
-  );
-}
+export type StudyDocumentClientExtractionOptions = {
+  onProgress?: (message: string) => void;
+};
 
-export async function extractStudyDocumentTextClient(file: File) {
+export async function extractStudyDocumentTextClient(
+  file: File,
+  options?: StudyDocumentClientExtractionOptions,
+) {
   if (isLegacyPptFile(file.name, file.type)) {
     throw new Error(
       "El formato .ppt antiguo no está soportado. Guarda la presentación como .pptx en PowerPoint.",
@@ -68,13 +68,20 @@ export async function extractStudyDocumentTextClient(file: File) {
   }
 
   const text = await extractPdfTextClient(file);
-  if (text.length < MIN_USEFUL_TEXT) {
-    const pptHint = pptConvertedPdfHint(file.name);
+  if (text.length >= MIN_USEFUL_TEXT) {
+    return { text, method: "pdfjs-client" as const };
+  }
+
+  options?.onProgress?.(
+    "Este PDF parece exportado desde PowerPoint (solo imágenes). Leyendo diapositivas con IA…",
+  );
+
+  const ocrText = await ocrPdfSlidesClient(file, options?.onProgress);
+  if (ocrText.length < MIN_USEFUL_TEXT) {
     throw new Error(
-      pptHint ??
-        "No se extrajo suficiente texto del PDF. Si es escaneado o solo imágenes, usa un PDF con texto seleccionable o el .pptx original.",
+      "No se pudo leer suficiente texto del PDF. Verifica que las diapositivas sean legibles o intenta de nuevo en unos minutos.",
     );
   }
 
-  return { text, method: "pdfjs-client" as const };
+  return { text: ocrText, method: "gemini-ocr-slides" as const };
 }

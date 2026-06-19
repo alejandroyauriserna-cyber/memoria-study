@@ -11,6 +11,15 @@ Transcribe fielmente TODO el texto visible de este fragmento de PDF escaneado (d
 - Si algo es ilegible escribe [ilegible] y continúa.
 `;
 
+const SLIDE_OCR_PROMPT = `
+Transcribe fielmente TODO el texto visible de esta diapositiva o página de presentación (derecho, códigos, doctrina).
+- Idioma: español jurídico.
+- Incluye títulos, viñetas, numeración, artículos, incisos y notas al pie.
+- Respeta la jerarquía (título principal, subtítulos, puntos).
+- No resumas: transcripción literal.
+- Si algo es ilegible escribe [ilegible] y continúa.
+`;
+
 const MAX_INLINE_OCR_BYTES = 14 * 1024 * 1024;
 const PAGES_PER_CHUNK = 3;
 const MAX_MODEL_ATTEMPTS = 3;
@@ -62,9 +71,12 @@ async function ocrWithModel(
   modelName: string,
   buffer: Buffer,
   label: string,
+  options?: { mimeType?: string; prompt?: string },
 ) {
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({ model: modelName });
+  const mimeType = options?.mimeType ?? "application/pdf";
+  const prompt = options?.prompt ?? OCR_PROMPT;
   let lastError: unknown;
 
   for (let attempt = 1; attempt <= MAX_MODEL_ATTEMPTS; attempt += 1) {
@@ -72,11 +84,11 @@ async function ocrWithModel(
       const result = await model.generateContent([
         {
           inlineData: {
-            mimeType: "application/pdf",
+            mimeType,
             data: buffer.toString("base64"),
           },
         },
-        { text: `${OCR_PROMPT}\n\nFragmento: ${label}` },
+        { text: `${prompt}\n\nFragmento: ${label}` },
       ]);
 
       const text = result.response.text();
@@ -113,6 +125,7 @@ async function ocrBufferWithFallback(
   apiKey: string,
   buffer: Buffer,
   label: string,
+  options?: { mimeType?: string; prompt?: string },
 ) {
   const errors: string[] = [];
   const preferred = normalizeGeminiModel(env.geminiModel);
@@ -123,7 +136,7 @@ async function ocrBufferWithFallback(
 
   for (const modelName of models) {
     try {
-      return await ocrWithModel(apiKey, modelName, buffer, label);
+      return await ocrWithModel(apiKey, modelName, buffer, label, options);
     } catch (error) {
       errors.push(
         `${modelName}: ${extractErrorMessage(error)}`,
@@ -132,6 +145,22 @@ async function ocrBufferWithFallback(
   }
 
   throw new Error(errors.join(" | "));
+}
+
+export async function ocrSlideImageWithGemini(
+  imageBuffer: Buffer,
+  label: string,
+) {
+  if (!env.geminiApiKey) {
+    throw new Error(
+      "OCR no disponible: configura GEMINI_API_KEY para PDFs de diapositivas.",
+    );
+  }
+
+  return ocrBufferWithFallback(env.geminiApiKey, imageBuffer, label, {
+    mimeType: "image/jpeg",
+    prompt: SLIDE_OCR_PROMPT,
+  });
 }
 
 export async function extractTextWithGeminiOcr(

@@ -88,7 +88,9 @@ export function UploadMaterialForm() {
 
     try {
       setAnalyzeHint("Leyendo el archivo en tu navegador…");
-      const { text, method } = await extractStudyDocumentTextClient(selected);
+      const { text, method } = await extractStudyDocumentTextClient(selected, {
+        onProgress: setAnalyzeHint,
+      });
 
       setAnalyzeHint("La IA está detectando curso, título y descripción…");
 
@@ -331,7 +333,7 @@ export function UploadMaterialForm() {
         <div className="upload-page-panel__head">
           <div>
             <h2>Archivo de estudio</h2>
-            <p>Arrastra tu PDF o PowerPoint (.pptx). Se lee en tu navegador y la IA completará título, curso y descripción.</p>
+            <p>Arrastra tu PDF o PowerPoint (.pptx). Si el profesor te dio un PDF de diapositivas, lo leemos con IA automáticamente.</p>
           </div>
           <span className="upload-page-panel__icon" aria-hidden>
             <Upload size={18} />

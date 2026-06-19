@@ -36,12 +36,10 @@ async function analyzeFromExtractedText(
   });
 
   if (prepared.text.length < MIN_TEXT_CHARS) {
-    const isPdf = fileName.toLowerCase().endsWith(".pdf");
     return NextResponse.json(
       {
-        error: isPdf
-          ? "Este PDF exportado desde PowerPoint no tiene texto seleccionable. Sube el .pptx original en lugar del PDF."
-          : "No se extrajo suficiente texto. Usa el .pptx original con texto editable.",
+        error:
+          "No se extrajo suficiente texto del archivo. Si es un PDF de diapositivas, espera a que termine el OCR o reintenta el análisis.",
       },
       { status: 422 },
     );
