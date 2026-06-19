@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { requireAuth } from "@/lib/api/require-auth";
 import { extractMaterialUploadMetadata } from "@/lib/materials/extract-material-metadata";
 import { hasSupabaseEnv } from "@/lib/env";
@@ -14,6 +15,72 @@ export const maxDuration = 300;
 const MIN_TEXT_CHARS = 80;
 const METADATA_AI_TIMEOUT_MS = 20_000;
 
+const analyzeJsonSchema = z.object({
+  fileName: z.string().min(1),
+  text: z.string().min(1),
+  extractionMethod: z.string().optional(),
+});
+
+async function analyzeFromExtractedText(
+  fileName: string,
+  text: string,
+  method = "client",
+) {
+  const prepared = prepareTextForGeneration(text, 120_000);
+
+  console.log("[materials/analyze-upload]", {
+    fileName,
+    method,
+    textChars: prepared.text.length,
+    source: "client-text",
+  });
+
+  if (prepared.text.length < MIN_TEXT_CHARS) {
+    const isPdf = fileName.toLowerCase().endsWith(".pdf");
+    return NextResponse.json(
+      {
+        error: isPdf
+          ? "Este PDF exportado desde PowerPoint no tiene texto seleccionable. Sube el .pptx original en lugar del PDF."
+          : "No se extrajo suficiente texto. Usa el .pptx original con texto editable.",
+      },
+      { status: 422 },
+    );
+  }
+
+  const { suggested, confidence } = await extractMaterialUploadMetadata({
+    extractedText: prepared.text,
+    fileName,
+    aiTimeoutMs: METADATA_AI_TIMEOUT_MS,
+  });
+
+  const confidenceValues = [
+    confidence.title,
+    confidence.description,
+    confidence.materialType,
+    confidence.course,
+  ].filter((v): v is number => typeof v === "number" && v > 0);
+
+  const overallConfidence = confidenceValues.length
+    ? confidenceValues.reduce((sum, value) => sum + value, 0) / confidenceValues.length
+    : 0;
+
+  return NextResponse.json({
+    ok: true,
+    suggested: {
+      title: suggested.title,
+      description: suggested.description,
+      materialType: suggested.materialType,
+      academic: suggested.academic,
+      detection: suggested.detection,
+      conceptsDetected: suggested.conceptsDetected,
+    },
+    confidence,
+    overallConfidence,
+    needsReview: overallConfidence < 0.65 || !suggested.academic,
+    extractionMethod: method,
+  });
+}
+
 export async function POST(request: Request) {
   try {
     if (!hasSupabaseEnv()) {
@@ -22,6 +89,17 @@ export async function POST(request: Request) {
 
     const auth = await requireAuth(request, { rateLimit: { limit: 25, windowMs: 3_600_000 } });
     if (auth instanceof NextResponse) return auth;
+
+    const contentType = request.headers.get("content-type") ?? "";
+
+    if (contentType.includes("application/json")) {
+      const parsed = analyzeJsonSchema.parse(await request.json());
+      return analyzeFromExtractedText(
+        parsed.fileName,
+        parsed.text,
+        parsed.extractionMethod ?? "client",
+      );
+    }
 
     const formData = await request.formData();
     const file = formData.get("file");
@@ -63,59 +141,13 @@ export async function POST(request: Request) {
     const { text, method } = await extractDocumentFromBuffer(buffer, file.name, {
       skipOcr: true,
     });
-    const prepared = prepareTextForGeneration(text, 120_000);
 
-    console.log("[materials/analyze-upload]", {
-      fileName: file.name,
-      mimeType: file.type,
-      kind,
-      method,
-      textChars: prepared.text.length,
-    });
-
-    if (prepared.text.length < MIN_TEXT_CHARS) {
-      return NextResponse.json(
-        {
-          error:
-            "No se extrajo suficiente texto. Si subiste un PDF escaneado o una presentación hecha solo con imágenes, usa el .pptx original con texto editable.",
-        },
-        { status: 422 },
-      );
+    return analyzeFromExtractedText(file.name, text, method);
+  } catch (caught) {
+    if (caught instanceof z.ZodError) {
+      return NextResponse.json({ error: "Solicitud de análisis inválida." }, { status: 400 });
     }
 
-    const { suggested, confidence } = await extractMaterialUploadMetadata({
-      extractedText: prepared.text,
-      fileName: file.name,
-      aiTimeoutMs: METADATA_AI_TIMEOUT_MS,
-    });
-
-    const confidenceValues = [
-      confidence.title,
-      confidence.description,
-      confidence.materialType,
-      confidence.course,
-    ].filter((v): v is number => typeof v === "number" && v > 0);
-
-    const overallConfidence = confidenceValues.length
-      ? confidenceValues.reduce((sum, value) => sum + value, 0) / confidenceValues.length
-      : 0;
-
-    return NextResponse.json({
-      ok: true,
-      suggested: {
-        title: suggested.title,
-        description: suggested.description,
-        materialType: suggested.materialType,
-        academic: suggested.academic,
-        detection: suggested.detection,
-        conceptsDetected: suggested.conceptsDetected,
-      },
-      confidence,
-      overallConfidence,
-      needsReview: overallConfidence < 0.65 || !suggested.academic,
-      extractionMethod: method,
-    });
-  } catch (caught) {
     console.error("[materials/analyze-upload]", caught);
     return NextResponse.json(
       { error: caught instanceof Error ? caught.message : "No se pudo analizar el material." },

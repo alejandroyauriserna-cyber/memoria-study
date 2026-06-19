@@ -18,6 +18,8 @@ import type { AcademicSelection } from "@/types/academic";
 import type { CourseDetectionResult } from "@/types/course-detection";
 import { MAX_FILE_SIZE } from "@/lib/pdf/constants";
 import { parseJsonResponse } from "@/lib/api/parse-json-response";
+import { extractStudyDocumentTextClient } from "@/lib/documents/extract-client";
+import { uploadMaterialFileToStorage } from "@/lib/materials/upload-material-client";
 
 const maxMaterialFileMb = Math.round(MAX_FILE_SIZE / (1024 * 1024));
 
@@ -85,15 +87,20 @@ export function UploadMaterialForm() {
     setStatus("idle");
 
     try {
-      const formData = new FormData();
-      formData.set("file", selected);
+      setAnalyzeHint("Leyendo el archivo en tu navegador…");
+      const { text, method } = await extractStudyDocumentTextClient(selected);
 
       setAnalyzeHint("La IA está detectando curso, título y descripción…");
 
       const response = await fetch("/api/materials/analyze-upload", {
         method: "POST",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
         credentials: "same-origin",
+        body: JSON.stringify({
+          fileName: selected.name,
+          text,
+          extractionMethod: method,
+        }),
       });
 
       const payload = await parseJsonResponse<{
@@ -255,22 +262,32 @@ export function UploadMaterialForm() {
       if (!academic || !file) return;
 
       try {
-        const formData = new FormData();
-        formData.set("title", title.trim());
-        formData.set("description", description.trim());
-        formData.set("materialType", materialType);
-        formData.set("courseId", academic.courseId);
-        formData.set("courseName", academic.courseName);
-        formData.set("cycleNumber", String(academic.cycleNumber));
-        formData.set("cycleLabel", academic.cycleLabel);
-        formData.set("file", file);
+        setMessage("Subiendo archivo a la biblioteca…");
+        const uploaded = await uploadMaterialFileToStorage(file);
 
         const response = await fetch("/api/materials", {
           method: "POST",
-          body: formData,
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({
+            title: title.trim(),
+            description: description.trim(),
+            materialType,
+            courseId: academic.courseId,
+            courseName: academic.courseName,
+            cycleNumber: academic.cycleNumber,
+            cycleLabel: academic.cycleLabel,
+            fileName: uploaded.fileName,
+            fileUrl: uploaded.fileUrl,
+            fileHash: uploaded.fileHash,
+          }),
         });
 
-        const payload = await response.json();
+        const payload = await parseJsonResponse<{
+          error?: string;
+          fieldErrors?: FieldErrors;
+          duplicate?: { id: string };
+        }>(response);
 
         if (!response.ok) {
           if (payload?.fieldErrors) {
@@ -314,7 +331,7 @@ export function UploadMaterialForm() {
         <div className="upload-page-panel__head">
           <div>
             <h2>Archivo de estudio</h2>
-            <p>Arrastra tu PDF o PowerPoint (.pptx). La IA completará título, curso y descripción.</p>
+            <p>Arrastra tu PDF o PowerPoint (.pptx). Se lee en tu navegador y la IA completará título, curso y descripción.</p>
           </div>
           <span className="upload-page-panel__icon" aria-hidden>
             <Upload size={18} />

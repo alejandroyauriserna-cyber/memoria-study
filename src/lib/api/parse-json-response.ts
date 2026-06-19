@@ -1,6 +1,12 @@
 export async function parseJsonResponse<T extends Record<string, unknown>>(
   response: Response,
 ): Promise<T> {
+  if (response.status === 413) {
+    throw new Error(
+      "El archivo es demasiado pesado para enviarlo al servidor. La app ahora lo lee en tu navegador; recarga la página e inténtalo de nuevo.",
+    );
+  }
+
   const raw = await response.text();
 
   if (!raw.trim()) {

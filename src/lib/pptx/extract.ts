@@ -206,7 +206,7 @@ function mergeExtractedParts(parts: string[]) {
   return uniqueSegments(parts.filter(Boolean)).join("\n\n").trim();
 }
 
-export async function extractPptxFromBuffer(buffer: Buffer) {
+export async function extractPptxFromBuffer(buffer: ArrayBuffer | Uint8Array | Buffer) {
   let zip: JSZip;
 
   try {

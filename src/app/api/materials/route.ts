@@ -13,6 +13,7 @@ import {
 import { MAX_FILE_SIZE } from "@/lib/pdf/constants";
 import { findMaterialDuplicate } from "@/lib/materials/find-material-duplicate";
 import { materialInsertPayload, recordToMaterial } from "@/lib/materials/mapper";
+import { sanitizeMaterialFileName } from "@/lib/materials/sanitize-file-name";
 import type { MaterialRecord } from "@/types/material";
 
 const createMaterialSchema = z.object({
@@ -25,22 +26,11 @@ const createMaterialSchema = z.object({
   cycleLabel: z.string().min(1),
 });
 
-function sanitizeFileName(fileName: string): string {
-  const normalized = fileName.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  const lastDotIndex = normalized.lastIndexOf(".");
-  const nameWithoutExt = lastDotIndex > 0 ? normalized.substring(0, lastDotIndex) : normalized;
-  const extension = lastDotIndex > 0 ? normalized.substring(lastDotIndex + 1) : "pdf";
-
-  const sanitizedName = nameWithoutExt
-    .replace(/\s+/g, "_")
-    .replace(/[^a-zA-Z0-9_-]/g, "");
-
-  const sanitizedExtension = extension.toLowerCase().replace(/[^a-z0-9]/g, "");
-  const finalName = sanitizedName || "archivo";
-  const finalExtension = sanitizedExtension ? `.${sanitizedExtension}` : ".pdf";
-
-  return `${finalName}${finalExtension}`;
-}
+const registerMaterialSchema = createMaterialSchema.extend({
+  fileName: z.string().min(1),
+  fileUrl: z.string().url(),
+  fileHash: z.string().length(64),
+});
 
 function formatValidationErrors(error: z.ZodError) {
   const fieldErrors: Record<string, string> = {};
@@ -66,10 +56,153 @@ function formatValidationErrors(error: z.ZodError) {
 
 export const runtime = "nodejs";
 
+async function saveMaterialRecord(input: {
+  user: { id: string; email?: string | null; user_metadata?: { full_name?: string } };
+  body: z.infer<typeof createMaterialSchema>;
+  fileName: string;
+  fileUrl: string;
+  fileHash: string;
+}) {
+  const admin = createAdminClient();
+
+  const duplicate = await findMaterialDuplicate(admin, {
+    fileHash: input.fileHash,
+    title: input.body.title,
+    courseId: input.body.courseId,
+    fileName: input.fileName,
+  });
+
+  if (duplicate) {
+    const duplicateMessages = {
+      file_hash: "Este archivo ya está publicado en la biblioteca.",
+      file_name: "Ya existe un material con el mismo archivo en este curso.",
+      title: "Ya existe un material muy similar en este curso.",
+    } as const;
+
+    const message = duplicateMessages[duplicate.reason];
+
+    return NextResponse.json(
+      {
+        error: `${message} Material existente: «${duplicate.title}».`,
+        duplicate: { id: duplicate.id, title: duplicate.title, reason: duplicate.reason },
+        fieldErrors: { file: message },
+      },
+      { status: 409 },
+    );
+  }
+
+  const materialPayload = materialInsertPayload(
+    {
+      authorName:
+        input.user.user_metadata?.full_name ?? input.user.email ?? "Estudiante UNT",
+      title: input.body.title,
+      description: input.body.description,
+      courseId: input.body.courseId,
+      courseName: input.body.courseName,
+      cycleNumber: input.body.cycleNumber,
+      cycleLabel: input.body.cycleLabel,
+      materialType: input.body.materialType,
+      fileName: input.fileName,
+      fileUrl: input.fileUrl,
+      views: 0,
+      downloads: 0,
+      likes: 0,
+      fileHash: input.fileHash,
+    },
+    input.user.id,
+  );
+
+  const { data, error } = await admin
+    .from("materials")
+    .insert(materialPayload)
+    .select()
+    .single();
+
+  if (error || !data) {
+    throw error ?? new Error("No se pudo guardar el material.");
+  }
+
+  const { data: profileData, error: profileSelectError } = await admin
+    .from("user_profiles")
+    .select("total_shared, reputation_points")
+    .eq("user_id", input.user.id)
+    .maybeSingle();
+
+  if (!profileSelectError) {
+    if (profileData) {
+      await admin
+        .from("user_profiles")
+        .update({
+          total_shared: (profileData.total_shared ?? 0) + 1,
+          reputation_points: (profileData.reputation_points ?? 0) + 10,
+        })
+        .eq("user_id", input.user.id);
+    } else {
+      await admin.from("user_profiles").insert({
+        user_id: input.user.id,
+        email: input.user.email,
+        academic_context: {},
+        total_shared: 1,
+        reputation_points: 10,
+      });
+    }
+  }
+
+  return NextResponse.json({ material: recordToMaterial(data as MaterialRecord) }, { status: 201 });
+}
+
 export async function POST(request: Request) {
   try {
     if (!hasSupabaseEnv()) {
       return NextResponse.json({ error: "Supabase no está configurado." }, { status: 503 });
+    }
+
+    const contentType = request.headers.get("content-type") ?? "";
+
+    if (contentType.includes("application/json")) {
+      const parsed = registerMaterialSchema.parse(await request.json());
+      const academic = normalizeAcademicForWrite({
+        courseId: parsed.courseId,
+        courseName: parsed.courseName,
+        cycleNumber: parsed.cycleNumber,
+        cycleLabel: parsed.cycleLabel,
+      });
+
+      if (!academic) {
+        return NextResponse.json(
+          {
+            fieldErrors: {
+              course:
+                "El curso no pertenece a la malla oficial UNT 2021 o usa un identificador obsoleto.",
+            },
+          },
+          { status: 400 },
+        );
+      }
+
+      if (!detectStudyDocumentKind(parsed.fileName)) {
+        return NextResponse.json(
+          { fieldErrors: { file: "Debes seleccionar un PDF o una presentación PowerPoint (.pptx)." } },
+          { status: 400 },
+        );
+      }
+
+      const supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        return NextResponse.json({ error: "Debes iniciar sesión para subir materiales." }, { status: 401 });
+      }
+
+      return saveMaterialRecord({
+        user,
+        body: { ...parsed, ...academic },
+        fileName: parsed.fileName,
+        fileUrl: parsed.fileUrl,
+        fileHash: parsed.fileHash,
+      });
     }
 
     const formData = await request.formData();
@@ -180,7 +313,7 @@ export async function POST(request: Request) {
     }
 
     const originalFileName = file.name;
-    const sanitizedFileName = sanitizeFileName(originalFileName);
+    const sanitizedFileName = sanitizeMaterialFileName(originalFileName);
     const storagePath = `${user.id}/${crypto.randomUUID()}-${sanitizedFileName}`;
 
     console.log("Storage upload debug:", {
@@ -261,63 +394,13 @@ export async function POST(request: Request) {
     }
     const fileUrl = urlResult.data.publicUrl;
 
-    const materialPayload = materialInsertPayload(
-      {
-        authorName: user.user_metadata?.full_name ?? user.email ?? "Estudiante UNT",
-        title: body.title,
-        description: body.description,
-        courseId: body.courseId,
-        courseName: body.courseName,
-        cycleNumber: body.cycleNumber,
-        cycleLabel: body.cycleLabel,
-        materialType: body.materialType,
-        fileName: file.name,
-        fileUrl,
-        views: 0,
-        downloads: 0,
-        likes: 0,
-        fileHash,
-      },
-      user.id,
-    );
-
-    const { data, error } = await admin
-      .from("materials")
-      .insert(materialPayload)
-      .select()
-      .single();
-
-    if (error || !data) {
-      throw error ?? new Error("No se pudo guardar el material.");
-    }
-
-    const { data: profileData, error: profileSelectError } = await admin
-      .from("user_profiles")
-      .select("total_shared, reputation_points")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (!profileSelectError) {
-      if (profileData) {
-        await admin
-          .from("user_profiles")
-          .update({
-            total_shared: (profileData.total_shared ?? 0) + 1,
-            reputation_points: (profileData.reputation_points ?? 0) + 10,
-          })
-          .eq("user_id", user.id);
-      } else {
-        await admin.from("user_profiles").insert({
-          user_id: user.id,
-          email: user.email,
-          academic_context: {},
-          total_shared: 1,
-          reputation_points: 10,
-        });
-      }
-    }
-
-    return NextResponse.json({ material: recordToMaterial(data as MaterialRecord) }, { status: 201 });
+    return saveMaterialRecord({
+      user,
+      body,
+      fileName: file.name,
+      fileUrl,
+      fileHash,
+    });
   } catch (caught) {
     if (caught instanceof z.ZodError) {
       return NextResponse.json(
