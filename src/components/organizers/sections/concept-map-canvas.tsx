@@ -298,10 +298,22 @@ export function ConceptMapCanvas({
           </div>
         ) : null}
 
-        {panLocked || touchPanDisabled ? (
+        {panLocked || selectedNodeId || (touchPanDisabled && !selectedNodeId) ? (
           <div
-            className={`organizer-canvas-touch-blocker absolute inset-0 z-[45]${touchPanDisabled && !panLocked ? " organizer-canvas-touch-blocker--scroll" : " touch-none"}`}
+            className={`organizer-canvas-touch-blocker absolute inset-0 z-[45]${touchPanDisabled && !panLocked && !selectedNodeId ? " organizer-canvas-touch-blocker--scroll" : " touch-none"}`}
             aria-hidden
+          />
+        ) : null}
+
+        {selectedNodeId ? (
+          <button
+            type="button"
+            className="organizer-node-panel-backdrop absolute inset-0 z-[48] cursor-default border-0 bg-black/25 p-0 backdrop-blur-[1px]"
+            aria-label="Cerrar asistente de estudio"
+            onClick={() => {
+              setSelectedNodeId(null);
+              onNodeSelect?.(null, null);
+            }}
           />
         ) : null}
 
@@ -465,17 +477,23 @@ export function ConceptMapCanvas({
           {selectedNode && selectedBranch && nodeDetail ? (
             <motion.div
               data-study-panel
-              initial={{ x: "100%", opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: "100%", opacity: 0 }}
+              initial={{ x: touchPanDisabled ? 0 : "100%", y: touchPanDisabled ? "100%" : 0, opacity: 0 }}
+              animate={{ x: 0, y: 0, opacity: 1 }}
+              exit={{ x: touchPanDisabled ? 0 : "100%", y: touchPanDisabled ? "100%" : 0, opacity: 0 }}
               transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              className="org-panel-drawer organizer-studio-panel org-panel-scroll-host absolute inset-y-0 right-0 z-50 flex min-h-0 w-[min(100%,400px)] flex-col p-3"
+              className={`organizer-studio-panel absolute z-[80] flex min-h-0 flex-col overflow-hidden ${
+                touchPanDisabled
+                  ? "org-panel-drawer org-panel-drawer--sheet inset-x-0 bottom-0 w-full max-w-none p-0"
+                  : "org-panel-drawer org-panel-scroll-host inset-y-0 right-0 w-[min(100%,400px)] p-3"
+              }`}
               style={{ touchAction: "pan-y" }}
               onPointerDown={(event) => event.stopPropagation()}
+              onTouchMove={(event) => event.stopPropagation()}
             >
               <StudyAssistantPanel
                 embedded
                 drawer
+                sheet={touchPanDisabled}
                 node={selectedNode}
                 branch={selectedBranch}
                 detail={nodeDetail}

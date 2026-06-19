@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import {
   AlertTriangle,
   BookOpen,
+  ChevronDown,
   ChevronLeft,
+  ChevronUp,
   Focus,
   GraduationCap,
   HelpCircle,
@@ -46,6 +48,74 @@ function Section({
   );
 }
 
+function PanelScrollBody({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [canScrollUp, setCanScrollUp] = useState(false);
+  const [canScrollDown, setCanScrollDown] = useState(false);
+
+  const syncScrollState = useCallback(() => {
+    const el = ref.current;
+    if (!el) return;
+    const maxScroll = el.scrollHeight - el.clientHeight;
+    setCanScrollUp(el.scrollTop > 6);
+    setCanScrollDown(maxScroll > 6 && el.scrollTop < maxScroll - 6);
+  }, []);
+
+  useEffect(() => {
+    syncScrollState();
+    const el = ref.current;
+    if (!el) return;
+    const observer = new ResizeObserver(syncScrollState);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [syncScrollState, children]);
+
+  function nudge(direction: "up" | "down") {
+    const el = ref.current;
+    if (!el) return;
+    el.scrollBy({ top: direction === "down" ? 160 : -160, behavior: "smooth" });
+  }
+
+  return (
+    <div className={`org-panel-scroll-wrap relative min-h-0 flex-1 ${className}`}>
+      {canScrollUp ? (
+        <button
+          type="button"
+          className="org-panel-scroll-nudge org-panel-scroll-nudge--up"
+          aria-label="Subir en el panel"
+          onClick={() => nudge("up")}
+        >
+          <ChevronUp size={16} strokeWidth={2.2} />
+        </button>
+      ) : null}
+      <div
+        ref={ref}
+        className="org-panel-scroll-body org-panel-scroll-host min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 py-3"
+        onScroll={syncScrollState}
+        onTouchMove={(event) => event.stopPropagation()}
+      >
+        {children}
+      </div>
+      {canScrollDown ? (
+        <button
+          type="button"
+          className="org-panel-scroll-nudge org-panel-scroll-nudge--down"
+          aria-label="Bajar en el panel"
+          onClick={() => nudge("down")}
+        >
+          <ChevronDown size={16} strokeWidth={2.2} />
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
 export function StudyAssistantPanel({
   node,
   branch,
@@ -56,6 +126,7 @@ export function StudyAssistantPanel({
   onStudyBranch,
   embedded = false,
   drawer = false,
+  sheet = false,
 }: {
   node: StudyMapNode;
   branch: StudyBranch;
@@ -66,6 +137,7 @@ export function StudyAssistantPanel({
   onStudyBranch: () => void;
   embedded?: boolean;
   drawer?: boolean;
+  sheet?: boolean;
 }) {
   const BranchIcon = branch.icon;
   const [collapsed, setCollapsed] = useState(false);
@@ -74,7 +146,14 @@ export function StudyAssistantPanel({
 
   const content = (
     <>
-      <div className="flex items-start justify-between gap-2 border-b border-[var(--org-accent-border)] px-4 py-3">
+      {sheet ? (
+        <div className="org-panel-sheet-handle-wrap shrink-0 px-4 pt-2.5">
+          <div className="org-panel-sheet-handle" aria-hidden />
+          <p className="org-panel-sheet-hint">Desliza para ver todo el contenido</p>
+        </div>
+      ) : null}
+
+      <div className="flex shrink-0 items-start justify-between gap-2 border-b border-[var(--org-accent-border)] px-4 py-3">
         <div className="min-w-0">
           <p className="org-panel-kicker flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]">
             <Sparkles size={12} />
@@ -111,22 +190,22 @@ export function StudyAssistantPanel({
         </div>
       </div>
 
-      <div className="border-b border-[var(--org-accent-border)] px-4 py-2">
+      <div className="shrink-0 border-b border-[var(--org-accent-border)] px-4 py-2">
         <OrganizerSpeakButton script={speakScript} label="Escuchar explicación" compact />
       </div>
 
       {guidedMode ? (
-        <div className="org-panel-scroll-host flex-1 overflow-y-auto px-4 py-3">
+        <PanelScrollBody>
           <GuidedStudyWalkthrough
             conceptLabel={node.label}
             detail={detail}
             onComplete={() => setGuidedMode(false)}
             onClose={() => setGuidedMode(false)}
           />
-        </div>
+        </PanelScrollBody>
       ) : (
         <>
-      <div className="org-panel-scroll-host flex-1 space-y-4 overflow-y-auto px-4 py-3">
+      <PanelScrollBody>
         <Section icon={<BookOpen size={11} />} label="Resumen IA" color="#00FFD5">
           {detail.summary}
         </Section>
@@ -192,9 +271,9 @@ export function StudyAssistantPanel({
             </div>
           </section>
         ) : null}
-      </div>
+      </PanelScrollBody>
 
-      <div className="flex flex-col gap-2 border-t border-[var(--org-accent-border)] p-3">
+      <div className="flex shrink-0 flex-col gap-2 border-t border-[var(--org-accent-border)] p-3">
         <GuidedStudyLaunchButton onClick={() => setGuidedMode(true)} />
         <div className="flex flex-col gap-2 sm:flex-row">
         <button
@@ -248,7 +327,9 @@ export function StudyAssistantPanel({
         data-study-panel
         className={`organizer-studio-panel flex h-full min-h-0 flex-col overflow-hidden ${
           drawer
-            ? ""
+            ? sheet
+              ? "org-panel-drawer--sheet-inner"
+              : ""
             : "org-panel-drawer rounded-2xl"
         }`}
       >
