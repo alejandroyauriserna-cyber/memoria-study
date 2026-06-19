@@ -7,6 +7,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getMaterialBadges } from "@/lib/materials/badges";
 import { recordToMaterial } from "@/lib/materials/mapper";
+import { resolveUserEmail } from "@/lib/auth/user-email";
+import { isJurisprudenceModerator } from "@/lib/jurisprudence/unt-access";
 import type { MaterialRecord } from "@/types/material";
 
 export const dynamic = "force-dynamic";
@@ -58,6 +60,8 @@ export default async function MaterialPage({
     isFavorite: Boolean(favorite),
   };
   const badges = getMaterialBadges(material, recentViews ?? 0);
+  const email = user ? resolveUserEmail(user) : null;
+  const isModerator = email ? await isJurisprudenceModerator(email) : false;
 
   return (
     <AppShell>
@@ -138,6 +142,7 @@ export default async function MaterialPage({
                 initialFavorite={material.isFavorite}
                 initialLikes={material.likes}
                 initialViews={material.views}
+                isModerator={isModerator}
               />
             </aside>
           </div>

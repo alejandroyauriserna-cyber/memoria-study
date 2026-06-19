@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowDown, BookOpen, GraduationCap, Heart, Loader2, Sparkles, Star } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowDown, BookOpen, GraduationCap, Heart, Loader2, Sparkles, Star, Trash2 } from "lucide-react";
 import { StudyWithAiStatus } from "@/components/organizers/study-with-ai-status";
 import { Button } from "@/components/ui/button";
 import { useStudyWithAi } from "@/hooks/use-study-with-ai";
@@ -14,6 +15,7 @@ export function MaterialDetailActions({
   initialFavorite = false,
   initialLikes,
   initialViews,
+  isModerator = false,
 }: {
   materialId: string;
   fileName: string;
@@ -21,7 +23,9 @@ export function MaterialDetailActions({
   initialFavorite?: boolean;
   initialLikes: number;
   initialViews: number;
+  isModerator?: boolean;
 }) {
+  const router = useRouter();
   const [favorite, setFavorite] = useState(initialFavorite);
   const [likes, setLikes] = useState(initialLikes);
   const [views, setViews] = useState(initialViews);
@@ -110,6 +114,30 @@ export function MaterialDetailActions({
     await generateOrganizer();
   }
 
+  async function handleDeleteMaterial() {
+    const confirmed = window.confirm(
+      "¿Eliminar permanentemente este material de la biblioteca? Esta acción no se puede deshacer.",
+    );
+    if (!confirmed) return;
+
+    setBusy(true);
+    setMessage("");
+
+    try {
+      const response = await fetch(`/api/materials/${materialId}`, { method: "DELETE" });
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.error ?? "No se pudo eliminar el material.");
+      }
+      router.push("/library");
+      router.refresh();
+    } catch (caught) {
+      setMessage(caught instanceof Error ? caught.message : "Error al eliminar el material.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const actionsDisabled = busy || isGenerating;
 
   return (
@@ -152,6 +180,17 @@ export function MaterialDetailActions({
           <GraduationCap size={16} />
           Estudio guiado jurídico
         </Link>
+        {isModerator ? (
+          <Button
+            variant="secondary"
+            onClick={() => void handleDeleteMaterial()}
+            disabled={actionsDisabled}
+            className="h-12 border border-red-400/35 text-red-300 hover:bg-red-500/10"
+          >
+            <Trash2 size={16} />
+            Eliminar de biblioteca
+          </Button>
+        ) : null}
       </div>
 
       <StudyWithAiStatus

@@ -15,6 +15,8 @@ import {
   dedupeStudyHistory,
   preparePublicMaterialCatalog,
 } from "@/lib/materials/prepare-public-material-catalog";
+import { resolveUserEmail } from "@/lib/auth/user-email";
+import { isJurisprudenceModerator } from "@/lib/jurisprudence/unt-access";
 import type { MaterialRecord } from "@/types/material";
 
 function materialOnOfficialMalla(mat: ReturnType<typeof recordToMaterial>): boolean {
@@ -66,8 +68,14 @@ export default async function LibraryHomePage() {
   const materials = catalog.filter(materialOnOfficialMalla);
 
   let favoriteIds: string[] = [];
+  let isModerator = false;
 
   if (user) {
+    const email = resolveUserEmail(user);
+    if (email) {
+      isModerator = await isJurisprudenceModerator(email);
+    }
+
     const { data: favData } = await admin
       .schema("public")
       .from("favorites")
@@ -203,6 +211,7 @@ export default async function LibraryHomePage() {
           studyHistory={studyHistory}
           initialFavoriteIds={favoriteIds}
           isLoggedIn={Boolean(user)}
+          isModerator={isModerator}
         />
       </div>
     </AppShell>

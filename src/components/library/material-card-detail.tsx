@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   Sparkles,
   Star,
+  Trash2,
   User,
 } from "lucide-react";
 import { StudyWithAiStatus } from "@/components/organizers/study-with-ai-status";
@@ -33,7 +34,15 @@ import {
 import type { Material } from "@/types/material";
 
 /** Panel lateral premium — no usar en galería. */
-export function MaterialCardDetail({ material }: { material: Material }) {
+export function MaterialCardDetail({
+  material,
+  isModerator = false,
+  onDeleted,
+}: {
+  material: Material;
+  isModerator?: boolean;
+  onDeleted?: (materialId: string) => void;
+}) {
   const [downloads, setDownloads] = useState(material.downloads);
   const [likes, setLikes] = useState(material.likes ?? 0);
   const [favorite, setFavorite] = useState(material.isFavorite ?? false);
@@ -78,6 +87,33 @@ export function MaterialCardDetail({ material }: { material: Material }) {
       document.removeEventListener("keydown", handleEscape);
     };
   }, [menuOpen]);
+
+  async function handleDeleteMaterial() {
+    if (!material.id || !isModerator) return;
+
+    const confirmed = window.confirm(
+      `¿Eliminar permanentemente «${material.title}» de la biblioteca? Esta acción no se puede deshacer.`,
+    );
+    if (!confirmed) return;
+
+    setBusy(true);
+    setMessage("");
+    setMenuOpen(false);
+
+    try {
+      const response = await fetch(`/api/materials/${material.id}`, { method: "DELETE" });
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.error ?? "No se pudo eliminar el material.");
+      }
+      onDeleted?.(material.id);
+      setMessage("Material eliminado de la biblioteca.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Error al eliminar el material.");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function handleOpenPdf() {
     if (!material.id) return;
@@ -294,6 +330,18 @@ export function MaterialCardDetail({ material }: { material: Material }) {
                   <GraduationCap size={15} />
                   Estudio guiado
                 </Link>
+                {isModerator ? (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="is-danger"
+                    onClick={() => void handleDeleteMaterial()}
+                    disabled={actionsDisabled}
+                  >
+                    <Trash2 size={15} />
+                    Eliminar de biblioteca
+                  </button>
+                ) : null}
               </div>
             ) : null}
           </div>

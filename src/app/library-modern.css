@@ -643,6 +643,15 @@
   cursor: not-allowed;
 }
 
+.lib-detail-menu-panel button.is-danger {
+  color: #fecaca;
+}
+
+.lib-detail-menu-panel button.is-danger:hover:not(:disabled) {
+  background: rgba(248, 113, 113, 0.12);
+  color: #fca5a5;
+}
+
 .lib-detail-meta {
   display: flex;
   flex-direction: column;

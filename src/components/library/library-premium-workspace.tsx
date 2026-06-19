@@ -52,12 +52,15 @@ export function LibraryPremiumWorkspace({
   studyHistory = [],
   initialFavoriteIds = [],
   isLoggedIn = false,
+  isModerator = false,
 }: {
   materials: Material[];
   studyHistory?: Material[];
   initialFavoriteIds?: string[];
   isLoggedIn?: boolean;
+  isModerator?: boolean;
 }) {
+  const [catalogMaterials, setCatalogMaterials] = useState(materials);
   const [query, setQuery] = useState("");
   const [filters, setFilters] = useState<Omit<LibraryFilters, "query">>({
     favoritesOnly: false,
@@ -72,15 +75,29 @@ export function LibraryPremiumWorkspace({
   const [showFilters, setShowFilters] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    setCatalogMaterials(materials);
+  }, [materials]);
+
+  const handleMaterialDeleted = useCallback((materialId: string) => {
+    setCatalogMaterials((current) => current.filter((item) => item.id !== materialId));
+    setSelected((current) => (current?.id === materialId ? null : current));
+    setFavoriteIds((current) => {
+      const next = new Set(current);
+      next.delete(materialId);
+      return next;
+    });
+  }, []);
+
   useCommandK(searchInputRef);
 
   const { tree, expandedIds, matchCount } = useMemo(
     () =>
-      buildFilteredLibraryTree(materials, favoriteIds, {
+      buildFilteredLibraryTree(catalogMaterials, favoriteIds, {
         query,
         ...filters,
       }),
-    [materials, favoriteIds, query, filters.favoritesOnly, filters.materialType, filters.cycleNumber],
+    [catalogMaterials, favoriteIds, query, filters.favoritesOnly, filters.materialType, filters.cycleNumber],
   );
 
   const cycles = useMemo(
@@ -93,8 +110,8 @@ export function LibraryPremiumWorkspace({
   );
 
   const favoritesList = useMemo(
-    () => materials.filter((m) => m.id && favoriteIds.has(m.id)),
-    [materials, favoriteIds],
+    () => catalogMaterials.filter((m) => m.id && favoriteIds.has(m.id)),
+    [catalogMaterials, favoriteIds],
   );
 
   useEffect(() => {
@@ -367,10 +384,12 @@ export function LibraryPremiumWorkspace({
           <MaterialPreviewPanel
             material={{ ...selected, isFavorite: favoriteIds.has(selected.id ?? "") }}
             onClose={() => setSelected(null)}
+            isModerator={isModerator}
+            onMaterialDeleted={handleMaterialDeleted}
           />
         ) : (
           <LibraryWelcomePanel
-            materials={materials}
+            materials={catalogMaterials}
             matchCount={matchCount}
             cycleCount={cycles.length}
             favoritesCount={favoriteIds.size}
@@ -585,9 +604,13 @@ function CycleBranch({
 function MaterialPreviewPanel({
   material,
   onClose,
+  isModerator = false,
+  onMaterialDeleted,
 }: {
   material: Material;
   onClose: () => void;
+  isModerator?: boolean;
+  onMaterialDeleted?: (materialId: string) => void;
 }) {
   return (
     <div className="flex h-full flex-col overflow-hidden">
@@ -608,7 +631,14 @@ function MaterialPreviewPanel({
         </button>
       </div>
       <div className="library-preview-body flex-1 overflow-y-auto p-4">
-        <MaterialCardDetail material={material} />
+        <MaterialCardDetail
+          material={material}
+          isModerator={isModerator}
+          onDeleted={(materialId) => {
+            onMaterialDeleted?.(materialId);
+            onClose();
+          }}
+        />
       </div>
     </div>
   );
