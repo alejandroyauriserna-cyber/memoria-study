@@ -44,7 +44,7 @@ export function isSupportedStudyDocument(fileName: string, mimeType?: string) {
 }
 
 export const STUDY_DOCUMENT_ACCEPT =
-  ".pdf,application/pdf,.pptx,.pptm,application/vnd.openxmlformats-officedocument.presentationml.presentation";
+  ".pdf,application/pdf,.pptx,.pptm,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/zip";
 
 export function studyDocumentContentType(fileName: string, mimeType?: string) {
   const kind = detectStudyDocumentKind(fileName, mimeType);

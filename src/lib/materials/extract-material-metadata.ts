@@ -36,13 +36,14 @@ export type MaterialUploadConfidence = {
 };
 
 function titleFromFileName(fileName: string): string {
-  const base = fileName.replace(/\.pdf$/i, "").replace(/[_-]+/g, " ").trim();
+  const base = fileName.replace(/\.(pdf|pptx|pptm)$/i, "").replace(/[_-]+/g, " ").trim();
   if (base.length >= 3) return base;
   return "Material jurídico UNT";
 }
 
 function guessTypeFromFileName(fileName: string): MaterialUploadType {
   const n = fileName.toLowerCase();
+  if (n.endsWith(".pptx") || n.endsWith(".pptm") || n.includes("present")) return "guia";
   if (n.includes("resumen")) return "resumen";
   if (n.includes("caso")) return "caso";
   if (n.includes("guia") || n.includes("guía")) return "guia";
@@ -67,6 +68,7 @@ export async function extractMaterialUploadMetadata(input: {
   const prompt = `Eres un asistente de biblioteca jurídica universitaria (UNT — Derecho).
 
 Analiza el documento y propone metadatos para publicarlo en la biblioteca colaborativa de materiales de estudio.
+Si es una presentación PowerPoint (.pptx), resume el tema de las diapositivas y notas del presentador.
 
 TIPOS PERMITIDOS (materialType, valor exacto):
 apunte, resumen, pdf, caso, guia, otro

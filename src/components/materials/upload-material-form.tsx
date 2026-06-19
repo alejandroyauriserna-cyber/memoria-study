@@ -53,6 +53,7 @@ export function UploadMaterialForm() {
   const [analyzed, setAnalyzed] = useState(false);
   const [detection, setDetection] = useState<CourseDetectionResult | null>(null);
   const [overallConfidence, setOverallConfidence] = useState<number | null>(null);
+  const [analyzeError, setAnalyzeError] = useState("");
   const [analyzeHint, setAnalyzeHint] = useState("");
   const [status, setStatus] = useState<"idle" | "uploading" | "saved" | "error">("idle");
   const [message, setMessage] = useState("");
@@ -77,6 +78,7 @@ export function UploadMaterialForm() {
     setAnalyzed(false);
     setDetection(null);
     setOverallConfidence(null);
+    setAnalyzeError("");
     setAnalyzeHint(`Leyendo ${studyDocumentLabel(selected.name, selected.type)}…`);
     setMessage("");
     setStatus("idle");
@@ -90,10 +92,20 @@ export function UploadMaterialForm() {
       const response = await fetch("/api/materials/analyze-upload", {
         method: "POST",
         body: formData,
+        credentials: "same-origin",
       });
-      const payload = await response.json();
+
+      let payload: { error?: string; suggested?: unknown; overallConfidence?: number; needsReview?: boolean } = {};
+      try {
+        payload = (await response.json()) as typeof payload;
+      } catch {
+        throw new Error("El servidor devolvió una respuesta inválida al analizar el archivo.");
+      }
 
       if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error("Debes iniciar sesión para analizar materiales. Ve a /auth e inténtalo de nuevo.");
+        }
         throw new Error(payload.error ?? "No se pudo analizar el archivo.");
       }
 
@@ -112,6 +124,7 @@ export function UploadMaterialForm() {
       setDetection(suggested.detection);
       setOverallConfidence(payload.overallConfidence as number);
       setAnalyzed(true);
+      setAnalyzeError("");
       setAnalyzeHint(
         payload.needsReview
           ? "Revisa curso y descripción antes de publicar."
@@ -120,7 +133,10 @@ export function UploadMaterialForm() {
     } catch (caught) {
       setAnalyzed(false);
       setAnalyzeHint("");
-      setMessage(caught instanceof Error ? caught.message : "Error al analizar el archivo.");
+      const errorMessage =
+        caught instanceof Error ? caught.message : "Error al analizar el archivo.";
+      setAnalyzeError(errorMessage);
+      setMessage(errorMessage);
       setStatus("error");
     } finally {
       setAnalyzing(false);
@@ -162,6 +178,7 @@ export function UploadMaterialForm() {
       clearFieldError("file");
       setStatus("idle");
       setMessage("");
+      setAnalyzeError("");
       void analyzeFile(selected);
     },
     [analyzeFile, clearFieldError],
@@ -329,6 +346,24 @@ export function UploadMaterialForm() {
           <span>{file ? "Toca o arrastra otro archivo para cambiar" : `Máximo ${maxMaterialFileMb} MB · PDF o .pptx`}</span>
         </div>
         {errors.file ? <p className="upload-field__error">{errors.file}</p> : null}
+        {analyzeError ? (
+          <p className="upload-field__error mt-3" role="alert">
+            {analyzeError}
+          </p>
+        ) : null}
+
+        {file && !analyzing && !analyzed ? (
+          <div className="mt-3">
+            <button
+              type="button"
+              className="upload-submit-btn"
+              onClick={() => void analyzeFile(file)}
+            >
+              <Sparkles size={16} />
+              Reintentar análisis con IA
+            </button>
+          </div>
+        ) : null}
 
         {analyzing ? (
           <div className="upload-analyze-status" role="status">
@@ -442,7 +477,7 @@ export function UploadMaterialForm() {
       </fieldset>
 
       {!file ? (
-        <p className="upload-page-hint">Primero sube un PDF arriba para activar el formulario.</p>
+        <p className="upload-page-hint">Primero sube un PDF o PowerPoint (.pptx) arriba para activar el formulario.</p>
       ) : null}
 
       <div className="upload-submit-row">

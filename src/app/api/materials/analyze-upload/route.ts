@@ -3,6 +3,7 @@ import { requireAuth } from "@/lib/api/require-auth";
 import { extractMaterialUploadMetadata } from "@/lib/materials/extract-material-metadata";
 import { hasSupabaseEnv } from "@/lib/env";
 import { extractDocumentFromBuffer } from "@/lib/documents/extract";
+import { sniffStudyDocumentKind } from "@/lib/documents/sniff";
 import { detectStudyDocumentKind } from "@/lib/documents/kinds";
 import { prepareTextForGeneration } from "@/lib/pdf/extract";
 import { MAX_FILE_SIZE } from "@/lib/pdf/constants";
@@ -43,8 +44,31 @@ export async function POST(request: Request) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const { text } = await extractDocumentFromBuffer(buffer, file.name);
+
+    const kind =
+      (await sniffStudyDocumentKind(buffer, file.name, file.type)) ??
+      detectStudyDocumentKind(file.name, file.type);
+
+    if (!kind) {
+      return NextResponse.json(
+        {
+          error:
+            "Formato no reconocido. Sube el .pptx original de PowerPoint (no un PDF renombrado ni .ppt antiguo).",
+        },
+        { status: 400 },
+      );
+    }
+
+    const { text, method } = await extractDocumentFromBuffer(buffer, file.name);
     const prepared = prepareTextForGeneration(text, 120_000);
+
+    console.log("[materials/analyze-upload]", {
+      fileName: file.name,
+      mimeType: file.type,
+      kind,
+      method,
+      textChars: prepared.text.length,
+    });
 
     if (prepared.text.length < MIN_TEXT_CHARS) {
       return NextResponse.json(

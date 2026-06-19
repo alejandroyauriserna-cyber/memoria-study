@@ -1,8 +1,11 @@
 import JSZip from "jszip";
 
 const MIN_USEFUL_TEXT_LENGTH = 50;
-const SKIP_XML_PREFIX =
-  /^ppt\/(theme|tablestyles|presprops|viewprops|slidemasters|slidelayouts|notesmasters|notesslide)/i;
+
+const SUPPLEMENTAL_XML_PATH =
+  /^ppt\/(slidelayouts|slidemasters|notesmasters)\/[^/]+\.xml$/i;
+
+const FALLBACK_XML_PATH = /^ppt\/(slides|notesslides|slidelayouts|slidemasters|notesmasters)\/[^/]+\.xml$/i;
 
 function normalizeZipPath(path: string) {
   return path.replace(/\\/g, "/");
@@ -33,8 +36,43 @@ export function extractTextFromOfficeXml(xml: string) {
   return parts.join(" ");
 }
 
+function extractDocPropsText(xml: string) {
+  const fields: string[] = [];
+  const patterns = [
+    /<dc:title[^>]*>([\s\S]*?)<\/dc:title>/gi,
+    /<dc:subject[^>]*>([\s\S]*?)<\/dc:subject>/gi,
+    /<dc:description[^>]*>([\s\S]*?)<\/dc:description>/gi,
+    /<cp:keywords[^>]*>([\s\S]*?)<\/cp:keywords>/gi,
+  ];
+
+  for (const pattern of patterns) {
+    let match = pattern.exec(xml);
+    while (match) {
+      const value = decodeXmlEntities((match[1] ?? "").replace(/<[^>]+>/g, "")).trim();
+      if (value) fields.push(value);
+      match = pattern.exec(xml);
+    }
+  }
+
+  return fields.join(" ");
+}
+
 function normalizeText(text: string) {
   return text.replace(/\s+/g, " ").trim();
+}
+
+function uniqueSegments(segments: string[]) {
+  const seen = new Set<string>();
+  const unique: string[] = [];
+
+  for (const segment of segments) {
+    const normalized = normalizeText(segment);
+    if (!normalized || seen.has(normalized.toLowerCase())) continue;
+    seen.add(normalized.toLowerCase());
+    unique.push(normalized);
+  }
+
+  return unique;
 }
 
 type IndexedText = { index: number; text: string };
@@ -83,29 +121,55 @@ async function readIndexedTexts(
   return entries.sort((a, b) => a.index - b.index);
 }
 
-async function readFallbackTexts(zip: JSZip) {
-  const sections: string[] = [];
-  let fragment = 0;
+async function readDocProps(zip: JSZip) {
+  for (const [path, file] of Object.entries(zip.files)) {
+    if (file.dir) continue;
+    if (!/docprops\/core\.xml$/i.test(normalizeZipPath(path))) continue;
+
+    const xml = await file.async("string");
+    const text = normalizeText(extractDocPropsText(xml));
+    if (text) return text;
+  }
+
+  return "";
+}
+
+async function readSupplementalTexts(zip: JSZip) {
+  const segments: string[] = [];
 
   for (const [path, file] of Object.entries(zip.files)) {
     if (file.dir) continue;
 
     const normalized = normalizeZipPath(path);
-    if (!/^ppt\/.*\.xml$/i.test(normalized) || SKIP_XML_PREFIX.test(normalized)) {
-      continue;
-    }
+    if (!SUPPLEMENTAL_XML_PATH.test(normalized)) continue;
 
     const xml = await file.async("string");
     const text = normalizeText(extractTextFromOfficeXml(xml));
-    if (text.length < 12) continue;
-
-    fragment += 1;
-    sections.push(`--- Fragmento ${fragment} ---`);
-    sections.push(text);
-    sections.push("");
+    if (text.length >= 12) {
+      segments.push(text);
+    }
   }
 
-  return sections.join("\n").trim();
+  return uniqueSegments(segments).join("\n\n");
+}
+
+async function readFallbackTexts(zip: JSZip) {
+  const segments: string[] = [];
+
+  for (const [path, file] of Object.entries(zip.files)) {
+    if (file.dir) continue;
+
+    const normalized = normalizeZipPath(path);
+    if (!FALLBACK_XML_PATH.test(normalized)) continue;
+
+    const xml = await file.async("string");
+    const text = normalizeText(extractTextFromOfficeXml(xml));
+    if (text.length >= 12) {
+      segments.push(text);
+    }
+  }
+
+  return uniqueSegments(segments).join("\n\n");
 }
 
 function buildSlideDocument(slides: IndexedText[], notes: IndexedText[]) {
@@ -138,6 +202,10 @@ function buildSlideDocument(slides: IndexedText[], notes: IndexedText[]) {
   return sections.join("\n").trim();
 }
 
+function mergeExtractedParts(parts: string[]) {
+  return uniqueSegments(parts.filter(Boolean)).join("\n\n").trim();
+}
+
 export async function extractPptxFromBuffer(buffer: Buffer) {
   let zip: JSZip;
 
@@ -151,10 +219,21 @@ export async function extractPptxFromBuffer(buffer: Buffer) {
 
   const slides = await readIndexedTexts(zip, "slide");
   const notes = await readIndexedTexts(zip, "notes");
-  let combined = buildSlideDocument(slides, notes);
+  const docProps = await readDocProps(zip);
+  const supplemental = await readSupplementalTexts(zip);
+
+  let combined = mergeExtractedParts([
+    docProps ? `--- Metadatos de la presentación ---\n${docProps}` : "",
+    buildSlideDocument(slides, notes),
+    supplemental ? `--- Texto adicional de plantillas ---\n${supplemental}` : "",
+  ]);
 
   if (combined.length < MIN_USEFUL_TEXT_LENGTH) {
-    combined = await readFallbackTexts(zip);
+    const fallback = await readFallbackTexts(zip);
+    combined = mergeExtractedParts([
+      docProps ? `--- Metadatos de la presentación ---\n${docProps}` : "",
+      fallback,
+    ]);
   }
 
   if (combined.length < MIN_USEFUL_TEXT_LENGTH) {

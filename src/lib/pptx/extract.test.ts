@@ -50,4 +50,22 @@ describe("extractPptxFromBuffer", () => {
 
     expect(text).toContain("Artículo 135");
   });
+
+  it("lee metadatos de docProps cuando las diapositivas están vacías", async () => {
+    const zip = new JSZip();
+    zip.file("ppt/presentation.xml", "<p:presentation />");
+    zip.file(
+      "docProps/core.xml",
+      `<?xml version="1.0" encoding="UTF-8"?>
+      <cp:coreProperties xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties">
+        <dc:title>Derecho Procesal Civil</dc:title>
+        <dc:subject>Proceso ordinario y recursos</dc:subject>
+      </cp:coreProperties>`,
+    );
+    const buffer = await zip.generateAsync({ type: "nodebuffer" });
+    const text = await extractPptxFromBuffer(buffer);
+
+    expect(text).toContain("Derecho Procesal Civil");
+    expect(text).toContain("Proceso ordinario");
+  });
 });

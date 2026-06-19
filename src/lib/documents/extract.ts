@@ -8,6 +8,7 @@ import {
   type PdfExtractionOptions,
 } from "@/lib/pdf/extract";
 import { extractPptxFromBuffer } from "@/lib/pptx/extract";
+import { sniffStudyDocumentKind } from "@/lib/documents/sniff";
 
 export type DocumentExtractionMethod = PdfExtractionMeta["method"] | "pptx";
 
@@ -22,7 +23,9 @@ export async function extractDocumentFromBuffer(
     );
   }
 
-  const kind = detectStudyDocumentKind(fileName);
+  const kind =
+    (await sniffStudyDocumentKind(buffer, fileName)) ??
+    detectStudyDocumentKind(fileName);
 
   if (!kind) {
     throw new Error("Formato no admitido. Usa PDF o PowerPoint (.pptx).");
