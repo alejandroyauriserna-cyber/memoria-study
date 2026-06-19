@@ -1211,19 +1211,60 @@ html:not(.dark) .bj-contribute-success {
 
 .bj-contribute-upload {
   display: flex;
+  min-height: 7.5rem;
+  flex-direction: column;
   align-items: center;
-  gap: 0.55rem;
-  border: 1px dashed rgba(0, 255, 213, 0.2);
+  justify-content: center;
+  gap: 0.45rem;
+  border: 1px dashed rgba(0, 255, 213, 0.28);
   border-radius: 16px;
   background: rgba(0, 255, 213, 0.04);
   color: rgba(245, 247, 250, 0.75);
   font-size: 0.85rem;
-  padding: 0.85rem 1rem;
+  padding: 1rem 1.1rem;
+  text-align: center;
   cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.bj-contribute-upload:hover {
+  border-color: rgba(0, 255, 213, 0.45);
+  background: rgba(0, 255, 213, 0.08);
+}
+
+.bj-contribute-upload.is-dragging {
+  border-color: rgba(0, 255, 213, 0.65);
+  background: rgba(0, 255, 213, 0.14);
+  transform: scale(1.01);
+}
+
+.bj-contribute-upload.has-file {
+  border-style: solid;
+  border-color: rgba(0, 255, 213, 0.35);
+}
+
+.bj-contribute-upload strong {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: rgba(245, 247, 250, 0.92);
+}
+
+.bj-contribute-upload span {
+  font-size: 0.76rem;
+  color: rgba(245, 247, 250, 0.55);
+}
+
+.bj-contribute-upload svg {
+  color: #00ffd5;
 }
 
 .bj-contribute-upload input {
   display: none;
+}
+
+.bj-contribute-grid:disabled {
+  opacity: 0.72;
+  pointer-events: none;
 }
 
 .bj-contribute-error,

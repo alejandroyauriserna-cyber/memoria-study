@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
+import type { DragEvent } from "react";
 import { Loader2, Sparkles, Upload, Users, X } from "lucide-react";
 import {
   confidenceClass,
@@ -22,6 +23,10 @@ type Props = {
   onClose: () => void;
   onSubmitted: (record: JurisprudenceRecord) => void;
 };
+
+function isPdfFile(file: File): boolean {
+  return file.name.toLowerCase().endsWith(".pdf") || file.type === "application/pdf";
+}
 
 function FieldLabel({
   children,
@@ -61,6 +66,7 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
   const [asuntoPrincipal, setAsuntoPrincipal] = useState("");
   const [pdfUrl, setPdfUrl] = useState("");
   const [useLink, setUseLink] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [analyzed, setAnalyzed] = useState(false);
   const [aiConfidence, setAiConfidence] = useState<JurisprudenceFieldConfidence | null>(null);
@@ -83,6 +89,7 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
     setExpediente("");
     setAsuntoPrincipal("");
     setPdfUrl("");
+    setIsDragging(false);
     setAnalyzed(false);
     setAiConfidence(null);
     setAiFilled({});
@@ -168,16 +175,59 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
     }
   }
 
-  const handleFileChange = async (next: File | null) => {
-    setFile(next);
-    setAnalyzed(false);
-    setAiConfidence(null);
-    setAiFilled({});
-    setOverallConfidence(null);
-    setAnalyzeMessage("");
-    if (next) {
+  const acceptPdfFile = useCallback(
+    async (next: File | null | undefined) => {
+      if (!next) return;
+      if (!isPdfFile(next)) {
+        setError("Solo se admiten archivos PDF.");
+        return;
+      }
+      if (next.size > 20 * 1024 * 1024) {
+        setError("El PDF no puede superar 20 MB.");
+        return;
+      }
+      setError("");
+      setFile(next);
+      setAnalyzed(false);
+      setAiConfidence(null);
+      setAiFilled({});
+      setOverallConfidence(null);
+      setAnalyzeMessage("");
       await analyzeSource(next);
-    }
+    },
+    [],
+  );
+
+  const onDragEnter = useCallback((event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragging(true);
+  }, []);
+
+  const onDragOver = useCallback((event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragging(true);
+  }, []);
+
+  const onDragLeave = useCallback((event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragging(false);
+  }, []);
+
+  const onDrop = useCallback(
+    (event: DragEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      setIsDragging(false);
+      void acceptPdfFile(event.dataTransfer.files?.[0]);
+    },
+    [acceptPdfFile],
+  );
+
+  const handleFileChange = (next: File | null) => {
+    void acceptPdfFile(next);
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -275,16 +325,37 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
             </div>
 
             {!useLink ? (
-              <label className="bj-contribute-upload">
+              <>
                 <input
                   ref={fileRef}
                   type="file"
                   accept="application/pdf,.pdf"
-                  onChange={(e) => void handleFileChange(e.target.files?.[0] ?? null)}
+                  className="sr-only"
+                  onChange={(e) => handleFileChange(e.target.files?.[0] ?? null)}
                 />
-                <Upload size={18} />
-                {file ? file.name : "Seleccionar PDF (máx. 20 MB)"}
-              </label>
+                <div
+                  role="button"
+                  tabIndex={0}
+                  className={`bj-contribute-upload${isDragging ? " is-dragging" : ""}${file ? " has-file" : ""}`}
+                  onClick={() => fileRef.current?.click()}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      fileRef.current?.click();
+                    }
+                  }}
+                  onDragEnter={onDragEnter}
+                  onDragOver={onDragOver}
+                  onDragLeave={onDragLeave}
+                  onDrop={onDrop}
+                >
+                  <Upload size={22} strokeWidth={1.6} />
+                  <strong>
+                    {file?.name ?? (isDragging ? "Suelta el PDF aquí" : "Arrastra o selecciona tu PDF")}
+                  </strong>
+                  <span>{file ? "Toca o arrastra otro archivo para cambiar" : "Máximo 20 MB · la IA completará el formulario"}</span>
+                </div>
+              </>
             ) : (
               <div className="bj-contribute-link-row">
                 <label className="bj-contribute-field bj-contribute-field--wide">
