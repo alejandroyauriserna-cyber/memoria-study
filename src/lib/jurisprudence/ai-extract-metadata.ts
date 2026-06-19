@@ -53,17 +53,43 @@ const AiExtractSchema = z.object({
   }),
 });
 
-function normalizeTipo(raw: string): JurisprudenceTipo {
-  const n = raw
+function stripDiacritics(value: string): string {
+  return value.normalize("NFD").replace(/\p{Diacritic}/gu, "");
+}
+
+function textBlob(...parts: Array<string | undefined | null>): string {
+  return stripDiacritics(parts.filter(Boolean).join(" ").toLowerCase());
+}
+
+/** Señales de que el documento resuelve un recurso de casación (no una sentencia de mérito ordinaria). */
+export function textSuggestsCasacion(...parts: Array<string | undefined | null>): boolean {
+  const blob = textBlob(...parts);
+  if (!blob) return false;
+
+  if (/\bcasacion(es)?\b/.test(blob)) return true;
+  if (/\bcasatorio(s)?\b/.test(blob)) return true;
+  if (/\brecurso\s+de\s+casacion\b/.test(blob)) return true;
+  if (/\bsentencia\s+de\s+casacion\b/.test(blob)) return true;
+  if (/\bauto\s+de\s+casacion\b/.test(blob)) return true;
+  if (/\bvista\s+(de\s+)?(la\s+)?casacion\b/.test(blob)) return true;
+  if (/\brecurso\s+extraordinario\b/.test(blob) && /\bcorte\s+suprema\b/.test(blob)) {
+    return true;
+  }
+
+  return false;
+}
+
+export function normalizeTipo(raw: string): JurisprudenceTipo {
+  const n = stripDiacritics(raw)
     .toLowerCase()
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
     .replace(/\s+/g, "_");
 
   if (n.includes("pleno") && n.includes("casatorio")) return "pleno_casatorio";
-  if (n.includes("sentencia") && (n.includes("tc") || n.includes("tribunal_constitucional")))
+  if (n.includes("sentencia") && (n.includes("tc") || n.includes("tribunal_constitucional"))) {
     return "sentencia_tc";
+  }
   if (n.includes("precedente") && n.includes("vinculante")) return "precedente_vinculante";
+  if (n.includes("sentencia") && n.includes("casacion")) return "casacion";
   if (n.includes("casacion")) return "casacion";
   if (n.includes("resolucion")) return "resolucion";
   if (n.includes("expediente")) return "expediente";
@@ -71,6 +97,30 @@ function normalizeTipo(raw: string): JurisprudenceTipo {
 
   if (isJurisprudenceTipo(n)) return n;
   return "sentencia";
+}
+
+type TipoReconcileInput = Pick<
+  JurisprudenceSuggestedMetadata,
+  "title" | "tipo" | "summary" | "asuntoPrincipal" | "organo" | "keywords"
+>;
+
+/** Corrige sentencia → casación cuando el contenido indica un fallo casatorio. */
+export function reconcileSuggestedTipo(input: TipoReconcileInput): JurisprudenceTipo {
+  if (input.tipo !== "sentencia") return input.tipo;
+
+  if (
+    textSuggestsCasacion(
+      input.title,
+      input.summary,
+      input.asuntoPrincipal,
+      input.organo,
+      input.keywords.join(" "),
+    )
+  ) {
+    return "casacion";
+  }
+
+  return input.tipo;
 }
 
 function normalizeMateria(raw: string): JurisprudenceMateria {
@@ -121,6 +171,14 @@ INSTRUCCIONES:
 - asuntoPrincipal: tema central en una frase
 - confidence: probabilidad 0-1 de cada campo extraído
 
+REGLAS PARA EL CAMPO tipo (MUY IMPORTANTE):
+- sentencia: fallo de primera o segunda instancia que resuelve el fondo del litigio en vía ordinaria (juzgado, sala superior, tribunal de apelaciones).
+- casacion: fallo que RESUELVE un recurso de casación (recurso extraordinario ante la Corte Suprema u homólogo), aunque el encabezado del PDF diga solo "SENTENCIA" o "Sentencia de casación".
+- Si el documento menciona recurso de casación, casación, tribunal de casación, vista de la casación o sentencia de casación → tipo = casacion (NO sentencia).
+- pleno_casatorio: acuerdos plenarios casatorios de la Corte Suprema.
+- sentencia_tc: fallos del Tribunal Constitucional.
+- resolucion / expediente: solo si no es un fallo jurisdiccional de fondo ni casación.
+
 Responde SOLO JSON válido:
 {
   "title": "...",
@@ -159,9 +217,12 @@ ${sample}`;
 
   const parsed = AiExtractSchema.parse(JSON.parse(raw));
 
+  const initialTipo = normalizeTipo(parsed.tipo);
+  const keywords = parsed.keywords.map((k) => k.trim()).filter(Boolean).slice(0, 12);
+
   const suggested: JurisprudenceSuggestedMetadata = {
     title: parsed.title.trim(),
-    tipo: normalizeTipo(parsed.tipo),
+    tipo: initialTipo,
     numeroDocumento: parsed.numeroDocumento?.trim() || undefined,
     year: parsed.year,
     organo: parsed.organo.trim(),
@@ -169,11 +230,21 @@ ${sample}`;
     distritoJudicial: parsed.distritoJudicial?.trim() || undefined,
     materia: normalizeMateria(parsed.materia),
     submateria: parsed.submateria.trim(),
-    keywords: parsed.keywords.map((k) => k.trim()).filter(Boolean).slice(0, 12),
+    keywords,
     asuntoPrincipal: parsed.asuntoPrincipal?.trim() || undefined,
     summary: parsed.summary.trim(),
     expediente: parsed.expediente?.trim() || undefined,
   };
+
+  const reconciledTipo = reconcileSuggestedTipo(suggested);
+  const confidence = { ...parsed.confidence } as JurisprudenceFieldConfidence;
+
+  if (reconciledTipo !== suggested.tipo) {
+    suggested.tipo = reconciledTipo;
+    if (typeof confidence.tipo === "number") {
+      confidence.tipo = Math.min(confidence.tipo, 0.82);
+    }
+  }
 
   if (!suggested.keywords.length) {
     suggested.keywords.push(suggested.submateria.toLowerCase());
@@ -181,7 +252,7 @@ ${sample}`;
 
   return {
     suggested,
-    confidence: parsed.confidence as JurisprudenceFieldConfidence,
+    confidence,
   };
 }
 
