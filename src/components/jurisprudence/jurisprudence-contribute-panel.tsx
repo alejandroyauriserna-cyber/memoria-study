@@ -15,6 +15,10 @@ import {
   JURISPRUDENCE_TIPO_LABELS,
 } from "@/lib/jurisprudence/labels";
 import { JURISPRUDENCE_MATERIAS, JURISPRUDENCE_TIPOS } from "@/types/jurisprudence";
+import {
+  JURISPRUDENCE_MAX_FILE_SIZE,
+  jurisprudenceMaxFileSizeLabel,
+} from "@/lib/jurisprudence/upload-limits";
 import type { JurisprudenceFieldConfidence, JurisprudenceSuggestedMetadata } from "@/types/jurisprudence-ingest";
 import type { JurisprudenceRecord } from "@/types/jurisprudence";
 
@@ -181,8 +185,8 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
         setError("Solo se admiten archivos PDF.");
         return;
       }
-      if (next.size > 20 * 1024 * 1024) {
-        setError("El PDF no puede superar 20 MB.");
+      if (next.size > JURISPRUDENCE_MAX_FILE_SIZE) {
+        setError(`El PDF no puede superar ${jurisprudenceMaxFileSizeLabel()}.`);
         return;
       }
       setUseLink(false);
@@ -388,7 +392,11 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
                   <strong>
                     {file?.name ?? (isDragging ? "Suelta el PDF aquí" : "Arrastra o selecciona tu PDF")}
                   </strong>
-                  <span>{file ? "Toca o arrastra otro archivo para cambiar" : "Máximo 20 MB · la IA completará el formulario"}</span>
+                  <span>
+                    {file
+                      ? "Toca o arrastra otro archivo para cambiar"
+                      : `Máximo ${jurisprudenceMaxFileSizeLabel()} · la IA completará el formulario`}
+                  </span>
                 </div>
               </>
             ) : (

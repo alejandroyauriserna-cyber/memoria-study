@@ -10,6 +10,9 @@ import { AcademicNavigator } from "@/components/study/academic-navigator";
 import type { MaterialUploadType } from "@/lib/materials/extract-material-metadata";
 import type { AcademicSelection } from "@/types/academic";
 import type { CourseDetectionResult } from "@/types/course-detection";
+import { MAX_FILE_SIZE } from "@/lib/pdf/constants";
+
+const maxMaterialFileMb = Math.round(MAX_FILE_SIZE / (1024 * 1024));
 
 type FieldErrors = {
   title?: string;
@@ -128,6 +131,15 @@ export function UploadMaterialForm() {
         }));
         setStatus("error");
         setMessage("Solo se admiten archivos PDF.");
+        return;
+      }
+      if (selected.size > MAX_FILE_SIZE) {
+        setErrors((current) => ({
+          ...current,
+          file: `El PDF no puede superar ${maxMaterialFileMb} MB.`,
+        }));
+        setStatus("error");
+        setMessage(`El PDF no puede superar ${maxMaterialFileMb} MB.`);
         return;
       }
 
@@ -299,7 +311,7 @@ export function UploadMaterialForm() {
         >
           <Upload size={28} strokeWidth={1.5} />
           <strong>{file?.name ?? (isDragging ? "Suelta el PDF aquí" : "Arrastra o selecciona tu PDF")}</strong>
-          <span>{file ? "Toca o arrastra otro archivo para cambiar" : "Máximo un archivo · formato PDF"}</span>
+          <span>{file ? "Toca o arrastra otro archivo para cambiar" : `Máximo ${maxMaterialFileMb} MB · formato PDF`}</span>
         </div>
         {errors.file ? <p className="upload-field__error">{errors.file}</p> : null}
 

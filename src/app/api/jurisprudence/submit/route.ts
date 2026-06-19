@@ -24,6 +24,10 @@ import {
 import { isTrustedJurisprudenceContributor } from "@/lib/jurisprudence/trusted-contributor";
 import { notifyJurisprudenceModerators } from "@/lib/jurisprudence/notify-moderators";
 import { extractAndStoreJurisprudenceText } from "@/lib/jurisprudence/extract-document-text";
+import {
+  JURISPRUDENCE_MAX_FILE_SIZE,
+  jurisprudenceMaxFileSizeLabel,
+} from "@/lib/jurisprudence/upload-limits";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -35,10 +39,17 @@ async function ensureBucket(admin: ReturnType<typeof createAdminClient>) {
   if (bucketInfo.error?.message?.toLowerCase().includes("not found") || !bucketInfo.data) {
     await admin.storage.createBucket(BUCKET, {
       public: true,
-      fileSizeLimit: 20 * 1024 * 1024,
+      fileSizeLimit: JURISPRUDENCE_MAX_FILE_SIZE,
       allowedMimeTypes: ["application/pdf"],
     });
+    return;
   }
+
+  await admin.storage.updateBucket(BUCKET, {
+    public: true,
+    fileSizeLimit: JURISPRUDENCE_MAX_FILE_SIZE,
+    allowedMimeTypes: ["application/pdf"],
+  });
 }
 
 export async function POST(request: Request) {
@@ -112,8 +123,11 @@ export async function POST(request: Request) {
       if (pdfFile.type !== "application/pdf" && !pdfFile.name.toLowerCase().endsWith(".pdf")) {
         return NextResponse.json({ error: "Solo se admiten archivos PDF." }, { status: 400 });
       }
-      if (pdfFile.size > 20 * 1024 * 1024) {
-        return NextResponse.json({ error: "El PDF no puede superar 20 MB." }, { status: 400 });
+      if (pdfFile.size > JURISPRUDENCE_MAX_FILE_SIZE) {
+        return NextResponse.json(
+          { error: `El PDF no puede superar ${jurisprudenceMaxFileSizeLabel()}.` },
+          { status: 400 },
+        );
       }
     }
 

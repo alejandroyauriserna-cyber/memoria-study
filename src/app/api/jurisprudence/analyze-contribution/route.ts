@@ -20,7 +20,7 @@ import { extractPdfFromBuffer, prepareTextForGeneration } from "@/lib/pdf/extrac
 export const runtime = "nodejs";
 export const maxDuration = 120;
 
-const MAX_FILE_SIZE = 20 * 1024 * 1024;
+import { JURISPRUDENCE_MAX_FILE_SIZE, jurisprudenceMaxFileSizeLabel } from "@/lib/jurisprudence/upload-limits";
 const MIN_TEXT_CHARS = 80;
 
 async function extractTextFromPdfSource(input: {
@@ -97,8 +97,11 @@ export async function POST(request: Request) {
       if (pdfFile.type !== "application/pdf" && !pdfFile.name.toLowerCase().endsWith(".pdf")) {
         return NextResponse.json({ error: "Solo se admiten archivos PDF." }, { status: 400 });
       }
-      if (pdfFile.size > MAX_FILE_SIZE) {
-        return NextResponse.json({ error: "El PDF no puede superar 20 MB." }, { status: 400 });
+      if (pdfFile.size > JURISPRUDENCE_MAX_FILE_SIZE) {
+        return NextResponse.json(
+          { error: `El PDF no puede superar ${jurisprudenceMaxFileSizeLabel()}.` },
+          { status: 400 },
+        );
       }
     }
 

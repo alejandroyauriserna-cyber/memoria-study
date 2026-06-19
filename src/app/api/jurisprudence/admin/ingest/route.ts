@@ -4,23 +4,33 @@ import { sanitizePdfFileName } from "@/lib/jurisprudence/build-document-id";
 import { ingestItemToReview } from "@/lib/jurisprudence/process-ingest-item";
 import type { IngestItemRow } from "@/lib/jurisprudence/process-ingest-item";
 import { requireJurisprudenceModerator } from "@/lib/jurisprudence/require-moderator";
+import {
+  JURISPRUDENCE_MAX_BATCH_FILES,
+  JURISPRUDENCE_MAX_FILE_SIZE,
+  jurisprudenceMaxFileSizeLabel,
+} from "@/lib/jurisprudence/upload-limits";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
 const BUCKET = "jurisprudence-pdfs";
-const MAX_FILES = 200;
-const MAX_FILE_BYTES = 20 * 1024 * 1024;
 
 async function ensureBucket(admin: ReturnType<typeof createAdminClient>) {
   const bucketInfo = await admin.storage.getBucket(BUCKET);
   if (bucketInfo.error?.message?.toLowerCase().includes("not found") || !bucketInfo.data) {
     await admin.storage.createBucket(BUCKET, {
       public: true,
-      fileSizeLimit: MAX_FILE_BYTES,
+      fileSizeLimit: JURISPRUDENCE_MAX_FILE_SIZE,
       allowedMimeTypes: ["application/pdf"],
     });
+    return;
   }
+
+  await admin.storage.updateBucket(BUCKET, {
+    public: true,
+    fileSizeLimit: JURISPRUDENCE_MAX_FILE_SIZE,
+    allowedMimeTypes: ["application/pdf"],
+  });
 }
 
 export async function GET(request: Request) {
@@ -100,13 +110,19 @@ export async function POST(request: Request) {
     if (!files.length) {
       return NextResponse.json({ error: "Sube al menos un PDF." }, { status: 400 });
     }
-    if (files.length > MAX_FILES) {
-      return NextResponse.json({ error: `Máximo ${MAX_FILES} archivos por lote.` }, { status: 400 });
+    if (files.length > JURISPRUDENCE_MAX_BATCH_FILES) {
+      return NextResponse.json(
+        { error: `Máximo ${JURISPRUDENCE_MAX_BATCH_FILES} archivos por lote.` },
+        { status: 400 },
+      );
     }
 
     for (const file of files) {
-      if (file.size > MAX_FILE_BYTES) {
-        return NextResponse.json({ error: `${file.name} supera 20 MB.` }, { status: 400 });
+      if (file.size > JURISPRUDENCE_MAX_FILE_SIZE) {
+        return NextResponse.json(
+          { error: `${file.name} supera ${jurisprudenceMaxFileSizeLabel()}.` },
+          { status: 400 },
+        );
       }
       if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
         return NextResponse.json({ error: `${file.name} no es PDF.` }, { status: 400 });
