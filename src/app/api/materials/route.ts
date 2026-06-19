@@ -5,6 +5,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/env";
 import { normalizeAcademicForWrite } from "@/lib/academic/helpers";
+import {
+  detectStudyDocumentKind,
+  isLegacyPptFile,
+  studyDocumentContentType,
+} from "@/lib/documents/kinds";
 import { MAX_FILE_SIZE } from "@/lib/pdf/constants";
 import { findMaterialDuplicate } from "@/lib/materials/find-material-duplicate";
 import { materialInsertPayload, recordToMaterial } from "@/lib/materials/mapper";
@@ -72,22 +77,32 @@ export async function POST(request: Request) {
 
     if (!(file instanceof File) || file.size === 0) {
       return NextResponse.json(
-        { fieldErrors: { file: "Debes seleccionar un archivo PDF." } },
+        { fieldErrors: { file: "Debes seleccionar un PDF o una presentación PowerPoint (.pptx)." } },
         { status: 400 },
       );
     }
 
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
-        { fieldErrors: { file: "El PDF no puede superar 150 MB." } },
+        { fieldErrors: { file: "El archivo no puede superar 150 MB." } },
         { status: 400 },
       );
     }
 
-    const isPdf = file.name.toLowerCase().endsWith(".pdf") || file.type === "application/pdf";
-    if (!isPdf) {
+    if (isLegacyPptFile(file.name, file.type)) {
       return NextResponse.json(
-        { fieldErrors: { file: "Debes seleccionar un archivo PDF." } },
+        {
+          fieldErrors: {
+            file: "El formato .ppt antiguo no está soportado. Guarda la presentación como .pptx.",
+          },
+        },
+        { status: 400 },
+      );
+    }
+
+    if (!detectStudyDocumentKind(file.name, file.type)) {
+      return NextResponse.json(
+        { fieldErrors: { file: "Debes seleccionar un PDF o una presentación PowerPoint (.pptx)." } },
         { status: 400 },
       );
     }
@@ -147,7 +162,7 @@ export async function POST(request: Request) {
 
     if (duplicate) {
       const duplicateMessages = {
-        file_hash: "Este PDF ya está publicado en la biblioteca.",
+        file_hash: "Este archivo ya está publicado en la biblioteca.",
         file_name: "Ya existe un material con el mismo archivo en este curso.",
         title: "Ya existe un material muy similar en este curso.",
       } as const;
@@ -217,7 +232,10 @@ export async function POST(request: Request) {
 
     const { error: uploadError } = await admin.storage
       .from(bucket)
-      .upload(storagePath, fileBytes, { contentType: file.type || "application/pdf", upsert: false });
+      .upload(storagePath, fileBytes, {
+        contentType: studyDocumentContentType(file.name, file.type),
+        upsert: false,
+      });
 
     if (uploadError) {
       console.error("Storage upload failed:", uploadError);

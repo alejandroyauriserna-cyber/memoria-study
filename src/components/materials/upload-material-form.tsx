@@ -8,6 +8,12 @@ import { LoadingState } from "@/components/ui/loading-state";
 import { useLoadingProgress } from "@/hooks/use-loading-progress";
 import { AcademicNavigator } from "@/components/study/academic-navigator";
 import type { MaterialUploadType } from "@/lib/materials/extract-material-metadata";
+import {
+  STUDY_DOCUMENT_ACCEPT,
+  isLegacyPptFile,
+  isSupportedStudyDocument,
+  studyDocumentLabel,
+} from "@/lib/documents/kinds";
 import type { AcademicSelection } from "@/types/academic";
 import type { CourseDetectionResult } from "@/types/course-detection";
 import { MAX_FILE_SIZE } from "@/lib/pdf/constants";
@@ -30,8 +36,8 @@ const materialTypes: Array<{ value: MaterialUploadType; label: string }> = [
   { value: "otro", label: "Otro" },
 ];
 
-function isPdfFile(file: File): boolean {
-  return file.name.toLowerCase().endsWith(".pdf") || file.type === "application/pdf";
+function isStudyDocumentFile(file: File): boolean {
+  return isSupportedStudyDocument(file.name, file.type);
 }
 
 export function UploadMaterialForm() {
@@ -71,7 +77,7 @@ export function UploadMaterialForm() {
     setAnalyzed(false);
     setDetection(null);
     setOverallConfidence(null);
-    setAnalyzeHint("Leyendo PDF…");
+    setAnalyzeHint(`Leyendo ${studyDocumentLabel(selected.name, selected.type)}…`);
     setMessage("");
     setStatus("idle");
 
@@ -88,7 +94,7 @@ export function UploadMaterialForm() {
       const payload = await response.json();
 
       if (!response.ok) {
-        throw new Error(payload.error ?? "No se pudo analizar el PDF.");
+        throw new Error(payload.error ?? "No se pudo analizar el archivo.");
       }
 
       const suggested = payload.suggested as {
@@ -114,32 +120,41 @@ export function UploadMaterialForm() {
     } catch (caught) {
       setAnalyzed(false);
       setAnalyzeHint("");
-      setMessage(caught instanceof Error ? caught.message : "Error al analizar el PDF.");
+      setMessage(caught instanceof Error ? caught.message : "Error al analizar el archivo.");
       setStatus("error");
     } finally {
       setAnalyzing(false);
     }
   }, []);
 
-  const acceptPdfFile = useCallback(
+  const acceptStudyFile = useCallback(
     (selected: File | null | undefined) => {
       if (!selected) return;
-      if (!isPdfFile(selected)) {
+      if (isLegacyPptFile(selected.name, selected.type)) {
         setErrors((current) => ({
           ...current,
-          file: "Debes seleccionar un archivo PDF.",
+          file: "El formato .ppt antiguo no está soportado. Guarda como .pptx en PowerPoint.",
         }));
         setStatus("error");
-        setMessage("Solo se admiten archivos PDF.");
+        setMessage("Guarda la presentación como .pptx y vuelve a subirla.");
+        return;
+      }
+      if (!isStudyDocumentFile(selected)) {
+        setErrors((current) => ({
+          ...current,
+          file: "Debes seleccionar un PDF o una presentación PowerPoint (.pptx).",
+        }));
+        setStatus("error");
+        setMessage("Solo se admiten archivos PDF o PowerPoint (.pptx).");
         return;
       }
       if (selected.size > MAX_FILE_SIZE) {
         setErrors((current) => ({
           ...current,
-          file: `El PDF no puede superar ${maxMaterialFileMb} MB.`,
+          file: `El archivo no puede superar ${maxMaterialFileMb} MB.`,
         }));
         setStatus("error");
-        setMessage(`El PDF no puede superar ${maxMaterialFileMb} MB.`);
+        setMessage(`El archivo no puede superar ${maxMaterialFileMb} MB.`);
         return;
       }
 
@@ -176,9 +191,9 @@ export function UploadMaterialForm() {
       event.stopPropagation();
       setIsDragging(false);
       const dropped = event.dataTransfer.files?.[0];
-      acceptPdfFile(dropped);
+      acceptStudyFile(dropped);
     },
-    [acceptPdfFile],
+    [acceptStudyFile],
   );
 
   const handleSubmit = useCallback(
@@ -200,9 +215,9 @@ export function UploadMaterialForm() {
       }
 
       if (!file) {
-        fieldErrors.file = "Debes seleccionar un archivo PDF.";
-      } else if (!isPdfFile(file)) {
-        fieldErrors.file = "Debes seleccionar un archivo PDF.";
+        fieldErrors.file = "Debes seleccionar un PDF o una presentación PowerPoint (.pptx).";
+      } else if (!isStudyDocumentFile(file)) {
+        fieldErrors.file = "Debes seleccionar un PDF o una presentación PowerPoint (.pptx).";
       }
 
       if (Object.keys(fieldErrors).length > 0) {
@@ -277,8 +292,8 @@ export function UploadMaterialForm() {
       <section className="upload-page-panel">
         <div className="upload-page-panel__head">
           <div>
-            <h2>Archivo PDF</h2>
-            <p>Arrastra tu PDF al recuadro o selecciónalo. La IA completará título, curso y descripción.</p>
+            <h2>Archivo de estudio</h2>
+            <p>Arrastra tu PDF o PowerPoint (.pptx). La IA completará título, curso y descripción.</p>
           </div>
           <span className="upload-page-panel__icon" aria-hidden>
             <Upload size={18} />
@@ -288,9 +303,9 @@ export function UploadMaterialForm() {
         <input
           ref={fileInputRef}
           type="file"
-          accept=".pdf,application/pdf"
+          accept={STUDY_DOCUMENT_ACCEPT}
           className="sr-only"
-          onChange={(event) => acceptPdfFile(event.target.files?.[0])}
+          onChange={(event) => acceptStudyFile(event.target.files?.[0])}
         />
 
         <div
@@ -310,8 +325,8 @@ export function UploadMaterialForm() {
           onDrop={onDrop}
         >
           <Upload size={28} strokeWidth={1.5} />
-          <strong>{file?.name ?? (isDragging ? "Suelta el PDF aquí" : "Arrastra o selecciona tu PDF")}</strong>
-          <span>{file ? "Toca o arrastra otro archivo para cambiar" : `Máximo ${maxMaterialFileMb} MB · formato PDF`}</span>
+          <strong>{file?.name ?? (isDragging ? "Suelta el archivo aquí" : "Arrastra o selecciona PDF / PowerPoint")}</strong>
+          <span>{file ? "Toca o arrastra otro archivo para cambiar" : `Máximo ${maxMaterialFileMb} MB · PDF o .pptx`}</span>
         </div>
         {errors.file ? <p className="upload-field__error">{errors.file}</p> : null}
 

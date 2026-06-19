@@ -24,8 +24,8 @@ export default function UploadMaterialPage() {
             </p>
             <h1>Comparte apuntes con toda la red.</h1>
             <p className="ms-home-lead">
-              Arrastra tu PDF, la IA detecta curso y descripción, y tu material queda disponible para
-              compañeros del mismo ciclo.
+              Arrastra tu PDF o PowerPoint (.pptx), la IA detecta curso y descripción, y tu material
+              queda disponible para compañeros del mismo ciclo.
             </p>
             <div className="library-hero-actions" aria-label="Acciones de subida">
               <Link href="/library" className="library-hero-action">
@@ -50,7 +50,7 @@ export default function UploadMaterialPage() {
             <div className="upload-hero-steps">
               <div className="upload-hero-step is-active">
                 <Upload size={18} />
-                <span>1. Sube el PDF</span>
+                <span>1. Sube el archivo</span>
               </div>
               <div className="upload-hero-step">
                 <Sparkles size={18} />
@@ -76,8 +76,8 @@ export default function UploadMaterialPage() {
                   <FileText size={18} />
                 </span>
                 <span>
-                  <strong>Solo PDF</strong>
-                  <em>Apuntes y casos</em>
+                  <strong>PDF o PPTX</strong>
+                  <em>Apuntes y presentaciones</em>
                 </span>
               </div>
               <div className="library-page-stat">

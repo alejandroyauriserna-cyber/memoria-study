@@ -50,7 +50,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error:
-            "No se extrajo suficiente texto. Si es un PDF escaneado, usa una versión con texto seleccionable.",
+            "No se extrajo suficiente texto. Si subiste un PDF escaneado o una presentación hecha solo con imágenes, usa el .pptx original con texto editable.",
         },
         { status: 422 },
       );

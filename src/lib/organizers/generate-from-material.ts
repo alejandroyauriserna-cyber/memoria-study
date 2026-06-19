@@ -1,6 +1,7 @@
 import { generateOrganizerContent } from "@/lib/ai/generate-organizer";
 import { downloadMaterialPdf } from "@/lib/organizers/download-material-pdf";
-import { extractPdfFromBuffer, prepareOrganizerText } from "@/lib/pdf/extract";
+import { extractDocumentFromBuffer } from "@/lib/documents/extract";
+import { prepareOrganizerText } from "@/lib/pdf/extract";
 import type { StoredOrganizerContent } from "@/lib/ai/organizer-schema";
 
 export const MIN_ORGANIZER_EXTRACTED_TEXT = 120;
@@ -37,7 +38,7 @@ export async function generateOrganizerFromMaterial(
   let extractionMethod = "unknown";
 
   try {
-    const extraction = await extractPdfFromBuffer(buffer, material.file_name || fileName);
+    const extraction = await extractDocumentFromBuffer(buffer, material.file_name || fileName);
     extractedText = extraction.text;
     extractionMethod = extraction.method;
   } catch (extractionError) {
@@ -50,7 +51,7 @@ export async function generateOrganizerFromMaterial(
 
   if (!extractedText || extractedText.trim().length < MIN_ORGANIZER_EXTRACTED_TEXT) {
     throw new Error(
-      "No se pudo extraer texto suficiente del PDF. Si es escaneado, verifica GEMINI_API_KEY para OCR.",
+      "No se pudo extraer texto suficiente del material. Si es PDF escaneado verifica GEMINI_API_KEY; si es PowerPoint, sube el .pptx con texto editable.",
     );
   }
 

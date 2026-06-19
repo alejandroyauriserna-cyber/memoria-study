@@ -45,3 +45,17 @@ export function isSupportedStudyDocument(fileName: string, mimeType?: string) {
 
 export const STUDY_DOCUMENT_ACCEPT =
   ".pdf,application/pdf,.pptx,.pptm,application/vnd.openxmlformats-officedocument.presentationml.presentation";
+
+export function studyDocumentContentType(fileName: string, mimeType?: string) {
+  const kind = detectStudyDocumentKind(fileName, mimeType);
+  if (kind === "pptx") return PPTX_MIME;
+  if (kind === "pdf") return "application/pdf";
+  return mimeType || "application/octet-stream";
+}
+
+export function studyDocumentLabel(fileName: string, mimeType?: string) {
+  const kind = detectStudyDocumentKind(fileName, mimeType);
+  if (kind === "pptx") return "presentación PowerPoint";
+  if (kind === "pdf") return "PDF";
+  return "archivo";
+}
