@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/api/require-auth";
 import { extractMaterialUploadMetadata } from "@/lib/materials/extract-material-metadata";
 import { hasSupabaseEnv } from "@/lib/env";
-import { extractPdfFromBuffer, prepareTextForGeneration } from "@/lib/pdf/extract";
+import { extractDocumentFromBuffer } from "@/lib/documents/extract";
+import { detectStudyDocumentKind } from "@/lib/documents/kinds";
+import { prepareTextForGeneration } from "@/lib/pdf/extract";
 import { MAX_FILE_SIZE } from "@/lib/pdf/constants";
 
 export const runtime = "nodejs";
@@ -23,20 +25,25 @@ export async function POST(request: Request) {
     const file = formData.get("file");
 
     if (!(file instanceof File)) {
-      return NextResponse.json({ error: "Debes subir un PDF." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Debes subir un PDF o una presentación PowerPoint (.pptx)." },
+        { status: 400 },
+      );
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json({ error: "El PDF supera el límite permitido." }, { status: 400 });
+      return NextResponse.json({ error: "El archivo supera el límite permitido." }, { status: 400 });
     }
 
-    const isPdf = file.name.toLowerCase().endsWith(".pdf") || file.type === "application/pdf";
-    if (!isPdf) {
-      return NextResponse.json({ error: "Solo se admiten archivos PDF." }, { status: 400 });
+    if (!detectStudyDocumentKind(file.name, file.type)) {
+      return NextResponse.json(
+        { error: "Solo se admiten archivos PDF o PowerPoint (.pptx)." },
+        { status: 400 },
+      );
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const { text } = await extractPdfFromBuffer(buffer, file.name);
+    const { text } = await extractDocumentFromBuffer(buffer, file.name);
     const prepared = prepareTextForGeneration(text, 120_000);
 
     if (prepared.text.length < MIN_TEXT_CHARS) {

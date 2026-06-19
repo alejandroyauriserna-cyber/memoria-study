@@ -11,6 +11,7 @@ import { GenerationSettings } from "@/components/study/generation-settings";
 import { StudyHub } from "@/components/study/study-hub";
 import { detectionToSelection } from "@/lib/academic/detect-course";
 import { UNT_DERECHO_AUDIENCE } from "@/lib/ai/prompts";
+import { STUDY_DOCUMENT_ACCEPT } from "@/lib/documents/kinds";
 import { MAX_FILE_SIZE } from "@/lib/pdf/constants";
 import { loadAcademicSelection } from "@/lib/academic/storage";
 import { set } from "idb-keyval";
@@ -99,6 +100,16 @@ function formatFileSize(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+function isPptxFile(file: File) {
+  const lower = file.name.toLowerCase();
+  return (
+    lower.endsWith(".pptx") ||
+    lower.endsWith(".pptm") ||
+    file.type ===
+      "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+  );
+}
+
 export function UploadGenerator() {
   const [deck, setDeck] = useState<StudyDeck | null>(null);
   const [status, setStatus] = useState<Status>("idle");
@@ -106,6 +117,7 @@ export function UploadGenerator() {
   const [fileName, setFileName] = useState("");
   const [fileSize, setFileSize] = useState(0);
   const [forceScanned, setForceScanned] = useState(false);
+  const [isPptxUpload, setIsPptxUpload] = useState(false);
   const [extractionMethod, setExtractionMethod] = useState("");
   const [textTruncated, setTextTruncated] = useState(false);
   const [progress, setProgress] = useState<ProgressState | null>(null);
@@ -132,8 +144,8 @@ export function UploadGenerator() {
     setDetection(null);
     setAnalyzeProgress({
       percent: 2,
-      message: "Analizando PDF...",
-      stageLabel: "Leyendo PDF",
+      message: "Analizando archivo...",
+      stageLabel: "Leyendo documento",
     });
 
     try {
@@ -147,7 +159,7 @@ export function UploadGenerator() {
       });
 
       if (!extractResponse.ok) {
-        throw new Error("No se pudo leer el PDF para detectar el curso.");
+        throw new Error("No se pudo leer el archivo para detectar el curso.");
       }
 
       let extractedText = "";
@@ -172,7 +184,7 @@ export function UploadGenerator() {
       });
 
       if (extractError) throw new Error(extractError);
-      if (!extractedText) throw new Error("No se extrajo texto del PDF.");
+      if (!extractedText) throw new Error("No se extrajo texto del archivo.");
 
       await set("pdfText", extractedText);
 
@@ -195,7 +207,7 @@ export function UploadGenerator() {
 
       setStep(2);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Error al analizar el PDF.");
+      setError(caught instanceof Error ? caught.message : "Error al analizar el archivo.");
     } finally {
       setAnalyzing(false);
       setAnalyzeProgress(null);
@@ -209,8 +221,8 @@ export function UploadGenerator() {
     setDeck(null);
     setProgress({
       percent: 2,
-      message: "Analizando PDF...",
-      stageLabel: "Analizando PDF",
+      message: "Analizando archivo...",
+      stageLabel: "Leyendo documento",
     });
 
     const form = event.currentTarget;
@@ -219,7 +231,7 @@ export function UploadGenerator() {
 
     try {
       if (!(file instanceof File)) {
-        throw new Error("Debes subir un PDF.");
+        throw new Error("Debes subir un PDF o una presentación PowerPoint (.pptx).");
       }
 
       if (!academic) {
@@ -246,7 +258,7 @@ export function UploadGenerator() {
 
       if (!extractResponse.ok) {
         const errorText = await extractResponse.text();
-        let responseMessage = `No se pudo leer el PDF. (${extractResponse.status})`;
+        let responseMessage = `No se pudo leer el archivo. (${extractResponse.status})`;
         try {
           const payload = JSON.parse(errorText);
           if (payload?.error) {
@@ -287,7 +299,7 @@ export function UploadGenerator() {
       }
 
       if (!extractedText) {
-        throw new Error("No se extrajo texto del PDF.");
+        throw new Error("No se extrajo texto del archivo.");
       }
 
       try {
@@ -400,7 +412,7 @@ export function UploadGenerator() {
   const isWorking = status === "working";
 
   const steps = [
-    { n: 1, label: "PDF" },
+    { n: 1, label: "Archivo" },
     { n: 2, label: "Contexto académico" },
     { n: 3, label: "Configuración" },
   ] as const;
@@ -426,11 +438,11 @@ export function UploadGenerator() {
 
       {step === 1 ? (
         <form onSubmit={handleSubmit} className="ms-panel p-5 md:p-6">
-          <h3 className="text-sm font-semibold text-[#F5F7FA]">Paso 1 · Seleccionar PDF</h3>
+          <h3 className="text-sm font-semibold text-[#F5F7FA]">Paso 1 · Seleccionar archivo</h3>
           <label className="mt-4 flex min-h-40 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-[rgba(0,255,213,0.25)] bg-[rgba(7,19,26,0.5)] px-4 text-center transition hover:border-[rgba(0,255,213,0.45)]">
             <FileUp className="mb-2 text-[#00FFD5]" size={28} />
             <span className="text-sm font-semibold text-[#F5F7FA]">
-              {fileName || "Arrastra o elige un PDF"}
+              {fileName || "Arrastra o elige un PDF o PowerPoint (.pptx)"}
             </span>
             {fileName ? (
               <span className="mt-1 text-xs text-[#00FFD5]">
@@ -442,7 +454,7 @@ export function UploadGenerator() {
             <input
               name="file"
               type="file"
-              accept="application/pdf"
+              accept={STUDY_DOCUMENT_ACCEPT}
               className="sr-only"
               required
               disabled={isWorking}
@@ -451,30 +463,41 @@ export function UploadGenerator() {
                 if (!file) return;
 
                 if (file.size > MAX_FILE_SIZE) {
-                  setError(`El PDF supera el límite de ${maxMb} MB.`);
+                  setError(`El archivo supera el límite de ${maxMb} MB.`);
                   event.target.value = "";
                   setFileName("");
                   setFileSize(0);
+                  setIsPptxUpload(false);
                   return;
                 }
 
                 setError("");
                 setFileName(file.name);
                 setFileSize(file.size);
+                setIsPptxUpload(isPptxFile(file));
+                if (isPptxFile(file)) {
+                  setForceScanned(false);
+                }
               }}
             />
           </label>
 
-          <label className="mt-4 flex items-start gap-2 text-sm text-muted-foreground">
-            <input
-              type="checkbox"
-              checked={forceScanned}
-              disabled={isWorking}
-              onChange={(event) => setForceScanned(event.target.checked)}
-              className="mt-1 size-4 accent-[#00FFD5]"
-            />
-            <span>PDF escaneado — usar OCR para libros y fotocopias</span>
-          </label>
+          {!isPptxUpload ? (
+            <label className="mt-4 flex items-start gap-2 text-sm text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={forceScanned}
+                disabled={isWorking}
+                onChange={(event) => setForceScanned(event.target.checked)}
+                className="mt-1 size-4 accent-[#00FFD5]"
+              />
+              <span>PDF escaneado — usar OCR para libros y fotocopias</span>
+            </label>
+          ) : (
+            <p className="mt-4 text-sm text-muted-foreground">
+              PowerPoint: se leen diapositivas y notas del presentador directamente del .pptx.
+            </p>
+          )}
 
           <div className="mt-5 flex flex-wrap gap-2">
             <Button
@@ -538,7 +561,7 @@ export function UploadGenerator() {
                 difficulty: detection.difficulty,
                 recommendations: [
                   "Revisa la sugerencia de curso antes de generar.",
-                  "Corrige manualmente si el PDF corresponde a otro ciclo.",
+                  "Corrige manualmente si el archivo corresponde a otro ciclo.",
                 ],
               }}
             />
@@ -568,7 +591,7 @@ export function UploadGenerator() {
               Atrás
             </Button>
             <Button type="button" variant="secondary" onClick={() => setStep(1)}>
-              Ir a generar PDF
+              Ir a generar material
             </Button>
           </div>
         </div>
@@ -592,6 +615,7 @@ export function UploadGenerator() {
                     <Sparkles size={14} className="text-[#00FFD5]" />
                     {deck.generatedWith.label}
                     {extractionMethod === "gemini-ocr" ? " · OCR" : null}
+                    {extractionMethod === "pptx" ? " · PowerPoint" : null}
                     {textTruncated ? " · Texto truncado por longitud" : null}
                   </p>
                 ) : null}

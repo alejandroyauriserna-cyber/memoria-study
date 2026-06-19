@@ -3,8 +3,10 @@ import { requireAuth } from "@/lib/api/require-auth";
 import { generateStudyDeck } from "@/lib/ai/generate-study-deck";
 import { parseGenerationCounts } from "@/lib/ai/generation-counts";
 import { UNT_DERECHO_AUDIENCE } from "@/lib/ai/prompts";
+import { extractDocumentText } from "@/lib/documents/extract";
+import { detectStudyDocumentKind } from "@/lib/documents/kinds";
 import { MAX_FILE_SIZE } from "@/lib/pdf/constants";
-import { extractPdfText, prepareTextForGeneration } from "@/lib/pdf/extract";
+import { prepareTextForGeneration } from "@/lib/pdf/extract";
 import type { AcademicSelection } from "@/types/academic";
 
 export const runtime = "nodejs";
@@ -85,14 +87,21 @@ export async function POST(request: Request) {
 
     if (!(file instanceof File)) {
       return NextResponse.json(
-        { error: "Debes subir un PDF." },
+        { error: "Debes subir un PDF o una presentación PowerPoint (.pptx)." },
         { status: 400 },
       );
     }
 
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
-        { error: "El PDF supera el límite de 150 MB." },
+        { error: "El archivo supera el límite de 150 MB." },
+        { status: 400 },
+      );
+    }
+
+    if (!detectStudyDocumentKind(file.name, file.type)) {
+      return NextResponse.json(
+        { error: "Formato no admitido. Usa PDF o PowerPoint (.pptx)." },
         { status: 400 },
       );
     }
@@ -104,7 +113,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { text, method } = await extractPdfText(file, { forceScanned });
+    const { text, method } = await extractDocumentText(file, { forceScanned });
     const prepared = prepareTextForGeneration(text);
 
     const deck = await generateStudyDeck({

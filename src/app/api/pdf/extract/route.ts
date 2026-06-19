@@ -1,6 +1,11 @@
 import { requireAuth } from "@/lib/api/require-auth";
+import { extractDocumentFromBuffer } from "@/lib/documents/extract";
+import {
+  detectStudyDocumentKind,
+  isLegacyPptFile,
+} from "@/lib/documents/kinds";
 import { MAX_FILE_SIZE } from "@/lib/pdf/constants";
-import { extractPdfFromBuffer, prepareTextForGeneration } from "@/lib/pdf/extract";
+import { prepareTextForGeneration } from "@/lib/pdf/extract";
 import type { PdfExtractStreamEvent } from "@/types/pdf-progress";
 import { NextResponse } from "next/server";
 
@@ -33,7 +38,7 @@ export async function POST(request: Request) {
           send({
             stage: "error",
             percent: 0,
-            message: "Debes subir un PDF.",
+            message: "Debes subir un PDF o una presentación PowerPoint (.pptx).",
           });
           controller.close();
           return;
@@ -43,14 +48,35 @@ export async function POST(request: Request) {
           send({
             stage: "error",
             percent: 0,
-            message: "El PDF supera el límite de 150 MB.",
+            message: "El archivo supera el límite de 150 MB.",
+          });
+          controller.close();
+          return;
+        }
+
+        if (isLegacyPptFile(file.name, file.type)) {
+          send({
+            stage: "error",
+            percent: 0,
+            message:
+              "El formato .ppt antiguo no está soportado. Guarda la presentación como .pptx y vuelve a subirla.",
+          });
+          controller.close();
+          return;
+        }
+
+        if (!detectStudyDocumentKind(file.name, file.type)) {
+          send({
+            stage: "error",
+            percent: 0,
+            message: "Formato no admitido. Usa PDF o PowerPoint (.pptx).",
           });
           controller.close();
           return;
         }
 
         fileName = file.name;
-        console.log("PDF extract start:", {
+        console.log("Document extract start:", {
           fileName,
           size: file.size,
           mimeType: file.type,
@@ -65,7 +91,7 @@ export async function POST(request: Request) {
 
         const buffer = Buffer.from(await file.arrayBuffer());
 
-        const { text, method } = await extractPdfFromBuffer(
+        const { text, method } = await extractDocumentFromBuffer(
           buffer,
           file.name,
           {
@@ -74,7 +100,7 @@ export async function POST(request: Request) {
           },
         );
 
-        console.log("PDF extract success:", {
+        console.log("Document extract success:", {
           fileName: file.name,
           mimeType: file.type,
           size: file.size,
@@ -98,8 +124,8 @@ export async function POST(request: Request) {
         });
       } catch (caught) {
         const message =
-          caught instanceof Error ? caught.message : "Error al leer el PDF.";
-        console.error("PDF extract failed:", { fileName, error: caught });
+          caught instanceof Error ? caught.message : "Error al leer el archivo.";
+        console.error("Document extract failed:", { fileName, error: caught });
         send({
           stage: "error",
           percent: 0,
