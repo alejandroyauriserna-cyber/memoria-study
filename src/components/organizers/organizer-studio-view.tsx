@@ -45,7 +45,7 @@ export function OrganizerStudioView({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
       transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-      className="organizers-studio-mode flex min-h-[85vh] w-full max-w-none flex-1 flex-col"
+      className="organizers-studio-mode flex min-h-0 w-full max-w-none flex-1 flex-col lg:min-h-[85vh]"
     >
       <header className="organizers-studio-mode__header shrink-0">
         <button

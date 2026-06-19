@@ -47,8 +47,8 @@ export function OrganizerStudioDock({
   onSelect: (id: StudioPanelId) => void;
 }) {
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-5 z-30 flex justify-center px-4">
-      <div className="organizer-studio-dock-premium pointer-events-auto">
+    <div className="organizer-studio-dock-host pointer-events-none absolute inset-x-0 bottom-0 z-50 flex justify-center px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 sm:px-4 sm:bottom-5 sm:pb-0">
+      <div className="organizer-studio-dock-premium pointer-events-auto max-w-full overflow-x-auto">
         {items.map((item) => {
           const Icon = item.icon;
           const selected = active === item.id;

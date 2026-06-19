@@ -68,6 +68,7 @@ export function ConceptMapCanvas({
   const viewportRef = useRef<HTMLDivElement>(null);
   const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 });
   const [fitApplied, setFitApplied] = useState(false);
+  const [touchPanDisabled, setTouchPanDisabled] = useState(false);
   const [canvasDragging, setCanvasDragging] = useState(false);
   const [nodeDraggingId, setNodeDraggingId] = useState<string | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
@@ -83,6 +84,14 @@ export function ConceptMapCanvas({
   useEffect(() => {
     setCustomPositions(loadMapPositions(mapKey));
   }, [mapKey, baseLayout]);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(hover: none), (pointer: coarse), (max-width: 1024px)");
+    const sync = () => setTouchPanDisabled(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
 
   const layout = useMemo(() => {
     const merged = applyCustomPositions(baseLayout, customPositions);
@@ -171,7 +180,7 @@ export function ConceptMapCanvas({
   }
 
   function onCanvasPointerDown(event: React.PointerEvent) {
-    if (panLocked || selectedNodeId) return;
+    if (panLocked || selectedNodeId || touchPanDisabled) return;
     if ((event.target as HTMLElement).closest("[data-study-node]")) return;
     if ((event.target as HTMLElement).closest("[data-study-panel]")) return;
     setCanvasDragging(true);
@@ -289,15 +298,15 @@ export function ConceptMapCanvas({
           </div>
         ) : null}
 
-        {panLocked ? (
+        {panLocked || touchPanDisabled ? (
           <div
-            className="organizer-canvas-touch-blocker absolute inset-0 z-[45] touch-none"
+            className={`organizer-canvas-touch-blocker absolute inset-0 z-[45]${touchPanDisabled && !panLocked ? " organizer-canvas-touch-blocker--scroll" : " touch-none"}`}
             aria-hidden
           />
         ) : null}
 
         <div
-          className={`absolute inset-0 ${panLocked || selectedNodeId ? "pointer-events-none touch-none" : "touch-none"} ${canvasDragging ? "cursor-grabbing" : nodeDraggingId ? "cursor-move" : panLocked || selectedNodeId ? "cursor-default" : "cursor-grab"}`}
+          className={`absolute inset-0 ${panLocked || selectedNodeId || touchPanDisabled ? "pointer-events-none touch-none" : "touch-none"} ${canvasDragging ? "cursor-grabbing" : nodeDraggingId ? "cursor-move" : panLocked || selectedNodeId || touchPanDisabled ? "cursor-default" : "cursor-grab"}`}
           onPointerDown={onCanvasPointerDown}
           onPointerMove={onCanvasPointerMove}
           onPointerUp={onCanvasPointerUp}

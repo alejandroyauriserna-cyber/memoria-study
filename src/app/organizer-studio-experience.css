@@ -145,6 +145,12 @@ html:not(.dark) .organizers-studio-mode__tab--alt.is-active {
   flex: 1;
 }
 
+@media (max-width: 1024px) {
+  .organizer-canvas-stage {
+    min-height: 0;
+  }
+}
+
 /* ——— CANVAS DEPTH ——— */
 
 .organizer-canvas-viewport {
@@ -270,9 +276,9 @@ html:not(.dark) .organizers-studio .map-controls-figma__btn:hover {
 
 .organizer-studio-dock-premium {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 0.35rem;
   padding: 0.45rem 0.65rem;
   border-radius: 999px;
@@ -283,6 +289,24 @@ html:not(.dark) .organizers-studio .map-controls-figma__btn:hover {
     0 0 40px rgba(0, 255, 213, 0.06),
     inset 0 1px 0 rgba(255, 255, 255, 0.06);
   backdrop-filter: blur(24px) saturate(160%);
+}
+
+@media (max-width: 1024px) {
+  .organizer-studio-dock-premium {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    max-width: min(100%, calc(100vw - 1.5rem));
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    border-radius: 1.25rem;
+    padding: 0.5rem 0.55rem;
+  }
+
+  .organizer-studio-dock-premium__btn {
+    flex-shrink: 0;
+    scroll-snap-align: start;
+  }
 }
 
 html:not(.dark) .organizers-studio .organizer-studio-dock-premium {
