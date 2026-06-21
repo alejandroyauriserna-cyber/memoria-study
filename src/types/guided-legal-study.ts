@@ -339,6 +339,9 @@ export type GuidedStudySession = {
   difficultConcepts?: ConceptDifficulty[];
   lastSessionEndedAt?: string;
   narrationMemory?: NarrationSessionMemory;
+  activeStudyMs?: number;
+  lastActivityAt?: number;
+  lastTickAt?: number;
 };
 
 export type PdfPageContent = {

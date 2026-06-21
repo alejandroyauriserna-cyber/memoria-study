@@ -9,6 +9,7 @@ export type ReviewAnalyticsState = {
   streak: number;
   lastStudyAt: number;
   studyMinutes: number;
+  activeStudyMs?: number;
   topicStats: Record<string, { correct: number; total: number }>;
   sessionHistory: Array<{ at: number; score: number; total: number }>;
 };

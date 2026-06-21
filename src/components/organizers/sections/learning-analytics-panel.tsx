@@ -2,9 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { BarChart3, Brain, CheckCircle2, Clock, Target, XCircle } from "lucide-react";
+import { useActiveStudyTime } from "@/hooks/use-active-study-time";
+import { normalizeActiveStudyFields } from "@/lib/study/active-study-time";
 
 export type LearningAnalyticsState = {
   startedAt: number;
+  activeStudyMs?: number;
+  lastActivityAt?: number;
+  lastTickAt?: number;
   conceptsStudied: string[];
   questionsCorrect: number;
   questionsWrong: number;
@@ -14,11 +19,28 @@ export type LearningAnalyticsState = {
 
 const STORAGE_PREFIX = "memoria-organizer-analytics:";
 
+function createDefaultState(): LearningAnalyticsState {
+  const now = Date.now();
+  return {
+    startedAt: now,
+    activeStudyMs: 0,
+    lastActivityAt: now,
+    lastTickAt: now,
+    conceptsStudied: [],
+    questionsCorrect: 0,
+    questionsWrong: 0,
+    flashcardMastery: 0,
+    organizerProgress: 0,
+  };
+}
+
 function loadState(key: string): LearningAnalyticsState | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = localStorage.getItem(`${STORAGE_PREFIX}${key}`);
-    return raw ? (JSON.parse(raw) as LearningAnalyticsState) : null;
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as LearningAnalyticsState;
+    return { ...createDefaultState(), ...parsed, ...normalizeActiveStudyFields(parsed) };
   } catch {
     return null;
   }
@@ -31,15 +53,12 @@ function saveState(key: string, state: LearningAnalyticsState) {
 
 export function useLearningAnalytics(organizerKey: string, flashcardMastery = 0) {
   const [state, setState] = useState<LearningAnalyticsState>(() =>
-    loadState(organizerKey) ?? {
-      startedAt: Date.now(),
-      conceptsStudied: [],
-      questionsCorrect: 0,
-      questionsWrong: 0,
-      flashcardMastery: 0,
-      organizerProgress: 0,
-    },
+    loadState(organizerKey) ?? createDefaultState(),
   );
+
+  const { readingMinutes, registerActivity } = useActiveStudyTime(state, setState, {
+    onPersist: (next) => saveState(organizerKey, next),
+  });
 
   useEffect(() => {
     setState((current) => {
@@ -50,11 +69,13 @@ export function useLearningAnalytics(organizerKey: string, flashcardMastery = 0)
   }, [flashcardMastery, organizerKey]);
 
   function recordConcept(label: string) {
+    registerActivity();
     setState((current) => {
       if (current.conceptsStudied.includes(label)) return current;
       const next = {
         ...current,
         conceptsStudied: [...current.conceptsStudied, label],
+        lastActivityAt: Date.now(),
         organizerProgress: computeProgress(
           { ...current, conceptsStudied: [...current.conceptsStudied, label] },
           flashcardMastery,
@@ -66,22 +87,19 @@ export function useLearningAnalytics(organizerKey: string, flashcardMastery = 0)
   }
 
   function recordAnswer(correct: boolean) {
+    registerActivity();
     setState((current) => {
       const next = {
         ...current,
         questionsCorrect: current.questionsCorrect + (correct ? 1 : 0),
         questionsWrong: current.questionsWrong + (correct ? 0 : 1),
+        lastActivityAt: Date.now(),
         organizerProgress: computeProgress(current, flashcardMastery),
       };
       saveState(organizerKey, next);
       return next;
     });
   }
-
-  const readingMinutes = useMemo(
-    () => Math.max(1, Math.round((Date.now() - state.startedAt) / 60_000)),
-    [state.startedAt],
-  );
 
   const mastery = useMemo(() => {
     const total = state.questionsCorrect + state.questionsWrong;
@@ -122,7 +140,7 @@ export function LearningAnalyticsPanel({
   const stats = [
     hasMastery ? { label: "Dominio estimado", value: `${mastery}%`, icon: Target, accent: true } : null,
     hasConcepts ? { label: "Conceptos estudiados", value: String(conceptsStudied), icon: Brain } : null,
-    hasReading ? { label: "Tiempo de lectura", value: `${readingMinutes} min`, icon: Clock } : null,
+    hasReading ? { label: "Tiempo activo", value: `${readingMinutes} min`, icon: Clock } : null,
     hasQuestions && questionsCorrect > 0
       ? { label: "Preguntas acertadas", value: String(questionsCorrect), icon: CheckCircle2 }
       : null,

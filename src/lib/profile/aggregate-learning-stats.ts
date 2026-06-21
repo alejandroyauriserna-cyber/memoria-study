@@ -1,5 +1,7 @@
 import type { LearningAnalyticsState } from "@/components/organizers/sections/learning-analytics-panel";
 import type { ServerLearningStats } from "@/lib/profile/server-learning-stats";
+import { readingMinutesFromActiveMs } from "@/lib/study/active-study-time";
+import { sumClientActiveStudyMinutes } from "@/lib/study/client-active-study-total";
 
 const ANALYTICS_PREFIX = "memoria-organizer-analytics:";
 const PATH_PREFIX = "memoria-study-path:";
@@ -100,6 +102,11 @@ function aggregateFlashcardMastery(): { decks: number; avgMastery: number; maste
   };
 }
 
+function resolveStudyMinutes(clientMinutes: number, cloud?: ServerLearningStats | null): number {
+  const serverMinutes = readingMinutesFromActiveMs(cloud?.activeStudyMs ?? 0);
+  return Math.max(clientMinutes, serverMinutes);
+}
+
 export function mergeServerLearningStats(
   base: AggregatedLearningStats,
   cloud?: ServerLearningStats | null,
@@ -109,7 +116,7 @@ export function mergeServerLearningStats(
   return {
     ...base,
     organizersCreated: Math.max(base.organizersCreated, cloud.organizersCreated),
-    studyMinutes: base.studyMinutes + cloud.pagesUnderstood * 12,
+    studyMinutes: resolveStudyMinutes(base.studyMinutes, cloud),
     conceptsMastered: base.conceptsMastered + Math.floor(cloud.pagesUnderstood * 0.5),
     guidedStudySessions: cloud.guidedStudySessions,
     pagesUnderstood: cloud.pagesUnderstood,
@@ -131,21 +138,17 @@ export function aggregateClientLearningStats(
   const flashcards = aggregateFlashcardMastery();
   const pathNodes = countPathCompletions();
 
-  let studyMinutes = 0;
   let questionsCorrect = 0;
   let questionsWrong = 0;
   const conceptSet = new Set<string>();
 
   for (const state of analytics) {
-    studyMinutes += Math.max(1, Math.round((Date.now() - state.startedAt) / 60_000));
     questionsCorrect += state.questionsCorrect;
     questionsWrong += state.questionsWrong;
     state.conceptsStudied.forEach((c) => conceptSet.add(c));
   }
 
-  studyMinutes += pathNodes * 8;
-  studyMinutes += flashcards.masteredCards * 2;
-
+  const studyMinutes = resolveStudyMinutes(sumClientActiveStudyMinutes(), cloud);
   const questionsAnswered = questionsCorrect + questionsWrong;
   const conceptsMastered = flashcards.masteredCards + Math.floor(conceptSet.size * 0.4);
 
@@ -193,6 +196,7 @@ export function aggregateClientLearningStats(
 }
 
 export function formatStudyHours(minutes: number): string {
+  if (minutes <= 0) return "0 min";
   if (minutes < 60) return `${minutes} min`;
   const hours = Math.floor(minutes / 60);
   const mins = minutes % 60;

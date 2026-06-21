@@ -22,6 +22,7 @@ import "./atlas-ia-panel.css";
 import { env } from "@/lib/env";
 import { PWA_BACKGROUND_COLOR, PWA_THEME_COLOR } from "@/lib/pwa/constants";
 import { PwaProvider } from "@/components/pwa/pwa-provider";
+import { ActiveStudyTimeBootstrap } from "@/components/study/active-study-time-bootstrap";
 
 const appUrl = env.appUrl.replace(/\/$/, "");
 
@@ -103,6 +104,7 @@ export default function RootLayout({
       </head>
       <body className="flex min-h-full flex-col bg-background text-foreground">
         <PwaProvider />
+        <ActiveStudyTimeBootstrap />
         {children}
       </body>
     </html>

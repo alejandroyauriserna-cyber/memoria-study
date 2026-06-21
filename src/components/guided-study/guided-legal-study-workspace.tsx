@@ -20,6 +20,7 @@ import {
   guidedStudyClientTimeoutSeconds,
 } from "@/lib/guided-study/timeouts";
 import { parseJsonResponse } from "@/lib/api/parse-json-response";
+import { useActiveStudyTime } from "@/hooks/use-active-study-time";
 import { filterAnalysisForExamMode } from "@/lib/guided-study/legal-tutor";
 import { ensureActiveLearning } from "@/lib/guided-study/ensure-active-learning";
 import {
@@ -63,6 +64,7 @@ import {
   endStudySession,
   saveGuidedStudySession,
 } from "@/lib/guided-study/progress";
+import { persistGuidedStudySession } from "@/lib/guided-study/progress-sync";
 import {
   computeMasteryPercent,
   getPageLearningStatus,
@@ -154,6 +156,47 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
     () => buildNarrationMemoryPrompt(getNarrationMemory(studySession)),
     [studySession],
   );
+
+  const activeStudySession = useMemo<GuidedStudySession>(
+    () =>
+      studySession ?? {
+        materialId,
+        currentPage,
+        understoodPages: [],
+        lastUpdated: new Date().toISOString(),
+        activeStudyMs: 0,
+        lastActivityAt: Date.now(),
+        lastTickAt: Date.now(),
+      },
+    [studySession, materialId, currentPage],
+  );
+
+  useActiveStudyTime(activeStudySession, (updater) => {
+    setStudySession((prev) => {
+      const base =
+        prev ??
+        ({
+          materialId,
+          currentPage,
+          understoodPages: [],
+          lastUpdated: new Date().toISOString(),
+          activeStudyMs: 0,
+          lastActivityAt: Date.now(),
+          lastTickAt: Date.now(),
+        } satisfies GuidedStudySession);
+      const next = typeof updater === "function" ? updater(base) : updater;
+      saveGuidedStudySession(next);
+      void persistGuidedStudySession(next);
+      return next;
+    });
+  }, {
+    enabled: phase === "ready" && Boolean(studySession),
+    onPersist: (session) => {
+      saveGuidedStudySession(session);
+      void persistGuidedStudySession(session);
+    },
+  });
+
   const initProgress = useLoadingProgress(phase === "loading", "guidedStudyInit", {
     stageIntervalMs: 5500,
     tickMs: 800,

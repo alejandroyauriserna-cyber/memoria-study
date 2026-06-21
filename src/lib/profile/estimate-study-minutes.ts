@@ -1,11 +1,7 @@
 import type { ServerLearningStats } from "@/lib/profile/server-learning-stats";
+import { readingMinutesFromActiveMs } from "@/lib/study/active-study-time";
 
-/** Estimación conservadora a partir de actividad real en Supabase. */
+/** Horas activas sincronizadas en Supabase (tiempo real de estudio). */
 export function estimateStudyMinutesFromServer(stats: ServerLearningStats): number {
-  return (
-    stats.pagesUnderstood * 8 +
-    stats.materialsOpened * 5 +
-    stats.guidedStudySessions * 12 +
-    stats.organizersCreated * 15
-  );
+  return readingMinutesFromActiveMs(stats.activeStudyMs ?? 0);
 }

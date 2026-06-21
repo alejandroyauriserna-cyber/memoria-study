@@ -49,7 +49,7 @@ export function ProfileHero({
       href: null as string | null,
     },
     {
-      label: "Horas estudiadas",
+      label: "Horas activas",
       value: stats ? formatStudyHours(stats.studyMinutes) : "—",
       icon: Clock,
       href: null,

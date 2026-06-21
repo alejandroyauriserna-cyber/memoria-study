@@ -156,7 +156,7 @@ export function buildLearningAchievements(stats: AggregatedLearningStats): Learn
     {
       id: "study-marathon",
       label: "Maratón de estudio",
-      description: "Acumulaste 5 horas de estudio activo.",
+      description: "Acumula 5 horas de estudio activo (pestaña abierta e interactuando).",
       emoji: "⏱️",
       earned: stats.studyMinutes >= 300,
       progress: Math.min(100, Math.round((stats.studyMinutes / 300) * 100)),

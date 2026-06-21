@@ -31,6 +31,7 @@ import {
   aggregateClientLearningStats,
   type AggregatedLearningStats,
 } from "@/lib/profile/aggregate-learning-stats";
+import { syncActiveStudyTimeToServer } from "@/lib/study/sync-active-study-time";
 import {
   buildLearningAchievements,
   buildLearningProfile,
@@ -121,7 +122,21 @@ export function LearningHub({
   const [newGoal, setNewGoal] = useState("");
 
   useEffect(() => {
-    setStats(aggregateClientLearningStats(organizersCount, serverStats));
+    const refresh = () => {
+      void syncActiveStudyTimeToServer().finally(() => {
+        setStats(aggregateClientLearningStats(organizersCount, serverStats));
+      });
+    };
+    refresh();
+
+    const onFocus = () => refresh();
+    window.addEventListener("focus", onFocus);
+    const interval = window.setInterval(refresh, 60_000);
+
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      window.clearInterval(interval);
+    };
   }, [organizersCount, serverStats]);
 
   useEffect(() => {

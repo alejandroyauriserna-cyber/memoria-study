@@ -11,6 +11,7 @@ export type ServerLearningStats = {
   weeklyPagesUnderstood: number;
   weeklyMaterialsOpened: number;
   weeklyOrganizers: number;
+  activeStudyMs: number;
 };
 
 function distinctStreakDays(dates: string[]): number {
@@ -54,6 +55,7 @@ const EMPTY_STATS: ServerLearningStats = {
   weeklyPagesUnderstood: 0,
   weeklyMaterialsOpened: 0,
   weeklyOrganizers: 0,
+  activeStudyMs: 0,
 };
 
 export async function fetchServerLearningStats(
@@ -87,7 +89,7 @@ export async function fetchServerLearningStats(
       .eq("user_id", userId),
     admin
       .from("user_profiles")
-      .select("reputation_points")
+      .select("reputation_points,active_study_ms")
       .eq("user_id", userId)
       .maybeSingle(),
     admin
@@ -125,6 +127,7 @@ export async function fetchServerLearningStats(
     organizersCreated: organizersCreated ?? 0,
     studyStreakDays: distinctStreakDays(activityDates),
     reputationPoints: profileRow?.reputation_points ?? 0,
+    activeStudyMs: Number(profileRow?.active_study_ms ?? 0),
     weeklyPagesUnderstood,
     weeklyMaterialsOpened: recentHistory?.length ?? 0,
     weeklyOrganizers: recentOrganizers?.length ?? 0,
