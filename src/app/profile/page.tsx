@@ -47,7 +47,7 @@ export default async function ProfilePage() {
       fetchServerLearningStats(user.id),
       admin
         .from("user_profiles")
-        .select("full_name, current_cycle_number, current_cycle_label, academic_context")
+        .select("full_name, current_cycle_number, current_cycle_label, academic_context, show_in_study_ranking")
         .eq("user_id", user.id)
         .maybeSingle(),
       admin
@@ -108,6 +108,7 @@ export default async function ProfilePage() {
               ? academicContext.theme
               : undefined,
           }}
+          showInStudyRanking={profile?.show_in_study_ranking ?? true}
         />
       </section>
     </AppShell>

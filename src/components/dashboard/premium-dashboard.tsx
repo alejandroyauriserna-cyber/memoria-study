@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { DashboardOnboarding } from "@/components/dashboard/dashboard-onboarding";
 import { PwaInstallHint } from "@/components/dashboard/pwa-install-hint";
+import { StudyHoursLeaderboard } from "@/components/profile/study-hours-leaderboard";
 import { useTimeGreeting } from "@/lib/home/use-time-greeting";
 import { UNT_DERECHO } from "@/lib/academic/unt-derecho";
 import type {
@@ -62,6 +63,7 @@ function fade(index: number) {
 export function PremiumDashboard({
   profileName,
   currentCycle,
+  currentCycleNumber,
   materialsThisWeek,
   studyHoursLabel,
   totalOrganizers,
@@ -217,8 +219,20 @@ export function PremiumDashboard({
           </Link>
         </motion.div>
 
+        {/* Ranking horas activas */}
+        <motion.div {...fade(5)}>
+          <div className="dash-home__glass dash-home__ranking">
+            <StudyHoursLeaderboard
+              currentCycleNumber={currentCycleNumber}
+              currentCycleLabel={currentCycle}
+              showInStudyRanking
+              compact
+            />
+          </div>
+        </motion.div>
+
         {/* IA proactiva — compacta */}
-        <motion.section className="dash-home__glass dash-home__insight" {...fade(5)} aria-label="Sugerencia IA">
+        <motion.section className="dash-home__glass dash-home__insight" {...fade(6)} aria-label="Sugerencia IA">
           <p className="dash-home__panel-label">Sugerencia IA</p>
           {insight ? (
             <>
@@ -249,7 +263,7 @@ export function PremiumDashboard({
         </motion.section>
 
         {/* 4. Actividad reciente — timeline estilo landing */}
-        <motion.section className="dash-home__glass dash-home__recent" {...fade(6)} aria-label="Actividad reciente">
+        <motion.section className="dash-home__glass dash-home__recent" {...fade(7)} aria-label="Actividad reciente">
           <div className="dash-home__recent-head">
             <p className="dash-home__panel-label">Actividad reciente</p>
             <Link href="/library" className="dash-home__recent-link">
@@ -286,7 +300,7 @@ export function PremiumDashboard({
         </motion.section>
       </div>
 
-      <motion.nav className="dash-home__chips" {...fade(7)} aria-label="Accesos rápidos">
+      <motion.nav className="dash-home__chips" {...fade(8)} aria-label="Accesos rápidos">
         {QUICK_LINKS.map((item) => (
           <Link key={item.href} href={item.href} className="dash-home__chip">
             <item.icon size={12} />

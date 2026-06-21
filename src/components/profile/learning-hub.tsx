@@ -25,6 +25,7 @@ import { ProfileAccountSection } from "@/components/profile/profile-account-sect
 import { ProfileForm } from "@/components/profile/profile-form";
 import { ProfileLegalPanel } from "@/components/profile/profile-legal-panel";
 import { ProfileOnboarding } from "@/components/profile/profile-onboarding";
+import { StudyHoursLeaderboard } from "@/components/profile/study-hours-leaderboard";
 import { LoadingState } from "@/components/ui/loading-state";
 import { useLoadingProgress } from "@/hooks/use-loading-progress";
 import {
@@ -63,6 +64,7 @@ type Props = {
   topCourses: CourseStudyCount[];
   favoritesCount?: number;
   initialSettings?: Partial<ProfileStudySettings>;
+  showInStudyRanking?: boolean;
 };
 
 const QUICK_GOAL_TEMPLATES = [
@@ -108,6 +110,7 @@ export function LearningHub({
   topCourses,
   favoritesCount = 0,
   initialSettings,
+  showInStudyRanking: initialShowInRanking = true,
 }: Props) {
   const [settings, setSettings] = useState<ProfileStudySettings>(() => ({
     ...loadProfileStudySettings(),
@@ -120,6 +123,7 @@ export function LearningHub({
   const [stats, setStats] = useState<AggregatedLearningStats | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [newGoal, setNewGoal] = useState("");
+  const [showInStudyRanking, setShowInStudyRanking] = useState(initialShowInRanking);
 
   useEffect(() => {
     const refresh = () => {
@@ -194,6 +198,15 @@ export function LearningHub({
     applyProfileTheme(themeKey);
   }
 
+  function toggleStudyRanking(value: boolean) {
+    setShowInStudyRanking(value);
+    fetch("/api/profile/study-ranking", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ showInStudyRanking: value }),
+    }).catch(() => undefined);
+  }
+
   function addGoal() {
     const label = newGoal.trim();
     if (!label) return;
@@ -257,6 +270,14 @@ export function LearningHub({
           </div>
         </section>
       ) : null}
+
+      <StudyHoursLeaderboard
+        currentCycleNumber={currentCycleNumber}
+        currentCycleLabel={currentCycleLabel}
+        showInStudyRanking={showInStudyRanking}
+        onToggleRanking={toggleStudyRanking}
+        accent={theme.accent}
+      />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <ProfileAccountSection email={email} fullName={fullName} />

@@ -31,6 +31,15 @@ export function formatProfileFirstName(raw: string | null | undefined): string {
   return sanitizeProfileDisplayName(raw).split(/\s+/)[0] ?? "Estudiante";
 }
 
+/** Nombre para ranking: primer nombre + inicial del apellido (p. ej. "María G."). */
+export function formatRankingDisplayName(raw: string | null | undefined): string {
+  const parts = sanitizeProfileDisplayName(raw).split(/\s+/).filter(Boolean);
+  if (!parts.length) return "Estudiante";
+  if (parts.length === 1) return parts[0]!;
+  const lastInitial = parts[parts.length - 1]![0]?.toUpperCase() ?? "";
+  return lastInitial ? `${parts[0]} ${lastInitial}.` : parts[0]!;
+}
+
 export function validateSignupFullName(name: string): string | null {
   const trimmed = name.trim();
   if (trimmed.length < 3) return "Escribe tu nombre y apellidos.";

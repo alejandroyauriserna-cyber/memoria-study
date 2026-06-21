@@ -593,3 +593,92 @@ html:not(.dark) .profile-goal-template:hover {
   background: color-mix(in srgb, var(--accent) 8%, #fff);
 }
 
+.study-ranking__tabs {
+  display: inline-flex;
+  gap: 0.25rem;
+  padding: 0.2rem;
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.study-ranking__tabs button {
+  border: none;
+  border-radius: 0.55rem;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.study-ranking__tabs button.is-active {
+  color: var(--foreground);
+  background: rgba(0, 255, 213, 0.12);
+}
+
+.study-ranking__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.study-ranking__row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.85rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.study-ranking__row.is-you {
+  background: rgba(0, 255, 213, 0.06);
+}
+
+.study-ranking__rank {
+  display: flex;
+  width: 1.25rem;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.study-ranking__you {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.85rem;
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+}
+
+.study-ranking--compact .study-ranking__row {
+  padding: 0.5rem 0.6rem;
+}
+
+html:not(.dark) .study-ranking__tabs {
+  background: rgba(15, 23, 42, 0.04);
+  border-color: color-mix(in srgb, var(--border) 75%, transparent);
+}
+
+html:not(.dark) .study-ranking__tabs button.is-active {
+  background: color-mix(in srgb, var(--accent) 12%, #fff);
+}
+
+html:not(.dark) .study-ranking__row {
+  background: rgba(255, 255, 255, 0.72);
+  border-color: color-mix(in srgb, var(--border) 75%, transparent);
+}
+
+html:not(.dark) .study-ranking__row.is-you {
+  background: color-mix(in srgb, var(--accent) 8%, #fff);
+}
+
+

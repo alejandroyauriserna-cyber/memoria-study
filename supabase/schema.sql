@@ -94,6 +94,10 @@ alter table public.user_profiles add column if not exists reputation_points inte
 alter table public.user_profiles add column if not exists reputation_level text;
 alter table public.user_profiles add column if not exists reputation_progress integer not null default 0;
 alter table public.user_profiles add column if not exists badges jsonb default '[]'::jsonb;
+alter table public.user_profiles add column if not exists active_study_ms bigint not null default 0;
+alter table public.user_profiles add column if not exists active_study_ms_week bigint not null default 0;
+alter table public.user_profiles add column if not exists active_study_week_key text;
+alter table public.user_profiles add column if not exists show_in_study_ranking boolean not null default true;
 
 drop trigger if exists user_profiles_set_updated_at on public.user_profiles;
 create trigger user_profiles_set_updated_at

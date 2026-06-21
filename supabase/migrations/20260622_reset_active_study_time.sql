@@ -1,3 +1,4 @@
+-- DEPRECATED: usar 20260623_user_profiles_study_ranking.sql (crea user_profiles si no existe).
 -- Reinicio justo de horas de estudio: solo tiempo activo real a partir de esta migración.
 
 alter table public.user_profiles
