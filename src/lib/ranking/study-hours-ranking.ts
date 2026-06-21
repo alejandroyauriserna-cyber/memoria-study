@@ -16,11 +16,15 @@ export type StudyRankingResponse = {
   period: StudyRankingPeriod;
   cycleFilter: number | null;
   entries: StudyRankingEntry[];
+  leaderMs: number;
   currentUser: {
     rank: number | null;
     activeStudyMs: number;
     showInRanking: boolean;
     meetsMinimum: boolean;
+    nextRivalName: string | null;
+    msToNextRival: number | null;
+    msToTop10: number | null;
   };
 };
 

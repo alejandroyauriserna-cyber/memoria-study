@@ -276,7 +276,6 @@ export function LearningHub({
         currentCycleLabel={currentCycleLabel}
         showInStudyRanking={showInStudyRanking}
         onToggleRanking={toggleStudyRanking}
-        accent={theme.accent}
       />
 
       <div className="grid gap-6 lg:grid-cols-2">

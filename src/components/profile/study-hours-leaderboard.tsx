@@ -1,11 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Crown, Medal, Trophy } from "lucide-react";
-import { formatStudyHours } from "@/lib/profile/aggregate-learning-stats";
-import { readingMinutesFromActiveMs } from "@/lib/study/active-study-time";
+import { Sparkles, Trophy } from "lucide-react";
 import type { StudyRankingPeriod, StudyRankingResponse } from "@/lib/ranking/study-hours-ranking";
+import { STUDY_RANKING_MIN_MS } from "@/lib/ranking/study-hours-ranking";
+import {
+  formatMsGap,
+  formatRankingHours,
+  getStudyLeague,
+  progressVsLeader,
+  rankMedal,
+} from "@/lib/ranking/study-league";
 
 type Props = {
   currentCycleNumber?: number | null;
@@ -13,18 +19,25 @@ type Props = {
   showInStudyRanking: boolean;
   onToggleRanking?: (value: boolean) => void;
   compact?: boolean;
-  accent?: string;
 };
 
-function rankIcon(rank: number) {
-  if (rank === 1) return <Crown size={16} className="text-amber-300" />;
-  if (rank === 2) return <Medal size={16} className="text-slate-300" />;
-  if (rank === 3) return <Medal size={16} className="text-amber-600" />;
-  return <span className="w-4 text-center text-xs font-bold text-muted-foreground">{rank}</span>;
-}
+function buildMotivationMessage(data: StudyRankingResponse): string | null {
+  const { currentUser } = data;
+  if (!currentUser.showInRanking || !currentUser.meetsMinimum) return null;
 
-function formatMs(ms: number): string {
-  return formatStudyHours(readingMinutesFromActiveMs(ms));
+  if (currentUser.msToNextRival && currentUser.nextRivalName) {
+    return `Te faltan ${formatMsGap(currentUser.msToNextRival)} para superar a ${currentUser.nextRivalName}.`;
+  }
+
+  if (currentUser.rank && currentUser.rank > 10 && currentUser.msToTop10) {
+    return `A ${formatMsGap(currentUser.msToTop10)} del Top 10.`;
+  }
+
+  if (currentUser.rank === 1) {
+    return "Lideras el ranking. Defiende tu puesto.";
+  }
+
+  return null;
 }
 
 export function StudyHoursLeaderboard({
@@ -33,7 +46,6 @@ export function StudyHoursLeaderboard({
   showInStudyRanking,
   onToggleRanking,
   compact = false,
-  accent = "#00FFD5",
 }: Props) {
   const [period, setPeriod] = useState<StudyRankingPeriod>("week");
   const [scope, setScope] = useState<"cycle" | "all">(
@@ -68,38 +80,40 @@ export function StudyHoursLeaderboard({
   }, [load]);
 
   const userInList = data?.entries.some((entry) => entry.isCurrentUser) ?? false;
+  const motivation = useMemo(() => (data ? buildMotivationMessage(data) : null), [data]);
+  const leaderMs = data?.leaderMs ?? 0;
 
   return (
     <section
       id="ranking"
-      className={compact ? "study-ranking study-ranking--compact" : "profile-panel study-ranking"}
+      className={`study-ranking${compact ? " study-ranking--compact" : ""}`}
     >
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <header className="study-ranking__header">
         <div>
-          <p className={compact ? "dash-home__panel-label" : "profile-kicker"}>
-            <Trophy size={13} />
+          <h2 className="study-ranking__title">
+            <Trophy size={compact ? 16 : 18} aria-hidden />
             Top horas activas
-          </p>
+          </h2>
           {!compact ? (
-            <p className="mt-1 text-xs text-muted-foreground">
-              Solo cuenta tiempo con la pestaña visible e interactuando. Mínimo 30 min para aparecer.
+            <p className="study-ranking__subtitle">
+              Solo cuenta tiempo con la pestaña visible e interactuando. Mínimo 30 min para
+              aparecer.
             </p>
           ) : null}
         </div>
         {!compact && onToggleRanking ? (
-          <label className="flex cursor-pointer items-center gap-2 text-xs profile-text">
+          <label className="study-ranking__opt-in">
             <input
               type="checkbox"
               checked={showInStudyRanking}
               onChange={(e) => onToggleRanking(e.target.checked)}
-              className="rounded border-white/20 bg-transparent"
             />
             Aparecer en ranking
           </label>
         ) : null}
-      </div>
+      </header>
 
-      <div className="mt-4 flex flex-wrap gap-2">
+      <div className="study-ranking__filters">
         <div className="study-ranking__tabs">
           <button
             type="button"
@@ -137,69 +151,107 @@ export function StudyHoursLeaderboard({
       </div>
 
       {loading ? (
-        <p className="mt-4 text-sm text-muted-foreground">Cargando ranking…</p>
+        <p className="study-ranking__empty">Cargando ranking…</p>
       ) : error ? (
-        <p className="mt-4 text-sm text-red-300">{error}</p>
+        <p className="study-ranking__error">{error}</p>
       ) : !data?.entries.length ? (
-        <p className="mt-4 text-sm text-muted-foreground">
+        <p className="study-ranking__empty">
           Aún no hay estudiantes con 30+ min de estudio activo. ¡Sé el primero!
         </p>
       ) : (
-        <ol className={`study-ranking__list ${compact ? "mt-3" : "mt-4"}`}>
-          {data.entries.map((entry) => (
-            <li
-              key={entry.userId}
-              className={`study-ranking__row ${entry.isCurrentUser ? "is-you" : ""}`}
-              style={
-                entry.isCurrentUser
-                  ? { borderColor: `${accent}44`, boxShadow: `inset 0 0 0 1px ${accent}22` }
-                  : undefined
-              }
-            >
-              <span className="study-ranking__rank">{rankIcon(entry.rank)}</span>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold profile-text-strong">
-                  {entry.displayName}
-                  {entry.isCurrentUser ? (
-                    <span className="ml-1.5 text-[10px] font-normal text-accent">(tú)</span>
+        <ol className="study-ranking__list">
+          {data.entries.map((entry) => {
+            const league = getStudyLeague(entry.activeStudyMs);
+            const medal = rankMedal(entry.rank);
+            const progress = progressVsLeader(entry.activeStudyMs, leaderMs);
+
+            return (
+              <li
+                key={entry.userId}
+                className={`study-ranking__row${entry.isCurrentUser ? " is-you" : ""}`}
+              >
+                <span className="study-ranking__rank" aria-label={`Puesto ${entry.rank}`}>
+                  {medal ?? entry.rank}
+                </span>
+                <div className="study-ranking__body">
+                  <div className="study-ranking__meta">
+                    <p className="study-ranking__name">
+                      {entry.displayName}
+                      {entry.isCurrentUser ? (
+                        <span className="study-ranking__you-tag">✨ Tú</span>
+                      ) : null}
+                    </p>
+                    <span
+                      className={`study-ranking__league study-ranking__league--${league.tier}`}
+                    >
+                      {league.label}
+                    </span>
+                  </div>
+                  {entry.cycleLabel && !compact ? (
+                    <p className="study-ranking__cycle">{entry.cycleLabel}</p>
                   ) : null}
-                </p>
-                {entry.cycleLabel ? (
-                  <p className="text-[10px] text-muted-foreground">{entry.cycleLabel}</p>
-                ) : null}
-              </div>
-              <span className="text-sm font-bold tabular-nums" style={{ color: accent }}>
-                {formatMs(entry.activeStudyMs)}
-              </span>
-            </li>
-          ))}
+                  <div className="study-ranking__hours-row">
+                    <span className="study-ranking__hours">
+                      {formatRankingHours(entry.activeStudyMs)}
+                    </span>
+                  </div>
+                  {!compact ? (
+                    <div
+                      className="study-ranking__progress"
+                      role="progressbar"
+                      aria-valuenow={progress}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-label={`${progress}% del líder`}
+                    >
+                      <div
+                        className="study-ranking__progress-fill"
+                        style={{ width: `${progress}%` }}
+                      />
+                    </div>
+                  ) : null}
+                </div>
+              </li>
+            );
+          })}
         </ol>
       )}
 
       {data && !userInList && data.currentUser.rank ? (
-        <div className="study-ranking__you mt-3">
-          <span className="text-xs text-muted-foreground">Tu posición</span>
-          <span className="text-sm font-semibold profile-text-strong">
-            #{data.currentUser.rank} · {formatMs(data.currentUser.activeStudyMs)}
-          </span>
+        <div className="study-ranking__you-card">
+          <div className="study-ranking__you-head">
+            <span className="study-ranking__you-tag">
+              <Sparkles size={12} aria-hidden />
+              Tú
+            </span>
+            <span className="study-ranking__you-rank">Puesto #{data.currentUser.rank}</span>
+          </div>
+          <p className="study-ranking__you-hours">
+            {formatRankingHours(data.currentUser.activeStudyMs)}
+          </p>
+          {motivation ? <p className="study-ranking__motivation">{motivation}</p> : null}
         </div>
       ) : null}
 
+      {data && userInList && motivation ? (
+        <p className="study-ranking__motivation">{motivation}</p>
+      ) : null}
+
       {data && !data.currentUser.showInRanking ? (
-        <p className="mt-3 text-xs text-muted-foreground">
+        <p className="study-ranking__hint">
           Estás oculto del ranking. Activa &quot;Aparecer en ranking&quot; para competir.
         </p>
       ) : null}
 
       {data && data.currentUser.showInRanking && !data.currentUser.meetsMinimum ? (
-        <p className="mt-3 text-xs text-muted-foreground">
-          Te faltan {formatMs(Math.max(0, 30 * 60 * 1000 - data.currentUser.activeStudyMs))} para
-          entrar al top.
+        <p className="study-ranking__hint">
+          Te faltan {formatMsGap(Math.max(0, STUDY_RANKING_MIN_MS - data.currentUser.activeStudyMs))}{" "}
+          para entrar al top.
         </p>
       ) : null}
 
       {compact ? (
-        <Link href="/profile#ranking" className="mt-3 inline-flex text-xs font-semibold text-accent">
+        <Link href="/profile#ranking" className="study-ranking__more">
           Ver ranking completo →
         </Link>
       ) : null}

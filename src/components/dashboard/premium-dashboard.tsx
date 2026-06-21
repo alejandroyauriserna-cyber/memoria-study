@@ -221,14 +221,12 @@ export function PremiumDashboard({
 
         {/* Ranking horas activas */}
         <motion.div {...fade(5)}>
-          <div className="dash-home__glass dash-home__ranking">
-            <StudyHoursLeaderboard
-              currentCycleNumber={currentCycleNumber}
-              currentCycleLabel={currentCycle}
-              showInStudyRanking
-              compact
-            />
-          </div>
+          <StudyHoursLeaderboard
+            currentCycleNumber={currentCycleNumber}
+            currentCycleLabel={currentCycle}
+            showInStudyRanking
+            compact
+          />
         </motion.div>
 
         {/* IA proactiva — compacta */}

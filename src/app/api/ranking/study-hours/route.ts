@@ -111,6 +111,10 @@ export async function GET(request: Request) {
     const meetsMinimum = currentMs >= STUDY_RANKING_MIN_MS;
 
     let userRank: number | null = null;
+    let nextRivalName: string | null = null;
+    let msToNextRival: number | null = null;
+    let msToTop10: number | null = null;
+
     if (showInRanking && meetsMinimum) {
       let rankQuery = admin
         .from("user_profiles")
@@ -125,17 +129,66 @@ export async function GET(request: Request) {
       const { count, error: rankError } = await rankQuery;
       if (rankError) throw rankError;
       userRank = (count ?? 0) + 1;
+
+      let rivalQuery = admin
+        .from("user_profiles")
+        .select(`full_name, ${msColumn}`)
+        .eq("show_in_study_ranking", true)
+        .gt(msColumn, currentMs)
+        .order(msColumn, { ascending: true })
+        .limit(1);
+
+      if (cycle !== undefined) {
+        rivalQuery = rivalQuery.eq("current_cycle_number", cycle);
+      }
+
+      const { data: rivalRow, error: rivalError } = await rivalQuery.maybeSingle();
+      if (rivalError) throw rivalError;
+
+      if (rivalRow) {
+        const rivalMs = Number((rivalRow as Record<string, unknown>)[msColumn] ?? 0);
+        nextRivalName = formatRankingDisplayName(rivalRow.full_name as string | null);
+        msToNextRival = Math.max(0, rivalMs - currentMs + 1);
+      }
+
+      if (userRank > 10) {
+        let top10Query = admin
+          .from("user_profiles")
+          .select(msColumn)
+          .eq("show_in_study_ranking", true)
+          .gte(msColumn, STUDY_RANKING_MIN_MS)
+          .order(msColumn, { ascending: false })
+          .range(9, 9);
+
+        if (cycle !== undefined) {
+          top10Query = top10Query.eq("current_cycle_number", cycle);
+        }
+
+        const { data: tenthRow, error: tenthError } = await top10Query.maybeSingle();
+        if (tenthError) throw tenthError;
+
+        if (tenthRow) {
+          const tenthMs = Number((tenthRow as Record<string, unknown>)[msColumn] ?? 0);
+          msToTop10 = Math.max(0, tenthMs - currentMs + 1);
+        }
+      }
     }
+
+    const leaderMs = entries[0]?.activeStudyMs ?? 0;
 
     return NextResponse.json({
       period,
       cycleFilter: cycle ?? null,
       entries,
+      leaderMs,
       currentUser: {
         rank: userRank,
         activeStudyMs: currentMs,
         showInRanking,
         meetsMinimum,
+        nextRivalName,
+        msToNextRival,
+        msToTop10,
       },
     });
   } catch (caught) {
