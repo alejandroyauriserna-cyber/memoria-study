@@ -76,6 +76,7 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
   const [useLink, setUseLink] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
+  const [preparing, setPreparing] = useState(false);
   const [analyzed, setAnalyzed] = useState(false);
   const [aiConfidence, setAiConfidence] = useState<JurisprudenceFieldConfidence | null>(null);
   const [aiFilled, setAiFilled] = useState<AiFilledFields>({});
@@ -97,6 +98,7 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
     setPdfUrl("");
     setIsDragging(false);
     setAnalyzed(false);
+    setPreparing(false);
     setAiConfidence(null);
     setAiFilled({});
     setOverallConfidence(null);
@@ -229,11 +231,24 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
       setAiConfidence(null);
       setAiFilled({});
       setOverallConfidence(null);
-      setAnalyzeMessage("Preparando PDF…");
+      setFile(next);
+      setPreparing(true);
+      setAnalyzeMessage("Recibimos tu PDF. Preparando…");
 
-      const prepared = await preparePdfForUpload(next, { onProgress: setAnalyzeMessage });
-      setFile(prepared.file);
-      await analyzeSource(prepared.file);
+      let workingFile = next;
+      try {
+        const prepared = await preparePdfForUpload(next, { onProgress: setAnalyzeMessage });
+        workingFile = prepared.file;
+        setFile(prepared.file);
+      } catch (caught) {
+        setError(caught instanceof Error ? caught.message : "No se pudo preparar el PDF.");
+        setAnalyzeMessage("");
+        setPreparing(false);
+        return;
+      }
+
+      setPreparing(false);
+      await analyzeSource(workingFile);
     },
     [analyzeSource],
   );
@@ -290,6 +305,13 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
 
   const handleFileChange = (next: File | null) => {
     void acceptPdfFile(next);
+    if (fileRef.current) fileRef.current.value = "";
+  };
+
+  const openFilePicker = () => {
+    if (!fileRef.current) return;
+    fileRef.current.value = "";
+    fileRef.current.click();
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -351,7 +373,7 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
     }
   };
 
-  const canSubmit = analyzed && !analyzing && (useLink ? Boolean(pdfUrl.trim()) : Boolean(file));
+  const canSubmit = analyzed && !analyzing && !preparing && (useLink ? Boolean(pdfUrl.trim()) : Boolean(file));
 
   if (!open) return null;
 
@@ -428,11 +450,11 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
                   role="button"
                   tabIndex={0}
                   className={`bj-contribute-upload${isDragging ? " is-dragging" : ""}${file ? " has-file" : ""}`}
-                  onClick={() => fileRef.current?.click()}
+                  onClick={openFilePicker}
                   onKeyDown={(event) => {
                     if (event.key === "Enter" || event.key === " ") {
                       event.preventDefault();
-                      fileRef.current?.click();
+                      openFilePicker();
                     }
                   }}
                   onDragEnter={onDragEnter}
@@ -488,17 +510,19 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
             )}
           </div>
 
-          {analyzing ? (
+          {preparing || analyzing ? (
             <div className="bj-contribute-analyze-status" role="status">
               <Loader2 size={18} className="animate-spin" />
               <div>
-                <p className="bj-contribute-analyze-status__title">Analizando documento</p>
+                <p className="bj-contribute-analyze-status__title">
+                  {preparing ? "Preparando PDF" : "Analizando documento"}
+                </p>
                 <p className="bj-contribute-analyze-status__hint">{analyzeMessage || "Procesando…"}</p>
               </div>
             </div>
           ) : null}
 
-          {!analyzing && analyzed && overallConfidence !== null ? (
+          {!preparing && !analyzing && analyzed && overallConfidence !== null ? (
             <div
               className={`bj-contribute-ai-summary ${overallConfidence >= 0.85 ? "is-high" : overallConfidence >= 0.7 ? "is-mid" : "is-low"}`}
             >
@@ -516,7 +540,7 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
           ) : null}
           </section>
 
-          <fieldset className="bj-contribute-section bj-contribute-grid" disabled={!analyzed || analyzing}>
+          <fieldset className="bj-contribute-section bj-contribute-grid" disabled={!analyzed || analyzing || preparing}>
             <legend className="sr-only">Metadatos del aporte</legend>
 
             <div className="bj-contribute-section__head bj-contribute-section__head--grid">
@@ -642,7 +666,7 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
             </label>
           </fieldset>
 
-          {!analyzed && !analyzing ? (
+          {!analyzed && !analyzing && !preparing ? (
             <p className="bj-contribute-hint bj-contribute-hint--section">
               Primero sube el PDF (o analiza un enlace). La IA completará el formulario por ti.
             </p>

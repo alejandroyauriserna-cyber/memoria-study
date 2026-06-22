@@ -55,22 +55,32 @@ async function structuralCompress(bytes: ArrayBuffer): Promise<Uint8Array | null
 }
 
 async function analyzeProfile(file: File): Promise<PdfDocumentProfile> {
-  const { pdf } = await loadPdfJsDocument(file);
-  const pageCount = pdf.numPages;
-  const sampleCount = Math.min(pageCount, PDF_PROFILE_SAMPLE_PAGES);
-  let sampledTextChars = 0;
+  try {
+    const { pdf } = await loadPdfJsDocument(file);
+    const pageCount = pdf.numPages;
+    const sampleCount = Math.min(pageCount, PDF_PROFILE_SAMPLE_PAGES);
+    let sampledTextChars = 0;
 
-  for (let page = 1; page <= sampleCount; page += 1) {
-    const text = await readPdfPageText(pdf, page);
-    sampledTextChars += text.length;
+    for (let page = 1; page <= sampleCount; page += 1) {
+      const text = await readPdfPageText(pdf, page);
+      sampledTextChars += text.length;
+    }
+
+    return classifyPdfDocumentProfile({
+      pageCount,
+      sampledPages: sampleCount,
+      sampledTextChars,
+      fileBytes: file.size,
+    });
+  } catch (error) {
+    console.warn("[compress-pdf-client] profile analysis failed", error);
+    return classifyPdfDocumentProfile({
+      pageCount: 1,
+      sampledPages: 1,
+      sampledTextChars: 0,
+      fileBytes: file.size,
+    });
   }
-
-  return classifyPdfDocumentProfile({
-    pageCount,
-    sampledPages: sampleCount,
-    sampledTextChars,
-    fileBytes: file.size,
-  });
 }
 
 async function compressImageHeavyPdf(input: {
@@ -179,10 +189,18 @@ export async function compressPdfForUpload(
   if (shouldUseServerCompression(profile.pageCount, originalBytes, profile.kind)) {
     try {
       options?.onProgress?.("PDF grande — comprimiendo en servidor (Ghostscript)…");
-      const serverFile = await compressPdfViaServer(file, {
-        preset: presetId,
-        onProgress: options?.onProgress,
-      });
+      const serverFile = await Promise.race([
+        compressPdfViaServer(file, {
+          preset: presetId,
+          onProgress: options?.onProgress,
+        }),
+        new Promise<File>((_, reject) => {
+          window.setTimeout(
+            () => reject(new Error("Tiempo de espera agotado en compresión del servidor.")),
+            120_000,
+          );
+        }),
+      ]);
 
       if (serverFile.size < originalBytes) {
         options?.onProgress?.(

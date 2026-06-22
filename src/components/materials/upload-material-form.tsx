@@ -95,9 +95,17 @@ export function UploadMaterialForm() {
       let workingFile = selected;
       if (isPdfStudyFile(selected)) {
         setAnalyzeHint("Preparando PDF para subir más rápido…");
-        const prepared = await preparePdfForUpload(selected, { onProgress: setAnalyzeHint });
-        workingFile = prepared.file;
-        setFile(prepared.file);
+        try {
+          const prepared = await preparePdfForUpload(selected, { onProgress: setAnalyzeHint });
+          workingFile = prepared.file;
+          setFile(prepared.file);
+        } catch (caught) {
+          throw new Error(
+            caught instanceof Error
+              ? caught.message
+              : "No se pudo preparar el PDF. Intenta de nuevo.",
+          );
+        }
       } else {
         setFile(selected);
       }
@@ -207,6 +215,7 @@ export function UploadMaterialForm() {
       setStatus("idle");
       setMessage("");
       setAnalyzeError("");
+      setAnalyzeHint("Recibimos tu archivo…");
       void analyzeFile(selected);
     },
     [analyzeFile, clearFieldError],
@@ -360,18 +369,27 @@ export function UploadMaterialForm() {
           type="file"
           accept={STUDY_DOCUMENT_ACCEPT}
           className="sr-only"
-          onChange={(event) => acceptStudyFile(event.target.files?.[0])}
+          onChange={(event) => {
+            acceptStudyFile(event.target.files?.[0]);
+            event.target.value = "";
+          }}
         />
 
         <div
           role="button"
           tabIndex={0}
           className={`upload-dropzone${errors.file ? " is-error" : ""}${isDragging ? " is-dragging" : ""}${file ? " has-file" : ""}`}
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => {
+            if (!fileInputRef.current) return;
+            fileInputRef.current.value = "";
+            fileInputRef.current.click();
+          }}
           onKeyDown={(event) => {
             if (event.key === "Enter" || event.key === " ") {
               event.preventDefault();
-              fileInputRef.current?.click();
+              if (!fileInputRef.current) return;
+              fileInputRef.current.value = "";
+              fileInputRef.current.click();
             }
           }}
           onDragEnter={onDragEnter}
