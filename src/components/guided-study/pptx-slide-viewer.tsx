@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 type PptxSlideViewerProps = {
   fileUrl: string;
@@ -9,24 +9,68 @@ type PptxSlideViewerProps = {
   fallbackText?: string;
 };
 
+function layoutCanvas(canvas: HTMLCanvasElement, container: HTMLElement, zoom: number) {
+  const pad = 16;
+  const availableW = Math.max(320, container.clientWidth - pad * 2);
+  const availableH = Math.max(220, container.clientHeight - pad * 2);
+  const zoomFactor = Math.max(0.5, zoom / 100);
+  const cssW = Math.floor(availableW * zoomFactor);
+  const cssH = Math.floor(availableH * zoomFactor);
+  const dpr = window.devicePixelRatio || 1;
+
+  canvas.style.width = `${cssW}px`;
+  canvas.style.height = `${cssH}px`;
+  canvas.width = Math.max(1, Math.floor(cssW * dpr));
+  canvas.height = Math.max(1, Math.floor(cssH * dpr));
+}
+
 export function PptxSlideViewer({
   fileUrl,
   pageNumber,
   zoom,
   fallbackText,
 }: PptxSlideViewerProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const viewerRef = useRef<InstanceType<typeof import("pptxviewjs").PPTXViewer> | null>(null);
   const [loading, setLoading] = useState(true);
   const [rendering, setRendering] = useState(false);
   const [useTextFallback, setUseTextFallback] = useState(false);
+  const [containerVersion, setContainerVersion] = useState(0);
+
+  const renderCurrentSlide = useCallback(async () => {
+    const viewer = viewerRef.current;
+    const canvas = canvasRef.current;
+    const container = containerRef.current;
+    if (!viewer || !canvas || !container) return;
+
+    layoutCanvas(canvas, container, zoom);
+    const slideIndex = Math.max(0, pageNumber - 1);
+    await viewer.renderSlide(slideIndex, canvas);
+  }, [pageNumber, zoom]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || useTextFallback) return;
+
+    const observer = new ResizeObserver(() => {
+      setContainerVersion((value) => value + 1);
+    });
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [useTextFallback]);
 
   useEffect(() => {
     let cancelled = false;
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    const container = containerRef.current;
+    if (!canvas || !container) return;
 
     async function init() {
+      const activeCanvas = canvas;
+      const activeContainer = container;
+      if (!activeCanvas || !activeContainer) return;
+
       setLoading(true);
       setUseTextFallback(false);
 
@@ -35,7 +79,7 @@ export function PptxSlideViewer({
         if (cancelled) return;
 
         const viewer = new PPTXViewer({
-          canvas,
+          canvas: activeCanvas,
           slideSizeMode: "fit",
           backgroundColor: "#ffffff",
         });
@@ -52,8 +96,9 @@ export function PptxSlideViewer({
         await viewer.loadFile(buffer);
         if (cancelled) return;
 
+        layoutCanvas(activeCanvas, activeContainer, zoom);
         const slideIndex = Math.max(0, pageNumber - 1);
-        await viewer.renderSlide(slideIndex, canvas, { scale: zoom / 100 });
+        await viewer.renderSlide(slideIndex, activeCanvas);
         if (!cancelled) setLoading(false);
       } catch {
         if (!cancelled) {
@@ -70,21 +115,17 @@ export function PptxSlideViewer({
       viewerRef.current?.destroy();
       viewerRef.current = null;
     };
-    // pageNumber/zoom handled in separate effect after load
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fileUrl]);
 
   useEffect(() => {
     const viewer = viewerRef.current;
-    const canvas = canvasRef.current;
-    if (!viewer || !canvas || loading || useTextFallback) return;
+    if (!viewer || loading || useTextFallback) return;
 
     let cancelled = false;
     setRendering(true);
 
-    const slideIndex = Math.max(0, pageNumber - 1);
-    void viewer
-      .renderSlide(slideIndex, canvas, { scale: zoom / 100 })
+    void renderCurrentSlide()
       .catch(() => {
         if (!cancelled) setUseTextFallback(true);
       })
@@ -95,7 +136,7 @@ export function PptxSlideViewer({
     return () => {
       cancelled = true;
     };
-  }, [pageNumber, zoom, loading, useTextFallback]);
+  }, [pageNumber, zoom, loading, useTextFallback, containerVersion, renderCurrentSlide]);
 
   if (useTextFallback) {
     return (
@@ -115,7 +156,10 @@ export function PptxSlideViewer({
   }
 
   return (
-    <div className="relative flex h-full w-full items-center justify-center overflow-auto bg-[#f4f4f5] p-3 dark:bg-[#0f1720]">
+    <div
+      ref={containerRef}
+      className="relative h-full min-h-[280px] w-full overflow-auto bg-[#f4f4f5] dark:bg-[#0f1720]"
+    >
       {loading ? (
         <p className="absolute left-3 top-3 z-10 rounded bg-card/90 px-2 py-1 text-[10px] text-accent shadow-sm backdrop-blur-sm">
           Cargando presentación…
@@ -126,7 +170,9 @@ export function PptxSlideViewer({
           Renderizando diapositiva…
         </p>
       ) : null}
-      <canvas ref={canvasRef} className="max-h-full max-w-full rounded-lg shadow-lg" />
+      <div className="flex min-h-full w-full items-center justify-center p-4">
+        <canvas ref={canvasRef} className="block rounded-lg shadow-lg" />
+      </div>
     </div>
   );
 }
