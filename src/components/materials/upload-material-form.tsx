@@ -19,6 +19,7 @@ import type { CourseDetectionResult } from "@/types/course-detection";
 import { MAX_FILE_SIZE } from "@/lib/pdf/constants";
 import { parseJsonResponse } from "@/lib/api/parse-json-response";
 import { extractStudyDocumentTextClient } from "@/lib/documents/extract-client";
+import { preparePdfForUpload } from "@/lib/pdf/prepare-pdf-upload";
 import { uploadMaterialFileToStorage } from "@/lib/materials/upload-material-client";
 
 const maxMaterialFileMb = Math.round(MAX_FILE_SIZE / (1024 * 1024));
@@ -41,6 +42,10 @@ const materialTypes: Array<{ value: MaterialUploadType; label: string }> = [
 
 function isStudyDocumentFile(file: File): boolean {
   return isSupportedStudyDocument(file.name, file.type);
+}
+
+function isPdfStudyFile(file: File): boolean {
+  return file.name.toLowerCase().endsWith(".pdf") || file.type === "application/pdf";
 }
 
 export function UploadMaterialForm() {
@@ -87,8 +92,18 @@ export function UploadMaterialForm() {
     setStatus("idle");
 
     try {
+      let workingFile = selected;
+      if (isPdfStudyFile(selected)) {
+        setAnalyzeHint("Preparando PDF para subir más rápido…");
+        const prepared = await preparePdfForUpload(selected, { onProgress: setAnalyzeHint });
+        workingFile = prepared.file;
+        setFile(prepared.file);
+      } else {
+        setFile(selected);
+      }
+
       setAnalyzeHint("Leyendo el archivo en tu navegador…");
-      const { text, method } = await extractStudyDocumentTextClient(selected, {
+      const { text, method } = await extractStudyDocumentTextClient(workingFile, {
         onProgress: setAnalyzeHint,
       });
 
