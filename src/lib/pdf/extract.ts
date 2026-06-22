@@ -63,6 +63,26 @@ export function prepareTextForGeneration(text: string, maxChars = MAX_AI_INPUT_C
 
 const ORGANIZER_SECTION_SEPARATOR = "\n\n[... sección omitida ...]\n\n";
 
+/** Inicio + final sin el desarrollo intermedio (útil para asunto y resolución en casaciones). */
+export function sampleTextHeadTail(text: string, maxChars: number, headRatio = 0.5) {
+  if (text.length <= maxChars) {
+    return { text, truncated: false };
+  }
+
+  const separator = "\n\n[... desarrollo omitido para catalogación ...]\n\n";
+  const separatorBudget = separator.length;
+  const contentBudget = maxChars - separatorBudget;
+  const headLen = Math.max(400, Math.floor(contentBudget * headRatio));
+  const tailLen = contentBudget - headLen;
+
+  return {
+    text:
+      `${text.slice(0, headLen)}${separator}${text.slice(text.length - tailLen)}` +
+      "\n\n[... solo inicio y final del documento ...]",
+    truncated: true,
+  };
+}
+
 /** Muestrea inicio (40%), centro (20%) y final (40%) para no perder conclusiones. */
 export function sampleTextHeadMiddleTail(text: string, maxChars: number) {
   if (text.length <= maxChars) {

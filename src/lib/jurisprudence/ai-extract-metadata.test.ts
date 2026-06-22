@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   normalizeTipo,
+  pickJurisprudenceCatalogSample,
   reconcileSuggestedTipo,
   textSuggestsCasacion,
 } from "@/lib/jurisprudence/ai-extract-metadata";
@@ -86,5 +87,28 @@ describe("reconcileSuggestedTipo", () => {
         keywords: ["obligaciones"],
       }),
     ).toBe("sentencia");
+  });
+});
+
+describe("pickJurisprudenceCatalogSample", () => {
+  it("includes head and tail for casación, omitting the middle", () => {
+    const head = "SENTENCIA DE CASACIÓN\nASUNTO: Acción pauliana y simulación absoluta.\n";
+    const middle = "M".repeat(20_000);
+    const tail = "RESOLUCIÓN: SE CONFIRMA la sentencia apelada en el extremo impugnado.";
+    const sample = pickJurisprudenceCatalogSample(`${head}${middle}${tail}`, "casacion.pdf");
+
+    expect(sample).toMatch(/CASACIÓN/i);
+    expect(sample).toMatch(/ASUNTO: Acción pauliana/i);
+    expect(sample).toMatch(/RESOLUCIÓN: SE CONFIRMA/i);
+    expect(sample).toMatch(/desarrollo omitido/i);
+    expect(sample.length).toBeLessThan(head.length + middle.length + tail.length);
+  });
+
+  it("keeps samples within the catalog char budget", () => {
+    const longText = `${"INICIO ".repeat(800)}${"MEDIO ".repeat(4_000)}${"FINAL ".repeat(800)}`;
+    const sample = pickJurisprudenceCatalogSample(longText, "doc.pdf", 4_500);
+    expect(sample.length).toBeLessThan(6_500);
+    expect(sample).toMatch(/INICIO/);
+    expect(sample).toMatch(/FINAL/);
   });
 });

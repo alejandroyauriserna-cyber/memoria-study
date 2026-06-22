@@ -2,7 +2,7 @@ import { z } from "zod";
 import { generateTextWithFallback } from "@/lib/ai/generate-text-with-fallback";
 import type { TextGenerationProvider } from "@/lib/ai/generate-text-with-fallback";
 import { parseJsonText } from "@/lib/ai/parse-json-text";
-import { prepareTextForGeneration } from "@/lib/pdf/extract";
+import { sampleTextHeadTail } from "@/lib/pdf/extract";
 import {
   isJurisprudenceMateria,
   isJurisprudenceTipo,
@@ -138,10 +138,39 @@ function normalizeMateria(raw: string): JurisprudenceMateria {
   return "civil";
 }
 
-function pickHeaderSample(fullText: string, fileName: string, maxChars = 6_000): string {
-  const prepared = prepareTextForGeneration(fullText, maxChars + 4_000);
-  const head = prepared.text.slice(0, maxChars);
-  return `ARCHIVO: ${fileName}\n\nTEXTO (prioriza encabezados, sumilla, asunto, datos de identificación; NO copies frases literales en tu respuesta):\n${head}`;
+/** Máximo de caracteres que enviamos a la IA para catalogar (ahorro de tokens). */
+export const JURISPRUDENCE_CATALOG_SAMPLE_CHARS = 4_500;
+const JURISPRUDENCE_CATALOG_COMPACT_CHARS = 2_800;
+const CASACION_PEEK_CHARS = 5_000;
+
+/**
+ * Para casaciones: asunto al inicio + resolución al final bastan para catalogar.
+ * Omite el desarrollo intermedio para ahorrar créditos y reducir RECITATION.
+ */
+export function pickJurisprudenceCatalogSample(
+  fullText: string,
+  fileName: string,
+  maxChars = JURISPRUDENCE_CATALOG_SAMPLE_CHARS,
+): string {
+  const peek = fullText.slice(0, CASACION_PEEK_CHARS);
+  const isCasacion = textSuggestsCasacion(peek, fileName);
+  const normalized = fullText.replace(/\s+/g, " ").trim();
+  const headRatio = isCasacion ? 0.52 : 0.62;
+  const { text } = sampleTextHeadTail(normalized, maxChars, headRatio);
+
+  const strategy = isCasacion
+    ? `CASACIÓN: el ASUNTO al inicio y la RESOLUCIÓN/parte resolutiva al final describen el fallo. El desarrollo intermedio fue omitido a propósito.`
+    : `Prioriza encabezado, asunto, sumilla y la parte resolutiva del final.`;
+
+  return [
+    `ARCHIVO: ${fileName}`,
+    "",
+    strategy,
+    "NO copies frases literales; extrae metadatos y resume con tus palabras breves.",
+    "",
+    "TEXTO:",
+    text,
+  ].join("\n");
 }
 
 const ANTI_RECITATION_NOTE = `
@@ -165,9 +194,9 @@ ${CLASSIFICATION_TAXONOMY}
 
 INSTRUCCIONES:
 - title: título descriptivo del fallo (no copies solo el nombre del archivo)
-- summary: resumen breve 2-3 líneas en español jurídico, estilo catálogo universitario
+- summary: resumen breve 2-3 líneas; en casaciones usa el ASUNTO inicial y la RESOLUCIÓN final
 - keywords: 3-8 términos jurídicos relevantes
-- asuntoPrincipal: tema central en una frase
+- asuntoPrincipal: tema central en una frase (en casaciones suele figurar al inicio como ASUNTO)
 - confidence: probabilidad 0-1 de cada campo extraído
 
 REGLAS PARA EL CAMPO tipo (MUY IMPORTANTE):
@@ -235,7 +264,7 @@ export async function extractJurisprudenceMetadataWithAi(input: {
   catalogProvider: TextGenerationProvider;
   catalogModel: string;
 }> {
-  const sample = pickHeaderSample(input.extractedText, input.fileName);
+  const sample = pickJurisprudenceCatalogSample(input.extractedText, input.fileName);
 
   let extraction;
   try {
@@ -245,7 +274,11 @@ export async function extractJurisprudenceMetadataWithAi(input: {
       throw firstError;
     }
 
-    const compactSample = pickHeaderSample(input.extractedText, input.fileName, 2_500);
+    const compactSample = pickJurisprudenceCatalogSample(
+      input.extractedText,
+      input.fileName,
+      JURISPRUDENCE_CATALOG_COMPACT_CHARS,
+    );
     extraction = await requestMetadataExtraction(compactSample, ANTI_RECITATION_NOTE);
   }
 

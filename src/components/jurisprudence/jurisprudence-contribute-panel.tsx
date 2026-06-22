@@ -22,6 +22,7 @@ import {
 import type { JurisprudenceFieldConfidence, JurisprudenceSuggestedMetadata } from "@/types/jurisprudence-ingest";
 import type { JurisprudenceRecord } from "@/types/jurisprudence";
 import { parseJsonResponse } from "@/lib/api/parse-json-response";
+import { humanizeAiError } from "@/lib/ai/humanize-ai-error";
 import { extractStudyDocumentTextClient } from "@/lib/documents/extract-client";
 import { preparePdfForUpload } from "@/lib/pdf/prepare-pdf-upload";
 import { uploadJurisprudencePdfToStorage } from "@/lib/jurisprudence/upload-jurisprudence-pdf-client";
@@ -142,6 +143,10 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
       setError("");
       setAnalyzeMessage("Leyendo PDF…");
 
+      let aiProvidersHint:
+        | { openrouter?: boolean; openRouterAttempted?: boolean }
+        | undefined;
+
       try {
         let response: Response;
 
@@ -195,6 +200,7 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
         }>(response);
 
         if (!response.ok) {
+          aiProvidersHint = payload.aiProviders;
           if (payload.manualEntryAllowed || payload.error) {
             setManualEntry(true);
           }
@@ -226,7 +232,12 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
       } catch (caught) {
         const raw = caught instanceof Error ? caught.message : "Error al analizar.";
         setManualEntry(true);
-        setError(raw);
+        setError(
+          humanizeAiError(raw, {
+            openRouterConfigured: aiProvidersHint?.openrouter,
+            openRouterAttempted: aiProvidersHint?.openRouterAttempted,
+          }),
+        );
         setAnalyzeMessage("Completa el formulario manualmente. Tu PDF ya está listo para enviar.");
       } finally {
         setAnalyzing(false);

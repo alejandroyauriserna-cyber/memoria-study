@@ -46,11 +46,13 @@ async function analyzeFromExtractedText(fileName: string, text: string) {
     );
   }
 
+  console.info("[jurisprudence/analyze-contribution] AI providers", getTextAiProviderStatus());
+
   const { suggested, confidence, catalogProvider, catalogModel } =
     await extractJurisprudenceMetadataWithAi({
-    extractedText: prepared.text,
-    fileName,
-  });
+      extractedText: prepared.text,
+      fileName,
+    });
 
   const overallConfidence = computeOverallConfidence(confidence);
 
