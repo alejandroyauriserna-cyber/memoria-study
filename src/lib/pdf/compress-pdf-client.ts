@@ -15,8 +15,15 @@ import {
 import { formatCompressionDelta } from "@/lib/pdf/format-bytes";
 import { loadPdfJsDocument, readPdfPageText } from "@/lib/pdf/pdfjs-client";
 import { PDF_OPTIMIZE_THRESHOLD_BYTES } from "@/lib/pdf/server-upload-limits";
+import { shouldUseServerCompression } from "@/lib/pdf/compress-server-limits";
+import { compressPdfViaServer } from "@/lib/pdf/compress-pdf-server-client";
 
-export type CompressPdfMethod = "none" | "structural" | "image" | "structural+image";
+export type CompressPdfMethod =
+  | "none"
+  | "structural"
+  | "image"
+  | "structural+image"
+  | "ghostscript";
 
 export type CompressPdfResult = {
   file: File;
@@ -168,6 +175,34 @@ export async function compressPdfForUpload(
   options?.onProgress?.("Analizando PDF…");
   const profile = await analyzeProfile(file);
   const presetId = pickCompressPresetForProfile(profile, originalBytes);
+
+  if (shouldUseServerCompression(profile.pageCount, originalBytes, profile.kind)) {
+    try {
+      options?.onProgress?.("PDF grande — comprimiendo en servidor (Ghostscript)…");
+      const serverFile = await compressPdfViaServer(file, {
+        preset: presetId,
+        onProgress: options?.onProgress,
+      });
+
+      if (serverFile.size < originalBytes) {
+        options?.onProgress?.(
+          `PDF listo: ${formatCompressionDelta(originalBytes, serverFile.size)}`,
+        );
+        return {
+          file: serverFile,
+          optimized: true,
+          originalBytes,
+          finalBytes: serverFile.size,
+          profile,
+          presetUsed: presetId,
+          method: "ghostscript",
+        };
+      }
+    } catch (error) {
+      console.warn("[compress-pdf-client] server compress unavailable, using browser", error);
+      options?.onProgress?.("Servidor ocupado — comprimiendo en tu navegador…");
+    }
+  }
 
   let bestBytes: Uint8Array | null = null;
   let method: CompressPdfMethod = "none";

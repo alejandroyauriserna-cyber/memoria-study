@@ -1,0 +1,33 @@
+# MemoriaStudy — microservicio de compresión PDF (Ghostscript)
+# Despliegue recomendado: Fly.io (gratis/tier bajo para empezar)
+
+app = "memoriastudy-pdf-compress"
+primary_region = "mia"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "8080"
+  PDF_COMPRESS_MAX_BYTES = "157286400"
+  PDF_COMPRESS_DOWNLOAD_TIMEOUT_MS = "120000"
+  PDF_COMPRESS_GS_TIMEOUT_MS = "180000"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "5s"
+    method = "GET"
+    path = "/health"
+
+[[vm]]
+  memory = "1024mb"
+  cpu_kind = "shared"
+  cpus = 1
