@@ -30,16 +30,25 @@ export async function uploadMaterialFileToStorage(file: File) {
   const sanitizedFileName = sanitizeMaterialFileName(file.name);
   const storagePath = `${user.id}/${crypto.randomUUID()}-${sanitizedFileName}`;
 
-  const { error } = await supabase.storage.from("shared-materials").upload(storagePath, file, {
-    contentType: studyDocumentContentType(file.name, file.type),
+  const contentType = studyDocumentContentType(file.name, file.type);
+  const uploadBody =
+    file.type === contentType
+      ? file
+      : new Blob([await file.arrayBuffer()], { type: contentType });
+
+  const { error } = await supabase.storage.from("shared-materials").upload(storagePath, uploadBody, {
+    contentType,
     upsert: false,
   });
 
   if (error) {
+    const mimeRejected = /mime type/i.test(error.message) && /not supported/i.test(error.message);
     throw new Error(
       error.message.includes("Bucket not found")
         ? "El bucket shared-materials no está configurado en Supabase Storage."
-        : `No se pudo subir el archivo: ${error.message}`,
+        : mimeRejected
+          ? "PowerPoint no permitido en Storage (.pptm/.pptx). Guarda como .pptx sin macros (Archivo → Guardar como) e inténtalo de nuevo."
+          : `No se pudo subir el archivo: ${error.message}`,
     );
   }
 

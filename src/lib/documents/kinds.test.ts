@@ -3,6 +3,7 @@ import {
   detectStudyDocumentKind,
   isLegacyPptFile,
   isSupportedStudyDocument,
+  studyDocumentContentType,
 } from "@/lib/documents/kinds";
 
 describe("study document kinds", () => {
@@ -15,5 +16,14 @@ describe("study document kinds", () => {
   it("rechaza ppt legado", () => {
     expect(isLegacyPptFile("viejo.ppt")).toBe(true);
     expect(isSupportedStudyDocument("viejo.ppt")).toBe(false);
+  });
+
+  it("normaliza pptm con mime en minúsculas para storage", () => {
+    expect(
+      studyDocumentContentType(
+        "clase.pptm",
+        "application/vnd.ms-powerpoint.presentation.macroenabled.12",
+      ),
+    ).toBe("application/vnd.ms-powerpoint.presentation.macroEnabled.12");
   });
 });
