@@ -1,5 +1,11 @@
 import { fluxQuotaHint, generateFluxImage } from "@/lib/ai/hf-flux-image-provider";
 import type { ImageGenerationResult } from "@/lib/ai/image-generation-types";
+import {
+  buildProfileAvatarNegativePrompt,
+  resolveProfileAvatarFluxPrompt,
+} from "@/lib/profile/profile-avatar-prompts";
+
+export { resolveProfileAvatarFluxPrompt } from "@/lib/profile/profile-avatar-prompts";
 
 export type ProfileAvatarGeneration = {
   result: ImageGenerationResult;
@@ -65,13 +71,9 @@ export function buildProfileAvatarSvgFallback(prompt: string, displayName?: stri
   return Buffer.from(svg, "utf-8");
 }
 
-/** Prompt para FLUX: el texto del estudiante manda; solo añadimos reglas de avatar. */
+/** @deprecated Usar resolveProfileAvatarFluxPrompt desde profile-avatar-prompts. */
 export function buildProfileAvatarFluxPrompt(userPrompt: string): string {
-  const subject = userPrompt.replace(/[<>&"']/g, "").trim().slice(0, 200);
-  if (!subject) {
-    return "Stylized profile picture icon, abstract cyan teal glow, dark background, centered, square crop, high quality illustration, no text, no watermark";
-  }
-  return `${subject}, profile picture avatar, centered composition, square crop friendly, clean stylized illustration, vivid colors, simple dark background, high detail, no text, no watermark, no collage, single focal subject`;
+  return resolveProfileAvatarFluxPrompt(userPrompt);
 }
 
 function fluxFailureMessage(lastError: string): string {
@@ -89,8 +91,13 @@ export async function generateProfileAvatarImage(
   userPrompt: string,
   displayName?: string,
 ): Promise<ProfileAvatarGeneration> {
-  const fluxPrompt = buildProfileAvatarFluxPrompt(userPrompt);
-  const flux = await generateFluxImage(fluxPrompt, { aspectRatio: "1:1" });
+  const fluxPrompt = resolveProfileAvatarFluxPrompt(userPrompt);
+  const negativePrompt = buildProfileAvatarNegativePrompt(userPrompt);
+  const flux = await generateFluxImage(fluxPrompt, {
+    aspectRatio: "1:1",
+    profileAvatar: true,
+    negativePrompt,
+  });
 
   if (flux.ok) {
     return {

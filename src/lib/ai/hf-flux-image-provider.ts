@@ -34,7 +34,13 @@ function parseInferenceError(caught: unknown, model: string, provider: string): 
 
 export async function generateFluxImage(
   prompt: string,
-  options: { aspectRatio?: ImageAspectRatio } = {},
+  options: {
+    aspectRatio?: ImageAspectRatio;
+    model?: string;
+    negativePrompt?: string;
+    /** Avatares de perfil: 768px suele bastar y mejora en Schnell. */
+    profileAvatar?: boolean;
+  } = {},
 ): Promise<{ ok: true; result: ImageGenerationResult } | { ok: false; lastError: string }> {
   const envStatus = getImageGenerationEnvStatus();
 
@@ -50,9 +56,13 @@ export async function generateFluxImage(
     return { ok: false, lastError: error };
   }
 
-  const model = env.hfImageModel?.trim() || DEFAULT_FLUX_MODEL;
+  const model = options.model?.trim() || env.hfImageModel?.trim() || DEFAULT_FLUX_MODEL;
   const aspectRatio = options.aspectRatio ?? "1:1";
-  const { width, height } = dimensionsForAspectRatio(aspectRatio);
+  let { width, height } = dimensionsForAspectRatio(aspectRatio);
+  if (options.profileAvatar && aspectRatio === "1:1") {
+    width = 768;
+    height = 768;
+  }
   const numInferenceSteps = inferenceStepsForModel(model);
   const client = new InferenceClient(env.hfToken);
 
@@ -71,6 +81,7 @@ export async function generateFluxImage(
             width,
             height,
             num_inference_steps: numInferenceSteps,
+            ...(options.negativePrompt ? { negative_prompt: options.negativePrompt } : {}),
           },
         },
         { outputType: "blob" },

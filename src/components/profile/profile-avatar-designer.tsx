@@ -8,14 +8,9 @@ import { LoadingState } from "@/components/ui/loading-state";
 import { useLoadingProgress } from "@/hooks/use-loading-progress";
 import { ProfileAvatar } from "@/components/profile/profile-avatar";
 
-const SUGGESTIONS = [
-  "Estudiante de derecho estilo anime con toga y libros",
-  "Mascota búho jurídico con gafas redondas",
-  "Avatar cyberpunk cyan con laptop y café",
-  "Superhéroe del estudio con capa y balanza",
-  "Retrato kawaii con estrella en la frente",
-  "Detective legal con lupa y código civil",
-];
+import { PROFILE_AVATAR_SUGGESTION_LABELS } from "@/lib/profile/profile-avatar-prompts";
+
+const SUGGESTIONS = PROFILE_AVATAR_SUGGESTION_LABELS;
 
 type Props = {
   open: boolean;
