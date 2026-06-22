@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Shield } from "lucide-react";
 
-export function JurisprudenceAdminNavLink() {
+export function JurisprudenceAdminNavLink({ className }: { className?: string } = {}) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -17,7 +17,7 @@ export function JurisprudenceAdminNavLink() {
   if (!visible) return null;
 
   return (
-    <Link href="/admin/biblioteca-juridica" className="tron-nav-link">
+    <Link href="/admin/biblioteca-juridica" className={className ?? "tron-nav-link"}>
       <Shield size={13} className="mr-1 inline" aria-hidden />
       Admin Jurídica
     </Link>

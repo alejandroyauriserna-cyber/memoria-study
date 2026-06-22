@@ -10,24 +10,8 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { UserMenu } from "@/components/ui/user-menu";
 import { OfflineSyncBanner } from "@/components/ui/offline-sync-banner";
 import { MobileNavMenu } from "@/components/ui/mobile-nav-menu";
+import { DesktopNavMenu } from "@/components/ui/desktop-nav-menu";
 import { MobileBackButton } from "@/components/ui/mobile-back-button";
-import { JurisprudenceAdminNavLink } from "@/components/jurisprudence/jurisprudence-admin-nav-link";
-
-const NAV = [
-  { href: "/", label: "Inicio" },
-  { href: "/guia", label: "Guía" },
-  { href: "/library", label: "Materiales" },
-  { href: "/biblioteca-juridica", label: "Jurisprudencia" },
-  { href: "/favorites", label: "Favoritos" },
-  { href: "/organizers", label: "Organizadores" },
-  { href: "/cuaderno", label: "Cuaderno IA" },
-  { href: "/fuentes-juridicas", label: "Fuentes" },
-] as const;
-
-function navIsActive(pathname: string, href: string): boolean {
-  if (href === "/") return pathname === "/";
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
 
 export function AppShell({
   children,
@@ -96,23 +80,14 @@ export function AppShell({
           </Link>
           </div>
 
-          {!compactShell ? (
-          <nav className="hidden min-w-0 flex-1 items-center justify-center gap-0.5 overflow-x-auto md:flex lg:gap-1" aria-label="Navegación principal">
-            {NAV.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                data-active={navIsActive(pathname, item.href) ? "true" : undefined}
-                className="tron-nav-link"
-              >
-                {item.label}
-              </Link>
-            ))}
-            <JurisprudenceAdminNavLink />
-          </nav>
-          ) : null}
+          {!compactShell ? <DesktopNavMenu /> : null}
 
           <div className="shell-header-actions flex shrink-0 items-center gap-0.5 sm:gap-2">
+            {!compactShell ? (
+              <div className="lg:hidden">
+                <MobileNavMenu />
+              </div>
+            ) : null}
             <div className="hidden items-center gap-1.5 sm:flex">
               <ThemePicker />
               <ThemeToggle />
@@ -122,7 +97,6 @@ export function AppShell({
             <div className="flex items-center gap-0.5 sm:hidden">
               <ThemeToggle />
               <UserMenu />
-              {!compactShell ? <MobileNavMenu /> : null}
             </div>
           </div>
         </div>

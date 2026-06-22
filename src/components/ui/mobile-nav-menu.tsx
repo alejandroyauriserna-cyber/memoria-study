@@ -5,22 +5,7 @@ import { Menu, X } from "lucide-react";
 import { useCallback, useEffect, useId, useState } from "react";
 import { usePathname } from "next/navigation";
 import { JurisprudenceAdminNavLink } from "@/components/jurisprudence/jurisprudence-admin-nav-link";
-
-const NAV = [
-  { href: "/", label: "Inicio" },
-  { href: "/guia", label: "Guía" },
-  { href: "/library", label: "Materiales" },
-  { href: "/biblioteca-juridica", label: "Jurisprudencia" },
-  { href: "/favorites", label: "Favoritos" },
-  { href: "/organizers", label: "Organizadores" },
-  { href: "/cuaderno", label: "Cuaderno IA" },
-  { href: "/fuentes-juridicas", label: "Fuentes" },
-] as const;
-
-function navIsActive(pathname: string, href: string): boolean {
-  if (href === "/") return pathname === "/";
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
+import { APP_NAV_ALL, navIsActive } from "@/lib/navigation/app-nav";
 
 export function MobileNavMenu() {
   const [open, setOpen] = useState(false);
@@ -50,7 +35,7 @@ export function MobileNavMenu() {
   }, [open, close]);
 
   return (
-    <div className="shell-mobile-nav md:hidden">
+    <div className="shell-mobile-nav">
       <button
         type="button"
         className="shell-mobile-nav__trigger"
@@ -78,7 +63,7 @@ export function MobileNavMenu() {
         aria-label="Navegación móvil"
         hidden={!open}
       >
-        {NAV.map((item) => (
+        {APP_NAV_ALL.map((item) => (
           <Link
             key={item.href}
             href={item.href}

@@ -15,8 +15,8 @@ body {
   max-width: 100%;
 }
 
-/* Header móvil — una sola fila, menú en overlay */
-@media (max-width: 767px) {
+/* Header móvil / tablet — menú en overlay hasta lg */
+@media (max-width: 1023px) {
   .shell-header-bar {
     min-height: 2.75rem;
     align-items: center;
