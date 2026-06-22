@@ -7,6 +7,10 @@ import { hasSubstantiveStudyText, cleanPageTextForStudy } from "@/lib/guided-stu
 import { verifyMaterialAccess } from "@/lib/materials/verify-access";
 import { detectStudyDocumentKind, type StudyDocumentKind } from "@/lib/documents/kinds";
 import { extractPptxPagesFromBuffer } from "@/lib/pptx/extract";
+import {
+  isSequentialStudyPages,
+  normalizeStudyPages,
+} from "@/lib/guided-study/normalize-study-pages";
 import type { PdfPageContent } from "@/types/guided-legal-study";
 
 export type LoadedStudyMaterial = {
@@ -58,7 +62,7 @@ async function savePagesToDbCache(materialId: string, pages: PdfPageContent[]) {
 async function buildStudyPages(buffer: Buffer, fileName: string): Promise<PdfPageContent[]> {
   const kind = detectStudyDocumentKind(fileName);
   if (kind === "pptx") {
-    return extractPptxPagesFromBuffer(buffer);
+    return normalizeStudyPages(await extractPptxPagesFromBuffer(buffer));
   }
   if (kind === null) {
     throw new Error(
@@ -78,13 +82,13 @@ async function buildStudyPages(buffer: Buffer, fileName: string): Promise<PdfPag
 
   let pages = await extractPdfPagesFromBuffer(buffer, fallbackText);
   if (isGuidedStudyPageCacheUsable(pages)) {
-    return pages;
+    return normalizeStudyPages(pages);
   }
 
   try {
     pages = await extractPdfPagesWithPerPageOcr(buffer, fileName);
     if (isGuidedStudyPageCacheUsable(pages)) {
-      return pages;
+      return normalizeStudyPages(pages);
     }
   } catch (error) {
     console.warn("[guided-study] per-page slide OCR failed:", error);
@@ -95,6 +99,21 @@ async function buildStudyPages(buffer: Buffer, fileName: string): Promise<PdfPag
     pages = await extractPdfPagesFromBuffer(buffer, forced.text);
   } catch (error) {
     console.warn("[guided-study] forced OCR fallback failed:", error);
+  }
+
+  return normalizeStudyPages(pages);
+}
+
+function normalizeCachedStudyPages(
+  pages: PdfPageContent[],
+  documentKind: StudyDocumentKind,
+): PdfPageContent[] | null {
+  if (!pages.length || !isGuidedStudyPageCacheUsable(pages)) {
+    return null;
+  }
+
+  if (documentKind === "pptx" && !isSequentialStudyPages(pages)) {
+    return normalizeStudyPages(pages);
   }
 
   return pages;
@@ -125,21 +144,25 @@ export async function loadMaterialForGuidedStudy(
   const cached = pageCache.get(materialId);
   const documentKind = detectStudyDocumentKind(material.file_name ?? "") ?? "pdf";
 
-  if (cached && Date.now() - cached.loadedAt < CACHE_TTL_MS && isGuidedStudyPageCacheUsable(cached.pages)) {
-    return {
-      id: material.id,
-      title: material.title,
-      fileName: material.file_name,
-      fileUrl: material.file_url,
-      courseName: material.course_name,
-      cycleLabel: material.cycle_label,
-      documentKind,
-      pages: cached.pages,
-    };
+  if (cached && Date.now() - cached.loadedAt < CACHE_TTL_MS) {
+    const normalized = normalizeCachedStudyPages(cached.pages, documentKind);
+    if (normalized) {
+      return {
+        id: material.id,
+        title: material.title,
+        fileName: material.file_name,
+        fileUrl: material.file_url,
+        courseName: material.course_name,
+        cycleLabel: material.cycle_label,
+        documentKind,
+        pages: normalized,
+      };
+    }
   }
 
-  const dbPages = await loadPagesFromDbCache(materialId);
-  if (dbPages?.length && isGuidedStudyPageCacheUsable(dbPages)) {
+  const rawDbPages = await loadPagesFromDbCache(materialId);
+  const dbPages = rawDbPages ? normalizeCachedStudyPages(rawDbPages, documentKind) : null;
+  if (dbPages?.length) {
     pageCache.set(materialId, { pages: dbPages, loadedAt: Date.now() });
     return {
       id: material.id,

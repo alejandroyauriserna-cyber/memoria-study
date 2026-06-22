@@ -16,6 +16,7 @@ import {
 } from "@/lib/guided-study/tutor-chat-server";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/env";
+import { humanizeTutorAiError } from "@/lib/ai/humanize-tutor-error";
 import type { DocumentStudyIndex, GuidedStudyTutorAction } from "@/types/guided-legal-study";
 
 export const runtime = "nodejs";
@@ -271,7 +272,7 @@ export async function POST(request: Request) {
   } catch (caught) {
     console.error("[guided-study/tutor]", caught);
     return NextResponse.json(
-      { error: caught instanceof Error ? caught.message : "Error del tutor jurídico." },
+      { error: humanizeTutorAiError(caught) },
       { status: 500 },
     );
   }

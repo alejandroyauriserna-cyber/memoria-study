@@ -314,19 +314,32 @@ export function buildFallbackAnalysis(pageText: string, pageNumber: number): Pag
   const cleaned = cleanPageTextForStudy(pageText);
   const topicHint = extractStudyTopicHint(pageText);
   const canTeach = hasSubstantiveStudyText(cleaned);
+  const pageFocus = topicHint
+    ? `En la página ${pageNumber} se estudia: ${topicHint}.`
+    : canTeach
+      ? `Estudia los institutos jurídicos centrales de la página ${pageNumber}.`
+      : `No se pudo leer bien el texto automático de la página ${pageNumber}. Revisa el documento y pulsa «Explicar página».`;
 
   return {
-    pageFocus: topicHint
-      ? `En la página ${pageNumber} se estudia: ${topicHint}. Lee el PDF y luego pide «Explicar página» para generar la clase con IA.`
-      : canTeach
-        ? `Estudia los institutos jurídicos centrales de la página ${pageNumber}.`
-        : `No se pudo leer bien el texto automático de la página ${pageNumber}. Lee el PDF y pulsa «Explicar página».`,
+    pageFocus,
     secondaryMentions: [],
     keyLearning: topicHint
       ? [{ id: "kl-fallback", label: topicHint.slice(0, 80), essential: true }]
       : [],
     highlights: [],
-    conceptCards: [],
+    conceptCards:
+      canTeach && cleaned.length >= 80
+        ? [
+            {
+              id: "fb-1",
+              concept: topicHint?.slice(0, 80) ?? `Contenido de la página ${pageNumber}`,
+              explanation: cleaned.slice(0, 1200),
+              example: "Relaciona este contenido con un caso o ejemplo de tu curso.",
+              examImportance: "Domina la idea central antes de pasar a la siguiente diapositiva.",
+              essential: true,
+            },
+          ]
+        : [],
     examMode: {
       oral: [],
       desarrollo: [],

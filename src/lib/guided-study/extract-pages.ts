@@ -158,7 +158,11 @@ export async function extractPdfPagesFromBuffer(
 }
 
 export function getPageText(pages: PdfPageContent[], pageNumber: number, maxChars = 12_000): string {
-  const page = pages.find((p) => p.pageNumber === pageNumber);
+  const byIndex = pages[pageNumber - 1];
+  const page =
+    byIndex && byIndex.text.trim()
+      ? byIndex
+      : pages.find((entry) => entry.pageNumber === pageNumber);
   const text = cleanPageTextForStudy(page?.text ?? "");
   if (text.length <= maxChars) return text;
   return `${text.slice(0, maxChars)}\n\n[... texto de la página truncado ...]`;

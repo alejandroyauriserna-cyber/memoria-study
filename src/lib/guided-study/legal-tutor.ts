@@ -3,6 +3,7 @@ import {
   GUIDED_STUDY_AI_PROVIDER_TIMEOUT_MS,
 } from "@/lib/guided-study/timeouts";
 import { generateTextWithFallback } from "@/lib/ai/generate-text-with-fallback";
+import { humanizeTutorAiError } from "@/lib/ai/humanize-tutor-error";
 import {
   GUIDED_STUDY_SYSTEM_ROLE,
   buildAnalyzeDocumentPrompt,
@@ -296,16 +297,17 @@ export async function askLegalStudyTutor(input: {
     }
   } catch (error) {
     console.error("[guided-study/tutor] Todos los proveedores fallaron:", error);
-    const detail = error instanceof Error ? error.message : String(error);
+    const friendly = humanizeTutorAiError(error);
     const analysis = await finalizeTeachingAnalysis(undefined, input);
+    const fallbackReply =
+      buildCustomReplyFromAnalysis(analysis, input.customPrompt) ??
+      (resolvePageTextForTutor(input.pageText).trim()
+        ? "No pudimos generar la explicación completa con IA. Intenta de nuevo en un momento."
+        : "No se pudo leer el texto de esta diapositiva. Revisa el documento visualmente y vuelve a pulsar «Explicar página».");
+
     return {
       analysis,
-      customReply:
-        detail.includes("proveedores") || detail.includes("GEMINI") || detail.includes("OPENROUTER")
-          ? `${detail} Configura GEMINI_API_KEY u OPENROUTER_API_KEY en Vercel e inténtalo de nuevo.`
-          : analysis.conceptCards.length
-            ? undefined
-            : `El profesor IA no respondió: ${detail}`,
+      customReply: friendly || fallbackReply,
       activeSources,
     };
   }
@@ -395,15 +397,19 @@ export async function askLegalStudyTutor(input: {
   if (input.action === "custom") {
     const customReply = buildCustomReplyFromAnalysis(analysis, input.customPrompt);
     if (customReply) {
-      return { customReply, activeSources };
+      return { analysis, customReply, activeSources };
     }
   }
 
+  const fallbackReply =
+    buildCustomReplyFromAnalysis(analysis, input.customPrompt) ??
+    (pageTextForTutor.trim()
+      ? "El profesor IA no generó tarjetas para esta página. Pulsa «Explicar página» de nuevo."
+      : "No se pudo extraer texto de esta página. Revisa el documento visualmente mientras el profesor te guía.");
+
   return {
     analysis,
-    customReply: pageTextForTutor.trim() || hasSubstantiveStudyText(input.pageText)
-      ? undefined
-      : "No se pudo extraer texto de esta página. Revisa el PDF visualmente mientras el profesor te guía.",
+    customReply: fallbackReply,
     activeSources,
   };
 }
