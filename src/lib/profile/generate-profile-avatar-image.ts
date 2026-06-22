@@ -19,52 +19,72 @@ function escapeXml(value: string): string {
   return value.replace(/[<>&"']/g, "");
 }
 
-/** Avatar SVG local cuando Flux no está disponible (sin Gemini de pago). */
-export function buildProfileAvatarSvgFallback(prompt: string): Buffer {
-  const seed = hashString(prompt.toLowerCase());
-  const hue = seed % 360;
-  const accent = `hsl(${hue} 78% 58%)`;
-  const accentSoft = `hsl(${(hue + 40) % 360} 70% 72%)`;
-  const label = escapeXml(prompt.split(/\s+/).slice(0, 2).join(" ").slice(0, 24) || "Estudiante");
+/** Avatar SVG estilo MemoriaStudy (iniciales + Tron cyan) si FLUX no responde. */
+export function buildProfileAvatarSvgFallback(prompt: string, displayName?: string): Buffer {
+  const seed = hashString(`${prompt}:${displayName ?? ""}`.toLowerCase());
+  const words = (displayName ?? prompt).trim().split(/\s+/).filter(Boolean);
+  const initials = words
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? "")
+    .join("") || "MS";
+
+  const accentAngle = seed % 360;
+  const accent = "#00FFD5";
+  const accentBlue = "#00BFFF";
+  const bg = "#07131a";
+  const safeInitials = escapeXml(initials);
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+    <radialGradient id="glow" cx="50%" cy="38%" r="58%">
+      <stop offset="0%" stop-color="${accent}" stop-opacity="0.35"/>
+      <stop offset="55%" stop-color="${accentBlue}" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="${bg}" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="${accent}"/>
-      <stop offset="100%" stop-color="${accentSoft}"/>
+      <stop offset="100%" stop-color="${accentBlue}"/>
     </linearGradient>
+    <linearGradient id="textGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#d7f9f4"/>
+    </linearGradient>
+    <filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
   </defs>
-  <rect width="512" height="512" fill="url(#bg)"/>
-  <circle cx="256" cy="196" r="92" fill="rgba(255,255,255,0.92)"/>
-  <ellipse cx="256" cy="390" rx="132" ry="118" fill="rgba(255,255,255,0.92)"/>
-  <circle cx="224" cy="184" r="10" fill="#0f172a"/>
-  <circle cx="288" cy="184" r="10" fill="#0f172a"/>
-  <path d="M228 220 Q256 244 284 220" stroke="#0f172a" stroke-width="6" fill="none" stroke-linecap="round"/>
-  <text x="256" y="468" text-anchor="middle" fill="rgba(255,255,255,0.95)" font-family="system-ui,sans-serif" font-size="22" font-weight="800">${label}</text>
+  <rect width="512" height="512" fill="${bg}"/>
+  <rect width="512" height="512" fill="url(#glow)"/>
+  <circle cx="256" cy="256" r="196" fill="none" stroke="url(#ring)" stroke-width="3" opacity="0.35" transform="rotate(${accentAngle} 256 256)"/>
+  <circle cx="256" cy="256" r="168" fill="rgba(16,39,48,0.55)" stroke="url(#ring)" stroke-width="4" filter="url(#softGlow)"/>
+  <text x="256" y="278" text-anchor="middle" fill="url(#textGrad)" font-family="Segoe UI, Inter, system-ui, sans-serif" font-size="128" font-weight="900" letter-spacing="-6">${safeInitials}</text>
+  <text x="256" y="392" text-anchor="middle" fill="${accent}" opacity="0.85" font-family="Segoe UI, Inter, system-ui, sans-serif" font-size="18" font-weight="700" letter-spacing="6">MEMORIA</text>
 </svg>`;
 
   return Buffer.from(svg, "utf-8");
 }
 
-/** Prompt corto en inglés — FLUX Schnell responde mejor que prompts largos. */
+/** Prompt optimizado para FLUX Schnell — ilustración de avatar de calidad. */
 export function buildProfileAvatarFluxPrompt(userPrompt: string): string {
   const subject = userPrompt.replace(/[<>&"']/g, "").trim().slice(0, 120);
-  return `Cute profile avatar portrait, law student app mascot, ${subject}, shoulders up, centered, friendly expressive face, vibrant illustration, soft gradient background, high quality, no text, no watermark, single character`;
+  return `Stylized profile avatar portrait, ${subject}, law student character, polished digital illustration, clean anime-influenced art, expressive eyes, cyan teal rim light, dark elegant background, shoulders up, centered composition, vibrant but professional, high detail, single character, no text, no watermark, no collage`;
 }
 
 function fluxFailureMessage(lastError: string): string {
   return (
     fluxQuotaHint(lastError) ??
-    "FLUX (Hugging Face) no respondió. Se generó un avatar ilustrado local mientras tanto."
+    "FLUX no generó imagen IA. Se usó un avatar con tus iniciales. Para ilustraciones reales, verifica HF_TOKEN en Vercel (mismo token de organizadores visuales)."
   );
 }
 
 /**
  * Avatares: solo FLUX gratuito (HF_TOKEN). Sin Gemini Imagen (de pago).
- * Si Flux falla, SVG local para que el estudiante siempre reciba un avatar.
+ * Si Flux falla, avatar Tron con iniciales (no bloquea al estudiante).
  */
 export async function generateProfileAvatarImage(
   userPrompt: string,
+  displayName?: string,
 ): Promise<ProfileAvatarGeneration> {
   const fluxPrompt = buildProfileAvatarFluxPrompt(userPrompt);
   const flux = await generateFluxImage(fluxPrompt, { aspectRatio: "1:1" });
@@ -76,7 +96,7 @@ export async function generateProfileAvatarImage(
     };
   }
 
-  const buffer = buildProfileAvatarSvgFallback(userPrompt);
+  const buffer = buildProfileAvatarSvgFallback(userPrompt, displayName);
   return {
     result: {
       buffer,

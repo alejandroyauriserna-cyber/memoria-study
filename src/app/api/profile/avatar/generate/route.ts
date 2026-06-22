@@ -11,6 +11,7 @@ import {
 
 const bodySchema = z.object({
   prompt: z.string().trim().min(3).max(200),
+  displayName: z.string().trim().min(1).max(80).optional(),
 });
 
 export async function POST(request: Request) {
@@ -18,10 +19,10 @@ export async function POST(request: Request) {
     const auth = await requireAuth(request, { rateLimit: { limit: 8, windowMs: 60 * 60 * 1000 } });
     if (auth instanceof NextResponse) return auth;
 
-    const { prompt } = bodySchema.parse(await request.json());
+    const { prompt, displayName } = bodySchema.parse(await request.json());
     const envStatus = getImageGenerationEnvStatus();
 
-    const { result, warning } = await generateProfileAvatarImage(prompt);
+    const { result, warning } = await generateProfileAvatarImage(prompt, displayName);
 
     const { publicUrl } = await uploadProfileAvatarBuffer(
       auth.user.id,

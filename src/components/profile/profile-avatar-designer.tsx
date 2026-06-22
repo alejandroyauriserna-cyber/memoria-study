@@ -80,7 +80,7 @@ export function ProfileAvatarDesigner({
       const res = await fetch("/api/profile/avatar/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: userPrompt }),
+        body: JSON.stringify({ prompt: userPrompt, displayName: fullName }),
       });
       const data = (await res.json()) as {
         avatarUrl?: string;
@@ -97,7 +97,9 @@ export function ProfileAvatarDesigner({
       if (data.warning) {
         setNotice(data.warning);
       } else if (data.source === "flux") {
-        setNotice("Avatar generado con FLUX (Hugging Face).");
+        setNotice("Avatar IA generado con FLUX.");
+      } else if (data.source === "fallback") {
+        setNotice("Vista previa con iniciales. Configura HF_TOKEN en Vercel para ilustraciones IA.");
       }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Error al generar.");
