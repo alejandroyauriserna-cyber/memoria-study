@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import {
   computeOverallConfidence,
   extractJurisprudenceMetadataWithAi,
@@ -22,6 +23,42 @@ export const maxDuration = 120;
 
 import { JURISPRUDENCE_MAX_FILE_SIZE, jurisprudenceMaxFileSizeLabel } from "@/lib/jurisprudence/upload-limits";
 const MIN_TEXT_CHARS = 80;
+
+const analyzeJsonSchema = z.object({
+  fileName: z.string().min(1),
+  text: z.string().min(1),
+  extractionMethod: z.string().optional(),
+});
+
+async function analyzeFromExtractedText(fileName: string, text: string) {
+  const prepared = prepareTextForGeneration(text, 120_000);
+
+  if (prepared.text.length < MIN_TEXT_CHARS) {
+    return NextResponse.json(
+      {
+        error:
+          "No se extrajo suficiente texto. Si es un PDF escaneado, prueba con una versión con texto seleccionable.",
+      },
+      { status: 422 },
+    );
+  }
+
+  const { suggested, confidence } = await extractJurisprudenceMetadataWithAi({
+    extractedText: prepared.text,
+    fileName,
+  });
+
+  const overallConfidence = computeOverallConfidence(confidence);
+
+  return NextResponse.json({
+    ok: true,
+    suggested,
+    confidence,
+    overallConfidence,
+    needsReview: itemNeedsReview(confidence),
+    asuntoPrincipal: suggested.asuntoPrincipal ?? null,
+  });
+}
 
 async function extractTextFromPdfSource(input: {
   file?: File;
@@ -80,6 +117,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: getEmailConfirmationMessage() }, { status: 403 });
     }
 
+    const contentType = request.headers.get("content-type") ?? "";
+
+    if (contentType.includes("application/json")) {
+      const parsed = analyzeJsonSchema.parse(await request.json());
+      return analyzeFromExtractedText(parsed.fileName, parsed.text);
+    }
+
     const formData = await request.formData();
     const file = formData.get("file");
     const pdfUrl = String(formData.get("pdfUrl") ?? "").trim() || undefined;
@@ -110,32 +154,12 @@ export async function POST(request: Request) {
       pdfUrl,
     });
 
-    if (text.length < MIN_TEXT_CHARS) {
-      return NextResponse.json(
-        {
-          error:
-            "No se extrajo suficiente texto. Si es un PDF escaneado, prueba con una versión con texto seleccionable.",
-        },
-        { status: 422 },
-      );
+    return analyzeFromExtractedText(fileName, text);
+  } catch (caught) {
+    if (caught instanceof z.ZodError) {
+      return NextResponse.json({ error: "Solicitud de análisis inválida." }, { status: 400 });
     }
 
-    const { suggested, confidence } = await extractJurisprudenceMetadataWithAi({
-      extractedText: text,
-      fileName,
-    });
-
-    const overallConfidence = computeOverallConfidence(confidence);
-
-    return NextResponse.json({
-      ok: true,
-      suggested,
-      confidence,
-      overallConfidence,
-      needsReview: itemNeedsReview(confidence),
-      asuntoPrincipal: suggested.asuntoPrincipal ?? null,
-    });
-  } catch (caught) {
     console.error("[jurisprudence/analyze-contribution]", caught);
     return NextResponse.json(
       { error: caught instanceof Error ? caught.message : "No se pudo analizar el documento." },

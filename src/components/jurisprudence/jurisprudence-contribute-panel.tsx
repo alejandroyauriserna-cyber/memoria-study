@@ -21,6 +21,8 @@ import {
 } from "@/lib/jurisprudence/upload-limits";
 import type { JurisprudenceFieldConfidence, JurisprudenceSuggestedMetadata } from "@/types/jurisprudence-ingest";
 import type { JurisprudenceRecord } from "@/types/jurisprudence";
+import { parseJsonResponse } from "@/lib/api/parse-json-response";
+import { extractStudyDocumentTextClient } from "@/lib/documents/extract-client";
 
 type Props = {
   open: boolean;
@@ -135,32 +137,62 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
       setAnalyzeMessage("Leyendo PDF…");
 
       try {
-        const formData = new FormData();
+        let response: Response;
+
         if (nextFile) {
-          formData.set("file", nextFile);
+          setAnalyzeMessage("Leyendo PDF en tu navegador…");
+          const { text, method } = await extractStudyDocumentTextClient(nextFile, {
+            onProgress: setAnalyzeMessage,
+          });
+
+          setAnalyzeMessage("La IA está catalogando el documento…");
+
+          response = await fetch("/api/jurisprudence/analyze-contribution", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "same-origin",
+            body: JSON.stringify({
+              fileName: nextFile.name,
+              text,
+              extractionMethod: method,
+            }),
+          });
         } else if (nextUrl?.trim()) {
+          const formData = new FormData();
           formData.set("pdfUrl", nextUrl.trim());
+
+          setAnalyzeMessage("La IA está catalogando el documento…");
+
+          response = await fetch("/api/jurisprudence/analyze-contribution", {
+            method: "POST",
+            body: formData,
+          });
         } else {
           throw new Error("Selecciona un PDF o pega un enlace oficial.");
         }
 
-        setAnalyzeMessage("La IA está catalogando el documento…");
-
-        const response = await fetch("/api/jurisprudence/analyze-contribution", {
-          method: "POST",
-          body: formData,
-        });
-        const payload = await response.json();
+        const payload = await parseJsonResponse<{
+          error?: string;
+          suggested?: JurisprudenceSuggestedMetadata;
+          confidence?: JurisprudenceFieldConfidence;
+          overallConfidence?: number;
+          needsReview?: boolean;
+          asuntoPrincipal?: string | null;
+        }>(response);
 
         if (!response.ok) {
           throw new Error(payload.error ?? "No se pudo analizar el documento.");
         }
 
+        if (!payload.suggested || !payload.confidence) {
+          throw new Error("El servidor no devolvió metadatos sugeridos.");
+        }
+
         applySuggested(
           payload.suggested,
-          payload.confidence as JurisprudenceFieldConfidence,
+          payload.confidence,
           payload.overallConfidence as number,
-          payload.asuntoPrincipal as string | null,
+          payload.asuntoPrincipal ?? null,
         );
 
         setAnalyzeMessage(

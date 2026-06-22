@@ -12,6 +12,11 @@ describe("parseJsonResponse", () => {
     await expect(parseJsonResponse(response)).rejects.toThrow(/demasiado pesado/i);
   });
 
+  it("informa archivo demasiado grande en cuerpo de texto", async () => {
+    const response = new Response("Request Entity Too Large", { status: 500 });
+    await expect(parseJsonResponse(response)).rejects.toThrow(/demasiado pesado/i);
+  });
+
   it("informa timeout cuando la respuesta no es JSON", async () => {
     const response = new Response("<html>Gateway Timeout</html>", { status: 504 });
     await expect(parseJsonResponse(response)).rejects.toThrow(/tardó demasiado/i);

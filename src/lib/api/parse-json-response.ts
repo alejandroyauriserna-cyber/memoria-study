@@ -9,6 +9,12 @@ export async function parseJsonResponse<T extends Record<string, unknown>>(
 
   const raw = await response.text();
 
+  if (/request entity too large/i.test(raw)) {
+    throw new Error(
+      "El PDF es demasiado pesado para subirlo completo. La app lo lee en tu navegador; recarga la página e inténtalo de nuevo.",
+    );
+  }
+
   if (!raw.trim()) {
     if (response.status === 504 || response.status === 408) {
       throw new Error(
