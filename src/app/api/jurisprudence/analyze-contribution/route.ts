@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { humanizeAiError, isAiCatalogBlockedError } from "@/lib/ai/humanize-ai-error";
+import { getTextAiProviderStatus } from "@/lib/ai/server-ai-env";
+import { isTextAiProvidersFailedError } from "@/lib/ai/text-ai-providers-failed";
 import {
   computeOverallConfidence,
   extractJurisprudenceMetadataWithAi,
@@ -165,9 +167,36 @@ export async function POST(request: Request) {
     }
 
     console.error("[jurisprudence/analyze-contribution]", caught);
+
+    const providerStatus = getTextAiProviderStatus();
+    if (isTextAiProvidersFailedError(caught)) {
+      console.error("[jurisprudence/analyze-contribution] AI providers", {
+        configured: caught.providersConfigured,
+        attempted: caught.providersAttempted,
+      });
+    }
+
     const raw = caught instanceof Error ? caught.message : "No se pudo analizar el documento.";
-    const error = humanizeAiError(raw);
-    const status = isAiCatalogBlockedError(raw) ? 503 : 500;
-    return NextResponse.json({ error, manualEntryAllowed: status === 503 }, { status });
+    const openRouterAttempted = isTextAiProvidersFailedError(caught)
+      ? caught.providersAttempted.includes("openrouter")
+      : /openrouter:/i.test(raw);
+
+    const error = humanizeAiError(raw, {
+      openRouterConfigured: providerStatus.openrouter,
+      openRouterAttempted,
+    });
+    const status = isAiCatalogBlockedError(raw) || isTextAiProvidersFailedError(caught) ? 503 : 500;
+
+    return NextResponse.json(
+      {
+        error,
+        manualEntryAllowed: true,
+        aiProviders: {
+          ...providerStatus,
+          openRouterAttempted,
+        },
+      },
+      { status },
+    );
   }
 }

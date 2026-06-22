@@ -18,7 +18,27 @@ export function getGeminiModel(): string {
 }
 
 export function getOpenRouterApiKey(): string | undefined {
-  return readServerEnv("OPENROUTER_API_KEY") || env.openRouterApiKey;
+  return (
+    readServerEnv("OPENROUTER_API_KEY") ||
+    readServerEnv("OPENROUTER_KEY") ||
+    env.openRouterApiKey
+  );
+}
+
+export type TextAiProviderStatus = {
+  gemini: boolean;
+  openrouter: boolean;
+  xai: boolean;
+  openai: boolean;
+};
+
+export function getTextAiProviderStatus(): TextAiProviderStatus {
+  return {
+    gemini: Boolean(getGeminiApiKey()),
+    openrouter: Boolean(getOpenRouterApiKey()),
+    xai: Boolean(getXaiApiKey()),
+    openai: Boolean(getOpenAiApiKey()),
+  };
 }
 
 export function getOpenRouterModel(): string {

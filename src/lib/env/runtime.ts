@@ -6,7 +6,7 @@
 export function readServerEnv(name: string): string | undefined {
   const raw = process.env[name];
   if (raw == null) return undefined;
-  const trimmed = raw.trim();
+  const trimmed = raw.trim().replace(/^["']|["']$/g, "");
   return trimmed.length ? trimmed : undefined;
 }
 

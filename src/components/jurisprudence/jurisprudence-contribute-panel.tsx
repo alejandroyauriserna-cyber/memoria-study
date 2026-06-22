@@ -22,7 +22,6 @@ import {
 import type { JurisprudenceFieldConfidence, JurisprudenceSuggestedMetadata } from "@/types/jurisprudence-ingest";
 import type { JurisprudenceRecord } from "@/types/jurisprudence";
 import { parseJsonResponse } from "@/lib/api/parse-json-response";
-import { humanizeAiError, isAiCatalogBlockedError } from "@/lib/ai/humanize-ai-error";
 import { extractStudyDocumentTextClient } from "@/lib/documents/extract-client";
 import { preparePdfForUpload } from "@/lib/pdf/prepare-pdf-upload";
 import { uploadJurisprudencePdfToStorage } from "@/lib/jurisprudence/upload-jurisprudence-pdf-client";
@@ -181,6 +180,11 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
         const payload = await parseJsonResponse<{
           error?: string;
           manualEntryAllowed?: boolean;
+          aiProviders?: {
+            gemini?: boolean;
+            openrouter?: boolean;
+            openRouterAttempted?: boolean;
+          };
           suggested?: JurisprudenceSuggestedMetadata;
           confidence?: JurisprudenceFieldConfidence;
           overallConfidence?: number;
@@ -191,11 +195,10 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
         }>(response);
 
         if (!response.ok) {
-          const raw = payload.error ?? "No se pudo analizar el documento.";
-          if (payload.manualEntryAllowed || isAiCatalogBlockedError(raw)) {
+          if (payload.manualEntryAllowed || payload.error) {
             setManualEntry(true);
           }
-          throw new Error(humanizeAiError(raw));
+          throw new Error(payload.error ?? "No se pudo analizar el documento.");
         }
 
         if (!payload.suggested || !payload.confidence) {
@@ -222,15 +225,9 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
         setManualEntry(false);
       } catch (caught) {
         const raw = caught instanceof Error ? caught.message : "Error al analizar.";
-        if (isAiCatalogBlockedError(raw)) {
-          setManualEntry(true);
-        }
-        setError(humanizeAiError(raw));
-        setAnalyzeMessage(
-          isAiCatalogBlockedError(raw)
-            ? "Completa el formulario manualmente. Tu PDF ya está listo para enviar."
-            : "",
-        );
+        setManualEntry(true);
+        setError(raw);
+        setAnalyzeMessage("Completa el formulario manualmente. Tu PDF ya está listo para enviar.");
       } finally {
         setAnalyzing(false);
       }

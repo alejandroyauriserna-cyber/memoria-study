@@ -1,6 +1,5 @@
 import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
 import { generateGeminiText } from "@/lib/ai/gemini-text";
-import { humanizeAiError } from "@/lib/ai/humanize-ai-error";
 import { parseJsonText } from "@/lib/ai/parse-json-text";
 import {
   getGeminiApiKey,
@@ -9,14 +8,17 @@ import {
   getOpenAiModel,
   getOpenRouterApiKey,
   getOpenRouterModelCandidates,
+  getTextAiProviderStatus,
   getXaiApiKey,
   getXaiModel,
   hasTextAiProviders,
 } from "@/lib/ai/server-ai-env";
+import { TextAiProvidersFailedError } from "@/lib/ai/text-ai-providers-failed";
+import type { TextGenerationProvider } from "@/lib/ai/text-generation-types";
 import type { UserAiCredentials } from "@/lib/ai/user-ai-credentials";
 import { env } from "@/lib/env";
 
-export type TextGenerationProvider = "gemini" | "openrouter" | "xai" | "openai";
+export type { TextGenerationProvider } from "@/lib/ai/text-generation-types";
 
 export type TextGenerationResult = {
   text: string;
@@ -266,10 +268,15 @@ export async function generateTextWithFallback(input: {
     },
   ];
 
+  const providerStatus = getTextAiProviderStatus();
+  console.info("[ai-fallback] proveedores configurados", providerStatus);
+
   const errors: string[] = [];
+  const providersAttempted: TextGenerationProvider[] = [];
 
   for (const attempt of attempts) {
     if (!attempt.enabled) continue;
+    providersAttempted.push(attempt.provider);
     try {
       const result = await attempt.run();
       if (attempt.provider !== "gemini") {
@@ -291,7 +298,12 @@ export async function generateTextWithFallback(input: {
     );
   }
 
-  throw new Error(
-    humanizeAiError(`Todos los proveedores de texto fallaron. ${errors.join(" | ")}`),
+  throw new TextAiProvidersFailedError(
+    `Todos los proveedores de texto fallaron. ${errors.join(" | ")}`,
+    {
+      providerErrors: errors,
+      providersAttempted,
+      providersConfigured: getTextAiProviderStatus(),
+    },
   );
 }
