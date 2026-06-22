@@ -61,7 +61,7 @@ export async function POST(request: Request, context: any) {
 
     const isReachable = await canOpenFile(material.file_url, request.url);
     if (!isReachable) {
-      return NextResponse.json({ error: "No se pudo abrir el PDF." }, { status: 502 });
+      return NextResponse.json({ error: "No se pudo abrir el documento." }, { status: 502 });
     }
 
     const since = new Date(Date.now() - VIEW_COOLDOWN_MS).toISOString();

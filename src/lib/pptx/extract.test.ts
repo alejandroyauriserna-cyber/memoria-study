@@ -1,6 +1,10 @@
 import JSZip from "jszip";
 import { describe, expect, it } from "vitest";
-import { extractPptxFromBuffer, extractTextFromOfficeXml } from "@/lib/pptx/extract";
+import {
+  extractPptxFromBuffer,
+  extractPptxPagesFromBuffer,
+  extractTextFromOfficeXml,
+} from "@/lib/pptx/extract";
 
 const slideXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
@@ -67,5 +71,17 @@ describe("extractPptxFromBuffer", () => {
 
     expect(text).toContain("Derecho Procesal Civil");
     expect(text).toContain("Proceso ordinario");
+  });
+});
+
+describe("extractPptxPagesFromBuffer", () => {
+  it("devuelve una página por diapositiva con notas incluidas", async () => {
+    const buffer = await buildSamplePptxBuffer();
+    const pages = await extractPptxPagesFromBuffer(buffer);
+
+    expect(pages).toHaveLength(1);
+    expect(pages[0]?.pageNumber).toBe(1);
+    expect(pages[0]?.text).toContain("Artículo 135");
+    expect(pages[0]?.text).toContain("Notas del presentador");
   });
 });

@@ -6,6 +6,7 @@ import { ExternalLink, FileText, Loader2, Sparkles } from "lucide-react";
 import { MaterialCardDetail } from "@/components/library/material-card-detail";
 import { StudyWithAiStatus } from "@/components/organizers/study-with-ai-status";
 import { useStudyWithAi } from "@/hooks/use-study-with-ai";
+import { useOpenMaterialViewer } from "@/hooks/use-open-material-viewer";
 import {
   getMaterialCoverFormat,
   getMaterialPagesDisplay,
@@ -27,8 +28,8 @@ export function MaterialCard({ material, variant = "gallery" }: MaterialCardProp
 }
 
 function MaterialCardGallery({ material }: { material: Material }) {
-  const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const { openMaterialViewer, opening } = useOpenMaterialViewer();
   const {
     isGenerating,
     stage,
@@ -37,29 +38,19 @@ function MaterialCardGallery({ material }: { material: Material }) {
     generate: generateOrganizer,
   } = useStudyWithAi(material.id);
 
-  const actionsDisabled = busy || isGenerating || !material.id;
+  const actionsDisabled = opening || isGenerating || !material.id;
   const coverFormat = getMaterialCoverFormat(material);
   const pagesLabel = getMaterialPagesDisplay(material);
 
-  async function handleOpenPdf() {
+  async function handleOpenDocument() {
     if (!material.id) return;
 
-    setBusy(true);
     setMessage("");
 
     try {
-      const response = await fetch(`/api/materials/${material.id}/view`, {
-        method: "POST",
-      });
-      const payload = await response.json();
-      if (!response.ok) {
-        throw new Error(payload.error ?? "No se pudo abrir el PDF.");
-      }
-      window.open(payload.fileUrl ?? material.fileUrl, "_blank", "noopener,noreferrer");
+      await openMaterialViewer(material.id);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Error abriendo el PDF.");
-    } finally {
-      setBusy(false);
+      setMessage(error instanceof Error ? error.message : "Error abriendo el documento.");
     }
   }
 
@@ -103,7 +94,7 @@ function MaterialCardGallery({ material }: { material: Material }) {
             <button
               type="button"
               className="lib-material-card-btn lib-material-card-btn--ghost"
-              onClick={handleOpenPdf}
+              onClick={() => void handleOpenDocument()}
               disabled={actionsDisabled}
             >
               <ExternalLink size={15} />

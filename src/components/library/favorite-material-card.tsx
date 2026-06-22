@@ -5,6 +5,7 @@ import { useState } from "react";
 import { BookOpen, ExternalLink, FileText, Loader2, Sparkles, Star } from "lucide-react";
 import { StudyWithAiStatus } from "@/components/organizers/study-with-ai-status";
 import { useStudyWithAi } from "@/hooks/use-study-with-ai";
+import { useOpenMaterialViewer } from "@/hooks/use-open-material-viewer";
 import {
   getMaterialCoverFormat,
   getMaterialLastStudiedLabel,
@@ -17,8 +18,8 @@ import {
 import type { Material } from "@/types/material";
 
 export function FavoriteMaterialCard({ material }: { material: Material }) {
-  const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const { openMaterialViewer, opening } = useOpenMaterialViewer();
   const {
     isGenerating,
     stage,
@@ -27,7 +28,7 @@ export function FavoriteMaterialCard({ material }: { material: Material }) {
     generate: generateOrganizer,
   } = useStudyWithAi(material.id);
 
-  const actionsDisabled = busy || isGenerating || !material.id;
+  const actionsDisabled = opening || isGenerating || !material.id;
   const area = getMaterialLegalArea(material);
   const thumbnail = getMaterialThumbnailUrl(material);
   const typeLabel = getMaterialTypeLabel(material.materialType);
@@ -36,25 +37,15 @@ export function FavoriteMaterialCard({ material }: { material: Material }) {
   const lastStudied = getMaterialLastStudiedLabel(material);
   const progress = getMaterialStudyProgress(material);
 
-  async function handleOpenPdf() {
+  async function handleOpenDocument() {
     if (!material.id) return;
 
-    setBusy(true);
     setMessage("");
 
     try {
-      const response = await fetch(`/api/materials/${material.id}/view`, {
-        method: "POST",
-      });
-      const payload = await response.json();
-      if (!response.ok) {
-        throw new Error(payload.error ?? "No se pudo abrir el PDF.");
-      }
-      window.open(payload.fileUrl ?? material.fileUrl, "_blank", "noopener,noreferrer");
+      await openMaterialViewer(material.id);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Error abriendo el PDF.");
-    } finally {
-      setBusy(false);
+      setMessage(error instanceof Error ? error.message : "Error abriendo el documento.");
     }
   }
 
@@ -115,7 +106,7 @@ export function FavoriteMaterialCard({ material }: { material: Material }) {
           <button
             type="button"
             className="fav-card-btn fav-card-btn--ghost"
-            onClick={handleOpenPdf}
+            onClick={() => void handleOpenDocument()}
             disabled={actionsDisabled}
           >
             <ExternalLink size={14} />

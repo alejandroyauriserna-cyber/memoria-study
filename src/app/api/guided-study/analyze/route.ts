@@ -42,6 +42,11 @@ export async function POST(request: Request) {
         courseName: material.courseName,
         cycleLabel: material.cycleLabel,
         totalPages: material.pages.length,
+        documentKind: material.documentKind,
+        pageTexts:
+          material.documentKind === "pptx"
+            ? material.pages.map((page) => page.text)
+            : undefined,
       },
       index,
     });

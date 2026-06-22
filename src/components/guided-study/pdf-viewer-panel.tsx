@@ -23,12 +23,16 @@ export function PdfViewerPanel({
   totalPages,
   conceptFocus,
   onPageChange,
+  documentKind = "pdf",
+  slideText,
 }: {
   fileUrl: string;
   pageNumber: number;
   totalPages: number;
   conceptFocus?: PdfConceptFocus | null;
   onPageChange: (page: number) => void;
+  documentKind?: "pdf" | "pptx";
+  slideText?: string;
 }) {
   const [zoom, setZoom] = useState(100);
   const [searchQuery, setSearchQuery] = useState("");
@@ -66,6 +70,18 @@ export function PdfViewerPanel({
     }
   }
 
+  const isPptx = documentKind === "pptx";
+  const pageLabel = isPptx ? "Diapositiva" : "Página";
+  const displayText = slideText?.trim() ?? "";
+  const normalizedSearch = searchQuery.trim().toLowerCase();
+  const filteredSlideText =
+    isPptx && normalizedSearch && displayText
+      ? displayText
+          .split("\n")
+          .filter((line) => line.toLowerCase().includes(normalizedSearch))
+          .join("\n") || displayText
+      : displayText;
+
   return (
     <div
       ref={containerRef}
@@ -78,7 +94,7 @@ export function PdfViewerPanel({
             onClick={goPrev}
             disabled={pageNumber <= 1}
             className="rounded-lg p-2 text-accent hover:bg-accent-soft disabled:opacity-30"
-            aria-label="Página anterior"
+            aria-label={`${pageLabel} anterior`}
           >
             <ChevronLeft size={18} />
           </button>
@@ -90,7 +106,7 @@ export function PdfViewerPanel({
             onClick={goNext}
             disabled={pageNumber >= totalPages}
             className="rounded-lg p-2 text-accent hover:bg-accent-soft disabled:opacity-30"
-            aria-label="Página siguiente"
+            aria-label={`${pageLabel} siguiente`}
           >
             <ChevronRight size={18} />
           </button>
@@ -124,7 +140,7 @@ export function PdfViewerPanel({
           <input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Buscar en la página (opcional)"
+            placeholder={isPptx ? "Buscar en la diapositiva" : "Buscar en la página (opcional)"}
             className="h-8 w-full rounded-lg border border-border bg-muted pl-8 pr-3 text-xs text-foreground placeholder:text-muted-foreground"
           />
         </div>
@@ -143,26 +159,45 @@ export function PdfViewerPanel({
         {conceptFocus ? (
           <div className="gs-pdf-highlight-bar">
             <span className="text-[10px] font-semibold uppercase tracking-wide text-accent">
-              {conceptFocus.locatePhrase ? "Concepto en el PDF" : "Concepto seleccionado"}
+              {conceptFocus.locatePhrase
+                ? isPptx
+                  ? "Concepto en la diapositiva"
+                  : "Concepto en el PDF"
+                : "Concepto seleccionado"}
             </span>
             <p className="mt-0.5 line-clamp-2 text-xs leading-5 text-foreground">
               {conceptFocus.label}
             </p>
             {!conceptFocus.locatePhrase ? (
               <p className="mt-1 text-[10px] leading-4 text-muted-foreground">
-                Este concepto no tiene texto localizable en el PDF (explicación reformulada por el
+                Este concepto no tiene texto localizable en el documento (explicación reformulada por el
                 profesor IA).
               </p>
             ) : null}
           </div>
         ) : null}
-        <PdfJsViewer
-          fileUrl={fileUrl}
-          pageNumber={pageNumber}
-          zoom={zoom}
-          searchQuery={searchQuery}
-          locatePhrase={conceptFocus?.locatePhrase ?? null}
-        />
+        {isPptx ? (
+          <div
+            className="h-full overflow-auto px-4 py-5"
+            style={{ fontSize: `${zoom}%` }}
+          >
+            {filteredSlideText ? (
+              <p className="whitespace-pre-wrap leading-relaxed text-foreground">{filteredSlideText}</p>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Esta diapositiva no tiene texto extraíble (puede ser solo imágenes).
+              </p>
+            )}
+          </div>
+        ) : (
+          <PdfJsViewer
+            fileUrl={fileUrl}
+            pageNumber={pageNumber}
+            zoom={zoom}
+            searchQuery={searchQuery}
+            locatePhrase={conceptFocus?.locatePhrase ?? null}
+          />
+        )}
       </div>
     </div>
   );

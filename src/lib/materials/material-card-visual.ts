@@ -61,6 +61,8 @@ export function getMaterialReadingMinutes(material: Material): number {
 
 export function getMaterialCoverFormat(material: Material): string {
   if (material.materialType === "resumen") return "RES";
+  const name = material.fileName?.toLowerCase() ?? "";
+  if (name.endsWith(".pptx") || name.endsWith(".pptm")) return "PPT";
   return "PDF";
 }
 

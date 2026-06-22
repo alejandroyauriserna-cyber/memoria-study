@@ -5,6 +5,8 @@ import { extractPdfPagesFromBuffer } from "@/lib/guided-study/extract-pages";
 import { extractPdfPagesWithPerPageOcr } from "@/lib/guided-study/extract-pages-ocr";
 import { hasSubstantiveStudyText, cleanPageTextForStudy } from "@/lib/guided-study/prepare-study-page-text";
 import { verifyMaterialAccess } from "@/lib/materials/verify-access";
+import { detectStudyDocumentKind, type StudyDocumentKind } from "@/lib/documents/kinds";
+import { extractPptxPagesFromBuffer } from "@/lib/pptx/extract";
 import type { PdfPageContent } from "@/types/guided-legal-study";
 
 export type LoadedStudyMaterial = {
@@ -14,6 +16,7 @@ export type LoadedStudyMaterial = {
   fileUrl: string;
   courseName: string;
   cycleLabel: string;
+  documentKind: StudyDocumentKind;
   pages: PdfPageContent[];
 };
 
@@ -53,6 +56,16 @@ async function savePagesToDbCache(materialId: string, pages: PdfPageContent[]) {
 }
 
 async function buildStudyPages(buffer: Buffer, fileName: string): Promise<PdfPageContent[]> {
+  const kind = detectStudyDocumentKind(fileName);
+  if (kind === "pptx") {
+    return extractPptxPagesFromBuffer(buffer);
+  }
+  if (kind === null) {
+    throw new Error(
+      "Formato no compatible con estudio guiado. Usa PDF o PowerPoint (.pptx / .pptm).",
+    );
+  }
+
   let fallbackText: string | undefined;
 
   try {
@@ -110,6 +123,8 @@ export async function loadMaterialForGuidedStudy(
   }
 
   const cached = pageCache.get(materialId);
+  const documentKind = detectStudyDocumentKind(material.file_name ?? "") ?? "pdf";
+
   if (cached && Date.now() - cached.loadedAt < CACHE_TTL_MS && isGuidedStudyPageCacheUsable(cached.pages)) {
     return {
       id: material.id,
@@ -118,6 +133,7 @@ export async function loadMaterialForGuidedStudy(
       fileUrl: material.file_url,
       courseName: material.course_name,
       cycleLabel: material.cycle_label,
+      documentKind,
       pages: cached.pages,
     };
   }
@@ -132,6 +148,7 @@ export async function loadMaterialForGuidedStudy(
       fileUrl: material.file_url,
       courseName: material.course_name,
       cycleLabel: material.cycle_label,
+      documentKind,
       pages: dbPages,
     };
   }
@@ -140,8 +157,12 @@ export async function loadMaterialForGuidedStudy(
   const pages = await buildStudyPages(buffer, material.file_name ?? "material.pdf");
 
   if (!isGuidedStudyPageCacheUsable(pages)) {
+    const label =
+      documentKind === "pptx"
+        ? "presentación PowerPoint"
+        : "PDF de diapositivas";
     throw new Error(
-      "No se pudo leer el texto de este PDF de diapositivas. Espera unos minutos y vuelve a abrir el estudio guiado.",
+      `No se pudo leer el texto de esta ${label}. Verifica que tenga texto editable y vuelve a abrir el estudio guiado.`,
     );
   }
 
@@ -155,6 +176,7 @@ export async function loadMaterialForGuidedStudy(
     fileUrl: material.file_url,
     courseName: material.course_name,
     cycleLabel: material.cycle_label,
+    documentKind,
     pages,
   };
 }

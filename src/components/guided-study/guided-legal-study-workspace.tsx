@@ -111,6 +111,8 @@ type MaterialInfo = {
   courseName: string;
   cycleLabel: string;
   totalPages: number;
+  documentKind?: "pdf" | "pptx";
+  pageTexts?: string[];
 };
 
 type TutorState = {
@@ -274,6 +276,8 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
             courseName: string;
             cycleLabel: string;
             totalPages: number;
+            documentKind?: "pdf" | "pptx";
+            pageTexts?: string[];
           };
           index?: NonNullable<typeof index>;
         }>(response);
@@ -1209,6 +1213,8 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
               totalPages={material.totalPages}
               conceptFocus={pdfConceptFocus}
               onPageChange={handlePageChange}
+              documentKind={material.documentKind ?? "pdf"}
+              slideText={material.pageTexts?.[currentPage - 1]}
             />
           </div>
 

@@ -172,6 +172,37 @@ async function readFallbackTexts(zip: JSZip) {
   return uniqueSegments(segments).join("\n\n");
 }
 
+function buildSlidePages(slides: IndexedText[], notes: IndexedText[]) {
+  const notesBySlide = new Map(notes.map((entry) => [entry.index, entry.text]));
+  const pages: { pageNumber: number; text: string }[] = [];
+
+  for (const slide of slides) {
+    const parts = [slide.text];
+    const speakerNotes = notesBySlide.get(slide.index);
+    if (speakerNotes) {
+      parts.push(`Notas del presentador:\n${speakerNotes}`);
+    }
+
+    const text = parts.filter(Boolean).join("\n\n").trim();
+    if (text) {
+      pages.push({ pageNumber: slide.index, text });
+    }
+  }
+
+  for (const note of notes) {
+    if (slides.some((slide) => slide.index === note.index)) {
+      continue;
+    }
+
+    pages.push({
+      pageNumber: note.index,
+      text: `Notas del presentador:\n${note.text}`,
+    });
+  }
+
+  return pages.sort((a, b) => a.pageNumber - b.pageNumber);
+}
+
 function buildSlideDocument(slides: IndexedText[], notes: IndexedText[]) {
   const notesBySlide = new Map(notes.map((entry) => [entry.index, entry.text]));
   const sections: string[] = [];
@@ -243,4 +274,45 @@ export async function extractPptxFromBuffer(buffer: ArrayBuffer | Uint8Array | B
   }
 
   return combined;
+}
+
+export async function extractPptxPagesFromBuffer(
+  buffer: ArrayBuffer | Uint8Array | Buffer,
+): Promise<{ pageNumber: number; text: string }[]> {
+  let zip: JSZip;
+
+  try {
+    zip = await JSZip.loadAsync(buffer);
+  } catch {
+    throw new Error(
+      "No se pudo leer el archivo PowerPoint. Verifica que sea un .pptx o .pptm válido (no .ppt antiguo ni PDF renombrado).",
+    );
+  }
+
+  const slides = await readIndexedTexts(zip, "slide");
+  const notes = await readIndexedTexts(zip, "notes");
+  let pages = buildSlidePages(slides, notes);
+
+  if (!pages.length || pages.every((page) => page.text.length < MIN_USEFUL_TEXT_LENGTH)) {
+    const docProps = await readDocProps(zip);
+    const supplemental = await readSupplementalTexts(zip);
+    const fallback = await readFallbackTexts(zip);
+    const merged = mergeExtractedParts([
+      docProps ? `Metadatos de la presentación:\n${docProps}` : "",
+      supplemental,
+      fallback,
+    ]);
+
+    if (merged.length >= MIN_USEFUL_TEXT_LENGTH) {
+      pages = [{ pageNumber: 1, text: merged }];
+    }
+  }
+
+  if (!pages.length) {
+    throw new Error(
+      "No se extrajo texto de la presentación. Usa el .pptx original con texto editable; si las diapositivas son solo imágenes, la IA no podrá leerlas.",
+    );
+  }
+
+  return pages;
 }

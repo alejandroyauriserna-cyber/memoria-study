@@ -22,6 +22,12 @@ import {
 } from "lucide-react";
 import { StudyWithAiStatus } from "@/components/organizers/study-with-ai-status";
 import { useStudyWithAi } from "@/hooks/use-study-with-ai";
+import { useOpenMaterialViewer } from "@/hooks/use-open-material-viewer";
+import {
+  materialDownloadButtonLabel,
+  materialFileApiPath,
+  materialViewButtonLabel,
+} from "@/lib/materials/material-viewer";
 import {
   getMaterialConceptCount,
   getMaterialCoverFormat,
@@ -49,6 +55,7 @@ export function MaterialCardDetail({
   const [busy, setBusy] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [message, setMessage] = useState("");
+  const { openMaterialViewer, opening } = useOpenMaterialViewer();
   const menuRef = useRef<HTMLDivElement>(null);
   const {
     isGenerating,
@@ -58,7 +65,7 @@ export function MaterialCardDetail({
     generate: generateOrganizer,
   } = useStudyWithAi(material.id);
 
-  const actionsDisabled = busy || isGenerating || !material.id;
+  const actionsDisabled = busy || opening || isGenerating || !material.id;
   const coverGradient = getMaterialCoverGradient(material.courseId);
   const typeLabel = getMaterialTypeLabel(material.materialType);
   const coverFormat = getMaterialCoverFormat(material);
@@ -115,25 +122,15 @@ export function MaterialCardDetail({
     }
   }
 
-  async function handleOpenPdf() {
+  async function handleOpenDocument() {
     if (!material.id) return;
 
-    setBusy(true);
     setMessage("");
 
     try {
-      const response = await fetch(`/api/materials/${material.id}/view`, {
-        method: "POST",
-      });
-      const payload = await response.json();
-      if (!response.ok) {
-        throw new Error(payload.error ?? "No se pudo abrir el PDF.");
-      }
-      window.open(payload.fileUrl ?? material.fileUrl, "_blank", "noopener,noreferrer");
+      await openMaterialViewer(material.id);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Error abriendo el PDF.");
-    } finally {
-      setBusy(false);
+      setMessage(error instanceof Error ? error.message : "Error abriendo el documento.");
     }
   }
 
@@ -152,8 +149,14 @@ export function MaterialCardDetail({
       if (!response.ok) {
         throw new Error(payload.error ?? "No se pudo registrar la descarga.");
       }
-      setDownloads(payload.downloads ?? downloads + 1);
-      window.open(material.fileUrl, "_blank");
+      setDownloads(payload.downloads ?? downloads);
+      const anchor = document.createElement("a");
+      anchor.href = materialFileApiPath(material.id, "attachment");
+      anchor.download = material.fileName;
+      anchor.rel = "noopener";
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Error registrando la descarga.");
     } finally {
@@ -268,11 +271,11 @@ export function MaterialCardDetail({
         <button
           type="button"
           className="lib-detail-btn lib-detail-btn--ghost"
-          onClick={handleOpenPdf}
+          onClick={() => void handleOpenDocument()}
           disabled={actionsDisabled}
         >
           <BookOpen size={16} />
-          Ver PDF
+          {materialViewButtonLabel(material.fileName)}
         </button>
         <button
           type="button"

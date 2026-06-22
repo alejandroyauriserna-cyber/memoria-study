@@ -7,6 +7,12 @@ import { ArrowDown, BookOpen, GraduationCap, Heart, Loader2, Sparkles, Star, Tra
 import { StudyWithAiStatus } from "@/components/organizers/study-with-ai-status";
 import { Button } from "@/components/ui/button";
 import { useStudyWithAi } from "@/hooks/use-study-with-ai";
+import { useOpenMaterialViewer } from "@/hooks/use-open-material-viewer";
+import {
+  materialDownloadButtonLabel,
+  materialFileApiPath,
+  materialViewButtonLabel,
+} from "@/lib/materials/material-viewer";
 
 export function MaterialDetailActions({
   materialId,
@@ -31,6 +37,7 @@ export function MaterialDetailActions({
   const [views, setViews] = useState(initialViews);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const { openMaterialViewer, opening } = useOpenMaterialViewer();
   const {
     isGenerating,
     stage,
@@ -50,18 +57,13 @@ export function MaterialDetailActions({
     return payload;
   }
 
-  async function handleOpenPdf() {
-    setBusy(true);
+  async function handleOpenDocument() {
     setMessage("");
 
     try {
-      const payload = await postJson(`/api/materials/${materialId}/view`);
-      setViews(payload.views ?? views);
-      window.open(payload.fileUrl ?? fileUrl, "_blank", "noopener,noreferrer");
+      await openMaterialViewer(materialId);
     } catch (caught) {
-      setMessage(caught instanceof Error ? caught.message : "Error abriendo el PDF.");
-    } finally {
-      setBusy(false);
+      setMessage(caught instanceof Error ? caught.message : "Error abriendo el documento.");
     }
   }
 
@@ -71,7 +73,13 @@ export function MaterialDetailActions({
 
     try {
       await postJson(`/api/materials/${materialId}/download`);
-      window.open(fileUrl, "_blank", "noopener,noreferrer");
+      const anchor = document.createElement("a");
+      anchor.href = materialFileApiPath(materialId, "attachment");
+      anchor.download = fileName;
+      anchor.rel = "noopener";
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
     } catch (caught) {
       setMessage(caught instanceof Error ? caught.message : "Error registrando la descarga.");
     } finally {
@@ -138,16 +146,16 @@ export function MaterialDetailActions({
     }
   }
 
-  const actionsDisabled = busy || isGenerating;
+  const actionsDisabled = busy || opening || isGenerating;
 
   return (
     <div className="space-y-4">
       <div className="grid gap-3">
-        <Button onClick={handleOpenPdf} disabled={actionsDisabled} className="h-12">
-          <BookOpen size={16} /> Ver PDF
+        <Button onClick={() => void handleOpenDocument()} disabled={actionsDisabled} className="h-12">
+          <BookOpen size={16} /> {materialViewButtonLabel(fileName)}
         </Button>
         <Button variant="secondary" onClick={handleDownload} disabled={actionsDisabled} className="h-12">
-          <ArrowDown size={16} /> Descargar PDF
+          <ArrowDown size={16} /> {materialDownloadButtonLabel(fileName)}
         </Button>
         <Button variant="secondary" onClick={handleFavorite} disabled={actionsDisabled} className="h-12 transition">
           <Star size={16} /> {favorite ? "Guardado" : "Guardar"}
