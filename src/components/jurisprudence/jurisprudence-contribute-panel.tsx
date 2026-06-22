@@ -23,6 +23,8 @@ import type { JurisprudenceFieldConfidence, JurisprudenceSuggestedMetadata } fro
 import type { JurisprudenceRecord } from "@/types/jurisprudence";
 import { parseJsonResponse } from "@/lib/api/parse-json-response";
 import { extractStudyDocumentTextClient } from "@/lib/documents/extract-client";
+import { preparePdfForUpload } from "@/lib/pdf/prepare-pdf-upload";
+import { uploadJurisprudencePdfToStorage } from "@/lib/jurisprudence/upload-jurisprudence-pdf-client";
 
 type Props = {
   open: boolean;
@@ -223,13 +225,15 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
       }
       setUseLink(false);
       setError("");
-      setFile(next);
       setAnalyzed(false);
       setAiConfidence(null);
       setAiFilled({});
       setOverallConfidence(null);
-      setAnalyzeMessage("");
-      await analyzeSource(next);
+      setAnalyzeMessage("Preparando PDF…");
+
+      const prepared = await preparePdfForUpload(next, { onProgress: setAnalyzeMessage });
+      setFile(prepared.file);
+      await analyzeSource(prepared.file);
     },
     [analyzeSource],
   );
@@ -295,24 +299,39 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
     setSuccess("");
 
     try {
-      const formData = new FormData();
-      formData.set("title", title);
-      formData.set("tipo", tipo);
-      formData.set("materia", materia);
-      formData.set("submateria", submateria);
-      formData.set("year", year);
-      formData.set("organo", organo);
-      formData.set("summary", summary);
-      formData.set("keywords", keywords);
-      if (expediente) formData.set("expediente", expediente);
-      if (useLink && pdfUrl) formData.set("pdfUrl", pdfUrl);
-      if (!useLink && file) formData.set("file", file);
+      let storagePath: string | undefined;
+      let uploadedFileName: string | undefined;
+
+      if (!useLink && file) {
+        const uploaded = await uploadJurisprudencePdfToStorage(file);
+        storagePath = uploaded.storagePath;
+        uploadedFileName = uploaded.fileName;
+      }
 
       const response = await fetch("/api/jurisprudence/submit", {
         method: "POST",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({
+          title,
+          tipo,
+          materia,
+          submateria,
+          year: Number(year),
+          organo,
+          summary,
+          keywords,
+          expediente: expediente || null,
+          pdfUrl: useLink && pdfUrl.trim() ? pdfUrl.trim() : null,
+          storagePath,
+          fileName: uploadedFileName,
+        }),
       });
-      const payload = await response.json();
+      const payload = await parseJsonResponse<{
+        error?: string;
+        autoPublished?: boolean;
+        document?: JurisprudenceRecord;
+      }>(response);
 
       if (!response.ok) {
         throw new Error(payload.error ?? "No se pudo publicar el aporte.");
@@ -348,7 +367,8 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
             </p>
             <h2 id="bj-contribute-title">Comparte una sentencia o resolución</h2>
             <p className="bj-contribute-lead">
-              Sube el PDF y la IA detecta título, materia, expediente y resumen. Solo revisas y envías.
+              Sube el PDF y la IA detecta título, materia, expediente y resumen. Los archivos pesados
+              se optimizan y suben automáticamente — no necesitas herramientas externas.
               Cuentas @unitru.edu.pe con correo confirmado. Enlaces oficiales: PJ, TC, SUNAT, SPIJ o LP.
             </p>
           </div>

@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/browser";
 import { studyDocumentContentType } from "@/lib/documents/kinds";
 import { sanitizeMaterialFileName } from "@/lib/materials/sanitize-file-name";
+import { preparePdfForUpload } from "@/lib/pdf/prepare-pdf-upload";
 import { MAX_FILE_SIZE } from "@/lib/pdf/constants";
 
 async function sha256Hex(file: File) {
@@ -12,7 +13,18 @@ async function sha256Hex(file: File) {
     .join("");
 }
 
-export async function uploadMaterialFileToStorage(file: File) {
+export async function uploadMaterialFileToStorage(
+  file: File,
+  options?: { onProgress?: (message: string) => void },
+) {
+  const isPdf =
+    file.name.toLowerCase().endsWith(".pdf") || file.type === "application/pdf";
+  const prepared = isPdf
+    ? await preparePdfForUpload(file, options)
+    : { file, optimized: false, originalBytes: file.size, finalBytes: file.size };
+
+  file = prepared.file;
+
   if (file.size > MAX_FILE_SIZE) {
     throw new Error("El archivo supera el límite permitido.");
   }
