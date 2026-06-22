@@ -104,7 +104,7 @@ export function StudyHoursLeaderboard({
           {!compact ? (
             <p className="study-ranking__subtitle">
               {period === "beta"
-                ? "Reto julio: total = horas reales + bonus IA. El premio S/ 40 solo cuenta horas reales (mín. 5 h)."
+                ? "Reto 21 jun–21 jul: total = horas reales + bonus IA. El premio S/ 40 solo cuenta horas reales (mín. 5 h)."
                 : "Solo cuenta tiempo con la pestaña visible e interactuando. Mínimo 30 min para aparecer."}
             </p>
           ) : null}
@@ -129,7 +129,7 @@ export function StudyHoursLeaderboard({
               className={period === "beta" ? "is-active" : ""}
               onClick={() => setPeriod("beta")}
             >
-              Reto julio
+              Reto beta
             </button>
           ) : null}
           <button

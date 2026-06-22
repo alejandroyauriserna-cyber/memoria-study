@@ -63,7 +63,7 @@ export function BetaJulyChallengePanel() {
         <div>
           <p className="beta-july-panel__kicker">
             <Trophy size={14} />
-            Reto Beta Julio
+            Reto Beta · 21 jun – 21 jul
           </p>
           <h2 className="beta-july-panel__title">S/ {status.prizeAmountPen} al campeón de estudio</h2>
           <p className="beta-july-panel__subtitle">

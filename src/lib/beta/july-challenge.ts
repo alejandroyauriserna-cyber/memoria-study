@@ -1,11 +1,11 @@
-/** Reto beta julio 2026 — America/Lima (UTC-5). */
+/** Reto beta 2026 — America/Lima (UTC-5). Del 21 jun al 21 jul. */
 export const BETA_JULY_TIMEZONE = "America/Lima";
 
-/** 21 jul 2026 00:00 Lima */
-export const BETA_JULY_START = new Date("2026-07-21T05:00:00.000Z");
+/** 21 jun 2026 00:00 Lima */
+export const BETA_JULY_START = new Date("2026-06-21T05:00:00.000Z");
 
-/** 28 jul 2026 00:00 Lima (fin del 27) */
-export const BETA_JULY_END = new Date("2026-07-28T05:00:00.000Z");
+/** 22 jul 2026 00:00 Lima (fin del 21 jul) */
+export const BETA_JULY_END = new Date("2026-07-22T05:00:00.000Z");
 
 export const BETA_JULY_PRIZE_MIN_MS = 5 * 60 * 60 * 1000;
 export const BETA_JULY_PRIZE_AMOUNT_PEN = 40;

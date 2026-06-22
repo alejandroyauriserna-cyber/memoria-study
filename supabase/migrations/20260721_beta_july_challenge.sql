@@ -25,7 +25,7 @@ comment on column public.user_profiles.bonus_study_ms is
   'Horas bonus del reto (conectar IA). Cuentan en ranking visual, no en premio S/ 40.';
 
 comment on column public.user_profiles.beta_july_active_ms is
-  'Horas activas reales acumuladas durante el reto beta (21–27 jul 2026, America/Lima).';
+  'Horas activas reales acumuladas durante el reto beta (21 jun – 21 jul 2026, America/Lima).';
 
 create index if not exists user_profiles_beta_july_active_ms_idx
   on public.user_profiles (beta_july_active_ms desc)

@@ -16,7 +16,7 @@ describe("july-challenge", () => {
       betaAiFirstGenAt: null,
       geminiConfigured: true,
       hfConfigured: false,
-      now: new Date("2026-07-22T18:00:00.000Z"),
+      now: new Date("2026-06-22T18:00:00.000Z"),
     });
 
     expect(status.realStudyMs).toBe(4 * 60 * 60 * 1000);
@@ -42,7 +42,9 @@ describe("july-challenge", () => {
   });
 
   it("detecta ventana activa del reto", () => {
+    expect(isBetaJulyChallengeActive(new Date("2026-06-22T10:00:00.000Z"))).toBe(true);
     expect(isBetaJulyChallengeActive(new Date("2026-07-21T10:00:00.000Z"))).toBe(true);
-    expect(isBetaJulyChallengeActive(new Date("2026-06-22T10:00:00.000Z"))).toBe(false);
+    expect(isBetaJulyChallengeActive(new Date("2026-06-20T10:00:00.000Z"))).toBe(false);
+    expect(isBetaJulyChallengeActive(new Date("2026-07-22T10:00:00.000Z"))).toBe(false);
   });
 });
