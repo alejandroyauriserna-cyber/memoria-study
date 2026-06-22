@@ -6,6 +6,10 @@ import { Sparkles, Trophy } from "lucide-react";
 import type { StudyRankingPeriod, StudyRankingResponse } from "@/lib/ranking/study-hours-ranking";
 import { STUDY_RANKING_MIN_MS } from "@/lib/ranking/study-hours-ranking";
 import {
+  isBetaJulyChallengeActive,
+  isBetaJulyChallengeUpcoming,
+} from "@/lib/beta/july-challenge";
+import {
   formatMsGap,
   formatRankingHours,
   getStudyLeague,
@@ -48,7 +52,9 @@ export function StudyHoursLeaderboard({
   onToggleRanking,
   compact = false,
 }: Props) {
-  const [period, setPeriod] = useState<StudyRankingPeriod>("week");
+  const [period, setPeriod] = useState<StudyRankingPeriod>(() =>
+    isBetaJulyChallengeActive() || isBetaJulyChallengeUpcoming() ? "beta" : "week",
+  );
   const [scope, setScope] = useState<"cycle" | "all">(
     currentCycleNumber ? "cycle" : "all",
   );
@@ -97,8 +103,9 @@ export function StudyHoursLeaderboard({
           </h2>
           {!compact ? (
             <p className="study-ranking__subtitle">
-              Solo cuenta tiempo con la pestaña visible e interactuando. Mínimo 30 min para
-              aparecer.
+              {period === "beta"
+                ? "Reto julio: total = horas reales + bonus IA. El premio S/ 40 solo cuenta horas reales (mín. 5 h)."
+                : "Solo cuenta tiempo con la pestaña visible e interactuando. Mínimo 30 min para aparecer."}
             </p>
           ) : null}
         </div>
@@ -116,6 +123,15 @@ export function StudyHoursLeaderboard({
 
       <div className="study-ranking__filters">
         <div className="study-ranking__tabs">
+          {isBetaJulyChallengeActive() || isBetaJulyChallengeUpcoming() ? (
+            <button
+              type="button"
+              className={period === "beta" ? "is-active" : ""}
+              onClick={() => setPeriod("beta")}
+            >
+              Reto julio
+            </button>
+          ) : null}
           <button
             type="button"
             className={period === "week" ? "is-active" : ""}
@@ -210,6 +226,11 @@ export function StudyHoursLeaderboard({
                     <span className="study-ranking__hours">
                       {formatRankingHours(entry.activeStudyMs)}
                     </span>
+                    {period === "beta" && entry.bonusStudyMs ? (
+                      <span className="study-ranking__bonus">
+                        incl. {formatRankingHours(entry.bonusStudyMs)} bonus
+                      </span>
+                    ) : null}
                   </div>
                   {!compact ? (
                     <div

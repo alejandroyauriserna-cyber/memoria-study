@@ -90,6 +90,7 @@ function fluxFailureMessage(lastError: string): string {
 export async function generateProfileAvatarImage(
   userPrompt: string,
   displayName?: string,
+  options: { hfToken?: string } = {},
 ): Promise<ProfileAvatarGeneration> {
   const fluxPrompt = resolveProfileAvatarFluxPrompt(userPrompt);
   const negativePrompt = buildProfileAvatarNegativePrompt(userPrompt);
@@ -97,6 +98,7 @@ export async function generateProfileAvatarImage(
     aspectRatio: "1:1",
     profileAvatar: true,
     negativePrompt,
+    hfToken: options.hfToken,
   });
 
   if (flux.ok) {

@@ -1,6 +1,7 @@
 import { env } from "@/lib/env";
 import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
 import { generateGeminiText } from "@/lib/ai/gemini-text";
+import type { UserAiCredentials } from "@/lib/ai/user-ai-credentials";
 
 export type TextGenerationProvider = "gemini" | "openrouter" | "xai" | "openai";
 
@@ -181,6 +182,7 @@ async function tryGeminiText(input: {
   temperature?: number;
   json?: boolean;
   timeoutMs?: number;
+  apiKey?: string;
 }): Promise<TextGenerationResult> {
   const text = await generateGeminiText(input);
   return { text, provider: "gemini", model: env.geminiModel };
@@ -195,14 +197,20 @@ export async function generateTextWithFallback(input: {
   temperature?: number;
   json?: boolean;
   timeoutMs?: number;
+  userCredentials?: UserAiCredentials;
 }): Promise<TextGenerationResult> {
   const providerTimeoutMs = input.timeoutMs;
+  const userGemini = input.userCredentials?.geminiApiKey?.trim();
   const attempts: Array<{
     provider: TextGenerationProvider;
     run: () => Promise<TextGenerationResult>;
     enabled: boolean;
   }> = [
-    { provider: "gemini", run: () => tryGeminiText(input), enabled: Boolean(env.geminiApiKey) },
+    {
+      provider: "gemini",
+      run: () => tryGeminiText({ ...input, apiKey: userGemini }),
+      enabled: Boolean(userGemini || env.geminiApiKey),
+    },
     {
       provider: "openrouter",
       run: () => tryOpenRouterText({ ...input, timeoutMs: providerTimeoutMs }),

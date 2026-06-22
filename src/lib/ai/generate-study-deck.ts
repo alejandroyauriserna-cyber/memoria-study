@@ -13,6 +13,7 @@ import {
 import type { AcademicSelection } from "@/types/academic";
 import type { StudyGenerationCounts } from "@/types/generation";
 import type { StudyProvider } from "@/types/study";
+import type { UserAiCredentials } from "@/lib/ai/user-ai-credentials";
 
 const providerLabels: Record<StudyProvider, { label: string; note: string }> = {
   openai: {
@@ -77,10 +78,12 @@ export async function generateStudyDeck(input: {
   academic?: AcademicSelection;
   counts: StudyGenerationCounts;
   ocrUsed?: boolean;
+  userCredentials?: UserAiCredentials;
 }) {
   const providerErrors: string[] = [];
   const audience = input.audience ?? UNT_DERECHO_AUDIENCE;
   const academic = academicContext(input.academic);
+  const userGeminiKey = input.userCredentials?.geminiApiKey?.trim();
   const userPrompt = buildStudyUserPrompt({
     sourceName: input.sourceName,
     text: input.text,
@@ -95,6 +98,25 @@ export async function generateStudyDeck(input: {
       provider,
       input.ocrUsed,
     );
+
+  if (userGeminiKey) {
+    try {
+      const deck = await generateWithGemini({
+        ...input,
+        audience,
+        academic,
+        counts: input.counts,
+        apiKey: userGeminiKey,
+        model: env.geminiModel,
+      });
+
+      return wrap(deck, "gemini");
+    } catch (error) {
+      providerErrors.push(
+        `Gemini (tu clave): ${error instanceof Error ? error.message : "failed"}`,
+      );
+    }
+  }
 
   if (env.openRouterApiKey) {
     const openrouter = new OpenAI({

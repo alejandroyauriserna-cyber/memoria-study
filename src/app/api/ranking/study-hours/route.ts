@@ -5,6 +5,11 @@ import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/env";
 import { formatRankingDisplayName } from "@/lib/profile/display-name";
 import {
+  BETA_JULY_PRIZE_AMOUNT_PEN,
+  BETA_JULY_PRIZE_MIN_MS,
+  isBetaJulyChallengeActive,
+} from "@/lib/beta/july-challenge";
+import {
   rankingMsColumn,
   STUDY_RANKING_MIN_MS,
   STUDY_RANKING_TOP_LIMIT,
@@ -13,7 +18,7 @@ import {
 } from "@/lib/ranking/study-hours-ranking";
 
 const querySchema = z.object({
-  period: z.enum(["week", "total"]).default("week"),
+  period: z.enum(["week", "total", "beta"]).default("week"),
   cycle: z.coerce.number().int().min(1).max(12).optional(),
 });
 
@@ -24,13 +29,26 @@ type ProfileRankingRow = {
   current_cycle_number: number | null;
   active_study_ms: number | null;
   active_study_ms_week: number | null;
+  beta_july_active_ms: number | null;
+  bonus_study_ms: number | null;
   show_in_study_ranking: boolean | null;
   avatar_url: string | null;
 };
 
-function rowMs(row: ProfileRankingRow, period: StudyRankingPeriod): number {
-  const column = rankingMsColumn(period);
-  return Number(row[column] ?? 0);
+const PROFILE_SELECT =
+  "user_id, full_name, current_cycle_label, current_cycle_number, active_study_ms, active_study_ms_week, beta_july_active_ms, bonus_study_ms, show_in_study_ranking, avatar_url";
+
+function betaDisplayMs(row: ProfileRankingRow): number {
+  return Number(row.beta_july_active_ms ?? 0) + Number(row.bonus_study_ms ?? 0);
+}
+
+function betaPrizeMs(row: ProfileRankingRow): number {
+  return Number(row.beta_july_active_ms ?? 0);
+}
+
+function rowDisplayMs(row: ProfileRankingRow, period: StudyRankingPeriod): number {
+  if (period === "beta") return betaDisplayMs(row);
+  return Number(row[rankingMsColumn(period)] ?? 0);
 }
 
 function buildEntry(
@@ -39,14 +57,61 @@ function buildEntry(
   period: StudyRankingPeriod,
   currentUserId: string,
 ): StudyRankingEntry {
-  return {
+  const entry: StudyRankingEntry = {
     rank,
     userId: row.user_id,
     displayName: formatRankingDisplayName(row.full_name),
     cycleLabel: row.current_cycle_label,
-    activeStudyMs: rowMs(row, period),
+    activeStudyMs: rowDisplayMs(row, period),
     isCurrentUser: row.user_id === currentUserId,
     avatarUrl: row.avatar_url ?? null,
+  };
+
+  if (period === "beta") {
+    entry.prizeStudyMs = betaPrizeMs(row);
+    entry.bonusStudyMs = Number(row.bonus_study_ms ?? 0);
+  }
+
+  return entry;
+}
+
+async function fetchBetaRanking(input: {
+  admin: ReturnType<typeof createAdminClient>;
+  cycle?: number;
+  currentUserId: string;
+}) {
+  let query = input.admin
+    .from("user_profiles")
+    .select(PROFILE_SELECT)
+    .eq("show_in_study_ranking", true);
+
+  if (input.cycle !== undefined) {
+    query = query.eq("current_cycle_number", input.cycle);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+
+  const rows = ((data ?? []) as ProfileRankingRow[])
+    .filter((row) => betaDisplayMs(row) >= STUDY_RANKING_MIN_MS)
+    .sort((a, b) => betaDisplayMs(b) - betaDisplayMs(a));
+
+  const entries = rows
+    .slice(0, STUDY_RANKING_TOP_LIMIT)
+    .map((row, index) => buildEntry(row, index + 1, "beta", input.currentUserId));
+
+  const currentProfile = rows.find((row) => row.user_id === input.currentUserId) ?? null;
+  const currentDisplayMs = currentProfile ? betaDisplayMs(currentProfile) : 0;
+  const currentPrizeMs = currentProfile ? betaPrizeMs(currentProfile) : 0;
+  const currentBonusMs = currentProfile ? Number(currentProfile.bonus_study_ms ?? 0) : 0;
+
+  return {
+    entries,
+    currentProfile,
+    currentDisplayMs,
+    currentPrizeMs,
+    currentBonusMs,
+    allRows: rows,
   };
 }
 
@@ -71,14 +136,61 @@ export async function GET(request: Request) {
       cycle: searchParams.get("cycle") ?? undefined,
     });
 
-    const msColumn = rankingMsColumn(period);
     const admin = createAdminClient();
+
+    if (period === "beta") {
+      const beta = await fetchBetaRanking({
+        admin,
+        cycle,
+        currentUserId: user.id,
+      });
+
+      const showInRanking = beta.currentProfile?.show_in_study_ranking ?? true;
+      const meetsMinimum = beta.currentDisplayMs >= STUDY_RANKING_MIN_MS;
+
+      let userRank: number | null = null;
+      let nextRivalName: string | null = null;
+      let msToNextRival: number | null = null;
+
+      if (showInRanking && meetsMinimum) {
+        userRank = beta.allRows.findIndex((row) => row.user_id === user.id) + 1;
+        const rival = beta.allRows.find((row) => betaDisplayMs(row) > beta.currentDisplayMs);
+        if (rival) {
+          nextRivalName = formatRankingDisplayName(rival.full_name);
+          msToNextRival = Math.max(0, betaDisplayMs(rival) - beta.currentDisplayMs + 1);
+        }
+      }
+
+      return NextResponse.json({
+        period,
+        cycleFilter: cycle ?? null,
+        entries: beta.entries,
+        leaderMs: beta.entries[0]?.activeStudyMs ?? 0,
+        betaChallenge: {
+          active: isBetaJulyChallengeActive(),
+          prizeAmountPen: BETA_JULY_PRIZE_AMOUNT_PEN,
+          prizeMinMs: BETA_JULY_PRIZE_MIN_MS,
+        },
+        currentUser: {
+          rank: userRank,
+          activeStudyMs: beta.currentDisplayMs,
+          prizeStudyMs: beta.currentPrizeMs,
+          bonusStudyMs: beta.currentBonusMs,
+          prizeEligible: beta.currentPrizeMs >= BETA_JULY_PRIZE_MIN_MS,
+          showInRanking,
+          meetsMinimum,
+          nextRivalName,
+          msToNextRival,
+          msToTop10: null,
+        },
+      });
+    }
+
+    const msColumn = rankingMsColumn(period);
 
     let topQuery = admin
       .from("user_profiles")
-      .select(
-        "user_id, full_name, current_cycle_label, current_cycle_number, active_study_ms, active_study_ms_week, show_in_study_ranking, avatar_url",
-      )
+      .select(PROFILE_SELECT)
       .eq("show_in_study_ranking", true)
       .gte(msColumn, STUDY_RANKING_MIN_MS)
       .order(msColumn, { ascending: false })
@@ -91,13 +203,7 @@ export async function GET(request: Request) {
     const [{ data: topRows, error: topError }, { data: currentRow, error: currentError }] =
       await Promise.all([
         topQuery,
-        admin
-          .from("user_profiles")
-          .select(
-            "user_id, full_name, current_cycle_label, current_cycle_number, active_study_ms, active_study_ms_week, show_in_study_ranking, avatar_url",
-          )
-          .eq("user_id", user.id)
-          .maybeSingle(),
+        admin.from("user_profiles").select(PROFILE_SELECT).eq("user_id", user.id).maybeSingle(),
       ]);
 
     if (topError) throw topError;
@@ -108,7 +214,7 @@ export async function GET(request: Request) {
     );
 
     const currentProfile = (currentRow ?? null) as ProfileRankingRow | null;
-    const currentMs = currentProfile ? rowMs(currentProfile, period) : 0;
+    const currentMs = currentProfile ? rowDisplayMs(currentProfile, period) : 0;
     const showInRanking = currentProfile?.show_in_study_ranking ?? true;
     const meetsMinimum = currentMs >= STUDY_RANKING_MIN_MS;
 
@@ -176,13 +282,11 @@ export async function GET(request: Request) {
       }
     }
 
-    const leaderMs = entries[0]?.activeStudyMs ?? 0;
-
     return NextResponse.json({
       period,
       cycleFilter: cycle ?? null,
       entries,
-      leaderMs,
+      leaderMs: entries[0]?.activeStudyMs ?? 0,
       currentUser: {
         rank: userRank,
         activeStudyMs: currentMs,

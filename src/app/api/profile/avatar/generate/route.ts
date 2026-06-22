@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAuth } from "@/lib/api/require-auth";
 import { getImageGenerationEnvStatus } from "@/lib/ai/image-generation-env";
+import { getUserAiCredentials } from "@/lib/ai/user-ai-credentials";
+import { recordUserAiGenerationIfNeeded } from "@/lib/beta/record-user-ai-generation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { generateProfileAvatarImage } from "@/lib/profile/generate-profile-avatar-image";
 import {
@@ -21,8 +23,11 @@ export async function POST(request: Request) {
 
     const { prompt, displayName } = bodySchema.parse(await request.json());
     const envStatus = getImageGenerationEnvStatus();
+    const userCredentials = await getUserAiCredentials(auth.user.id);
 
-    const { result, warning } = await generateProfileAvatarImage(prompt, displayName);
+    const { result, warning } = await generateProfileAvatarImage(prompt, displayName, {
+      hfToken: userCredentials.hfToken,
+    });
 
     const { publicUrl } = await uploadProfileAvatarBuffer(
       auth.user.id,
@@ -40,6 +45,10 @@ export async function POST(request: Request) {
     );
 
     if (profileError) throw profileError;
+
+    if (result.source === "flux" && userCredentials.hfToken) {
+      await recordUserAiGenerationIfNeeded(auth.user.id, userCredentials, "hf");
+    }
 
     return NextResponse.json({
       ok: true,

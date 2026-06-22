@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/api/require-auth";
 import { generateStudyDeck } from "@/lib/ai/generate-study-deck";
+import { getUserAiCredentials } from "@/lib/ai/user-ai-credentials";
+import { recordUserAiGenerationIfNeeded } from "@/lib/beta/record-user-ai-generation";
 import { parseGenerationCounts } from "@/lib/ai/generation-counts";
 import { UNT_DERECHO_AUDIENCE } from "@/lib/ai/prompts";
 import { extractDocumentText } from "@/lib/documents/extract";
@@ -59,6 +61,7 @@ export async function POST(request: Request) {
 
       const counts = parseGenerationCounts(body.counts);
       const prepared = prepareTextForGeneration(body.text);
+      const userCredentials = await getUserAiCredentials(auth.user.id);
 
       const deck = await generateStudyDeck({
         sourceName: body.sourceName,
@@ -67,7 +70,10 @@ export async function POST(request: Request) {
         academic: body.academic,
         counts,
         ocrUsed: Boolean(body.ocrUsed),
+        userCredentials,
       });
+
+      await recordUserAiGenerationIfNeeded(auth.user.id, userCredentials, "gemini");
 
       return NextResponse.json({
         deck: { ...deck, academic: body.academic },
@@ -115,6 +121,7 @@ export async function POST(request: Request) {
 
     const { text, method } = await extractDocumentText(file, { forceScanned });
     const prepared = prepareTextForGeneration(text);
+    const userCredentials = await getUserAiCredentials(auth.user.id);
 
     const deck = await generateStudyDeck({
       sourceName: file.name,
@@ -124,7 +131,10 @@ export async function POST(request: Request) {
       academic,
       counts,
       ocrUsed: method === "gemini-ocr",
+      userCredentials,
     });
+
+    await recordUserAiGenerationIfNeeded(auth.user.id, userCredentials, "gemini");
 
     return NextResponse.json({
       deck: { ...deck, academic },

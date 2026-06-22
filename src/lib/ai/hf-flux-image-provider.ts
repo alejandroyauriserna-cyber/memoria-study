@@ -38,13 +38,14 @@ export async function generateFluxImage(
     aspectRatio?: ImageAspectRatio;
     model?: string;
     negativePrompt?: string;
-    /** Avatares de perfil: 768px suele bastar y mejora en Schnell. */
     profileAvatar?: boolean;
+    hfToken?: string;
   } = {},
 ): Promise<{ ok: true; result: ImageGenerationResult } | { ok: false; lastError: string }> {
   const envStatus = getImageGenerationEnvStatus();
+  const hfToken = options.hfToken?.trim() || env.hfToken;
 
-  if (!env.hfToken) {
+  if (!hfToken) {
     const error = "HF_TOKEN no configurado.";
     logImageGenerationAttemptFailed({
       event: "flux_env_missing",
@@ -64,7 +65,7 @@ export async function generateFluxImage(
     height = 768;
   }
   const numInferenceSteps = inferenceStepsForModel(model);
-  const client = new InferenceClient(env.hfToken);
+  const client = new InferenceClient(hfToken);
 
   let lastError = "Flux no respondió.";
 

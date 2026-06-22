@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/env";
+import { isBetaJulyChallengeActive } from "@/lib/beta/july-challenge";
 import { getStudyWeekKey } from "@/lib/study/study-week-key";
 
 const bodySchema = z.object({
@@ -30,7 +31,7 @@ export async function PUT(request: Request) {
 
     const { data: existing, error: readError } = await admin
       .from("user_profiles")
-      .select("active_study_ms, active_study_ms_week, active_study_week_key")
+      .select("active_study_ms, active_study_ms_week, active_study_week_key, beta_july_active_ms")
       .eq("user_id", user.id)
       .maybeSingle();
 
@@ -47,12 +48,18 @@ export async function PUT(request: Request) {
     }
     weekMs += delta;
 
+    let betaJulyMs = Number(existing?.beta_july_active_ms ?? 0);
+    if (delta > 0 && isBetaJulyChallengeActive()) {
+      betaJulyMs += delta;
+    }
+
     const { error: writeError } = await admin.from("user_profiles").upsert(
       {
         user_id: user.id,
         active_study_ms: nextMs,
         active_study_ms_week: weekMs,
         active_study_week_key: weekKey,
+        beta_july_active_ms: betaJulyMs,
       },
       { onConflict: "user_id" },
     );

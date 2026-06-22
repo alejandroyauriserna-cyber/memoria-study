@@ -1435,3 +1435,352 @@ html:not(.dark) .profile-avatar-image {
   border-color: color-mix(in srgb, var(--border) 70%, transparent);
 }
 
+/* ——— Reto Beta Julio + claves IA ——— */
+
+.study-ranking__bonus {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--rank-fg-dim);
+}
+
+.beta-july-panel {
+  border-radius: 28px;
+  padding: 1.25rem;
+  background:
+    radial-gradient(circle at top left, rgba(255, 214, 107, 0.1), transparent 45%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
+  border: 1px solid rgba(255, 214, 107, 0.18);
+  color: #f5f7fa;
+}
+
+.beta-july-panel__kicker {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #ffd66b;
+}
+
+.beta-july-panel__title {
+  margin: 0.35rem 0 0;
+  font-size: 1.25rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+
+.beta-july-panel__subtitle {
+  margin: 0.45rem 0 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.beta-july-panel__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.beta-july-panel__badge {
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.beta-july-panel__badge--live {
+  background: rgba(34, 197, 94, 0.15);
+  color: #86efac;
+  border: 1px solid rgba(34, 197, 94, 0.25);
+}
+
+.beta-july-panel__badge--soon {
+  background: rgba(251, 191, 36, 0.12);
+  color: #fcd34d;
+  border: 1px solid rgba(251, 191, 36, 0.22);
+}
+
+.beta-july-panel__badge--done {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.beta-july-panel__stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.beta-july-panel__stat {
+  padding: 0.85rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.beta-july-panel__stat--accent {
+  border-color: rgba(0, 255, 213, 0.2);
+  background: rgba(0, 255, 213, 0.06);
+}
+
+.beta-july-panel__stat-label {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.beta-july-panel__stat strong {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: var(--accent, #00ffd5);
+}
+
+.beta-july-panel__eligible {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.68rem;
+  color: #86efac;
+}
+
+.beta-july-panel__hint {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.beta-july-panel__steps {
+  margin-top: 1rem;
+}
+
+.beta-july-panel__steps-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.beta-july-panel__steps-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.beta-july-panel__steps-list li {
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-start;
+  padding: 0.75rem;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.beta-july-panel__steps-list li.is-done {
+  border-color: rgba(0, 255, 213, 0.18);
+  background: rgba(0, 255, 213, 0.05);
+}
+
+.beta-july-panel__step-icon {
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.beta-july-panel__step-icon.is-done {
+  color: var(--accent, #00ffd5);
+}
+
+.beta-july-panel__step-label {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.beta-july-panel__step-bonus {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #ffd66b;
+}
+
+.beta-july-panel__step-desc {
+  margin: 0.2rem 0 0;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.4;
+}
+
+.beta-july-panel__footnote {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+  margin: 1rem 0 0;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.beta-july-panel__empty,
+.beta-july-panel__error {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.ai-credentials-panel {
+  margin-top: 1rem;
+}
+
+.ai-credentials-panel__title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.ai-credentials-panel__card {
+  padding: 0.85rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  margin-bottom: 0.65rem;
+}
+
+.ai-credentials-panel__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+}
+
+.ai-credentials-panel__label {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.ai-credentials-panel__hint {
+  margin: 0.2rem 0 0;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.4;
+}
+
+.ai-credentials-panel__hint a {
+  color: var(--accent, #00ffd5);
+}
+
+.ai-credentials-panel__row {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.65rem;
+}
+
+.ai-credentials-panel__input {
+  flex: 1;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: #f5f7fa;
+  padding: 0.65rem 0.8rem;
+  font-size: 0.8rem;
+}
+
+.ai-credentials-panel__connect {
+  border: none;
+  border-radius: 12px;
+  padding: 0 1rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #07131a;
+  background: var(--accent, #00ffd5);
+  cursor: pointer;
+}
+
+.ai-credentials-panel__connect:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ai-credentials-panel__remove {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border: 1px solid rgba(248, 113, 113, 0.22);
+  background: transparent;
+  color: #fca5a5;
+  border-radius: 10px;
+  padding: 0.35rem 0.55rem;
+  font-size: 0.68rem;
+  cursor: pointer;
+}
+
+.ai-credentials-panel__connected {
+  margin: 0.55rem 0 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #86efac;
+}
+
+.ai-credentials-panel__error {
+  margin: 0.5rem 0 0;
+  font-size: 0.78rem;
+  color: #fca5a5;
+}
+
+.ai-credentials-panel__notice {
+  margin: 0.5rem 0 0;
+  font-size: 0.78rem;
+  color: #fcd34d;
+}
+
+html:not(.dark) .beta-july-panel {
+  color: var(--foreground);
+  background:
+    radial-gradient(circle at top left, rgba(255, 214, 107, 0.12), transparent 45%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.88));
+  border-color: rgba(202, 138, 4, 0.22);
+}
+
+html:not(.dark) .beta-july-panel__subtitle,
+html:not(.dark) .beta-july-panel__step-desc,
+html:not(.dark) .ai-credentials-panel__hint {
+  color: var(--muted-foreground);
+}
+
+html:not(.dark) .ai-credentials-panel__input {
+  background: #fff;
+  color: var(--foreground);
+  border-color: color-mix(in srgb, var(--border) 75%, transparent);
+}
+
+@media (max-width: 640px) {
+  .beta-july-panel__stats {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-credentials-panel__row {
+    flex-direction: column;
+  }
+}
+

@@ -26,6 +26,7 @@ import { ProfileForm } from "@/components/profile/profile-form";
 import { ProfileLegalPanel } from "@/components/profile/profile-legal-panel";
 import { ProfileOnboarding } from "@/components/profile/profile-onboarding";
 import { StudyHoursLeaderboard } from "@/components/profile/study-hours-leaderboard";
+import { BetaJulyChallengePanel } from "@/components/profile/beta-july-challenge-panel";
 import { LoadingState } from "@/components/ui/loading-state";
 import { useLoadingProgress } from "@/hooks/use-loading-progress";
 import {
@@ -256,6 +257,8 @@ export function LearningHub({
       />
 
       {isNewUser ? <ProfileOnboarding /> : null}
+
+      <BetaJulyChallengePanel />
 
       {stats ? (
         <section className="profile-panel">
