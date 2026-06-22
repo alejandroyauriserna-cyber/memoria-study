@@ -32,17 +32,24 @@ export function humanizeAiError(message: string): string {
 
   const recitation = isRecitationError(trimmed);
   const quota = isQuotaError(trimmed);
+  const triedOpenRouter = /openrouter:/i.test(trimmed);
 
   if (recitation && quota) {
-    return "La IA no pudo catalogar este PDF: se agotó la cuota de Gemini y el documento activó filtros de contenido. Completa el formulario manualmente o vuelve a intentar más tarde.";
+    return triedOpenRouter
+      ? "Gemini y OpenRouter no pudieron catalogar este PDF (cuota y filtros de contenido). Completa el formulario manualmente."
+      : "La IA no pudo catalogar este PDF: cuota de Gemini agotada y filtros de contenido. Añade OPENROUTER_API_KEY en Vercel como respaldo gratuito, o completa el formulario manualmente.";
   }
 
   if (recitation) {
-    return "La IA no pudo catalogar este PDF porque el texto es muy literal (filtro RECITATION de Gemini). Completa el formulario manualmente: el archivo ya está listo para subir.";
+    return triedOpenRouter
+      ? "Ni Gemini ni OpenRouter pudieron catalogar este PDF. Completa el formulario manualmente: el archivo ya está listo para subir."
+      : "Gemini bloqueó el texto literal del PDF (RECITATION). Si tienes OPENROUTER_API_KEY configurada, se intentará automáticamente; si no, completa el formulario manualmente.";
   }
 
   if (quota) {
-    return "Se agotó la cuota gratuita de Gemini por ahora. Espera unos minutos, pide a quien administre la app que configure OPENROUTER_API_KEY como respaldo, o completa el formulario manualmente.";
+    return triedOpenRouter
+      ? "Se agotó la cuota gratuita de Gemini y OpenRouter tampoco respondió. Completa el formulario manualmente o inténtalo más tarde."
+      : "Se agotó la cuota gratuita de Gemini. Configura OPENROUTER_API_KEY en Vercel para el respaldo gratuito (DeepSeek) o completa el formulario manualmente.";
   }
 
   if (/todos los proveedores de texto fallaron/i.test(trimmed) || looksLikeRawProviderDump(trimmed)) {

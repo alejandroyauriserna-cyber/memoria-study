@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { generateTextWithFallback } from "@/lib/ai/generate-text-with-fallback";
+import type { TextGenerationProvider } from "@/lib/ai/generate-text-with-fallback";
+import { parseJsonText } from "@/lib/ai/parse-json-text";
 import { prepareTextForGeneration } from "@/lib/pdf/extract";
 import {
   isJurisprudenceMateria,
@@ -205,14 +207,18 @@ Responde SOLO JSON válido:
 
 ${sample}`;
 
-  const { text: raw } = await generateTextWithFallback({
+  const { text: raw, provider, model } = await generateTextWithFallback({
     prompt,
     temperature: 0.15,
     json: true,
     timeoutMs: 90_000,
   });
 
-  return AiExtractSchema.parse(JSON.parse(raw));
+  return {
+    parsed: AiExtractSchema.parse(JSON.parse(parseJsonText(raw))),
+    catalogProvider: provider,
+    catalogModel: model,
+  };
 }
 
 function shouldRetryWithShorterSample(error: unknown): boolean {
@@ -226,21 +232,24 @@ export async function extractJurisprudenceMetadataWithAi(input: {
 }): Promise<{
   suggested: JurisprudenceSuggestedMetadata;
   confidence: JurisprudenceFieldConfidence;
+  catalogProvider: TextGenerationProvider;
+  catalogModel: string;
 }> {
   const sample = pickHeaderSample(input.extractedText, input.fileName);
 
-  let parsed;
+  let extraction;
   try {
-    parsed = await requestMetadataExtraction(sample);
+    extraction = await requestMetadataExtraction(sample);
   } catch (firstError) {
     if (!shouldRetryWithShorterSample(firstError)) {
       throw firstError;
     }
 
     const compactSample = pickHeaderSample(input.extractedText, input.fileName, 2_500);
-    parsed = await requestMetadataExtraction(compactSample, ANTI_RECITATION_NOTE);
+    extraction = await requestMetadataExtraction(compactSample, ANTI_RECITATION_NOTE);
   }
 
+  const parsed = extraction.parsed;
   const initialTipo = normalizeTipo(parsed.tipo);
   const keywords = parsed.keywords.map((k) => k.trim()).filter(Boolean).slice(0, 12);
 
@@ -277,6 +286,8 @@ export async function extractJurisprudenceMetadataWithAi(input: {
   return {
     suggested,
     confidence,
+    catalogProvider: extraction.catalogProvider,
+    catalogModel: extraction.catalogModel,
   };
 }
 

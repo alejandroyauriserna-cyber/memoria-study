@@ -186,6 +186,8 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
           overallConfidence?: number;
           needsReview?: boolean;
           asuntoPrincipal?: string | null;
+          catalogProvider?: "gemini" | "openrouter" | "xai" | "openai";
+          catalogModel?: string;
         }>(response);
 
         if (!response.ok) {
@@ -207,10 +209,15 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
           payload.asuntoPrincipal ?? null,
         );
 
+        const fallbackNote =
+          payload.catalogProvider === "openrouter"
+            ? " Catalogado con OpenRouter (respaldo gratuito)."
+            : "";
+
         setAnalyzeMessage(
-          payload.needsReview
+          (payload.needsReview
             ? "Revisa los campos marcados en amarillo antes de enviar."
-            : "Metadatos detectados. Revisa y envía cuando estés listo.",
+            : "Metadatos detectados. Revisa y envía cuando estés listo.") + fallbackNote,
         );
         setManualEntry(false);
       } catch (caught) {

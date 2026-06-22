@@ -44,7 +44,8 @@ async function analyzeFromExtractedText(fileName: string, text: string) {
     );
   }
 
-  const { suggested, confidence } = await extractJurisprudenceMetadataWithAi({
+  const { suggested, confidence, catalogProvider, catalogModel } =
+    await extractJurisprudenceMetadataWithAi({
     extractedText: prepared.text,
     fileName,
   });
@@ -58,6 +59,8 @@ async function analyzeFromExtractedText(fileName: string, text: string) {
     overallConfidence,
     needsReview: itemNeedsReview(confidence),
     asuntoPrincipal: suggested.asuntoPrincipal ?? null,
+    catalogProvider,
+    catalogModel,
   });
 }
 

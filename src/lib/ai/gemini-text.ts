@@ -1,5 +1,5 @@
-import { env } from "@/lib/env";
 import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
+import { getGeminiApiKey, getGeminiModel } from "@/lib/ai/server-ai-env";
 
 const SUPPORTED_GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash"] as const;
 const MAX_GEMINI_RETRIES = 3;
@@ -86,12 +86,12 @@ export async function generateGeminiText(input: {
   json?: boolean;
   timeoutMs?: number;
 }): Promise<string> {
-  const apiKey = input.apiKey ?? env.geminiApiKey;
+  const apiKey = input.apiKey ?? getGeminiApiKey();
   if (!apiKey) {
     throw new Error("Gemini no está configurado.");
   }
 
-  const preferred = normalizeGeminiModel(input.model ?? env.geminiModel);
+  const preferred = normalizeGeminiModel(input.model ?? getGeminiModel());
   const models = [
     preferred,
     ...SUPPORTED_GEMINI_MODELS.filter((model) => model !== preferred),
