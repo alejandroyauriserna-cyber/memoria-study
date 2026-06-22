@@ -11,6 +11,7 @@ import {
   ZoomOut,
 } from "lucide-react";
 import { PdfJsViewer } from "@/components/guided-study/pdf-js-viewer";
+import { PptxSlideViewer } from "@/components/guided-study/pptx-slide-viewer";
 
 export type PdfConceptFocus = {
   label: string;
@@ -72,15 +73,6 @@ export function PdfViewerPanel({
 
   const isPptx = documentKind === "pptx";
   const pageLabel = isPptx ? "Diapositiva" : "Página";
-  const displayText = slideText?.trim() ?? "";
-  const normalizedSearch = searchQuery.trim().toLowerCase();
-  const filteredSlideText =
-    isPptx && normalizedSearch && displayText
-      ? displayText
-          .split("\n")
-          .filter((line) => line.toLowerCase().includes(normalizedSearch))
-          .join("\n") || displayText
-      : displayText;
 
   return (
     <div
@@ -132,18 +124,22 @@ export function PdfViewerPanel({
           </button>
         </div>
 
-        <div className="relative min-w-[6rem] flex-1">
-          <Search
-            size={14}
-            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
-          />
-          <input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={isPptx ? "Buscar en la diapositiva" : "Buscar en la página (opcional)"}
-            className="h-8 w-full rounded-lg border border-border bg-muted pl-8 pr-3 text-xs text-foreground placeholder:text-muted-foreground"
-          />
-        </div>
+        {!isPptx ? (
+          <div className="relative min-w-[6rem] flex-1">
+            <Search
+              size={14}
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+            />
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Buscar en la página (opcional)"
+              className="h-8 w-full rounded-lg border border-border bg-muted pl-8 pr-3 text-xs text-foreground placeholder:text-muted-foreground"
+            />
+          </div>
+        ) : (
+          <div className="min-w-[6rem] flex-1" />
+        )}
 
         <button
           type="button"
@@ -177,18 +173,12 @@ export function PdfViewerPanel({
           </div>
         ) : null}
         {isPptx ? (
-          <div
-            className="h-full overflow-auto px-4 py-5"
-            style={{ fontSize: `${zoom}%` }}
-          >
-            {filteredSlideText ? (
-              <p className="whitespace-pre-wrap leading-relaxed text-foreground">{filteredSlideText}</p>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                Esta diapositiva no tiene texto extraíble (puede ser solo imágenes).
-              </p>
-            )}
-          </div>
+          <PptxSlideViewer
+            fileUrl={fileUrl}
+            pageNumber={pageNumber}
+            zoom={zoom}
+            fallbackText={slideText}
+          />
         ) : (
           <PdfJsViewer
             fileUrl={fileUrl}

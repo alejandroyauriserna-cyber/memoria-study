@@ -65,6 +65,7 @@ import {
   saveGuidedStudySession,
 } from "@/lib/guided-study/progress";
 import { persistGuidedStudySession } from "@/lib/guided-study/progress-sync";
+import { materialFileApiPath } from "@/lib/materials/material-viewer";
 import {
   computeMasteryPercent,
   getPageLearningStatus,
@@ -1208,7 +1209,11 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
             }`}
           >
             <PdfViewerPanel
-              fileUrl={material.fileUrl}
+              fileUrl={
+                material.documentKind === "pptx"
+                  ? materialFileApiPath(materialId)
+                  : material.fileUrl
+              }
               pageNumber={currentPage}
               totalPages={material.totalPages}
               conceptFocus={pdfConceptFocus}
