@@ -803,3 +803,236 @@ html:not(.dark) .ms-home-hero h1 {
   background: none;
   color: var(--foreground);
 }
+
+/* ——— Guía de funciones ——— */
+
+.ms-home-onboarding__guide-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.ms-home-onboarding__guide-link:hover {
+  text-decoration: underline;
+}
+
+.ms-feature-guide--compact {
+  border-radius: 1.25rem;
+  border: 1px solid rgba(0, 255, 213, 0.16);
+  background: linear-gradient(135deg, rgba(0, 255, 213, 0.06), rgba(255, 255, 255, 0.02));
+  padding: 1rem 1.15rem;
+}
+
+.ms-feature-guide__compact-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.75rem 1rem;
+}
+
+.ms-feature-guide__compact-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.ms-feature-guide__compact-lead {
+  margin: 0.25rem 0 0;
+  font-size: 0.8rem;
+  color: var(--muted-foreground);
+  line-height: 1.45;
+}
+
+.ms-feature-guide__compact-cta {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.ms-feature-guide__start-list {
+  margin: 0.85rem 0 0;
+  padding-left: 1.25rem;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--muted-foreground);
+}
+
+.ms-feature-guide__start-list--inline {
+  margin-top: 0.65rem;
+}
+
+.ms-feature-guide__hero {
+  margin-bottom: 1.5rem;
+}
+
+.ms-feature-guide__kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.ms-feature-guide__title {
+  margin: 0.5rem 0 0;
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+
+.ms-feature-guide__lead {
+  margin: 0.65rem 0 0;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--muted-foreground);
+  max-width: 42rem;
+}
+
+.ms-feature-guide__route {
+  margin-bottom: 2rem;
+  padding: 1rem 1.15rem;
+  border-radius: 1.15rem;
+  border: 1px dashed rgba(0, 255, 213, 0.22);
+  background: rgba(0, 255, 213, 0.04);
+}
+
+.ms-feature-guide__route-title {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 0 0.65rem;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.ms-feature-guide__start-list li {
+  margin-bottom: 0.35rem;
+}
+
+.ms-feature-guide__start-list li:last-child {
+  margin-bottom: 0;
+}
+
+.ms-feature-guide__step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  margin-right: 0.5rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 900;
+  color: #07131a;
+  background: var(--accent);
+  vertical-align: middle;
+}
+
+.ms-feature-guide__section {
+  margin-bottom: 2rem;
+}
+
+.ms-feature-guide__section-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.ms-feature-guide__section-lead {
+  margin: 0.35rem 0 0.85rem;
+  font-size: 0.82rem;
+  color: var(--muted-foreground);
+}
+
+.ms-feature-guide__grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .ms-feature-guide__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.ms-feature-guide__card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 1rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.ms-feature-guide__card-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.75rem;
+  background: rgba(0, 255, 213, 0.1);
+  color: var(--accent);
+}
+
+.ms-feature-guide__card-title {
+  margin: 0.15rem 0 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.ms-feature-guide__card-summary {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--muted-foreground);
+}
+
+.ms-feature-guide__card-when {
+  margin: 0.25rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--muted-foreground);
+}
+
+.ms-feature-guide__card-when strong {
+  color: var(--foreground);
+  font-weight: 700;
+}
+
+.ms-feature-guide__card-link {
+  margin-top: auto;
+  padding-top: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+html:not(.dark) .ms-feature-guide__card {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: color-mix(in srgb, var(--border) 75%, transparent);
+}
+
+html:not(.dark) .ms-feature-guide--compact,
+html:not(.dark) .ms-feature-guide__route {
+  background: color-mix(in srgb, var(--accent) 5%, #fff);
+  border-color: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+

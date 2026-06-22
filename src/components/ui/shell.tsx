@@ -15,6 +15,7 @@ import { JurisprudenceAdminNavLink } from "@/components/jurisprudence/jurisprude
 
 const NAV = [
   { href: "/", label: "Inicio" },
+  { href: "/guia", label: "Guía" },
   { href: "/library", label: "Materiales" },
   { href: "/biblioteca-juridica", label: "Jurisprudencia" },
   { href: "/favorites", label: "Favoritos" },

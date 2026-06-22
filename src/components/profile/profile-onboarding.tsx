@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, BookOpen, Gavel, Map, Upload } from "lucide-react";
+import { ArrowRight, BookOpen, Compass, Gavel, Map, Upload } from "lucide-react";
 
 const STEPS = [
   {
@@ -40,7 +40,11 @@ export function ProfileOnboarding({ compact = false }: { compact?: boolean }) {
       <>
         <p className="ms-home-onboarding__title">Primera sesión</p>
         <p className="ms-home-onboarding__lead">
-          Cuatro pasos para activar tu espacio de estudio.
+          Cuatro pasos para activar tu espacio.{" "}
+          <Link href="/guia" className="ms-home-onboarding__guide-link">
+            <Compass size={11} aria-hidden />
+            ¿Qué hace cada cosa?
+          </Link>
         </p>
         <div className="ms-home-onboarding__pills">
           {STEPS.map((step) => {
@@ -66,7 +70,10 @@ export function ProfileOnboarding({ compact = false }: { compact?: boolean }) {
     <section className="rounded-2xl border border-dashed border-[var(--pd-border-accent,var(--border))] bg-[var(--accent-soft)] p-5">
       <p className="text-sm font-semibold text-foreground">Empieza tu ruta en MemoriaStudy</p>
       <p className="mt-1 text-xs text-muted-foreground">
-        Completa estos pasos para desbloquear estadísticas, logros y recomendaciones personalizadas.
+        Completa estos pasos para desbloquear estadísticas, logros y recomendaciones personalizadas.{" "}
+        <Link href="/guia" className="font-semibold text-[var(--accent)] hover:underline">
+          Ver guía de todas las funciones →
+        </Link>
       </p>
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         {STEPS.map((step) => {

@@ -16,6 +16,7 @@ import {
 import { AppShell } from "@/components/ui/shell";
 import { AcademicTrustCard } from "@/components/academic-trust/academic-trust-card";
 import { DashboardOnboarding } from "@/components/dashboard/dashboard-onboarding";
+import { FeatureGuide } from "@/components/product/feature-guide";
 import { LegalAiHero } from "@/components/home/legal-ai-hero";
 import { TimeGreetingText } from "@/components/home/time-greeting-text";
 import { MobilePwaMicroEntry } from "@/components/pwa/mobile-pwa-micro-entry";
@@ -250,6 +251,12 @@ export default async function Home() {
         </section>
 
         {isAuthenticated ? <AcademicTrustCard /> : null}
+
+        {isAuthenticated ? (
+          <div className="mb-6">
+            <FeatureGuide compact />
+          </div>
+        ) : null}
 
         <section className="ms-home-feature-band" aria-label="Funciones principales">
           {FEATURE_CARDS.map((feature) => {
