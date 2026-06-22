@@ -25,6 +25,7 @@ type ProfileRankingRow = {
   active_study_ms: number | null;
   active_study_ms_week: number | null;
   show_in_study_ranking: boolean | null;
+  avatar_url: string | null;
 };
 
 function rowMs(row: ProfileRankingRow, period: StudyRankingPeriod): number {
@@ -45,6 +46,7 @@ function buildEntry(
     cycleLabel: row.current_cycle_label,
     activeStudyMs: rowMs(row, period),
     isCurrentUser: row.user_id === currentUserId,
+    avatarUrl: row.avatar_url ?? null,
   };
 }
 
@@ -75,7 +77,7 @@ export async function GET(request: Request) {
     let topQuery = admin
       .from("user_profiles")
       .select(
-        "user_id, full_name, current_cycle_label, current_cycle_number, active_study_ms, active_study_ms_week, show_in_study_ranking",
+        "user_id, full_name, current_cycle_label, current_cycle_number, active_study_ms, active_study_ms_week, show_in_study_ranking, avatar_url",
       )
       .eq("show_in_study_ranking", true)
       .gte(msColumn, STUDY_RANKING_MIN_MS)
@@ -92,7 +94,7 @@ export async function GET(request: Request) {
         admin
           .from("user_profiles")
           .select(
-            "user_id, full_name, current_cycle_label, current_cycle_number, active_study_ms, active_study_ms_week, show_in_study_ranking",
+            "user_id, full_name, current_cycle_label, current_cycle_number, active_study_ms, active_study_ms_week, show_in_study_ranking, avatar_url",
           )
           .eq("user_id", user.id)
           .maybeSingle(),

@@ -12,6 +12,7 @@ import {
   progressVsLeader,
   rankMedal,
 } from "@/lib/ranking/study-league";
+import { ProfileAvatar } from "@/components/profile/profile-avatar";
 
 type Props = {
   currentCycleNumber?: number | null;
@@ -162,7 +163,6 @@ export function StudyHoursLeaderboard({
         <ol className="study-ranking__list">
           {data.entries.map((entry) => {
             const league = getStudyLeague(entry.activeStudyMs);
-            const medal = rankMedal(entry.rank);
             const progress = progressVsLeader(entry.activeStudyMs, leaderMs);
 
             return (
@@ -170,8 +170,24 @@ export function StudyHoursLeaderboard({
                 key={entry.userId}
                 className={`study-ranking__row${entry.isCurrentUser ? " is-you" : ""}`}
               >
-                <span className="study-ranking__rank" aria-label={`Puesto ${entry.rank}`}>
-                  {medal ?? entry.rank}
+                <span
+                  className={`study-ranking__rank${entry.avatarUrl ? " study-ranking__rank--avatar" : ""}`}
+                  aria-label={`Puesto ${entry.rank}`}
+                >
+                  {entry.avatarUrl ? (
+                    <span className="study-ranking__rank-avatar-wrap">
+                      <ProfileAvatar
+                        name={entry.displayName}
+                        avatarUrl={entry.avatarUrl}
+                        size="rank"
+                      />
+                      <span className="study-ranking__rank-badge">
+                        {rankMedal(entry.rank) ?? entry.rank}
+                      </span>
+                    </span>
+                  ) : (
+                    (rankMedal(entry.rank) ?? entry.rank)
+                  )}
                 </span>
                 <div className="study-ranking__body">
                   <div className="study-ranking__meta">

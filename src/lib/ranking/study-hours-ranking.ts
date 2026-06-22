@@ -10,6 +10,7 @@ export type StudyRankingEntry = {
   cycleLabel: string | null;
   activeStudyMs: number;
   isCurrentUser: boolean;
+  avatarUrl: string | null;
 };
 
 export type StudyRankingResponse = {

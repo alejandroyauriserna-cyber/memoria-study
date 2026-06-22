@@ -65,6 +65,7 @@ type Props = {
   favoritesCount?: number;
   initialSettings?: Partial<ProfileStudySettings>;
   showInStudyRanking?: boolean;
+  avatarUrl?: string | null;
 };
 
 const QUICK_GOAL_TEMPLATES = [
@@ -111,6 +112,7 @@ export function LearningHub({
   favoritesCount = 0,
   initialSettings,
   showInStudyRanking: initialShowInRanking = true,
+  avatarUrl: initialAvatarUrl = null,
 }: Props) {
   const [settings, setSettings] = useState<ProfileStudySettings>(() => ({
     ...loadProfileStudySettings(),
@@ -250,6 +252,7 @@ export function LearningHub({
         favoritesCount={favoritesCount}
         level={level}
         theme={theme}
+        avatarUrl={initialAvatarUrl}
       />
 
       {isNewUser ? <ProfileOnboarding /> : null}
