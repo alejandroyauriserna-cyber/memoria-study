@@ -1,6 +1,7 @@
 import { env } from "@/lib/env";
 import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
 import { generateGeminiText } from "@/lib/ai/gemini-text";
+import { humanizeAiError } from "@/lib/ai/humanize-ai-error";
 import type { UserAiCredentials } from "@/lib/ai/user-ai-credentials";
 
 export type TextGenerationProvider = "gemini" | "openrouter" | "xai" | "openai";
@@ -253,5 +254,7 @@ export async function generateTextWithFallback(input: {
     );
   }
 
-  throw new Error(`Todos los proveedores de texto fallaron. ${errors.join(" | ")}`);
+  throw new Error(
+    humanizeAiError(`Todos los proveedores de texto fallaron. ${errors.join(" | ")}`),
+  );
 }

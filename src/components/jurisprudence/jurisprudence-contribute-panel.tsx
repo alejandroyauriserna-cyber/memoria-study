@@ -22,6 +22,7 @@ import {
 import type { JurisprudenceFieldConfidence, JurisprudenceSuggestedMetadata } from "@/types/jurisprudence-ingest";
 import type { JurisprudenceRecord } from "@/types/jurisprudence";
 import { parseJsonResponse } from "@/lib/api/parse-json-response";
+import { humanizeAiError, isAiCatalogBlockedError } from "@/lib/ai/humanize-ai-error";
 import { extractStudyDocumentTextClient } from "@/lib/documents/extract-client";
 import { preparePdfForUpload } from "@/lib/pdf/prepare-pdf-upload";
 import { uploadJurisprudencePdfToStorage } from "@/lib/jurisprudence/upload-jurisprudence-pdf-client";
@@ -77,6 +78,7 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
   const [isDragging, setIsDragging] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [preparing, setPreparing] = useState(false);
+  const [manualEntry, setManualEntry] = useState(false);
   const [analyzed, setAnalyzed] = useState(false);
   const [aiConfidence, setAiConfidence] = useState<JurisprudenceFieldConfidence | null>(null);
   const [aiFilled, setAiFilled] = useState<AiFilledFields>({});
@@ -99,6 +101,7 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
     setIsDragging(false);
     setAnalyzed(false);
     setPreparing(false);
+    setManualEntry(false);
     setAiConfidence(null);
     setAiFilled({});
     setOverallConfidence(null);
@@ -177,6 +180,7 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
 
         const payload = await parseJsonResponse<{
           error?: string;
+          manualEntryAllowed?: boolean;
           suggested?: JurisprudenceSuggestedMetadata;
           confidence?: JurisprudenceFieldConfidence;
           overallConfidence?: number;
@@ -185,7 +189,11 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
         }>(response);
 
         if (!response.ok) {
-          throw new Error(payload.error ?? "No se pudo analizar el documento.");
+          const raw = payload.error ?? "No se pudo analizar el documento.";
+          if (payload.manualEntryAllowed || isAiCatalogBlockedError(raw)) {
+            setManualEntry(true);
+          }
+          throw new Error(humanizeAiError(raw));
         }
 
         if (!payload.suggested || !payload.confidence) {
@@ -204,9 +212,18 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
             ? "Revisa los campos marcados en amarillo antes de enviar."
             : "Metadatos detectados. Revisa y envía cuando estés listo.",
         );
+        setManualEntry(false);
       } catch (caught) {
-        setError(caught instanceof Error ? caught.message : "Error al analizar.");
-        setAnalyzeMessage("");
+        const raw = caught instanceof Error ? caught.message : "Error al analizar.";
+        if (isAiCatalogBlockedError(raw)) {
+          setManualEntry(true);
+        }
+        setError(humanizeAiError(raw));
+        setAnalyzeMessage(
+          isAiCatalogBlockedError(raw)
+            ? "Completa el formulario manualmente. Tu PDF ya está listo para enviar."
+            : "",
+        );
       } finally {
         setAnalyzing(false);
       }
@@ -228,6 +245,7 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
       setUseLink(false);
       setError("");
       setAnalyzed(false);
+      setManualEntry(false);
       setAiConfidence(null);
       setAiFilled({});
       setOverallConfidence(null);
@@ -373,7 +391,11 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
     }
   };
 
-  const canSubmit = analyzed && !analyzing && !preparing && (useLink ? Boolean(pdfUrl.trim()) : Boolean(file));
+  const canSubmit =
+    (analyzed || manualEntry) &&
+    !analyzing &&
+    !preparing &&
+    (useLink ? Boolean(pdfUrl.trim()) : Boolean(file));
 
   if (!open) return null;
 
@@ -419,6 +441,7 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
                 onClick={() => {
                   setUseLink(false);
                   setAnalyzed(false);
+                  setManualEntry(false);
                   setAnalyzeMessage("");
                 }}
               >
@@ -430,6 +453,7 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
                 onClick={() => {
                   setUseLink(true);
                   setAnalyzed(false);
+                  setManualEntry(false);
                   setAnalyzeMessage("");
                 }}
               >
@@ -540,7 +564,10 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
           ) : null}
           </section>
 
-          <fieldset className="bj-contribute-section bj-contribute-grid" disabled={!analyzed || analyzing || preparing}>
+          <fieldset
+            className="bj-contribute-section bj-contribute-grid"
+            disabled={(!analyzed && !manualEntry) || analyzing || preparing}
+          >
             <legend className="sr-only">Metadatos del aporte</legend>
 
             <div className="bj-contribute-section__head bj-contribute-section__head--grid">
@@ -666,9 +693,15 @@ export function JurisprudenceContributePanel({ open, onClose, onSubmitted }: Pro
             </label>
           </fieldset>
 
-          {!analyzed && !analyzing && !preparing ? (
+          {!analyzed && !manualEntry && !analyzing && !preparing ? (
             <p className="bj-contribute-hint bj-contribute-hint--section">
               Primero sube el PDF (o analiza un enlace). La IA completará el formulario por ti.
+            </p>
+          ) : null}
+
+          {manualEntry && !analyzed ? (
+            <p className="bj-contribute-hint bj-contribute-hint--section">
+              La IA no pudo catalogar este documento. Completa los campos manualmente y envía a revisión.
             </p>
           ) : null}
 

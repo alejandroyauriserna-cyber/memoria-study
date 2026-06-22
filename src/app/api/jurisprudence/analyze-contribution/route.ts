@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { humanizeAiError, isAiCatalogBlockedError } from "@/lib/ai/humanize-ai-error";
 import {
   computeOverallConfidence,
   extractJurisprudenceMetadataWithAi,
@@ -161,9 +162,9 @@ export async function POST(request: Request) {
     }
 
     console.error("[jurisprudence/analyze-contribution]", caught);
-    return NextResponse.json(
-      { error: caught instanceof Error ? caught.message : "No se pudo analizar el documento." },
-      { status: 500 },
-    );
+    const raw = caught instanceof Error ? caught.message : "No se pudo analizar el documento.";
+    const error = humanizeAiError(raw);
+    const status = isAiCatalogBlockedError(raw) ? 503 : 500;
+    return NextResponse.json({ error, manualEntryAllowed: status === 503 }, { status });
   }
 }

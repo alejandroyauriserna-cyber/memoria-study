@@ -136,24 +136,21 @@ function normalizeMateria(raw: string): JurisprudenceMateria {
   return "civil";
 }
 
-function pickHeaderSample(fullText: string, fileName: string): string {
-  const prepared = prepareTextForGeneration(fullText, 18_000);
-  const head = prepared.text.slice(0, 12_000);
-  return `ARCHIVO: ${fileName}\n\nTEXTO (prioriza primeras páginas, encabezados, sumilla, asunto, datos de identificación):\n${head}`;
+function pickHeaderSample(fullText: string, fileName: string, maxChars = 6_000): string {
+  const prepared = prepareTextForGeneration(fullText, maxChars + 4_000);
+  const head = prepared.text.slice(0, maxChars);
+  return `ARCHIVO: ${fileName}\n\nTEXTO (prioriza encabezados, sumilla, asunto, datos de identificación; NO copies frases literales en tu respuesta):\n${head}`;
 }
 
-export async function extractJurisprudenceMetadataWithAi(input: {
-  extractedText: string;
-  fileName: string;
-}): Promise<{
-  suggested: JurisprudenceSuggestedMetadata;
-  confidence: JurisprudenceFieldConfidence;
-}> {
-  const sample = pickHeaderSample(input.extractedText, input.fileName);
+const ANTI_RECITATION_NOTE = `
+IMPORTANTE: No copies texto literal del documento. Extrae solo metadatos estructurados y redacta título/resumen con tus propias palabras breves.
+`.trim();
 
+async function requestMetadataExtraction(sample: string, extraNote?: string) {
   const prompt = `Eres un bibliotecario jurídico peruano especializado en indexar jurisprudencia de la Corte Suprema, TC, SUNAT y tribunales superiores.
 
 Analiza el documento y extrae metadatos para catalogación. NO inventes datos que no aparezcan en el texto; si no hay certeza, baja la confianza.
+${extraNote ? `\n${extraNote}\n` : ""}
 
 TIPOS PERMITIDOS (campo tipo, valor exacto):
 ${JURISPRUDENCE_TIPOS.join(", ")}
@@ -215,7 +212,34 @@ ${sample}`;
     timeoutMs: 90_000,
   });
 
-  const parsed = AiExtractSchema.parse(JSON.parse(raw));
+  return AiExtractSchema.parse(JSON.parse(raw));
+}
+
+function shouldRetryWithShorterSample(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return /recitation|blocked due to/i.test(message);
+}
+
+export async function extractJurisprudenceMetadataWithAi(input: {
+  extractedText: string;
+  fileName: string;
+}): Promise<{
+  suggested: JurisprudenceSuggestedMetadata;
+  confidence: JurisprudenceFieldConfidence;
+}> {
+  const sample = pickHeaderSample(input.extractedText, input.fileName);
+
+  let parsed;
+  try {
+    parsed = await requestMetadataExtraction(sample);
+  } catch (firstError) {
+    if (!shouldRetryWithShorterSample(firstError)) {
+      throw firstError;
+    }
+
+    const compactSample = pickHeaderSample(input.extractedText, input.fileName, 2_500);
+    parsed = await requestMetadataExtraction(compactSample, ANTI_RECITATION_NOTE);
+  }
 
   const initialTipo = normalizeTipo(parsed.tipo);
   const keywords = parsed.keywords.map((k) => k.trim()).filter(Boolean).slice(0, 12);
