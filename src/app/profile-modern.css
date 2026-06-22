@@ -1336,6 +1336,17 @@ html.dark .study-ranking__league--starter {
   color: #fca5a5;
 }
 
+.profile-avatar-designer__notice {
+  margin: 0.75rem 0 0;
+  padding: 0.65rem 0.85rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.88);
+  background: rgba(251, 191, 36, 0.12);
+  border: 1px solid rgba(251, 191, 36, 0.22);
+}
+
 .profile-avatar-designer__actions {
   display: flex;
   align-items: center;
@@ -1379,6 +1390,12 @@ html:not(.dark) .study-ranking__rank-badge {
   color: var(--foreground);
   background: rgba(255, 255, 255, 0.96);
   border-color: color-mix(in srgb, var(--border) 75%, transparent);
+}
+
+html:not(.dark) .profile-avatar-designer__notice {
+  color: var(--foreground);
+  background: rgba(251, 191, 36, 0.14);
+  border-color: rgba(202, 138, 4, 0.22);
 }
 
 html:not(.dark) .profile-avatar-designer {

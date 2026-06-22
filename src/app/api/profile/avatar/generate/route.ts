@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAuth } from "@/lib/api/require-auth";
-import { generateOrganizerImageWithFallback } from "@/lib/ai/generate-image-with-fallback";
-import { buildImageGenerationUserMessage } from "@/lib/ai/image-generation-user-messages";
+import { getImageGenerationEnvStatus } from "@/lib/ai/image-generation-env";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { generateProfileAvatarImage } from "@/lib/profile/generate-profile-avatar-image";
 import {
-  buildProfileAvatarPrompt,
   removeProfileAvatar,
   uploadProfileAvatarBuffer,
 } from "@/lib/profile/profile-avatar-storage";
@@ -20,26 +19,14 @@ export async function POST(request: Request) {
     if (auth instanceof NextResponse) return auth;
 
     const { prompt } = bodySchema.parse(await request.json());
-    const fullPrompt = buildProfileAvatarPrompt(prompt);
+    const envStatus = getImageGenerationEnvStatus();
 
-    const generated = await generateOrganizerImageWithFallback(fullPrompt, {
-      aspectRatio: "1:1",
-    });
-
-    if (!generated.ok) {
-      const message =
-        buildImageGenerationUserMessage({
-          diagnostics: generated.diagnostics,
-          source: "fallback",
-        }) ?? generated.lastError;
-
-      return NextResponse.json({ error: message }, { status: 503 });
-    }
+    const { result, warning } = await generateProfileAvatarImage(prompt);
 
     const { publicUrl } = await uploadProfileAvatarBuffer(
       auth.user.id,
-      generated.result.buffer,
-      generated.result.mimeType || "image/png",
+      result.buffer,
+      result.mimeType || "image/png",
     );
 
     const admin = createAdminClient();
@@ -56,8 +43,9 @@ export async function POST(request: Request) {
     return NextResponse.json({
       ok: true,
       avatarUrl: publicUrl,
-      source: generated.result.source,
-      warning: generated.result.warning ?? null,
+      source: result.source,
+      warning: warning ?? result.warning ?? null,
+      fluxConfigured: envStatus.hfTokenConfigured,
     });
   } catch (caught) {
     if (caught instanceof z.ZodError) {

@@ -38,6 +38,7 @@ export function ProfileAvatarDesigner({
   const [loading, setLoading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const progress = useLoadingProgress(loading, "sticker");
 
@@ -49,6 +50,7 @@ export function ProfileAvatarDesigner({
     if (open) {
       setPreviewUrl(avatarUrl ?? null);
       setError(null);
+      setNotice(null);
     }
   }, [open, avatarUrl]);
 
@@ -73,6 +75,7 @@ export function ProfileAvatarDesigner({
   async function generateAvatar(userPrompt: string) {
     setLoading(true);
     setError(null);
+    setNotice(null);
     try {
       const res = await fetch("/api/profile/avatar/generate", {
         method: "POST",
@@ -83,12 +86,19 @@ export function ProfileAvatarDesigner({
         avatarUrl?: string;
         error?: string;
         warning?: string | null;
+        source?: string;
       };
       if (!res.ok) throw new Error(data.error ?? "No se pudo generar el avatar.");
       if (!data.avatarUrl) throw new Error("No se recibió la imagen del avatar.");
 
       setPreviewUrl(data.avatarUrl);
       onAvatarUpdated(data.avatarUrl);
+
+      if (data.warning) {
+        setNotice(data.warning);
+      } else if (data.source === "flux") {
+        setNotice("Avatar generado con FLUX (Hugging Face).");
+      }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Error al generar.");
     } finally {
@@ -152,7 +162,8 @@ export function ProfileAvatarDesigner({
                   Crea tu avatar
                 </h2>
                 <p className="profile-avatar-designer__subtitle">
-                  Aparecerá en tu perfil y en el ranking. Describe cómo quieres verte.
+                  Aparecerá en tu perfil y en el ranking. Usamos FLUX (Hugging Face) — sin Gemini de
+                  pago.
                 </p>
               </div>
               <button type="button" className="profile-avatar-designer__close" onClick={onClose}>
@@ -221,6 +232,9 @@ export function ProfileAvatarDesigner({
             ) : null}
 
             {error ? <p className="profile-avatar-designer__error">{error}</p> : null}
+            {notice && !error ? (
+              <p className="profile-avatar-designer__notice">{notice}</p>
+            ) : null}
 
             <div className="profile-avatar-designer__actions">
               {previewUrl ? (
