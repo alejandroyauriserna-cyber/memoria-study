@@ -65,10 +65,13 @@ export function buildProfileAvatarSvgFallback(prompt: string, displayName?: stri
   return Buffer.from(svg, "utf-8");
 }
 
-/** Prompt optimizado para FLUX Schnell — ilustración de avatar de calidad. */
+/** Prompt para FLUX: el texto del estudiante manda; solo añadimos reglas de avatar. */
 export function buildProfileAvatarFluxPrompt(userPrompt: string): string {
-  const subject = userPrompt.replace(/[<>&"']/g, "").trim().slice(0, 120);
-  return `Stylized profile avatar portrait, ${subject}, law student character, polished digital illustration, clean anime-influenced art, expressive eyes, cyan teal rim light, dark elegant background, shoulders up, centered composition, vibrant but professional, high detail, single character, no text, no watermark, no collage`;
+  const subject = userPrompt.replace(/[<>&"']/g, "").trim().slice(0, 200);
+  if (!subject) {
+    return "Stylized profile picture icon, abstract cyan teal glow, dark background, centered, square crop, high quality illustration, no text, no watermark";
+  }
+  return `${subject}, profile picture avatar, centered composition, square crop friendly, clean stylized illustration, vivid colors, simple dark background, high detail, no text, no watermark, no collage, single focal subject`;
 }
 
 function fluxFailureMessage(lastError: string): string {
