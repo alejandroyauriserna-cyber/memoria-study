@@ -1,3 +1,4 @@
+import { InferenceClient } from "@huggingface/inference";
 import { getImageGenerationEnvStatus } from "@/lib/ai/image-generation-env";
 import { logImageGenerationAttemptFailed } from "@/lib/ai/image-generation-logger";
 import { env } from "@/lib/env";
@@ -5,10 +6,8 @@ import type { ImageAspectRatio, ImageGenerationResult } from "@/lib/ai/image-gen
 
 const DEFAULT_FLUX_MODEL = "black-forest-labs/FLUX.1-schnell";
 
-const HF_INFERENCE_ENDPOINTS = [
-  (model: string) => `https://router.huggingface.co/hf-inference/models/${model}`,
-  (model: string) => `https://api-inference.huggingface.co/models/${model}`,
-] as const;
+/** HF ya no sirve FLUX solo por hf-inference; el SDK elige fal-ai, nscale, etc. */
+const FLUX_PROVIDER_ATTEMPTS = ["auto", "fal-ai", "nscale", "black-forest-labs"] as const;
 
 function dimensionsForAspectRatio(aspectRatio: ImageAspectRatio) {
   switch (aspectRatio) {
@@ -25,21 +24,12 @@ function inferenceStepsForModel(model: string) {
   return /schnell/i.test(model) ? 4 : 28;
 }
 
-function parseErrorPayload(payload: unknown, status: number): string {
-  if (typeof payload === "object" && payload) {
-    const record = payload as {
-      error?: string;
-      message?: string;
-      estimated_time?: number;
-    };
-    if (record.error) {
-      return record.estimated_time
-        ? `${record.error} (reintenta en ~${Math.ceil(record.estimated_time)}s)`
-        : record.error;
-    }
-    if (record.message) return record.message;
+function parseInferenceError(caught: unknown, model: string, provider: string): string {
+  if (caught instanceof Error) {
+    const message = caught.message.trim();
+    if (message) return `${model} (${provider}): ${message}`;
   }
-  return `HTTP ${status}`;
+  return `${model} (${provider}): error de inferencia`;
 }
 
 export async function generateFluxImage(
@@ -64,79 +54,48 @@ export async function generateFluxImage(
   const aspectRatio = options.aspectRatio ?? "1:1";
   const { width, height } = dimensionsForAspectRatio(aspectRatio);
   const numInferenceSteps = inferenceStepsForModel(model);
+  const client = new InferenceClient(env.hfToken);
 
   let lastError = "Flux no respondió.";
 
-  for (const buildUrl of HF_INFERENCE_ENDPOINTS) {
-    const url = buildUrl(model);
+  for (const provider of FLUX_PROVIDER_ATTEMPTS) {
+    const startedAt = Date.now();
 
     try {
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${env.hfToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      const blob = await client.textToImage(
+        {
+          model,
           inputs: prompt,
+          provider,
           parameters: {
             width,
             height,
             num_inference_steps: numInferenceSteps,
           },
-        }),
-      });
+        },
+        { outputType: "blob" },
+      );
 
-      const contentType = response.headers.get("content-type") ?? "";
+      const arrayBuffer = await blob.arrayBuffer();
 
-      if (!response.ok) {
-        const payload = contentType.includes("json")
-          ? await response.json()
-          : await response.text();
-        lastError = `${model}: ${parseErrorPayload(payload, response.status)}`;
-        logImageGenerationAttemptFailed({
-          event: "flux_http_error",
-          provider: "flux",
+      return {
+        ok: true,
+        result: {
+          buffer: Buffer.from(arrayBuffer),
+          mimeType: blob.type?.split(";")[0]?.trim() || "image/png",
+          source: "flux",
           model,
-          durationMs: 0,
-          error: lastError,
-          endpoint: url,
-        });
-        continue;
-      }
-
-      if (contentType.includes("image")) {
-        const arrayBuffer = await response.arrayBuffer();
-        return {
-          ok: true,
-          result: {
-            buffer: Buffer.from(arrayBuffer),
-            mimeType: contentType.split(";")[0]?.trim() || "image/png",
-            source: "flux",
-            model,
-          },
-        };
-      }
-
-      const payload = await response.json();
-      lastError = `${model}: ${parseErrorPayload(payload, response.status)}`;
-      logImageGenerationAttemptFailed({
-        event: "flux_unexpected_response",
-        provider: "flux",
-        model,
-        durationMs: 0,
-        error: lastError,
-        endpoint: url,
-      });
+        },
+      };
     } catch (caught) {
-      lastError = `${model}: ${caught instanceof Error ? caught.message : "error de red"}`;
+      lastError = parseInferenceError(caught, model, provider);
       logImageGenerationAttemptFailed({
-        event: "flux_network_error",
+        event: "flux_inference_error",
         provider: "flux",
         model,
-        durationMs: 0,
+        durationMs: Date.now() - startedAt,
         error: lastError,
-        endpoint: url,
+        endpoint: provider,
       });
     }
   }
@@ -145,14 +104,17 @@ export async function generateFluxImage(
 }
 
 export function fluxQuotaHint(error: string): string | undefined {
-  if (/quota|429|billing|credits|limit/i.test(error)) {
-    return "Tu token de Hugging Face no tiene cuota de inferencia para imágenes. Revisa HF_TOKEN y el plan de Inference Providers.";
+  if (/quota|429|billing|credits|limit|exhausted/i.test(error)) {
+    return "Tu token de Hugging Face no tiene cuota de inferencia para imágenes. Revisa créditos en hf.co/settings/billing y el plan Inference Providers.";
   }
-  if (/401|403|unauthorized|forbidden/i.test(error)) {
-    return "HF_TOKEN inválido o sin permiso de inferencia. Crea un token con acceso a Inference Providers.";
+  if (/401|403|unauthorized|forbidden|permission|gated|accept/i.test(error)) {
+    return "HF_TOKEN inválido o sin permiso Inference Providers. Crea un token en hf.co/settings/tokens con permiso «Inference Providers» y acepta la licencia del modelo FLUX en Hugging Face.";
   }
-  if (/loading|estimated_time/i.test(error)) {
-    return "El modelo Flux se está cargando en Hugging Face. Espera unos segundos y vuelve a intentar.";
+  if (/loading|estimated_time|503|unavailable/i.test(error)) {
+    return "El modelo Flux se está cargando o el proveedor está ocupado. Espera unos segundos y vuelve a intentar.";
+  }
+  if (/410|deprecated|no longer supported|api-inference/i.test(error)) {
+    return "Hugging Face cambió su API de imágenes. Redeploy la app más reciente; usa HF_TOKEN con Inference Providers.";
   }
   return undefined;
 }
