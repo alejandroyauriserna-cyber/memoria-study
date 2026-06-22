@@ -12,7 +12,7 @@ values (
   'profile-avatars',
   true,
   2097152,
-  array['image/png', 'image/jpeg', 'image/webp']::text[]
+  array['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml']::text[]
 )
 on conflict (id) do update set
   public = true,
