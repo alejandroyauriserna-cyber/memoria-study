@@ -43,10 +43,7 @@ export async function POST(request: Request) {
         cycleLabel: material.cycleLabel,
         totalPages: material.pages.length,
         documentKind: material.documentKind,
-        pageTexts:
-          material.documentKind === "pptx"
-            ? material.pages.map((page) => page.text)
-            : undefined,
+        pageTexts: material.pages.map((page) => page.text),
       },
       index,
     });

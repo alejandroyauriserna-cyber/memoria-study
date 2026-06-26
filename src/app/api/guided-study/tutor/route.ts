@@ -71,6 +71,7 @@ export async function POST(request: Request) {
       caseNarrative?: import("@/types/guided-legal-study").CaseNarrativeThread;
       socraticMode?: boolean;
       pedagogyMemoryHint?: string;
+      pageTexts?: string[];
     };
 
     if (!body.materialId || !body.pageNumber) {
@@ -91,7 +92,7 @@ export async function POST(request: Request) {
     }
 
     const [material, sourceSettings] = await Promise.all([
-      loadMaterialForGuidedStudy(body.materialId, user.id),
+      loadMaterialForGuidedStudy(body.materialId, user.id, body.pageTexts),
       enrichSourceSettings(user.id, body.sourceSettings),
     ]);
 

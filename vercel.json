@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "src/app/api/guided-study/**/route.ts": {
+      "maxDuration": 300
+    }
+  }
+}

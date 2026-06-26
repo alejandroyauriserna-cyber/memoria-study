@@ -19,6 +19,7 @@ import {
   GUIDED_STUDY_CLIENT_TIMEOUT_MS,
   guidedStudyClientTimeoutSeconds,
 } from "@/lib/guided-study/timeouts";
+import { humanizeGuidedStudyFetchError } from "@/lib/guided-study/humanize-fetch-error";
 import { parseJsonResponse } from "@/lib/api/parse-json-response";
 import { useActiveStudyTime } from "@/hooks/use-active-study-time";
 import { filterAnalysisForExamMode } from "@/lib/guided-study/legal-tutor";
@@ -301,9 +302,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
           const message =
             caught instanceof Error && caught.name === "AbortError"
               ? `El análisis del PDF superó ${guidedStudyClientTimeoutSeconds() / 60} minutos. Intenta de nuevo; la primera carga de un PDF largo puede tardar.`
-              : caught instanceof Error
-                ? caught.message
-                : "Error desconocido.";
+              : humanizeGuidedStudyFetchError(caught);
           setError(message);
           setPhase("error");
         }
@@ -454,6 +453,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
             caseNarrative: studySession?.caseNarrative,
             socraticMode: isSocraticTrigger(question),
             pedagogyMemoryHint: pedagogyMemoryHint || undefined,
+            pageTexts: material.pageTexts,
           }),
           signal: controller.signal,
         });
@@ -492,9 +492,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
         const message =
           caught instanceof Error && caught.name === "AbortError"
             ? `El profesor IA sigue procesando contenido denso. Espera hasta ${guidedStudyClientTimeoutSeconds() / 60} min o inténtalo de nuevo.`
-            : caught instanceof Error
-              ? caught.message
-              : "Error consultando al profesor.";
+            : humanizeGuidedStudyFetchError(caught);
         setChatMessages((prev) => [
           ...prev,
           createClientTutorChatMessage(question, message),
@@ -546,6 +544,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
             caseNarrative: studySession?.caseNarrative,
             socraticMode: isSocraticTrigger(question),
             pedagogyMemoryHint: pedagogyMemoryHint || undefined,
+            pageTexts: material.pageTexts,
           }),
           signal: controller.signal,
         });
@@ -652,6 +651,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
             teachingStyle: professorStyle,
             caseNarrative: studySession?.caseNarrative,
             pedagogyMemoryHint: pedagogyMemoryHint || undefined,
+            pageTexts: material.pageTexts,
           }),
           signal: controller.signal,
         });
@@ -679,9 +679,7 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
         const message =
           caught instanceof Error && caught.name === "AbortError"
             ? `El profesor IA superó ${guidedStudyClientTimeoutSeconds() / 60} minutos. Las explicaciones profundas pueden tardar; inténtalo de nuevo.`
-            : caught instanceof Error
-              ? caught.message
-              : "Error consultando al profesor.";
+            : humanizeGuidedStudyFetchError(caught);
         setTutorState((prev) => ({
           ...prev,
           analysis: null,

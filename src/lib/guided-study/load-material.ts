@@ -122,6 +122,7 @@ function normalizeCachedStudyPages(
 export async function loadMaterialForGuidedStudy(
   materialId: string,
   userId?: string | null,
+  clientPageTexts?: string[] | null,
 ): Promise<LoadedStudyMaterial> {
   const access = await verifyMaterialAccess(materialId, userId);
   if (!access.allowed) {
@@ -141,8 +142,31 @@ export async function loadMaterialForGuidedStudy(
     throw new Error("Material no encontrado.");
   }
 
-  const cached = pageCache.get(materialId);
   const documentKind = detectStudyDocumentKind(material.file_name ?? "") ?? "pdf";
+
+  if (clientPageTexts?.some((text) => text?.trim())) {
+    const pages = normalizeStudyPages(
+      clientPageTexts.map((text, index) => ({
+        pageNumber: index + 1,
+        text: text ?? "",
+      })),
+    );
+    if (isGuidedStudyPageCacheUsable(pages)) {
+      pageCache.set(materialId, { pages, loadedAt: Date.now() });
+      return {
+        id: material.id,
+        title: material.title,
+        fileName: material.file_name,
+        fileUrl: material.file_url,
+        courseName: material.course_name,
+        cycleLabel: material.cycle_label,
+        documentKind,
+        pages,
+      };
+    }
+  }
+
+  const cached = pageCache.get(materialId);
 
   if (cached && Date.now() - cached.loadedAt < CACHE_TTL_MS) {
     const normalized = normalizeCachedStudyPages(cached.pages, documentKind);
