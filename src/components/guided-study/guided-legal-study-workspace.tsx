@@ -394,6 +394,10 @@ export function GuidedLegalStudyWorkspace({ materialId }: { materialId: string }
       const local = loadLocalTutorChat(materialId, scope, examOnly, fingerprint);
       setChatMessages(local);
 
+      if (local.length > 0) {
+        return;
+      }
+
       try {
         const remote = await fetchRemoteTutorChat(materialId, scope, examOnly, settings);
         if (remote.length) {

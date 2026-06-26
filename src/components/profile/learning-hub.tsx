@@ -33,6 +33,7 @@ import {
   aggregateClientLearningStats,
   type AggregatedLearningStats,
 } from "@/lib/profile/aggregate-learning-stats";
+import { ACTIVE_STUDY_SERVER_SYNC_INTERVAL_MS } from "@/lib/study/active-study-time-sync";
 import { syncActiveStudyTimeToServer } from "@/lib/study/sync-active-study-time";
 import {
   buildLearningAchievements,
@@ -129,16 +130,18 @@ export function LearningHub({
   const [showInStudyRanking, setShowInStudyRanking] = useState(initialShowInRanking);
 
   useEffect(() => {
-    const refresh = () => {
-      void syncActiveStudyTimeToServer().finally(() => {
-        setStats(aggregateClientLearningStats(organizersCount, serverStats));
-      });
+    const refreshStats = () => {
+      setStats(aggregateClientLearningStats(organizersCount, serverStats));
     };
-    refresh();
+    const syncAndRefresh = () => {
+      void syncActiveStudyTimeToServer().finally(refreshStats);
+    };
 
-    const onFocus = () => refresh();
+    syncAndRefresh();
+
+    const onFocus = () => syncAndRefresh();
     window.addEventListener("focus", onFocus);
-    const interval = window.setInterval(refresh, 60_000);
+    const interval = window.setInterval(refreshStats, ACTIVE_STUDY_SERVER_SYNC_INTERVAL_MS);
 
     return () => {
       window.removeEventListener("focus", onFocus);
