@@ -9,7 +9,7 @@ export const env = {
   openRouterApiKey: process.env.OPENROUTER_API_KEY,
   openRouterModel:
     process.env.OPENROUTER_MODEL ??
-    "deepseek/deepseek-chat-v3-0324:free",
+    "openrouter/free",
 
   // GEMINI
   geminiApiKey: process.env.GEMINI_API_KEY,

@@ -294,7 +294,7 @@ export async function generateTextWithFallback(input: {
 
   if (!errors.length || !hasTextAiProviders()) {
     throw new Error(
-      "No hay proveedores de IA configurados. Añade GEMINI_API_KEY y OPENROUTER_API_KEY (DeepSeek gratis).",
+      "No hay proveedores de IA configurados. Añade GEMINI_API_KEY y OPENROUTER_API_KEY (modelos gratis en OpenRouter).",
     );
   }
 

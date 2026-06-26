@@ -280,7 +280,7 @@ export async function generateOrganizerContent(input: {
 
   if (env.openRouterApiKey) {
     providers.push({
-      name: "OpenRouter (DeepSeek gratis)",
+      name: "OpenRouter (gratis)",
       run: () => tryOpenRouterOrganizer(providerPrompt),
     });
   }

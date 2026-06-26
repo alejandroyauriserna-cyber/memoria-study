@@ -1,11 +1,13 @@
 import { env } from "@/lib/env";
 import { readServerEnv } from "@/lib/env/runtime";
 
-/** Modelos gratuitos en OpenRouter, en orden de preferencia tras OPENROUTER_MODEL. */
+/** Modelos gratuitos en OpenRouter (rotan; ver openrouter.ai/models). */
 export const OPENROUTER_FREE_MODEL_FALLBACKS = [
-  "deepseek/deepseek-chat-v3-0324:free",
   "openrouter/free",
-  "qwen/qwen3-4b:free",
+  "google/gemma-4-26b-a4b-it:free",
+  "poolside/laguna-m.1:free",
+  "google/gemma-4-31b-it:free",
+  "qwen/qwen3-next-80b-a3b-instruct:free",
   "meta-llama/llama-3.3-70b-instruct:free",
 ] as const;
 

@@ -23,10 +23,10 @@ describe("getOpenRouterModelCandidates", () => {
   });
 
   it("puts configured model first and dedupes fallbacks", () => {
-    process.env.OPENROUTER_MODEL = "deepseek/deepseek-chat-v3-0324:free";
+    process.env.OPENROUTER_MODEL = "openrouter/free";
     const models = getOpenRouterModelCandidates();
-    expect(models[0]).toBe("deepseek/deepseek-chat-v3-0324:free");
-    expect(models.filter((m) => m === "deepseek/deepseek-chat-v3-0324:free")).toHaveLength(1);
+    expect(models[0]).toBe("openrouter/free");
+    expect(models.filter((m) => m === "openrouter/free")).toHaveLength(1);
     expect(models.length).toBeGreaterThan(2);
   });
 });
